@@ -1,0 +1,770 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: DateTimeField</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time</a> ]
+</div>
+
+<h1>Coverage Summary for Class: DateTimeField (org.joda.time)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">DateTimeField</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/ 2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/ 2)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2015 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;import java.util.Locale;
+<i>19</i>&nbsp;
+<i>20</i>&nbsp;/**
+<i>21</i>&nbsp; * Defines the calculation engine for date and time fields.
+<i>22</i>&nbsp; * The interface defines a set of methods that manipulate a millisecond datetime
+<i>23</i>&nbsp; * with regards to a single field, such as monthOfYear or secondOfMinute.
+<i>24</i>&nbsp; * &lt;p&gt;
+<i>25</i>&nbsp; * This design is extensible so, if you wish, you can extract a different field from
+<i>26</i>&nbsp; * the milliseconds. A number of standard implementations are provided to assist.
+<i>27</i>&nbsp; *
+<i>28</i>&nbsp; * @author Guy Allard
+<i>29</i>&nbsp; * @author Stephen Colebourne
+<i>30</i>&nbsp; * @author Brian S O&#39;Neill
+<i>31</i>&nbsp; * @since 1.0
+<i>32</i>&nbsp; */
+<b class="fc"><i>33</i>&nbsp;public abstract class DateTimeField {</b>
+<i>34</i>&nbsp;
+<i>35</i>&nbsp;    /**
+<i>36</i>&nbsp;     * Get the type of the field.
+<i>37</i>&nbsp;     * 
+<i>38</i>&nbsp;     * @return field type
+<i>39</i>&nbsp;     */
+<i>40</i>&nbsp;    public abstract DateTimeFieldType getType();
+<i>41</i>&nbsp;
+<i>42</i>&nbsp;    /**
+<i>43</i>&nbsp;     * Get the name of the field.
+<i>44</i>&nbsp;     * &lt;p&gt;
+<i>45</i>&nbsp;     * By convention, names follow a pattern of &quot;dddOfRrr&quot;, where &quot;ddd&quot; represents
+<i>46</i>&nbsp;     * the (singular) duration unit field name and &quot;Rrr&quot; represents the (singular)
+<i>47</i>&nbsp;     * duration range field name. If the range field is not applicable, then
+<i>48</i>&nbsp;     * the name of the field is simply the (singular) duration field name.
+<i>49</i>&nbsp;     * 
+<i>50</i>&nbsp;     * @return field name
+<i>51</i>&nbsp;     */
+<i>52</i>&nbsp;    public abstract String getName();
+<i>53</i>&nbsp;
+<i>54</i>&nbsp;    /**
+<i>55</i>&nbsp;     * Returns true if this field is supported.
+<i>56</i>&nbsp;     * 
+<i>57</i>&nbsp;     * @return true if this field is supported
+<i>58</i>&nbsp;     */
+<i>59</i>&nbsp;    public abstract boolean isSupported();
+<i>60</i>&nbsp;
+<i>61</i>&nbsp;    /**
+<i>62</i>&nbsp;     * Returns true if the set method is lenient. If so, it accepts values that
+<i>63</i>&nbsp;     * are out of bounds. For example, a lenient day of month field accepts 32
+<i>64</i>&nbsp;     * for January, converting it to February 1.
+<i>65</i>&nbsp;     * 
+<i>66</i>&nbsp;     * @return true if this field is lenient
+<i>67</i>&nbsp;     */
+<i>68</i>&nbsp;    public abstract boolean isLenient();
+<i>69</i>&nbsp;
+<i>70</i>&nbsp;    // Main access API
+<i>71</i>&nbsp;    //------------------------------------------------------------------------
+<i>72</i>&nbsp;    /**
+<i>73</i>&nbsp;     * Get the value of this field from the milliseconds.
+<i>74</i>&nbsp;     * 
+<i>75</i>&nbsp;     * @param instant  the milliseconds from 1970-01-01T00:00:00Z to query
+<i>76</i>&nbsp;     * @return the value of the field, in the units of the field
+<i>77</i>&nbsp;     */
+<i>78</i>&nbsp;    public abstract int get(long instant);
+<i>79</i>&nbsp;
+<i>80</i>&nbsp;    /**
+<i>81</i>&nbsp;     * Get the human-readable, text value of this field from the milliseconds.
+<i>82</i>&nbsp;     * If the specified locale is null, the default locale is used.
+<i>83</i>&nbsp;     *
+<i>84</i>&nbsp;     * @param instant  the milliseconds from 1970-01-01T00:00:00Z to query
+<i>85</i>&nbsp;     * @param locale the locale to use for selecting a text symbol, null for default
+<i>86</i>&nbsp;     * @return the text value of the field
+<i>87</i>&nbsp;     */
+<i>88</i>&nbsp;    public abstract String getAsText(long instant, Locale locale);
+<i>89</i>&nbsp;
+<i>90</i>&nbsp;    /**
+<i>91</i>&nbsp;     * Get the human-readable, text value of this field from the milliseconds.
+<i>92</i>&nbsp;     * 
+<i>93</i>&nbsp;     * @param instant  the milliseconds from 1970-01-01T00:00:00Z to query
+<i>94</i>&nbsp;     * @return the text value of the field
+<i>95</i>&nbsp;     */
+<i>96</i>&nbsp;    public abstract String getAsText(long instant);
+<i>97</i>&nbsp;
+<i>98</i>&nbsp;    /**
+<i>99</i>&nbsp;     * Get the human-readable, text value of this field from a partial instant.
+<i>100</i>&nbsp;     * If the specified locale is null, the default locale is used.
+<i>101</i>&nbsp;     *
+<i>102</i>&nbsp;     * @param partial  the partial instant to query
+<i>103</i>&nbsp;     * @param fieldValue  the field value of this field, provided for performance
+<i>104</i>&nbsp;     * @param locale  the locale to use for selecting a text symbol, null for default
+<i>105</i>&nbsp;     * @return the text value of the field
+<i>106</i>&nbsp;     */
+<i>107</i>&nbsp;    public abstract String getAsText(ReadablePartial partial, int fieldValue, Locale locale);
+<i>108</i>&nbsp;
+<i>109</i>&nbsp;    /**
+<i>110</i>&nbsp;     * Get the human-readable, text value of this field from a partial instant.
+<i>111</i>&nbsp;     * If the specified locale is null, the default locale is used.
+<i>112</i>&nbsp;     *
+<i>113</i>&nbsp;     * @param partial  the partial instant to query
+<i>114</i>&nbsp;     * @param locale  the locale to use for selecting a text symbol, null for default
+<i>115</i>&nbsp;     * @return the text value of the field
+<i>116</i>&nbsp;     */
+<i>117</i>&nbsp;    public abstract String getAsText(ReadablePartial partial, Locale locale);
+<i>118</i>&nbsp;
+<i>119</i>&nbsp;    /**
+<i>120</i>&nbsp;     * Get the human-readable, text value of this field from the field value.
+<i>121</i>&nbsp;     * If the specified locale is null, the default locale is used.
+<i>122</i>&nbsp;     *
+<i>123</i>&nbsp;     * @param fieldValue  the numeric value to convert to text
+<i>124</i>&nbsp;     * @param locale the locale to use for selecting a text symbol, null for default
+<i>125</i>&nbsp;     * @return the text value of the field
+<i>126</i>&nbsp;     */
+<i>127</i>&nbsp;    public abstract String getAsText(int fieldValue, Locale locale);
+<i>128</i>&nbsp;
+<i>129</i>&nbsp;    /**
+<i>130</i>&nbsp;     * Get the human-readable, short text value of this field from the
+<i>131</i>&nbsp;     * milliseconds.  If the specified locale is null, the default locale is used.
+<i>132</i>&nbsp;     *
+<i>133</i>&nbsp;     * @param instant  the milliseconds from 1970-01-01T00:00:00Z to query
+<i>134</i>&nbsp;     * @param locale the locale to use for selecting a text symbol, null for default
+<i>135</i>&nbsp;     * @return the short text value of the field
+<i>136</i>&nbsp;     */
+<i>137</i>&nbsp;    public abstract String getAsShortText(long instant, Locale locale);
+<i>138</i>&nbsp;
+<i>139</i>&nbsp;    /**
+<i>140</i>&nbsp;     * Get the human-readable, short text value of this field from the
+<i>141</i>&nbsp;     * milliseconds.
+<i>142</i>&nbsp;     * 
+<i>143</i>&nbsp;     * @param instant  the milliseconds from 1970-01-01T00:00:00Z to query
+<i>144</i>&nbsp;     * @return the short text value of the field
+<i>145</i>&nbsp;     */
+<i>146</i>&nbsp;    public abstract String getAsShortText(long instant);
+<i>147</i>&nbsp;
+<i>148</i>&nbsp;    /**
+<i>149</i>&nbsp;     * Get the human-readable, short text value of this field from a partial instant.
+<i>150</i>&nbsp;     * If the specified locale is null, the default locale is used.
+<i>151</i>&nbsp;     *
+<i>152</i>&nbsp;     * @param partial  the partial instant to query
+<i>153</i>&nbsp;     * @param fieldValue  the field value of this field, provided for performance
+<i>154</i>&nbsp;     * @param locale  the locale to use for selecting a text symbol, null for default
+<i>155</i>&nbsp;     * @return the text value of the field
+<i>156</i>&nbsp;     */
+<i>157</i>&nbsp;    public abstract String getAsShortText(ReadablePartial partial, int fieldValue, Locale locale);
+<i>158</i>&nbsp;
+<i>159</i>&nbsp;    /**
+<i>160</i>&nbsp;     * Get the human-readable, short text value of this field from a partial instant.
+<i>161</i>&nbsp;     * If the specified locale is null, the default locale is used.
+<i>162</i>&nbsp;     *
+<i>163</i>&nbsp;     * @param partial  the partial instant to query
+<i>164</i>&nbsp;     * @param locale  the locale to use for selecting a text symbol, null for default
+<i>165</i>&nbsp;     * @return the text value of the field
+<i>166</i>&nbsp;     */
+<i>167</i>&nbsp;    public abstract String getAsShortText(ReadablePartial partial, Locale locale);
+<i>168</i>&nbsp;
+<i>169</i>&nbsp;    /**
+<i>170</i>&nbsp;     * Get the human-readable, short text value of this field from the field value.
+<i>171</i>&nbsp;     * If the specified locale is null, the default locale is used.
+<i>172</i>&nbsp;     *
+<i>173</i>&nbsp;     * @param fieldValue  the numeric value to convert to text
+<i>174</i>&nbsp;     * @param locale the locale to use for selecting a text symbol, null for default
+<i>175</i>&nbsp;     * @return the text value of the field
+<i>176</i>&nbsp;     */
+<i>177</i>&nbsp;    public abstract String getAsShortText(int fieldValue, Locale locale);
+<i>178</i>&nbsp;
+<i>179</i>&nbsp;    /**
+<i>180</i>&nbsp;     * Adds a value (which may be negative) to the millis value,
+<i>181</i>&nbsp;     * overflowing into larger fields if necessary.
+<i>182</i>&nbsp;     * &lt;p&gt;
+<i>183</i>&nbsp;     * The value will be added to this field. If the value is too large to be
+<i>184</i>&nbsp;     * added solely to this field, larger fields will increase as required.
+<i>185</i>&nbsp;     * Smaller fields should be unaffected, except where the result would be
+<i>186</i>&nbsp;     * an invalid value for a smaller field. In this case the smaller field is
+<i>187</i>&nbsp;     * adjusted to be in range.
+<i>188</i>&nbsp;     * &lt;p&gt;
+<i>189</i>&nbsp;     * For example, in the ISO chronology:&lt;br&gt;
+<i>190</i>&nbsp;     * 2000-08-20 add six months is 2001-02-20&lt;br&gt;
+<i>191</i>&nbsp;     * 2000-08-20 add twenty months is 2002-04-20&lt;br&gt;
+<i>192</i>&nbsp;     * 2000-08-20 add minus nine months is 1999-11-20&lt;br&gt;
+<i>193</i>&nbsp;     * 2001-01-31 add one month  is 2001-02-28&lt;br&gt;
+<i>194</i>&nbsp;     * 2001-01-31 add two months is 2001-03-31&lt;br&gt;
+<i>195</i>&nbsp;     * 
+<i>196</i>&nbsp;     * @param instant  the milliseconds from 1970-01-01T00:00:00Z to add to
+<i>197</i>&nbsp;     * @param value  the value to add, in the units of the field
+<i>198</i>&nbsp;     * @return the updated milliseconds
+<i>199</i>&nbsp;     */
+<i>200</i>&nbsp;    public abstract long add(long instant, int value);
+<i>201</i>&nbsp;
+<i>202</i>&nbsp;    /**
+<i>203</i>&nbsp;     * Adds a value (which may be negative) to the millis value,
+<i>204</i>&nbsp;     * overflowing into larger fields if necessary.
+<i>205</i>&nbsp;     * 
+<i>206</i>&nbsp;     * @param instant  the milliseconds from 1970-01-01T00:00:00Z to add to
+<i>207</i>&nbsp;     * @param value  the long value to add, in the units of the field
+<i>208</i>&nbsp;     * @return the updated milliseconds
+<i>209</i>&nbsp;     * @throws IllegalArgumentException if value is too large
+<i>210</i>&nbsp;     * @see #add(long,int)
+<i>211</i>&nbsp;     */
+<i>212</i>&nbsp;    public abstract long add(long instant, long value);
+<i>213</i>&nbsp;
+<i>214</i>&nbsp;    /**
+<i>215</i>&nbsp;     * Adds a value (which may be negative) to the partial instant,
+<i>216</i>&nbsp;     * throwing an exception if the maximum size of the instant is reached.
+<i>217</i>&nbsp;     * &lt;p&gt;
+<i>218</i>&nbsp;     * The value will be added to this field, overflowing into larger fields
+<i>219</i>&nbsp;     * if necessary. Smaller fields should be unaffected, except where the
+<i>220</i>&nbsp;     * result would be an invalid value for a smaller field. In this case the
+<i>221</i>&nbsp;     * smaller field is adjusted to be in range.
+<i>222</i>&nbsp;     * &lt;p&gt;
+<i>223</i>&nbsp;     * Partial instants only contain some fields. This may result in a maximum
+<i>224</i>&nbsp;     * possible value, such as TimeOfDay being limited to 23:59:59:999. If this
+<i>225</i>&nbsp;     * limit is breached by the add an exception is thrown.
+<i>226</i>&nbsp;     * &lt;p&gt;
+<i>227</i>&nbsp;     * For example, in the ISO chronology:&lt;br&gt;
+<i>228</i>&nbsp;     * 2000-08-20 add six months is 2000-02-20&lt;br&gt;
+<i>229</i>&nbsp;     * 2000-08-20 add twenty months is 2000-04-20&lt;br&gt;
+<i>230</i>&nbsp;     * 2000-08-20 add minus nine months is 2000-11-20&lt;br&gt;
+<i>231</i>&nbsp;     * 2001-01-31 add one month  is 2001-02-28&lt;br&gt;
+<i>232</i>&nbsp;     * 2001-01-31 add two months is 2001-03-31&lt;br&gt;
+<i>233</i>&nbsp;     * 
+<i>234</i>&nbsp;     * @param instant  the partial instant
+<i>235</i>&nbsp;     * @param fieldIndex  the index of this field in the instant
+<i>236</i>&nbsp;     * @param values  the values of the partial instant which should be updated
+<i>237</i>&nbsp;     * @param valueToAdd  the value to add, in the units of the field
+<i>238</i>&nbsp;     * @return the passed in values
+<i>239</i>&nbsp;     * @throws IllegalArgumentException if the value is invalid or the maximum instant is reached
+<i>240</i>&nbsp;     */
+<i>241</i>&nbsp;    public abstract int[] add(ReadablePartial instant, int fieldIndex, int[] values, int valueToAdd);
+<i>242</i>&nbsp;
+<i>243</i>&nbsp;    /**
+<i>244</i>&nbsp;     * Adds a value (which may be negative) to the partial instant,
+<i>245</i>&nbsp;     * wrapping the whole partial if the maximum size of the partial is reached.
+<i>246</i>&nbsp;     * &lt;p&gt;
+<i>247</i>&nbsp;     * The value will be added to this field, overflowing into larger fields
+<i>248</i>&nbsp;     * if necessary. Smaller fields should be unaffected, except where the
+<i>249</i>&nbsp;     * result would be an invalid value for a smaller field. In this case the
+<i>250</i>&nbsp;     * smaller field is adjusted to be in range.
+<i>251</i>&nbsp;     * &lt;p&gt;
+<i>252</i>&nbsp;     * Partial instants only contain some fields. This may result in a maximum
+<i>253</i>&nbsp;     * possible value, such as TimeOfDay normally being limited to 23:59:59:999.
+<i>254</i>&nbsp;     * If ths limit is reached by the addition, this method will wrap back to
+<i>255</i>&nbsp;     * 00:00:00.000. In fact, you would generally only use this method for
+<i>256</i>&nbsp;     * classes that have a limitation such as this.
+<i>257</i>&nbsp;     * &lt;p&gt;
+<i>258</i>&nbsp;     * For example, in the ISO chronology:&lt;br&gt;
+<i>259</i>&nbsp;     * 10:20:30 add 20 minutes is 10:40:30&lt;br&gt;
+<i>260</i>&nbsp;     * 10:20:30 add 45 minutes is 11:05:30&lt;br&gt;
+<i>261</i>&nbsp;     * 10:20:30 add 16 hours is 02:20:30&lt;br&gt;
+<i>262</i>&nbsp;     * 
+<i>263</i>&nbsp;     * @param instant  the partial instant
+<i>264</i>&nbsp;     * @param fieldIndex  the index of this field in the partial
+<i>265</i>&nbsp;     * @param values  the values of the partial instant which should be updated
+<i>266</i>&nbsp;     * @param valueToAdd  the value to add, in the units of the field
+<i>267</i>&nbsp;     * @return the passed in values
+<i>268</i>&nbsp;     * @throws IllegalArgumentException if the value is invalid or the maximum instant is reached
+<i>269</i>&nbsp;     */
+<i>270</i>&nbsp;    public abstract int[] addWrapPartial(ReadablePartial instant, int fieldIndex, int[] values, int valueToAdd);
+<i>271</i>&nbsp;
+<i>272</i>&nbsp;    /**
+<i>273</i>&nbsp;     * Adds a value (which may be negative) to the millis value,
+<i>274</i>&nbsp;     * wrapping within this field.
+<i>275</i>&nbsp;     * &lt;p&gt;
+<i>276</i>&nbsp;     * The value will be added to this field. If the value is too large to be
+<i>277</i>&nbsp;     * added solely to this field then it wraps. Larger fields are always
+<i>278</i>&nbsp;     * unaffected. Smaller fields should be unaffected, except where the
+<i>279</i>&nbsp;     * result would be an invalid value for a smaller field. In this case the
+<i>280</i>&nbsp;     * smaller field is adjusted to be in range.
+<i>281</i>&nbsp;     * &lt;p&gt;
+<i>282</i>&nbsp;     * For example, in the ISO chronology:&lt;br&gt;
+<i>283</i>&nbsp;     * 2000-08-20 addWrapField six months is 2000-02-20&lt;br&gt;
+<i>284</i>&nbsp;     * 2000-08-20 addWrapField twenty months is 2000-04-20&lt;br&gt;
+<i>285</i>&nbsp;     * 2000-08-20 addWrapField minus nine months is 2000-11-20&lt;br&gt;
+<i>286</i>&nbsp;     * 2001-01-31 addWrapField one month  is 2001-02-28&lt;br&gt;
+<i>287</i>&nbsp;     * 2001-01-31 addWrapField two months is 2001-03-31&lt;br&gt;
+<i>288</i>&nbsp;     * 
+<i>289</i>&nbsp;     * @param instant  the milliseconds from 1970-01-01T00:00:00Z to add to
+<i>290</i>&nbsp;     * @param value  the value to add, in the units of the field
+<i>291</i>&nbsp;     * @return the updated milliseconds
+<i>292</i>&nbsp;     */
+<i>293</i>&nbsp;    public abstract long addWrapField(long instant, int value) ;
+<i>294</i>&nbsp;
+<i>295</i>&nbsp;    /**
+<i>296</i>&nbsp;     * Adds a value (which may be negative) to the partial instant,
+<i>297</i>&nbsp;     * wrapping within this field.
+<i>298</i>&nbsp;     * &lt;p&gt;
+<i>299</i>&nbsp;     * The value will be added to this field. If the value is too large to be
+<i>300</i>&nbsp;     * added solely to this field then it wraps. Larger fields are always
+<i>301</i>&nbsp;     * unaffected. Smaller fields should be unaffected, except where the
+<i>302</i>&nbsp;     * result would be an invalid value for a smaller field. In this case the
+<i>303</i>&nbsp;     * smaller field is adjusted to be in range.
+<i>304</i>&nbsp;     * &lt;p&gt;
+<i>305</i>&nbsp;     * For example, in the ISO chronology:&lt;br&gt;
+<i>306</i>&nbsp;     * 2000-08-20 addWrapField six months is 2000-02-20&lt;br&gt;
+<i>307</i>&nbsp;     * 2000-08-20 addWrapField twenty months is 2000-04-20&lt;br&gt;
+<i>308</i>&nbsp;     * 2000-08-20 addWrapField minus nine months is 2000-11-20&lt;br&gt;
+<i>309</i>&nbsp;     * 2001-01-31 addWrapField one month  is 2001-02-28&lt;br&gt;
+<i>310</i>&nbsp;     * 2001-01-31 addWrapField two months is 2001-03-31&lt;br&gt;
+<i>311</i>&nbsp;     * 
+<i>312</i>&nbsp;     * @param instant  the partial instant
+<i>313</i>&nbsp;     * @param fieldIndex  the index of this field in the instant
+<i>314</i>&nbsp;     * @param values  the values of the partial instant which should be updated
+<i>315</i>&nbsp;     * @param valueToAdd  the value to add, in the units of the field
+<i>316</i>&nbsp;     * @return the passed in values
+<i>317</i>&nbsp;     * @throws IllegalArgumentException if the value is invalid
+<i>318</i>&nbsp;     */
+<i>319</i>&nbsp;    public abstract int[] addWrapField(ReadablePartial instant, int fieldIndex, int[] values, int valueToAdd);
+<i>320</i>&nbsp;
+<i>321</i>&nbsp;    /**
+<i>322</i>&nbsp;     * Computes the difference between two instants, as measured in the units
+<i>323</i>&nbsp;     * of this field. Any fractional units are dropped from the result. Calling
+<i>324</i>&nbsp;     * getDifference reverses the effect of calling add. In the following code:
+<i>325</i>&nbsp;     *
+<i>326</i>&nbsp;     * &lt;pre&gt;
+<i>327</i>&nbsp;     * long instant = ...
+<i>328</i>&nbsp;     * int v = ...
+<i>329</i>&nbsp;     * int age = getDifference(add(instant, v), instant);
+<i>330</i>&nbsp;     * &lt;/pre&gt;
+<i>331</i>&nbsp;     *
+<i>332</i>&nbsp;     * The value &#39;age&#39; is the same as the value &#39;v&#39;.
+<i>333</i>&nbsp;     *
+<i>334</i>&nbsp;     * @param minuendInstant the milliseconds from 1970-01-01T00:00:00Z to
+<i>335</i>&nbsp;     * subtract from
+<i>336</i>&nbsp;     * @param subtrahendInstant the milliseconds from 1970-01-01T00:00:00Z to
+<i>337</i>&nbsp;     * subtract off the minuend
+<i>338</i>&nbsp;     * @return the difference in the units of this field
+<i>339</i>&nbsp;     */
+<i>340</i>&nbsp;    public abstract int getDifference(long minuendInstant, long subtrahendInstant);
+<i>341</i>&nbsp;
+<i>342</i>&nbsp;    /**
+<i>343</i>&nbsp;     * Computes the difference between two instants, as measured in the units
+<i>344</i>&nbsp;     * of this field. Any fractional units are dropped from the result. Calling
+<i>345</i>&nbsp;     * getDifference reverses the effect of calling add. In the following code:
+<i>346</i>&nbsp;     *
+<i>347</i>&nbsp;     * &lt;pre&gt;
+<i>348</i>&nbsp;     * long instant = ...
+<i>349</i>&nbsp;     * long v = ...
+<i>350</i>&nbsp;     * long age = getDifferenceAsLong(add(instant, v), instant);
+<i>351</i>&nbsp;     * &lt;/pre&gt;
+<i>352</i>&nbsp;     *
+<i>353</i>&nbsp;     * The value &#39;age&#39; is the same as the value &#39;v&#39;.
+<i>354</i>&nbsp;     *
+<i>355</i>&nbsp;     * @param minuendInstant the milliseconds from 1970-01-01T00:00:00Z to
+<i>356</i>&nbsp;     * subtract from
+<i>357</i>&nbsp;     * @param subtrahendInstant the milliseconds from 1970-01-01T00:00:00Z to
+<i>358</i>&nbsp;     * subtract off the minuend
+<i>359</i>&nbsp;     * @return the difference in the units of this field
+<i>360</i>&nbsp;     */
+<i>361</i>&nbsp;    public abstract long getDifferenceAsLong(long minuendInstant, long subtrahendInstant);
+<i>362</i>&nbsp;
+<i>363</i>&nbsp;    /**
+<i>364</i>&nbsp;     * Sets a value in the milliseconds supplied.
+<i>365</i>&nbsp;     * &lt;p&gt;
+<i>366</i>&nbsp;     * The value of this field will be set.
+<i>367</i>&nbsp;     * If the value is invalid, an exception if thrown.
+<i>368</i>&nbsp;     * &lt;p&gt;
+<i>369</i>&nbsp;     * If setting this field would make other fields invalid, then those fields
+<i>370</i>&nbsp;     * may be changed. For example if the current date is the 31st January, and
+<i>371</i>&nbsp;     * the month is set to February, the day would be invalid. Instead, the day
+<i>372</i>&nbsp;     * would be changed to the closest value - the 28th/29th February as appropriate.
+<i>373</i>&nbsp;     * 
+<i>374</i>&nbsp;     * @param instant  the milliseconds from 1970-01-01T00:00:00Z to set in
+<i>375</i>&nbsp;     * @param value  the value to set, in the units of the field
+<i>376</i>&nbsp;     * @return the updated milliseconds
+<i>377</i>&nbsp;     * @throws IllegalArgumentException if the value is invalid
+<i>378</i>&nbsp;     */
+<i>379</i>&nbsp;    public abstract long set(long instant, int value);
+<i>380</i>&nbsp;
+<i>381</i>&nbsp;    /**
+<i>382</i>&nbsp;     * Sets a value in the milliseconds supplied, allowing a little leniency at the margins.
+<i>383</i>&nbsp;     * &lt;p&gt;
+<i>384</i>&nbsp;     * This is primarily an internal method used by parsing.
+<i>385</i>&nbsp;     * 
+<i>386</i>&nbsp;     * @param instant  the milliseconds from 1970-01-01T00:00:00Z to set in
+<i>387</i>&nbsp;     * @param value  the value to set, in the units of the field
+<i>388</i>&nbsp;     * @return the updated milliseconds
+<i>389</i>&nbsp;     * @throws IllegalArgumentException if the value is invalid
+<i>390</i>&nbsp;     */
+<i>391</i>&nbsp;    public long setExtended(long instant, int value) {
+<b class="fc"><i>392</i>&nbsp;        return set(instant, value);</b>
+<i>393</i>&nbsp;    }
+<i>394</i>&nbsp;
+<i>395</i>&nbsp;    /**
+<i>396</i>&nbsp;     * Sets a value using the specified partial instant.
+<i>397</i>&nbsp;     * &lt;p&gt;
+<i>398</i>&nbsp;     * The value of this field (specified by the index) will be set.
+<i>399</i>&nbsp;     * If the value is invalid, an exception if thrown.
+<i>400</i>&nbsp;     * &lt;p&gt;
+<i>401</i>&nbsp;     * If setting this field would make other fields invalid, then those fields
+<i>402</i>&nbsp;     * may be changed. For example if the current date is the 31st January, and
+<i>403</i>&nbsp;     * the month is set to February, the day would be invalid. Instead, the day
+<i>404</i>&nbsp;     * would be changed to the closest value - the 28th/29th February as appropriate.
+<i>405</i>&nbsp;     * 
+<i>406</i>&nbsp;     * @param instant  the partial instant
+<i>407</i>&nbsp;     * @param fieldIndex  the index of this field in the instant
+<i>408</i>&nbsp;     * @param values  the values of the partial instant which should be updated
+<i>409</i>&nbsp;     * @param newValue  the value to set, in the units of the field
+<i>410</i>&nbsp;     * @return the passed in values
+<i>411</i>&nbsp;     * @throws IllegalArgumentException if the value is invalid
+<i>412</i>&nbsp;     */
+<i>413</i>&nbsp;    public abstract int[] set(ReadablePartial instant, int fieldIndex, int[] values, int newValue);
+<i>414</i>&nbsp;
+<i>415</i>&nbsp;    /**
+<i>416</i>&nbsp;     * Sets a value in the milliseconds supplied from a human-readable, text value.
+<i>417</i>&nbsp;     * If the specified locale is null, the default locale is used.
+<i>418</i>&nbsp;     * &lt;p&gt;
+<i>419</i>&nbsp;     * If setting this field would make other fields invalid, then those fields
+<i>420</i>&nbsp;     * may be changed. For example if the current date is the 31st January, and
+<i>421</i>&nbsp;     * the month is set to February, the day would be invalid. Instead, the day
+<i>422</i>&nbsp;     * would be changed to the closest value - the 28th/29th February as appropriate.
+<i>423</i>&nbsp;     *
+<i>424</i>&nbsp;     * @param instant  the milliseconds from 1970-01-01T00:00:00Z to set in
+<i>425</i>&nbsp;     * @param text  the text value to set
+<i>426</i>&nbsp;     * @param locale the locale to use for selecting a text symbol, null for default
+<i>427</i>&nbsp;     * @return the updated milliseconds
+<i>428</i>&nbsp;     * @throws IllegalArgumentException if the text value is invalid
+<i>429</i>&nbsp;     */
+<i>430</i>&nbsp;    public abstract long set(long instant, String text, Locale locale);
+<i>431</i>&nbsp;
+<i>432</i>&nbsp;    /**
+<i>433</i>&nbsp;     * Sets a value in the milliseconds supplied from a human-readable, text value.
+<i>434</i>&nbsp;     * &lt;p&gt;
+<i>435</i>&nbsp;     * If setting this field would make other fields invalid, then those fields
+<i>436</i>&nbsp;     * may be changed. For example if the current date is the 31st January, and
+<i>437</i>&nbsp;     * the month is set to February, the day would be invalid. Instead, the day
+<i>438</i>&nbsp;     * would be changed to the closest value - the 28th/29th February as appropriate.
+<i>439</i>&nbsp;     * 
+<i>440</i>&nbsp;     * @param instant  the milliseconds from 1970-01-01T00:00:00Z to set in
+<i>441</i>&nbsp;     * @param text  the text value to set
+<i>442</i>&nbsp;     * @return the updated milliseconds
+<i>443</i>&nbsp;     * @throws IllegalArgumentException if the text value is invalid
+<i>444</i>&nbsp;     */
+<i>445</i>&nbsp;    public abstract long set(long instant, String text);
+<i>446</i>&nbsp;
+<i>447</i>&nbsp;    /**
+<i>448</i>&nbsp;     * Sets a value in the milliseconds supplied from a human-readable, text value.
+<i>449</i>&nbsp;     * If the specified locale is null, the default locale is used.
+<i>450</i>&nbsp;     * &lt;p&gt;
+<i>451</i>&nbsp;     * If setting this field would make other fields invalid, then those fields
+<i>452</i>&nbsp;     * may be changed. For example if the current date is the 31st January, and
+<i>453</i>&nbsp;     * the month is set to February, the day would be invalid. Instead, the day
+<i>454</i>&nbsp;     * would be changed to the closest value - the 28th/29th February as appropriate.
+<i>455</i>&nbsp;     *
+<i>456</i>&nbsp;     * @param instant  the partial instant
+<i>457</i>&nbsp;     * @param fieldIndex  the index of this field in the instant
+<i>458</i>&nbsp;     * @param values  the values of the partial instant which should be updated
+<i>459</i>&nbsp;     * @param text  the text value to set
+<i>460</i>&nbsp;     * @param locale the locale to use for selecting a text symbol, null for default
+<i>461</i>&nbsp;     * @return the passed in values
+<i>462</i>&nbsp;     * @throws IllegalArgumentException if the text value is invalid
+<i>463</i>&nbsp;     */
+<i>464</i>&nbsp;    public abstract int[] set(ReadablePartial instant, int fieldIndex, int[] values, String text, Locale locale);
+<i>465</i>&nbsp;
+<i>466</i>&nbsp;    // Extra information API
+<i>467</i>&nbsp;    //------------------------------------------------------------------------
+<i>468</i>&nbsp;    /**
+<i>469</i>&nbsp;     * Returns the duration per unit value of this field. For example, if this
+<i>470</i>&nbsp;     * field represents &quot;hour of day&quot;, then the duration is an hour.
+<i>471</i>&nbsp;     *
+<i>472</i>&nbsp;     * @return the duration of this field, or UnsupportedDurationField if field
+<i>473</i>&nbsp;     * has no duration
+<i>474</i>&nbsp;     */
+<i>475</i>&nbsp;    public abstract DurationField getDurationField();
+<i>476</i>&nbsp;
+<i>477</i>&nbsp;    /**
+<i>478</i>&nbsp;     * Returns the range duration of this field. For example, if this field
+<i>479</i>&nbsp;     * represents &quot;hour of day&quot;, then the range duration is a day.
+<i>480</i>&nbsp;     *
+<i>481</i>&nbsp;     * @return the range duration of this field, or null if field has no range
+<i>482</i>&nbsp;     */
+<i>483</i>&nbsp;    public abstract DurationField getRangeDurationField();
+<i>484</i>&nbsp;
+<i>485</i>&nbsp;    /**
+<i>486</i>&nbsp;     * Returns whether this field is &#39;leap&#39; for the specified instant.
+<i>487</i>&nbsp;     * &lt;p&gt;
+<i>488</i>&nbsp;     * For example, a leap year would return true, a non leap year would return
+<i>489</i>&nbsp;     * false.
+<i>490</i>&nbsp;     * 
+<i>491</i>&nbsp;     * @param instant  the instant to check for leap status
+<i>492</i>&nbsp;     * @return true if the field is &#39;leap&#39;
+<i>493</i>&nbsp;     */
+<i>494</i>&nbsp;    public abstract boolean isLeap(long instant);
+<i>495</i>&nbsp;
+<i>496</i>&nbsp;    /**
+<i>497</i>&nbsp;     * Gets the amount by which this field is &#39;leap&#39; for the specified instant.
+<i>498</i>&nbsp;     * &lt;p&gt;
+<i>499</i>&nbsp;     * For example, a leap year would return one, a non leap year would return
+<i>500</i>&nbsp;     * zero.
+<i>501</i>&nbsp;     * 
+<i>502</i>&nbsp;     * @param instant  the instant to check for leap status
+<i>503</i>&nbsp;     * @return the amount, in units of the leap duration field, that the field is leap
+<i>504</i>&nbsp;     */
+<i>505</i>&nbsp;    public abstract int getLeapAmount(long instant);
+<i>506</i>&nbsp;
+<i>507</i>&nbsp;    /**
+<i>508</i>&nbsp;     * If this field were to leap, then it would be in units described by the
+<i>509</i>&nbsp;     * returned duration. If this field doesn&#39;t ever leap, null is returned.
+<i>510</i>&nbsp;     * 
+<i>511</i>&nbsp;     * @return the leap duration field if field can be leap, null if it can&#39;t
+<i>512</i>&nbsp;     */
+<i>513</i>&nbsp;    public abstract DurationField getLeapDurationField();
+<i>514</i>&nbsp;
+<i>515</i>&nbsp;    /**
+<i>516</i>&nbsp;     * Get the minimum allowable value for this field.
+<i>517</i>&nbsp;     * 
+<i>518</i>&nbsp;     * @return the minimum valid value for this field, in the units of the
+<i>519</i>&nbsp;     * field
+<i>520</i>&nbsp;     */
+<i>521</i>&nbsp;    public abstract int getMinimumValue();
+<i>522</i>&nbsp;
+<i>523</i>&nbsp;    /**
+<i>524</i>&nbsp;     * Get the minimum value for this field evaluated at the specified time.
+<i>525</i>&nbsp;     * 
+<i>526</i>&nbsp;     * @param instant  the milliseconds from 1970-01-01T00:00:00Z to query
+<i>527</i>&nbsp;     * @return the minimum value for this field, in the units of the field
+<i>528</i>&nbsp;     */
+<i>529</i>&nbsp;    public abstract int getMinimumValue(long instant);
+<i>530</i>&nbsp;
+<i>531</i>&nbsp;    /**
+<i>532</i>&nbsp;     * Get the minimum value for this field evaluated at the specified time.
+<i>533</i>&nbsp;     * 
+<i>534</i>&nbsp;     * @param instant  the partial instant to query
+<i>535</i>&nbsp;     * @return the minimum value for this field, in the units of the field
+<i>536</i>&nbsp;     */
+<i>537</i>&nbsp;    public abstract int getMinimumValue(ReadablePartial instant);
+<i>538</i>&nbsp;
+<i>539</i>&nbsp;    /**
+<i>540</i>&nbsp;     * Get the minimum value for this field using the partial instant and
+<i>541</i>&nbsp;     * the specified values.
+<i>542</i>&nbsp;     * 
+<i>543</i>&nbsp;     * @param instant  the partial instant to query
+<i>544</i>&nbsp;     * @param values  the values to use
+<i>545</i>&nbsp;     * @return the minimum value for this field, in the units of the field
+<i>546</i>&nbsp;     */
+<i>547</i>&nbsp;    public abstract int getMinimumValue(ReadablePartial instant, int[] values);
+<i>548</i>&nbsp;
+<i>549</i>&nbsp;    /**
+<i>550</i>&nbsp;     * Get the maximum allowable value for this field.
+<i>551</i>&nbsp;     * 
+<i>552</i>&nbsp;     * @return the maximum valid value for this field, in the units of the
+<i>553</i>&nbsp;     * field
+<i>554</i>&nbsp;     */
+<i>555</i>&nbsp;    public abstract int getMaximumValue();
+<i>556</i>&nbsp;
+<i>557</i>&nbsp;    /**
+<i>558</i>&nbsp;     * Get the maximum value for this field evaluated at the specified time.
+<i>559</i>&nbsp;     * 
+<i>560</i>&nbsp;     * @param instant  the milliseconds from 1970-01-01T00:00:00Z to query
+<i>561</i>&nbsp;     * @return the maximum value for this field, in the units of the field
+<i>562</i>&nbsp;     */
+<i>563</i>&nbsp;    public abstract int getMaximumValue(long instant);
+<i>564</i>&nbsp;
+<i>565</i>&nbsp;    /**
+<i>566</i>&nbsp;     * Get the maximum value for this field evaluated at the specified time.
+<i>567</i>&nbsp;     * 
+<i>568</i>&nbsp;     * @param instant  the partial instant to query
+<i>569</i>&nbsp;     * @return the maximum value for this field, in the units of the field
+<i>570</i>&nbsp;     */
+<i>571</i>&nbsp;    public abstract int getMaximumValue(ReadablePartial instant);
+<i>572</i>&nbsp;
+<i>573</i>&nbsp;    /**
+<i>574</i>&nbsp;     * Get the maximum value for this field using the partial instant and
+<i>575</i>&nbsp;     * the specified values.
+<i>576</i>&nbsp;     * 
+<i>577</i>&nbsp;     * @param instant  the partial instant to query
+<i>578</i>&nbsp;     * @param values  the values to use
+<i>579</i>&nbsp;     * @return the maximum value for this field, in the units of the field
+<i>580</i>&nbsp;     */
+<i>581</i>&nbsp;    public abstract int getMaximumValue(ReadablePartial instant, int[] values);
+<i>582</i>&nbsp;
+<i>583</i>&nbsp;    /**
+<i>584</i>&nbsp;     * Get the maximum text value for this field.
+<i>585</i>&nbsp;     * 
+<i>586</i>&nbsp;     * @param locale  the locale to use for selecting a text symbol
+<i>587</i>&nbsp;     * @return the maximum text length
+<i>588</i>&nbsp;     */
+<i>589</i>&nbsp;    public abstract int getMaximumTextLength(Locale locale);
+<i>590</i>&nbsp;
+<i>591</i>&nbsp;    /**
+<i>592</i>&nbsp;     * Get the maximum short text value for this field.
+<i>593</i>&nbsp;     * 
+<i>594</i>&nbsp;     * @param locale  the locale to use for selecting a text symbol
+<i>595</i>&nbsp;     * @return the maximum short text length
+<i>596</i>&nbsp;     */
+<i>597</i>&nbsp;    public abstract int getMaximumShortTextLength(Locale locale);
+<i>598</i>&nbsp;
+<i>599</i>&nbsp;    // Calculation API
+<i>600</i>&nbsp;    //------------------------------------------------------------------------
+<i>601</i>&nbsp;    /**
+<i>602</i>&nbsp;     * Round to the lowest whole unit of this field. After rounding, the value
+<i>603</i>&nbsp;     * of this field and all fields of a higher magnitude are retained. The
+<i>604</i>&nbsp;     * fractional millis that cannot be expressed in whole increments of this
+<i>605</i>&nbsp;     * field are set to minimum.
+<i>606</i>&nbsp;     * &lt;p&gt;
+<i>607</i>&nbsp;     * For example, a datetime of 2002-11-02T23:34:56.789, rounded to the
+<i>608</i>&nbsp;     * lowest whole hour is 2002-11-02T23:00:00.000.
+<i>609</i>&nbsp;     *
+<i>610</i>&nbsp;     * @param instant  the milliseconds from 1970-01-01T00:00:00Z to round
+<i>611</i>&nbsp;     * @return rounded milliseconds
+<i>612</i>&nbsp;     */
+<i>613</i>&nbsp;    public abstract long roundFloor(long instant);
+<i>614</i>&nbsp;
+<i>615</i>&nbsp;    /**
+<i>616</i>&nbsp;     * Round to the highest whole unit of this field. The value of this field
+<i>617</i>&nbsp;     * and all fields of a higher magnitude may be incremented in order to
+<i>618</i>&nbsp;     * achieve this result. The fractional millis that cannot be expressed in
+<i>619</i>&nbsp;     * whole increments of this field are set to minimum.
+<i>620</i>&nbsp;     * &lt;p&gt;
+<i>621</i>&nbsp;     * For example, a datetime of 2002-11-02T23:34:56.789, rounded to the
+<i>622</i>&nbsp;     * highest whole hour is 2002-11-03T00:00:00.000.
+<i>623</i>&nbsp;     *
+<i>624</i>&nbsp;     * @param instant  the milliseconds from 1970-01-01T00:00:00Z to round
+<i>625</i>&nbsp;     * @return rounded milliseconds
+<i>626</i>&nbsp;     */
+<i>627</i>&nbsp;    public abstract long roundCeiling(long instant);
+<i>628</i>&nbsp;
+<i>629</i>&nbsp;    /**
+<i>630</i>&nbsp;     * Round to the nearest whole unit of this field. If the given millisecond
+<i>631</i>&nbsp;     * value is closer to the floor or is exactly halfway, this function
+<i>632</i>&nbsp;     * behaves like roundFloor. If the millisecond value is closer to the
+<i>633</i>&nbsp;     * ceiling, this function behaves like roundCeiling.
+<i>634</i>&nbsp;     *
+<i>635</i>&nbsp;     * @param instant  the milliseconds from 1970-01-01T00:00:00Z to round
+<i>636</i>&nbsp;     * @return rounded milliseconds
+<i>637</i>&nbsp;     */
+<i>638</i>&nbsp;    public abstract long roundHalfFloor(long instant);
+<i>639</i>&nbsp;
+<i>640</i>&nbsp;    /**
+<i>641</i>&nbsp;     * Round to the nearest whole unit of this field. If the given millisecond
+<i>642</i>&nbsp;     * value is closer to the floor, this function behaves like roundFloor. If
+<i>643</i>&nbsp;     * the millisecond value is closer to the ceiling or is exactly halfway,
+<i>644</i>&nbsp;     * this function behaves like roundCeiling.
+<i>645</i>&nbsp;     *
+<i>646</i>&nbsp;     * @param instant  the milliseconds from 1970-01-01T00:00:00Z to round
+<i>647</i>&nbsp;     * @return rounded milliseconds
+<i>648</i>&nbsp;     */
+<i>649</i>&nbsp;    public abstract long roundHalfCeiling(long instant);
+<i>650</i>&nbsp;
+<i>651</i>&nbsp;    /**
+<i>652</i>&nbsp;     * Round to the nearest whole unit of this field. If the given millisecond
+<i>653</i>&nbsp;     * value is closer to the floor, this function behaves like roundFloor. If
+<i>654</i>&nbsp;     * the millisecond value is closer to the ceiling, this function behaves
+<i>655</i>&nbsp;     * like roundCeiling.
+<i>656</i>&nbsp;     * &lt;p&gt;
+<i>657</i>&nbsp;     * If the millisecond value is exactly halfway between the floor and
+<i>658</i>&nbsp;     * ceiling, the ceiling is chosen over the floor only if it makes this
+<i>659</i>&nbsp;     * field&#39;s value even.
+<i>660</i>&nbsp;     *
+<i>661</i>&nbsp;     * @param instant  the milliseconds from 1970-01-01T00:00:00Z to round
+<i>662</i>&nbsp;     * @return rounded milliseconds
+<i>663</i>&nbsp;     */
+<i>664</i>&nbsp;    public abstract long roundHalfEven(long instant);
+<i>665</i>&nbsp;
+<i>666</i>&nbsp;    /**
+<i>667</i>&nbsp;     * Returns the fractional duration milliseconds of this field. In other
+<i>668</i>&nbsp;     * words, calling remainder returns the duration that roundFloor would
+<i>669</i>&nbsp;     * subtract.
+<i>670</i>&nbsp;     * &lt;p&gt;
+<i>671</i>&nbsp;     * For example, on a datetime of 2002-11-02T23:34:56.789, the remainder by
+<i>672</i>&nbsp;     * hour is 34 minutes and 56.789 seconds.
+<i>673</i>&nbsp;     *
+<i>674</i>&nbsp;     * @param instant the milliseconds from 1970-01-01T00:00:00Z to get the
+<i>675</i>&nbsp;     * remainder
+<i>676</i>&nbsp;     * @return remainder duration, in milliseconds
+<i>677</i>&nbsp;     */
+<i>678</i>&nbsp;    public abstract long remainder(long instant);
+<i>679</i>&nbsp;
+<i>680</i>&nbsp;    /**
+<i>681</i>&nbsp;     * Get a suitable debug string.
+<i>682</i>&nbsp;     * 
+<i>683</i>&nbsp;     * @return debug string
+<i>684</i>&nbsp;     */
+<i>685</i>&nbsp;    public abstract String toString();
+<i>686</i>&nbsp;    
+<i>687</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

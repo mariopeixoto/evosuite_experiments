@@ -1,0 +1,189 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: InternalPrinterDateTimePrinter</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time.format</a> ]
+</div>
+
+<h1>Coverage Summary for Class: InternalPrinterDateTimePrinter (org.joda.time.format)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">InternalPrinterDateTimePrinter</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (5/ 10)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    48.5%
+  </span>
+  <span class="absValue">
+    (16/ 33)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2014 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time.format;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;import java.io.IOException;
+<i>19</i>&nbsp;import java.io.Writer;
+<i>20</i>&nbsp;import java.util.Locale;
+<i>21</i>&nbsp;
+<i>22</i>&nbsp;import org.joda.time.Chronology;
+<i>23</i>&nbsp;import org.joda.time.DateTimeZone;
+<i>24</i>&nbsp;import org.joda.time.ReadablePartial;
+<i>25</i>&nbsp;
+<i>26</i>&nbsp;/**
+<i>27</i>&nbsp; * Adapter between old and new printer interface.
+<i>28</i>&nbsp; *
+<i>29</i>&nbsp; * @author Stephen Colebourne
+<i>30</i>&nbsp; * @since 2.4
+<i>31</i>&nbsp; */
+<i>32</i>&nbsp;class InternalPrinterDateTimePrinter implements DateTimePrinter, InternalPrinter {
+<i>33</i>&nbsp;    
+<i>34</i>&nbsp;    private final InternalPrinter underlying;
+<i>35</i>&nbsp;
+<i>36</i>&nbsp;    static DateTimePrinter of(InternalPrinter underlying) {
+<b class="fc"><i>37</i>&nbsp;        if (underlying instanceof DateTimePrinterInternalPrinter) {</b>
+<b class="nc"><i>38</i>&nbsp;            return ((DateTimePrinterInternalPrinter) underlying).getUnderlying();</b>
+<i>39</i>&nbsp;        }
+<b class="fc"><i>40</i>&nbsp;        if (underlying instanceof DateTimePrinter) {</b>
+<b class="fc"><i>41</i>&nbsp;            return (DateTimePrinter) underlying;</b>
+<i>42</i>&nbsp;        }
+<b class="fc"><i>43</i>&nbsp;        if (underlying == null) {</b>
+<b class="fc"><i>44</i>&nbsp;            return null;</b>
+<i>45</i>&nbsp;        }
+<b class="fc"><i>46</i>&nbsp;        return new InternalPrinterDateTimePrinter(underlying);</b>
+<i>47</i>&nbsp;    }
+<i>48</i>&nbsp;
+<b class="fc"><i>49</i>&nbsp;    private InternalPrinterDateTimePrinter(InternalPrinter underlying) {</b>
+<b class="fc"><i>50</i>&nbsp;        this.underlying = underlying;</b>
+<b class="fc"><i>51</i>&nbsp;    }</b>
+<i>52</i>&nbsp;
+<i>53</i>&nbsp;    //-----------------------------------------------------------------------
+<i>54</i>&nbsp;    public int estimatePrintedLength() {
+<b class="fc"><i>55</i>&nbsp;        return underlying.estimatePrintedLength();</b>
+<i>56</i>&nbsp;    }
+<i>57</i>&nbsp;
+<i>58</i>&nbsp;    public void printTo(StringBuffer buf, long instant, Chronology chrono,
+<i>59</i>&nbsp;                    int displayOffset, DateTimeZone displayZone, Locale locale) {
+<i>60</i>&nbsp;        try {
+<b class="nc"><i>61</i>&nbsp;            underlying.printTo(buf, instant, chrono, displayOffset, displayZone, locale);</b>
+<b class="nc"><i>62</i>&nbsp;        } catch (IOException ex) {</b>
+<i>63</i>&nbsp;            // StringBuffer does not throw IOException
+<b class="nc"><i>64</i>&nbsp;        }</b>
+<b class="nc"><i>65</i>&nbsp;    }</b>
+<i>66</i>&nbsp;
+<i>67</i>&nbsp;    public void printTo(Writer out, long instant, Chronology chrono,
+<i>68</i>&nbsp;                    int displayOffset, DateTimeZone displayZone, Locale locale) throws IOException {
+<b class="nc"><i>69</i>&nbsp;        underlying.printTo(out, instant, chrono, displayOffset, displayZone, locale);</b>
+<b class="nc"><i>70</i>&nbsp;    }</b>
+<i>71</i>&nbsp;
+<i>72</i>&nbsp;    public void printTo(Appendable appendable, long instant, Chronology chrono, int displayOffset,
+<i>73</i>&nbsp;                    DateTimeZone displayZone, Locale locale) throws IOException {
+<b class="fc"><i>74</i>&nbsp;        underlying.printTo(appendable, instant, chrono, displayOffset, displayZone, locale);</b>
+<b class="fc"><i>75</i>&nbsp;    }</b>
+<i>76</i>&nbsp;
+<i>77</i>&nbsp;    public void printTo(StringBuffer buf, ReadablePartial partial, Locale locale) {
+<i>78</i>&nbsp;        try {
+<b class="nc"><i>79</i>&nbsp;            underlying.printTo(buf, partial, locale);</b>
+<b class="nc"><i>80</i>&nbsp;        } catch (IOException ex) {</b>
+<i>81</i>&nbsp;            // StringBuffer does not throw IOException
+<b class="nc"><i>82</i>&nbsp;        }</b>
+<b class="nc"><i>83</i>&nbsp;    }</b>
+<i>84</i>&nbsp;
+<i>85</i>&nbsp;    public void printTo(Writer out, ReadablePartial partial, Locale locale) throws IOException {
+<b class="nc"><i>86</i>&nbsp;        underlying.printTo(out, partial, locale);</b>
+<b class="nc"><i>87</i>&nbsp;    }</b>
+<i>88</i>&nbsp;
+<i>89</i>&nbsp;    public void printTo(Appendable appendable, ReadablePartial partial, Locale locale) throws IOException {
+<b class="nc"><i>90</i>&nbsp;        underlying.printTo(appendable, partial, locale);</b>
+<b class="nc"><i>91</i>&nbsp;    }</b>
+<i>92</i>&nbsp;
+<i>93</i>&nbsp;    //-----------------------------------------------------------------------
+<i>94</i>&nbsp;    @Override
+<i>95</i>&nbsp;    public boolean equals(Object obj) {
+<b class="fc"><i>96</i>&nbsp;        if (obj == this) {</b>
+<b class="nc"><i>97</i>&nbsp;            return true;</b>
+<i>98</i>&nbsp;        }
+<b class="fc"><i>99</i>&nbsp;        if (obj instanceof InternalPrinterDateTimePrinter) {</b>
+<b class="fc"><i>100</i>&nbsp;            InternalPrinterDateTimePrinter other = (InternalPrinterDateTimePrinter) obj;</b>
+<b class="fc"><i>101</i>&nbsp;            return underlying.equals(other.underlying);</b>
+<i>102</i>&nbsp;        }
+<b class="nc"><i>103</i>&nbsp;        return false;</b>
+<i>104</i>&nbsp;    }
+<i>105</i>&nbsp;
+<i>106</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

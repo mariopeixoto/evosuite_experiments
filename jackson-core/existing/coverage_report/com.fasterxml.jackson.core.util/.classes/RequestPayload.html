@@ -1,0 +1,150 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: RequestPayload</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.fasterxml.jackson.core.util</a> ]
+</div>
+
+<h1>Coverage Summary for Class: RequestPayload (com.fasterxml.jackson.core.util)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">RequestPayload</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/ 4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    73.7%
+  </span>
+  <span class="absValue">
+    (14/ 19)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package com.fasterxml.jackson.core.util;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import java.io.IOException;
+<i>4</i>&nbsp;
+<i>5</i>&nbsp;/**
+<i>6</i>&nbsp; * Container object used to contain optional information on content
+<i>7</i>&nbsp; * being parsed, passed to {@link com.fasterxml.jackson.core.JsonParseException} in case of
+<i>8</i>&nbsp; * exception being thrown; this may be useful for caller to display
+<i>9</i>&nbsp; * information on failure.
+<i>10</i>&nbsp; *
+<i>11</i>&nbsp; * @since 2.8
+<i>12</i>&nbsp; */
+<i>13</i>&nbsp;public class RequestPayload
+<i>14</i>&nbsp;    implements java.io.Serializable // just in case, even though likely included as transient
+<i>15</i>&nbsp;{
+<i>16</i>&nbsp;    private static final long serialVersionUID = 1L;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;    // request payload as byte[]
+<i>19</i>&nbsp;    protected byte[] _payloadAsBytes;
+<i>20</i>&nbsp;
+<i>21</i>&nbsp;    // request payload as String
+<i>22</i>&nbsp;    protected CharSequence _payloadAsText;
+<i>23</i>&nbsp;
+<i>24</i>&nbsp;    // Charset if the request payload is set in bytes
+<i>25</i>&nbsp;    protected String _charset;
+<i>26</i>&nbsp;
+<b class="fc"><i>27</i>&nbsp;    public RequestPayload(byte[] bytes, String charset) {</b>
+<b class="fc"><i>28</i>&nbsp;        if (bytes == null) {</b>
+<b class="nc"><i>29</i>&nbsp;            throw new IllegalArgumentException();</b>
+<i>30</i>&nbsp;        }
+<b class="fc"><i>31</i>&nbsp;        _payloadAsBytes = bytes;</b>
+<b class="fc"><i>32</i>&nbsp;        _charset = (charset == null || charset.isEmpty()) ? &quot;UTF-8&quot; : charset;</b>
+<b class="fc"><i>33</i>&nbsp;    }</b>
+<i>34</i>&nbsp;
+<b class="fc"><i>35</i>&nbsp;    public RequestPayload(CharSequence str) {</b>
+<b class="fc"><i>36</i>&nbsp;        if (str == null) {</b>
+<b class="nc"><i>37</i>&nbsp;            throw new IllegalArgumentException();</b>
+<i>38</i>&nbsp;        }
+<b class="fc"><i>39</i>&nbsp;        _payloadAsText = str;</b>
+<b class="fc"><i>40</i>&nbsp;    }</b>
+<i>41</i>&nbsp;
+<i>42</i>&nbsp;    /**
+<i>43</i>&nbsp;     * Returns the raw request payload object i.e, either byte[] or String
+<i>44</i>&nbsp;     * 
+<i>45</i>&nbsp;     * @return Object which is a raw request payload i.e, either byte[] or
+<i>46</i>&nbsp;     *         String
+<i>47</i>&nbsp;     */
+<i>48</i>&nbsp;    public Object getRawPayload() {
+<b class="fc"><i>49</i>&nbsp;        if (_payloadAsBytes != null) {</b>
+<b class="fc"><i>50</i>&nbsp;            return _payloadAsBytes;</b>
+<i>51</i>&nbsp;        }
+<i>52</i>&nbsp;
+<b class="nc"><i>53</i>&nbsp;        return _payloadAsText;</b>
+<i>54</i>&nbsp;    }
+<i>55</i>&nbsp;
+<i>56</i>&nbsp;    @Override
+<i>57</i>&nbsp;    public String toString() {
+<b class="fc"><i>58</i>&nbsp;        if (_payloadAsBytes != null) {</b>
+<i>59</i>&nbsp;            try {
+<b class="fc"><i>60</i>&nbsp;                return new String(_payloadAsBytes, _charset);</b>
+<b class="nc"><i>61</i>&nbsp;            } catch (IOException e) {</b>
+<b class="nc"><i>62</i>&nbsp;                throw new RuntimeException(e);</b>
+<i>63</i>&nbsp;            }
+<i>64</i>&nbsp;        }
+<b class="fc"><i>65</i>&nbsp;        return _payloadAsText.toString();</b>
+<i>66</i>&nbsp;    }
+<i>67</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 04:22</div>
+</div>
+</body>
+</html>

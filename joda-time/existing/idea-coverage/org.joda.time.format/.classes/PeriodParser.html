@@ -1,0 +1,109 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: PeriodParser</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time.format</a> ]
+</div>
+
+<h1>Coverage Summary for Class: PeriodParser (org.joda.time.format)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+</tr>
+<tr>
+  <td class="name">PeriodParser</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2005 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time.format;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;import java.util.Locale;
+<i>19</i>&nbsp;
+<i>20</i>&nbsp;import org.joda.time.ReadWritablePeriod;
+<i>21</i>&nbsp;
+<i>22</i>&nbsp;/**
+<i>23</i>&nbsp; * Internal interface for parsing textual representations of time periods.
+<i>24</i>&nbsp; * &lt;p&gt;
+<i>25</i>&nbsp; * Application users will rarely use this class directly. Instead, you
+<i>26</i>&nbsp; * will use one of the factory classes to create a {@link PeriodFormatter}.
+<i>27</i>&nbsp; * &lt;p&gt;
+<i>28</i>&nbsp; * The factory classes are:&lt;br /&gt;
+<i>29</i>&nbsp; * - {@link PeriodFormatterBuilder}&lt;br /&gt;
+<i>30</i>&nbsp; * - {@link PeriodFormat}&lt;br /&gt;
+<i>31</i>&nbsp; * - {@link ISOPeriodFormat}&lt;br /&gt;
+<i>32</i>&nbsp; *
+<i>33</i>&nbsp; * @author Brian S O&#39;Neill
+<i>34</i>&nbsp; * @author Stephen Colebourne
+<i>35</i>&nbsp; * @since 1.0
+<i>36</i>&nbsp; * @see PeriodFormatter
+<i>37</i>&nbsp; * @see PeriodFormatterBuilder
+<i>38</i>&nbsp; * @see PeriodFormat
+<i>39</i>&nbsp; */
+<i>40</i>&nbsp;public interface PeriodParser {
+<i>41</i>&nbsp;
+<i>42</i>&nbsp;    /**
+<i>43</i>&nbsp;     * Parses a period from the given text, at the given position, saving the
+<i>44</i>&nbsp;     * result into the fields of the given ReadWritablePeriod. If the parse
+<i>45</i>&nbsp;     * succeeds, the return value is the new text position. Note that the parse
+<i>46</i>&nbsp;     * may succeed without fully reading the text.
+<i>47</i>&nbsp;     * &lt;p&gt;
+<i>48</i>&nbsp;     * If it fails, the return value is negative, but the period may still be
+<i>49</i>&nbsp;     * modified. To determine the position where the parse failed, apply the
+<i>50</i>&nbsp;     * one&#39;s complement operator (~) on the return value.
+<i>51</i>&nbsp;     *
+<i>52</i>&nbsp;     * @param period  a period that will be modified
+<i>53</i>&nbsp;     * @param periodStr  text to parse
+<i>54</i>&nbsp;     * @param position position to start parsing from
+<i>55</i>&nbsp;     * @param locale  the locale to use for parsing
+<i>56</i>&nbsp;     * @return new position, if negative, parse failed. Apply complement
+<i>57</i>&nbsp;     * operator (~) to get position of failure
+<i>58</i>&nbsp;     * @throws IllegalArgumentException if any field is out of range
+<i>59</i>&nbsp;     */
+<i>60</i>&nbsp;    int parseInto(ReadWritablePeriod period, String periodStr, int position, Locale locale);
+<i>61</i>&nbsp;
+<i>62</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

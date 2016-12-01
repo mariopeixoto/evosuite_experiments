@@ -1,0 +1,534 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: DefaultPrettyPrinter</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.fasterxml.jackson.core.util</a> ]
+</div>
+
+<h1>Coverage Summary for Class: DefaultPrettyPrinter (com.fasterxml.jackson.core.util)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">DefaultPrettyPrinter</td>
+<td class="coverageStat">
+  <span class="percent">
+    81.5%
+  </span>
+  <span class="absValue">
+    (22/ 27)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    85.7%
+  </span>
+  <span class="absValue">
+    (78/ 91)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">DefaultPrettyPrinter$FixedSpaceIndenter</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/ 4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/ 5)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">DefaultPrettyPrinter$Indenter</td>
+  </tr>
+  <tr>
+    <td class="name">DefaultPrettyPrinter$NopIndenter</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/ 4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/ 4)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    85.7%
+  </span>
+  <span class="absValue">
+    (30/ 35)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    87%
+  </span>
+  <span class="absValue">
+    (87/ 100)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package com.fasterxml.jackson.core.util;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import java.io.*;
+<i>4</i>&nbsp;
+<i>5</i>&nbsp;import com.fasterxml.jackson.core.*;
+<i>6</i>&nbsp;import com.fasterxml.jackson.core.io.SerializedString;
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;/**
+<i>9</i>&nbsp; * Default {@link PrettyPrinter} implementation that uses 2-space
+<i>10</i>&nbsp; * indentation with platform-default linefeeds.
+<i>11</i>&nbsp; * Usually this class is not instantiated directly, but instead
+<i>12</i>&nbsp; * method {@link JsonGenerator#useDefaultPrettyPrinter} is
+<i>13</i>&nbsp; * used, which will use an instance of this class for operation.
+<i>14</i>&nbsp; */
+<i>15</i>&nbsp;@SuppressWarnings(&quot;serial&quot;)
+<i>16</i>&nbsp;public class DefaultPrettyPrinter
+<i>17</i>&nbsp;    implements PrettyPrinter, Instantiatable&lt;DefaultPrettyPrinter&gt;,
+<i>18</i>&nbsp;        java.io.Serializable
+<i>19</i>&nbsp;{
+<i>20</i>&nbsp;    private static final long serialVersionUID = 1;
+<i>21</i>&nbsp;
+<i>22</i>&nbsp;    /**
+<i>23</i>&nbsp;     * Constant that specifies default &quot;root-level&quot; separator to use between
+<i>24</i>&nbsp;     * root values: a single space character.
+<i>25</i>&nbsp;     * 
+<i>26</i>&nbsp;     * @since 2.1
+<i>27</i>&nbsp;     */
+<b class="fc"><i>28</i>&nbsp;    public final static SerializedString DEFAULT_ROOT_VALUE_SEPARATOR = new SerializedString(&quot; &quot;);</b>
+<i>29</i>&nbsp;    
+<i>30</i>&nbsp;    /**
+<i>31</i>&nbsp;     * Interface that defines objects that can produce indentation used
+<i>32</i>&nbsp;     * to separate object entries and array values. Indentation in this
+<i>33</i>&nbsp;     * context just means insertion of white space, independent of whether
+<i>34</i>&nbsp;     * linefeeds are output.
+<i>35</i>&nbsp;     */
+<i>36</i>&nbsp;    public interface Indenter
+<i>37</i>&nbsp;    {
+<i>38</i>&nbsp;        void writeIndentation(JsonGenerator jg, int level) throws IOException;
+<i>39</i>&nbsp;
+<i>40</i>&nbsp;        /**
+<i>41</i>&nbsp;         * @return True if indenter is considered inline (does not add linefeeds),
+<i>42</i>&nbsp;         *   false otherwise
+<i>43</i>&nbsp;         */
+<i>44</i>&nbsp;        boolean isInline();
+<i>45</i>&nbsp;    }
+<i>46</i>&nbsp;    
+<i>47</i>&nbsp;    // // // Config, indentation
+<i>48</i>&nbsp;
+<i>49</i>&nbsp;    /**
+<i>50</i>&nbsp;     * By default, let&#39;s use only spaces to separate array values.
+<i>51</i>&nbsp;     */
+<b class="fc"><i>52</i>&nbsp;    protected Indenter _arrayIndenter = FixedSpaceIndenter.instance;</b>
+<i>53</i>&nbsp;
+<i>54</i>&nbsp;    /**
+<i>55</i>&nbsp;     * By default, let&#39;s use linefeed-adding indenter for separate
+<i>56</i>&nbsp;     * object entries. We&#39;ll further configure indenter to use
+<i>57</i>&nbsp;     * system-specific linefeeds, and 2 spaces per level (as opposed to,
+<i>58</i>&nbsp;     * say, single tabs)
+<i>59</i>&nbsp;     */
+<b class="fc"><i>60</i>&nbsp;    protected Indenter _objectIndenter = DefaultIndenter.SYSTEM_LINEFEED_INSTANCE;</b>
+<i>61</i>&nbsp;
+<i>62</i>&nbsp;    /**
+<i>63</i>&nbsp;     * String printed between root-level values, if any.
+<i>64</i>&nbsp;     */
+<i>65</i>&nbsp;    protected final SerializableString _rootSeparator;
+<i>66</i>&nbsp;    
+<i>67</i>&nbsp;    // // // Config, other white space configuration
+<i>68</i>&nbsp;
+<i>69</i>&nbsp;    /**
+<i>70</i>&nbsp;     * By default we will add spaces around colons used to
+<i>71</i>&nbsp;     * separate object fields and values.
+<i>72</i>&nbsp;     * If disabled, will not use spaces around colon.
+<i>73</i>&nbsp;     */
+<b class="fc"><i>74</i>&nbsp;    protected boolean _spacesInObjectEntries = true;</b>
+<i>75</i>&nbsp;
+<i>76</i>&nbsp;    // // // State:
+<i>77</i>&nbsp;
+<i>78</i>&nbsp;    /**
+<i>79</i>&nbsp;     * Number of open levels of nesting. Used to determine amount of
+<i>80</i>&nbsp;     * indentation to use.
+<i>81</i>&nbsp;     */
+<i>82</i>&nbsp;    protected transient int _nesting;
+<i>83</i>&nbsp;
+<i>84</i>&nbsp;    /*
+<i>85</i>&nbsp;    /**********************************************************
+<i>86</i>&nbsp;    /* Life-cycle (construct, configure)
+<i>87</i>&nbsp;    /**********************************************************
+<i>88</i>&nbsp;    */
+<i>89</i>&nbsp;
+<i>90</i>&nbsp;    public DefaultPrettyPrinter() {
+<b class="fc"><i>91</i>&nbsp;        this(DEFAULT_ROOT_VALUE_SEPARATOR);</b>
+<b class="fc"><i>92</i>&nbsp;    }</b>
+<i>93</i>&nbsp;
+<i>94</i>&nbsp;    /**
+<i>95</i>&nbsp;     * Constructor that specifies separator String to use between root values;
+<i>96</i>&nbsp;     * if null, no separator is printed.
+<i>97</i>&nbsp;     *&lt;p&gt;
+<i>98</i>&nbsp;     * Note: simply constructs a {@link SerializedString} out of parameter,
+<i>99</i>&nbsp;     * calls {@link #DefaultPrettyPrinter(SerializableString)}
+<i>100</i>&nbsp;     * 
+<i>101</i>&nbsp;     * @param rootSeparator
+<i>102</i>&nbsp;     * 
+<i>103</i>&nbsp;     * @since 2.1
+<i>104</i>&nbsp;     */
+<i>105</i>&nbsp;    public DefaultPrettyPrinter(String rootSeparator) {
+<b class="fc"><i>106</i>&nbsp;        this((rootSeparator == null) ? null : new SerializedString(rootSeparator));</b>
+<b class="fc"><i>107</i>&nbsp;    }</b>
+<i>108</i>&nbsp;
+<i>109</i>&nbsp;    /**
+<i>110</i>&nbsp;     * Constructor that specifies separator String to use between root values;
+<i>111</i>&nbsp;     * if null, no separator is printed.
+<i>112</i>&nbsp;     * 
+<i>113</i>&nbsp;     * @param rootSeparator
+<i>114</i>&nbsp;     * 
+<i>115</i>&nbsp;     * @since 2.1
+<i>116</i>&nbsp;     */
+<b class="fc"><i>117</i>&nbsp;    public DefaultPrettyPrinter(SerializableString rootSeparator) {</b>
+<b class="fc"><i>118</i>&nbsp;        _rootSeparator = rootSeparator;</b>
+<b class="fc"><i>119</i>&nbsp;    }</b>
+<i>120</i>&nbsp;    
+<i>121</i>&nbsp;    public DefaultPrettyPrinter(DefaultPrettyPrinter base) {
+<b class="fc"><i>122</i>&nbsp;        this(base, base._rootSeparator);</b>
+<b class="fc"><i>123</i>&nbsp;    }</b>
+<i>124</i>&nbsp;
+<i>125</i>&nbsp;    public DefaultPrettyPrinter(DefaultPrettyPrinter base,
+<i>126</i>&nbsp;            SerializableString rootSeparator)
+<b class="fc"><i>127</i>&nbsp;    {</b>
+<b class="fc"><i>128</i>&nbsp;        _arrayIndenter = base._arrayIndenter;</b>
+<b class="fc"><i>129</i>&nbsp;        _objectIndenter = base._objectIndenter;</b>
+<b class="fc"><i>130</i>&nbsp;        _spacesInObjectEntries = base._spacesInObjectEntries;</b>
+<b class="fc"><i>131</i>&nbsp;        _nesting = base._nesting;</b>
+<i>132</i>&nbsp;
+<b class="fc"><i>133</i>&nbsp;        _rootSeparator = rootSeparator;</b>
+<b class="fc"><i>134</i>&nbsp;    }</b>
+<i>135</i>&nbsp;
+<i>136</i>&nbsp;    public DefaultPrettyPrinter withRootSeparator(SerializableString rootSeparator)
+<i>137</i>&nbsp;    {
+<b class="fc"><i>138</i>&nbsp;        if (_rootSeparator == rootSeparator ||</b>
+<b class="fc"><i>139</i>&nbsp;                (rootSeparator != null &amp;&amp; rootSeparator.equals(_rootSeparator))) {</b>
+<b class="nc"><i>140</i>&nbsp;            return this;</b>
+<i>141</i>&nbsp;        }
+<b class="fc"><i>142</i>&nbsp;        return new DefaultPrettyPrinter(this, rootSeparator);</b>
+<i>143</i>&nbsp;    }
+<i>144</i>&nbsp;
+<i>145</i>&nbsp;    /**
+<i>146</i>&nbsp;     * @since 2.6.0
+<i>147</i>&nbsp;     */
+<i>148</i>&nbsp;    public DefaultPrettyPrinter withRootSeparator(String rootSeparator) {
+<b class="fc"><i>149</i>&nbsp;        return withRootSeparator((rootSeparator == null) ? null : new SerializedString(rootSeparator));</b>
+<i>150</i>&nbsp;    }
+<i>151</i>&nbsp;    
+<i>152</i>&nbsp;    public void indentArraysWith(Indenter i) {
+<b class="nc"><i>153</i>&nbsp;        _arrayIndenter = (i == null) ? NopIndenter.instance : i;</b>
+<b class="nc"><i>154</i>&nbsp;    }</b>
+<i>155</i>&nbsp;
+<i>156</i>&nbsp;    public void indentObjectsWith(Indenter i) {
+<b class="nc"><i>157</i>&nbsp;        _objectIndenter = (i == null) ? NopIndenter.instance : i;</b>
+<b class="nc"><i>158</i>&nbsp;    }</b>
+<i>159</i>&nbsp;
+<i>160</i>&nbsp;    /**
+<i>161</i>&nbsp;     * @deprecated Since 2.3 use {@link #withSpacesInObjectEntries} and {@link #withoutSpacesInObjectEntries()}
+<i>162</i>&nbsp;     */
+<i>163</i>&nbsp;    @Deprecated
+<b class="nc"><i>164</i>&nbsp;    public void spacesInObjectEntries(boolean b) { _spacesInObjectEntries = b; }</b>
+<i>165</i>&nbsp;
+<i>166</i>&nbsp;    /**
+<i>167</i>&nbsp;     * @since 2.3
+<i>168</i>&nbsp;     */
+<i>169</i>&nbsp;    public DefaultPrettyPrinter withArrayIndenter(Indenter i) {
+<b class="fc"><i>170</i>&nbsp;        if (i == null) {</b>
+<b class="fc"><i>171</i>&nbsp;            i = NopIndenter.instance;</b>
+<i>172</i>&nbsp;        }
+<b class="fc"><i>173</i>&nbsp;        if (_arrayIndenter == i) {</b>
+<b class="nc"><i>174</i>&nbsp;            return this;</b>
+<i>175</i>&nbsp;        }
+<b class="fc"><i>176</i>&nbsp;        DefaultPrettyPrinter pp = new DefaultPrettyPrinter(this);</b>
+<b class="fc"><i>177</i>&nbsp;        pp._arrayIndenter = i;</b>
+<b class="fc"><i>178</i>&nbsp;        return pp;</b>
+<i>179</i>&nbsp;    }
+<i>180</i>&nbsp;
+<i>181</i>&nbsp;    /**
+<i>182</i>&nbsp;     * @since 2.3
+<i>183</i>&nbsp;     */
+<i>184</i>&nbsp;    public DefaultPrettyPrinter withObjectIndenter(Indenter i) {
+<b class="fc"><i>185</i>&nbsp;        if (i == null) {</b>
+<b class="fc"><i>186</i>&nbsp;            i = NopIndenter.instance;</b>
+<i>187</i>&nbsp;        }
+<b class="fc"><i>188</i>&nbsp;        if (_objectIndenter == i) {</b>
+<b class="nc"><i>189</i>&nbsp;            return this;</b>
+<i>190</i>&nbsp;        }
+<b class="fc"><i>191</i>&nbsp;        DefaultPrettyPrinter pp = new DefaultPrettyPrinter(this);</b>
+<b class="fc"><i>192</i>&nbsp;        pp._objectIndenter = i;</b>
+<b class="fc"><i>193</i>&nbsp;        return pp;</b>
+<i>194</i>&nbsp;    }
+<i>195</i>&nbsp;
+<i>196</i>&nbsp;    /**
+<i>197</i>&nbsp;     * &quot;Mutant factory&quot; method that will return a pretty printer instance
+<i>198</i>&nbsp;     * that does use spaces inside object entries; if &#39;this&#39; instance already
+<i>199</i>&nbsp;     * does this, it is returned; if not, a new instance will be constructed
+<i>200</i>&nbsp;     * and returned.
+<i>201</i>&nbsp;     *
+<i>202</i>&nbsp;     * @since 2.3
+<i>203</i>&nbsp;     */
+<i>204</i>&nbsp;    public DefaultPrettyPrinter withSpacesInObjectEntries() {
+<b class="nc"><i>205</i>&nbsp;        return _withSpaces(true);</b>
+<i>206</i>&nbsp;    }
+<i>207</i>&nbsp;
+<i>208</i>&nbsp;    /**
+<i>209</i>&nbsp;     * &quot;Mutant factory&quot; method that will return a pretty printer instance
+<i>210</i>&nbsp;     * that does not use spaces inside object entries; if &#39;this&#39; instance already
+<i>211</i>&nbsp;     * does this, it is returned; if not, a new instance will be constructed
+<i>212</i>&nbsp;     * and returned.
+<i>213</i>&nbsp;     * 
+<i>214</i>&nbsp;     * @since 2.3
+<i>215</i>&nbsp;     */
+<i>216</i>&nbsp;    public DefaultPrettyPrinter withoutSpacesInObjectEntries() {
+<b class="fc"><i>217</i>&nbsp;        return _withSpaces(false);</b>
+<i>218</i>&nbsp;    }
+<i>219</i>&nbsp;
+<i>220</i>&nbsp;    protected DefaultPrettyPrinter _withSpaces(boolean state)
+<i>221</i>&nbsp;    {
+<b class="fc"><i>222</i>&nbsp;        if (_spacesInObjectEntries == state) {</b>
+<b class="nc"><i>223</i>&nbsp;            return this;</b>
+<i>224</i>&nbsp;        }
+<b class="fc"><i>225</i>&nbsp;        DefaultPrettyPrinter pp = new DefaultPrettyPrinter(this);</b>
+<b class="fc"><i>226</i>&nbsp;        pp._spacesInObjectEntries = state;</b>
+<b class="fc"><i>227</i>&nbsp;        return pp;</b>
+<i>228</i>&nbsp;    }
+<i>229</i>&nbsp;    
+<i>230</i>&nbsp;    /*
+<i>231</i>&nbsp;    /**********************************************************
+<i>232</i>&nbsp;    /* Instantiatable impl
+<i>233</i>&nbsp;    /**********************************************************
+<i>234</i>&nbsp;     */
+<i>235</i>&nbsp;    
+<i>236</i>&nbsp;    @Override
+<i>237</i>&nbsp;    public DefaultPrettyPrinter createInstance() {
+<b class="nc"><i>238</i>&nbsp;        return new DefaultPrettyPrinter(this);</b>
+<i>239</i>&nbsp;    }
+<i>240</i>&nbsp;    
+<i>241</i>&nbsp;    /*
+<i>242</i>&nbsp;    /**********************************************************
+<i>243</i>&nbsp;    /* PrettyPrinter impl
+<i>244</i>&nbsp;    /**********************************************************
+<i>245</i>&nbsp;     */
+<i>246</i>&nbsp;
+<i>247</i>&nbsp;    @Override
+<i>248</i>&nbsp;    public void writeRootValueSeparator(JsonGenerator jg) throws IOException
+<i>249</i>&nbsp;    {
+<b class="fc"><i>250</i>&nbsp;        if (_rootSeparator != null) {</b>
+<b class="fc"><i>251</i>&nbsp;            jg.writeRaw(_rootSeparator);</b>
+<i>252</i>&nbsp;        }
+<b class="fc"><i>253</i>&nbsp;    }</b>
+<i>254</i>&nbsp;
+<i>255</i>&nbsp;    @Override
+<i>256</i>&nbsp;    public void writeStartObject(JsonGenerator jg) throws IOException
+<i>257</i>&nbsp;    {
+<b class="fc"><i>258</i>&nbsp;        jg.writeRaw(&#39;{&#39;);</b>
+<b class="fc"><i>259</i>&nbsp;        if (!_objectIndenter.isInline()) {</b>
+<b class="fc"><i>260</i>&nbsp;            ++_nesting;</b>
+<i>261</i>&nbsp;        }
+<b class="fc"><i>262</i>&nbsp;    }</b>
+<i>263</i>&nbsp;
+<i>264</i>&nbsp;    @Override
+<i>265</i>&nbsp;    public void beforeObjectEntries(JsonGenerator jg) throws IOException
+<i>266</i>&nbsp;    {
+<b class="fc"><i>267</i>&nbsp;        _objectIndenter.writeIndentation(jg, _nesting);</b>
+<b class="fc"><i>268</i>&nbsp;    }</b>
+<i>269</i>&nbsp;
+<i>270</i>&nbsp;    /**
+<i>271</i>&nbsp;     * Method called after an object field has been output, but
+<i>272</i>&nbsp;     * before the value is output.
+<i>273</i>&nbsp;     *&lt;p&gt;
+<i>274</i>&nbsp;     * Default handling (without pretty-printing) will output a single
+<i>275</i>&nbsp;     * colon to separate the two. Pretty-printer is
+<i>276</i>&nbsp;     * to output a colon as well, but can surround that with other
+<i>277</i>&nbsp;     * (white-space) decoration.
+<i>278</i>&nbsp;     */
+<i>279</i>&nbsp;    @Override
+<i>280</i>&nbsp;    public void writeObjectFieldValueSeparator(JsonGenerator jg) throws IOException
+<i>281</i>&nbsp;    {
+<b class="fc"><i>282</i>&nbsp;        if (_spacesInObjectEntries) {</b>
+<b class="fc"><i>283</i>&nbsp;            jg.writeRaw(&quot; : &quot;);</b>
+<i>284</i>&nbsp;        } else {
+<b class="fc"><i>285</i>&nbsp;            jg.writeRaw(&#39;:&#39;);</b>
+<i>286</i>&nbsp;        }
+<b class="fc"><i>287</i>&nbsp;    }</b>
+<i>288</i>&nbsp;
+<i>289</i>&nbsp;    /**
+<i>290</i>&nbsp;     * Method called after an object entry (field:value) has been completely
+<i>291</i>&nbsp;     * output, and before another value is to be output.
+<i>292</i>&nbsp;     *&lt;p&gt;
+<i>293</i>&nbsp;     * Default handling (without pretty-printing) will output a single
+<i>294</i>&nbsp;     * comma to separate the two. Pretty-printer is
+<i>295</i>&nbsp;     * to output a comma as well, but can surround that with other
+<i>296</i>&nbsp;     * (white-space) decoration.
+<i>297</i>&nbsp;     */
+<i>298</i>&nbsp;    @Override
+<i>299</i>&nbsp;    public void writeObjectEntrySeparator(JsonGenerator jg) throws IOException
+<i>300</i>&nbsp;    {
+<b class="fc"><i>301</i>&nbsp;        jg.writeRaw(&#39;,&#39;);</b>
+<b class="fc"><i>302</i>&nbsp;        _objectIndenter.writeIndentation(jg, _nesting);</b>
+<b class="fc"><i>303</i>&nbsp;    }</b>
+<i>304</i>&nbsp;
+<i>305</i>&nbsp;    @Override
+<i>306</i>&nbsp;    public void writeEndObject(JsonGenerator jg, int nrOfEntries) throws IOException
+<i>307</i>&nbsp;    {
+<b class="fc"><i>308</i>&nbsp;        if (!_objectIndenter.isInline()) {</b>
+<b class="fc"><i>309</i>&nbsp;            --_nesting;</b>
+<i>310</i>&nbsp;        }
+<b class="fc"><i>311</i>&nbsp;        if (nrOfEntries &gt; 0) {</b>
+<b class="fc"><i>312</i>&nbsp;            _objectIndenter.writeIndentation(jg, _nesting);</b>
+<i>313</i>&nbsp;        } else {
+<b class="fc"><i>314</i>&nbsp;            jg.writeRaw(&#39; &#39;);</b>
+<i>315</i>&nbsp;        }
+<b class="fc"><i>316</i>&nbsp;        jg.writeRaw(&#39;}&#39;);</b>
+<b class="fc"><i>317</i>&nbsp;    }</b>
+<i>318</i>&nbsp;
+<i>319</i>&nbsp;    @Override
+<i>320</i>&nbsp;    public void writeStartArray(JsonGenerator jg) throws IOException
+<i>321</i>&nbsp;    {
+<b class="fc"><i>322</i>&nbsp;        if (!_arrayIndenter.isInline()) {</b>
+<b class="nc"><i>323</i>&nbsp;            ++_nesting;</b>
+<i>324</i>&nbsp;        }
+<b class="fc"><i>325</i>&nbsp;        jg.writeRaw(&#39;[&#39;);</b>
+<b class="fc"><i>326</i>&nbsp;    }</b>
+<i>327</i>&nbsp;
+<i>328</i>&nbsp;    @Override
+<i>329</i>&nbsp;    public void beforeArrayValues(JsonGenerator jg) throws IOException {
+<b class="fc"><i>330</i>&nbsp;        _arrayIndenter.writeIndentation(jg, _nesting);</b>
+<b class="fc"><i>331</i>&nbsp;    }</b>
+<i>332</i>&nbsp;
+<i>333</i>&nbsp;    /**
+<i>334</i>&nbsp;     * Method called after an array value has been completely
+<i>335</i>&nbsp;     * output, and before another value is to be output.
+<i>336</i>&nbsp;     *&lt;p&gt;
+<i>337</i>&nbsp;     * Default handling (without pretty-printing) will output a single
+<i>338</i>&nbsp;     * comma to separate the two. Pretty-printer is
+<i>339</i>&nbsp;     * to output a comma as well, but can surround that with other
+<i>340</i>&nbsp;     * (white-space) decoration.
+<i>341</i>&nbsp;     */
+<i>342</i>&nbsp;    @Override
+<i>343</i>&nbsp;    public void writeArrayValueSeparator(JsonGenerator gen) throws IOException
+<i>344</i>&nbsp;    {
+<b class="fc"><i>345</i>&nbsp;        gen.writeRaw(&#39;,&#39;);</b>
+<b class="fc"><i>346</i>&nbsp;        _arrayIndenter.writeIndentation(gen, _nesting);</b>
+<b class="fc"><i>347</i>&nbsp;    }</b>
+<i>348</i>&nbsp;
+<i>349</i>&nbsp;    @Override
+<i>350</i>&nbsp;    public void writeEndArray(JsonGenerator gen, int nrOfValues) throws IOException
+<i>351</i>&nbsp;    {
+<b class="fc"><i>352</i>&nbsp;        if (!_arrayIndenter.isInline()) {</b>
+<b class="nc"><i>353</i>&nbsp;            --_nesting;</b>
+<i>354</i>&nbsp;        }
+<b class="fc"><i>355</i>&nbsp;        if (nrOfValues &gt; 0) {</b>
+<b class="fc"><i>356</i>&nbsp;            _arrayIndenter.writeIndentation(gen, _nesting);</b>
+<i>357</i>&nbsp;        } else {
+<b class="fc"><i>358</i>&nbsp;            gen.writeRaw(&#39; &#39;);</b>
+<i>359</i>&nbsp;        }
+<b class="fc"><i>360</i>&nbsp;        gen.writeRaw(&#39;]&#39;);</b>
+<b class="fc"><i>361</i>&nbsp;    }</b>
+<i>362</i>&nbsp;
+<i>363</i>&nbsp;    /*
+<i>364</i>&nbsp;    /**********************************************************
+<i>365</i>&nbsp;    /* Helper classes
+<i>366</i>&nbsp;    /**********************************************************
+<i>367</i>&nbsp;     */
+<i>368</i>&nbsp;
+<i>369</i>&nbsp;    /**
+<i>370</i>&nbsp;     * Dummy implementation that adds no indentation whatsoever
+<i>371</i>&nbsp;     */
+<b class="fc"><i>372</i>&nbsp;    public static class NopIndenter</b>
+<i>373</i>&nbsp;        implements Indenter, java.io.Serializable
+<i>374</i>&nbsp;    {
+<b class="fc"><i>375</i>&nbsp;        public static final NopIndenter instance = new NopIndenter();</b>
+<i>376</i>&nbsp;
+<i>377</i>&nbsp;        @Override
+<b class="fc"><i>378</i>&nbsp;        public void writeIndentation(JsonGenerator jg, int level) throws IOException { }</b>
+<i>379</i>&nbsp;
+<i>380</i>&nbsp;        @Override
+<b class="fc"><i>381</i>&nbsp;        public boolean isInline() { return true; }</b>
+<i>382</i>&nbsp;    }
+<i>383</i>&nbsp;
+<i>384</i>&nbsp;    /**
+<i>385</i>&nbsp;     * This is a very simple indenter that only adds a
+<i>386</i>&nbsp;     * single space for indentation. It is used as the default
+<i>387</i>&nbsp;     * indenter for array values.
+<i>388</i>&nbsp;     */
+<b class="fc"><i>389</i>&nbsp;    public static class FixedSpaceIndenter extends NopIndenter</b>
+<i>390</i>&nbsp;    {
+<i>391</i>&nbsp;        @SuppressWarnings(&quot;hiding&quot;)
+<b class="fc"><i>392</i>&nbsp;        public static final FixedSpaceIndenter instance = new FixedSpaceIndenter();</b>
+<i>393</i>&nbsp;
+<i>394</i>&nbsp;        @Override
+<i>395</i>&nbsp;        public void writeIndentation(JsonGenerator jg, int level) throws IOException
+<i>396</i>&nbsp;        {
+<b class="fc"><i>397</i>&nbsp;            jg.writeRaw(&#39; &#39;);</b>
+<b class="fc"><i>398</i>&nbsp;        }</b>
+<i>399</i>&nbsp;
+<i>400</i>&nbsp;        @Override
+<b class="fc"><i>401</i>&nbsp;        public boolean isInline() { return true; }</b>
+<i>402</i>&nbsp;    }
+<i>403</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 04:22</div>
+</div>
+</body>
+</html>

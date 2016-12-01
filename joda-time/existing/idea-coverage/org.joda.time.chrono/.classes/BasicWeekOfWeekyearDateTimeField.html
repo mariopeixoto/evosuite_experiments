@@ -1,0 +1,204 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: BasicWeekOfWeekyearDateTimeField</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time.chrono</a> ]
+</div>
+
+<h1>Coverage Summary for Class: BasicWeekOfWeekyearDateTimeField (org.joda.time.chrono)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">BasicWeekOfWeekyearDateTimeField</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    84.6%
+  </span>
+  <span class="absValue">
+    (11/ 13)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    79.2%
+  </span>
+  <span class="absValue">
+    (19/ 24)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2013 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time.chrono;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;import org.joda.time.DateTimeConstants;
+<i>19</i>&nbsp;import org.joda.time.DateTimeFieldType;
+<i>20</i>&nbsp;import org.joda.time.DurationField;
+<i>21</i>&nbsp;import org.joda.time.ReadablePartial;
+<i>22</i>&nbsp;import org.joda.time.field.PreciseDurationDateTimeField;
+<i>23</i>&nbsp;
+<i>24</i>&nbsp;/**
+<i>25</i>&nbsp; * Provides time calculations for the week of a week based year component of time.
+<i>26</i>&nbsp; *
+<i>27</i>&nbsp; * @author Guy Allard
+<i>28</i>&nbsp; * @author Stephen Colebourne
+<i>29</i>&nbsp; * @author Brian S O&#39;Neill
+<i>30</i>&nbsp; * @since 1.1, refactored from GJWeekOfWeekyearDateTimeField
+<i>31</i>&nbsp; */
+<i>32</i>&nbsp;final class BasicWeekOfWeekyearDateTimeField extends PreciseDurationDateTimeField {
+<i>33</i>&nbsp;
+<i>34</i>&nbsp;    @SuppressWarnings(&quot;unused&quot;)
+<i>35</i>&nbsp;    private static final long serialVersionUID = -1587436826395135328L;
+<i>36</i>&nbsp;
+<i>37</i>&nbsp;    private final BasicChronology iChronology;
+<i>38</i>&nbsp;
+<i>39</i>&nbsp;    /**
+<i>40</i>&nbsp;     * Restricted constructor
+<i>41</i>&nbsp;     */
+<i>42</i>&nbsp;    BasicWeekOfWeekyearDateTimeField(BasicChronology chronology, DurationField weeks) {
+<b class="fc"><i>43</i>&nbsp;        super(DateTimeFieldType.weekOfWeekyear(), weeks);</b>
+<b class="fc"><i>44</i>&nbsp;        iChronology = chronology;</b>
+<b class="fc"><i>45</i>&nbsp;    }</b>
+<i>46</i>&nbsp;
+<i>47</i>&nbsp;    /**
+<i>48</i>&nbsp;     * Get the week of a week based year component of the specified time instant.
+<i>49</i>&nbsp;     * 
+<i>50</i>&nbsp;     * @see org.joda.time.DateTimeField#get(long)
+<i>51</i>&nbsp;     * @param instant  the time instant in millis to query.
+<i>52</i>&nbsp;     * @return the week of the year extracted from the input.
+<i>53</i>&nbsp;     */
+<i>54</i>&nbsp;    public int get(long instant) {
+<b class="fc"><i>55</i>&nbsp;        return iChronology.getWeekOfWeekyear(instant);</b>
+<i>56</i>&nbsp;    }
+<i>57</i>&nbsp;
+<i>58</i>&nbsp;    public DurationField getRangeDurationField() {
+<b class="fc"><i>59</i>&nbsp;        return iChronology.weekyears();</b>
+<i>60</i>&nbsp;    }
+<i>61</i>&nbsp;
+<i>62</i>&nbsp;    // 1970-01-01 is day of week 4, Thursday. The rounding methods need to
+<i>63</i>&nbsp;    // apply a corrective alignment since weeks begin on day of week 1, Monday.
+<i>64</i>&nbsp;
+<i>65</i>&nbsp;    public long roundFloor(long instant) {
+<b class="fc"><i>66</i>&nbsp;        return super.roundFloor(instant + 3 * DateTimeConstants.MILLIS_PER_DAY)</b>
+<i>67</i>&nbsp;            - 3 * DateTimeConstants.MILLIS_PER_DAY;
+<i>68</i>&nbsp;    }
+<i>69</i>&nbsp;
+<i>70</i>&nbsp;    public long roundCeiling(long instant) {
+<b class="fc"><i>71</i>&nbsp;        return super.roundCeiling(instant + 3 * DateTimeConstants.MILLIS_PER_DAY)</b>
+<i>72</i>&nbsp;            - 3 * DateTimeConstants.MILLIS_PER_DAY;
+<i>73</i>&nbsp;    }
+<i>74</i>&nbsp;
+<i>75</i>&nbsp;    public long remainder(long instant) {
+<b class="fc"><i>76</i>&nbsp;        return super.remainder(instant + 3 * DateTimeConstants.MILLIS_PER_DAY);</b>
+<i>77</i>&nbsp;    }
+<i>78</i>&nbsp;
+<i>79</i>&nbsp;    public int getMinimumValue() {
+<b class="fc"><i>80</i>&nbsp;        return 1;</b>
+<i>81</i>&nbsp;    }
+<i>82</i>&nbsp;
+<i>83</i>&nbsp;    public int getMaximumValue() {
+<b class="fc"><i>84</i>&nbsp;        return 53;</b>
+<i>85</i>&nbsp;    }
+<i>86</i>&nbsp;
+<i>87</i>&nbsp;    public int getMaximumValue(long instant) {
+<b class="fc"><i>88</i>&nbsp;        int weekyear = iChronology.getWeekyear(instant);</b>
+<b class="fc"><i>89</i>&nbsp;        return iChronology.getWeeksInYear(weekyear);</b>
+<i>90</i>&nbsp;    }
+<i>91</i>&nbsp;
+<i>92</i>&nbsp;    public int getMaximumValue(ReadablePartial partial) {
+<b class="nc"><i>93</i>&nbsp;        if (partial.isSupported(DateTimeFieldType.weekyear())) {</b>
+<b class="nc"><i>94</i>&nbsp;            int weekyear = partial.get(DateTimeFieldType.weekyear());</b>
+<b class="nc"><i>95</i>&nbsp;            return iChronology.getWeeksInYear(weekyear);</b>
+<i>96</i>&nbsp;        }
+<b class="nc"><i>97</i>&nbsp;        return 53;</b>
+<i>98</i>&nbsp;    }
+<i>99</i>&nbsp;
+<i>100</i>&nbsp;    public int getMaximumValue(ReadablePartial partial, int[] values) {
+<b class="fc"><i>101</i>&nbsp;        int size = partial.size();</b>
+<b class="fc"><i>102</i>&nbsp;        for (int i = 0; i &lt; size; i++) {</b>
+<b class="fc"><i>103</i>&nbsp;            if (partial.getFieldType(i) == DateTimeFieldType.weekyear()) {</b>
+<b class="fc"><i>104</i>&nbsp;                int weekyear = values[i];</b>
+<b class="fc"><i>105</i>&nbsp;                return iChronology.getWeeksInYear(weekyear);</b>
+<i>106</i>&nbsp;            }
+<i>107</i>&nbsp;        }
+<b class="fc"><i>108</i>&nbsp;        return 53;</b>
+<i>109</i>&nbsp;    }
+<i>110</i>&nbsp;
+<i>111</i>&nbsp;    protected int getMaximumValueForSet(long instant, int value) {
+<b class="fc"><i>112</i>&nbsp;        return value &gt; 52 ? getMaximumValue(instant) : 52;</b>
+<i>113</i>&nbsp;    }
+<i>114</i>&nbsp;
+<i>115</i>&nbsp;    /**
+<i>116</i>&nbsp;     * Serialization singleton
+<i>117</i>&nbsp;     */
+<i>118</i>&nbsp;    private Object readResolve() {
+<b class="nc"><i>119</i>&nbsp;        return iChronology.weekOfWeekyear();</b>
+<i>120</i>&nbsp;    }
+<i>121</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

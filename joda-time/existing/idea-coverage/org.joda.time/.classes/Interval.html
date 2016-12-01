@@ -1,0 +1,645 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: Interval</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time</a> ]
+</div>
+
+<h1>Coverage Summary for Class: Interval (org.joda.time)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">Interval</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (25/ 25)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.2%
+  </span>
+  <span class="absValue">
+    (107/ 109)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2006 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;import java.io.Serializable;
+<i>19</i>&nbsp;
+<i>20</i>&nbsp;import org.joda.time.base.BaseInterval;
+<i>21</i>&nbsp;import org.joda.time.chrono.ISOChronology;
+<i>22</i>&nbsp;import org.joda.time.format.DateTimeFormatter;
+<i>23</i>&nbsp;import org.joda.time.format.ISODateTimeFormat;
+<i>24</i>&nbsp;import org.joda.time.format.ISOPeriodFormat;
+<i>25</i>&nbsp;import org.joda.time.format.PeriodFormatter;
+<i>26</i>&nbsp;
+<i>27</i>&nbsp;/**
+<i>28</i>&nbsp; * Interval is the standard implementation of an immutable time interval.
+<i>29</i>&nbsp; * &lt;p&gt;
+<i>30</i>&nbsp; * A time interval represents a period of time between two instants.
+<i>31</i>&nbsp; * Intervals are inclusive of the start instant and exclusive of the end.
+<i>32</i>&nbsp; * The end instant is always greater than or equal to the start instant.
+<i>33</i>&nbsp; * &lt;p&gt;
+<i>34</i>&nbsp; * Intervals have a fixed millisecond duration.
+<i>35</i>&nbsp; * This is the difference between the start and end instants.
+<i>36</i>&nbsp; * The duration is represented separately by {@link ReadableDuration}.
+<i>37</i>&nbsp; * As a result, intervals are not comparable.
+<i>38</i>&nbsp; * To compare the length of two intervals, you should compare their durations.
+<i>39</i>&nbsp; * &lt;p&gt;
+<i>40</i>&nbsp; * An interval can also be converted to a {@link ReadablePeriod}.
+<i>41</i>&nbsp; * This represents the difference between the start and end points in terms of fields
+<i>42</i>&nbsp; * such as years and days.
+<i>43</i>&nbsp; * &lt;p&gt;
+<i>44</i>&nbsp; * Interval is thread-safe and immutable.
+<i>45</i>&nbsp; *
+<i>46</i>&nbsp; * @author Brian S O&#39;Neill
+<i>47</i>&nbsp; * @author Sean Geoghegan
+<i>48</i>&nbsp; * @author Stephen Colebourne
+<i>49</i>&nbsp; * @author Julen Parra
+<i>50</i>&nbsp; * @since 1.0
+<i>51</i>&nbsp; */
+<i>52</i>&nbsp;public final class Interval
+<i>53</i>&nbsp;        extends BaseInterval
+<i>54</i>&nbsp;        implements ReadableInterval, Serializable {
+<i>55</i>&nbsp;
+<i>56</i>&nbsp;    /** Serialization version */
+<i>57</i>&nbsp;    private static final long serialVersionUID = 4922451897541386752L;
+<i>58</i>&nbsp;
+<i>59</i>&nbsp;    //-----------------------------------------------------------------------
+<i>60</i>&nbsp;    /**
+<i>61</i>&nbsp;     * Parses a {@code Interval} from the specified string.
+<i>62</i>&nbsp;     * &lt;p&gt;
+<i>63</i>&nbsp;     * The String formats are described by {@link ISODateTimeFormat#dateTimeParser()}
+<i>64</i>&nbsp;     * and {@link ISOPeriodFormat#standard()}, and may be &#39;datetime/datetime&#39;,
+<i>65</i>&nbsp;     * &#39;datetime/period&#39; or &#39;period/datetime&#39;.
+<i>66</i>&nbsp;     * &lt;p&gt;
+<i>67</i>&nbsp;     * This method operates by parsing in the default time-zone.
+<i>68</i>&nbsp;     * Any offset contained within the string being parsed will be normalised to the
+<i>69</i>&nbsp;     * offset of the default time-zone. See also {@link #parseWithOffset(String)}.
+<i>70</i>&nbsp;     * 
+<i>71</i>&nbsp;     * @param str  the string to parse, not null
+<i>72</i>&nbsp;     * @since 2.0
+<i>73</i>&nbsp;     */
+<i>74</i>&nbsp;    public static Interval parse(String str) {
+<b class="fc"><i>75</i>&nbsp;        return new Interval(str);</b>
+<i>76</i>&nbsp;    }
+<i>77</i>&nbsp;
+<i>78</i>&nbsp;    /**
+<i>79</i>&nbsp;     * Parses a {@code Interval} from the specified string, using any offset it contains.
+<i>80</i>&nbsp;     * &lt;p&gt;
+<i>81</i>&nbsp;     * The String formats are described by
+<i>82</i>&nbsp;     * {@link ISODateTimeFormat#dateTimeParser()}{@code .withOffsetParsed()}
+<i>83</i>&nbsp;     * and {@link ISOPeriodFormat#standard()}, and may be &#39;datetime/datetime&#39;,
+<i>84</i>&nbsp;     * &#39;datetime/period&#39; or &#39;period/datetime&#39;.
+<i>85</i>&nbsp;     * &lt;p&gt;
+<i>86</i>&nbsp;     * Sometimes this method and {@code new Interval(str)} return different results.
+<i>87</i>&nbsp;     * This can be confusing as the difference is not visible in {@link #toString()}.
+<i>88</i>&nbsp;     * &lt;p&gt;
+<i>89</i>&nbsp;     * When passed a string without an offset, such as &#39;2010-06-30T01:20/P1D&#39;,
+<i>90</i>&nbsp;     * both the constructor and this method use the default time-zone.
+<i>91</i>&nbsp;     * As such, {@code Interval.parseWithOffset(&quot;2010-06-30T01:20/P1D&quot;)} and
+<i>92</i>&nbsp;     * {@code new Interval(&quot;2010-06-30T01:20/P1D&quot;))} are equal.
+<i>93</i>&nbsp;     * &lt;p&gt;
+<i>94</i>&nbsp;     * However, when this method is passed a string with an offset,
+<i>95</i>&nbsp;     * the offset is directly parsed and stored.
+<i>96</i>&nbsp;     * As such, {@code Interval.parseWithOffset(&quot;2010-06-30T01:20+02:00/P1D&quot;)} and
+<i>97</i>&nbsp;     * {@code new Interval(&quot;2010-06-30T01:20+02:00/P1D&quot;))} are NOT equal.
+<i>98</i>&nbsp;     * The object produced via this method has a zone of {@code DateTimeZone.forOffsetHours(2)}.
+<i>99</i>&nbsp;     * The object produced via the constructor has a zone of {@code DateTimeZone.getDefault()}.
+<i>100</i>&nbsp;     * 
+<i>101</i>&nbsp;     * @param str  the string to parse, not null
+<i>102</i>&nbsp;     * @since 2.9
+<i>103</i>&nbsp;     */
+<i>104</i>&nbsp;    public static Interval parseWithOffset(String str) {
+<b class="fc"><i>105</i>&nbsp;        int separator = str.indexOf(&#39;/&#39;);</b>
+<b class="fc"><i>106</i>&nbsp;        if (separator &lt; 0) {</b>
+<b class="fc"><i>107</i>&nbsp;            throw new IllegalArgumentException(&quot;Format requires a &#39;/&#39; separator: &quot; + str);</b>
+<i>108</i>&nbsp;        }
+<b class="fc"><i>109</i>&nbsp;        String leftStr = str.substring(0, separator);</b>
+<b class="fc"><i>110</i>&nbsp;        if (leftStr.length() &lt;= 0) {</b>
+<b class="nc"><i>111</i>&nbsp;            throw new IllegalArgumentException(&quot;Format invalid: &quot; + str);</b>
+<i>112</i>&nbsp;        }
+<b class="fc"><i>113</i>&nbsp;        String rightStr = str.substring(separator + 1);</b>
+<b class="fc"><i>114</i>&nbsp;        if (rightStr.length() &lt;= 0) {</b>
+<b class="nc"><i>115</i>&nbsp;            throw new IllegalArgumentException(&quot;Format invalid: &quot; + str);</b>
+<i>116</i>&nbsp;        }
+<i>117</i>&nbsp;
+<b class="fc"><i>118</i>&nbsp;        DateTimeFormatter dateTimeParser = ISODateTimeFormat.dateTimeParser().withOffsetParsed();</b>
+<b class="fc"><i>119</i>&nbsp;        PeriodFormatter periodParser = ISOPeriodFormat.standard();</b>
+<b class="fc"><i>120</i>&nbsp;        DateTime start = null;</b>
+<b class="fc"><i>121</i>&nbsp;        Period period = null;</b>
+<i>122</i>&nbsp;        
+<i>123</i>&nbsp;        // before slash
+<b class="fc"><i>124</i>&nbsp;        char c = leftStr.charAt(0);</b>
+<b class="fc"><i>125</i>&nbsp;        if (c == &#39;P&#39; || c == &#39;p&#39;) {</b>
+<b class="fc"><i>126</i>&nbsp;            period = periodParser.withParseType(PeriodType.standard()).parsePeriod(leftStr);</b>
+<i>127</i>&nbsp;        } else {
+<b class="fc"><i>128</i>&nbsp;            start = dateTimeParser.parseDateTime(leftStr);</b>
+<i>129</i>&nbsp;        }
+<i>130</i>&nbsp;        
+<i>131</i>&nbsp;        // after slash
+<b class="fc"><i>132</i>&nbsp;        c = rightStr.charAt(0);</b>
+<b class="fc"><i>133</i>&nbsp;        if (c == &#39;P&#39; || c == &#39;p&#39;) {</b>
+<b class="fc"><i>134</i>&nbsp;            if (period != null) {</b>
+<b class="fc"><i>135</i>&nbsp;                throw new IllegalArgumentException(&quot;Interval composed of two durations: &quot; + str);</b>
+<i>136</i>&nbsp;            }
+<b class="fc"><i>137</i>&nbsp;            period = periodParser.withParseType(PeriodType.standard()).parsePeriod(rightStr);</b>
+<b class="fc"><i>138</i>&nbsp;            return new Interval(start, period);</b>
+<i>139</i>&nbsp;        } else {
+<b class="fc"><i>140</i>&nbsp;            DateTime end = dateTimeParser.parseDateTime(rightStr);</b>
+<b class="fc"><i>141</i>&nbsp;            if (period != null) {</b>
+<b class="fc"><i>142</i>&nbsp;                return new Interval(period, end);</b>
+<i>143</i>&nbsp;            } else {
+<b class="fc"><i>144</i>&nbsp;                return new Interval(start, end);</b>
+<i>145</i>&nbsp;            }
+<i>146</i>&nbsp;        }
+<i>147</i>&nbsp;    }
+<i>148</i>&nbsp;
+<i>149</i>&nbsp;    //-----------------------------------------------------------------------
+<i>150</i>&nbsp;    /**
+<i>151</i>&nbsp;     * Constructs an interval from a start and end instant with the ISO
+<i>152</i>&nbsp;     * default chronology in the default time zone.
+<i>153</i>&nbsp;     * 
+<i>154</i>&nbsp;     * @param startInstant  start of this interval, as milliseconds from 1970-01-01T00:00:00Z.
+<i>155</i>&nbsp;     * @param endInstant  end of this interval, as milliseconds from 1970-01-01T00:00:00Z.
+<i>156</i>&nbsp;     * @throws IllegalArgumentException if the end is before the start
+<i>157</i>&nbsp;     */
+<i>158</i>&nbsp;    public Interval(long startInstant, long endInstant) {
+<b class="fc"><i>159</i>&nbsp;        super(startInstant, endInstant, null);</b>
+<b class="fc"><i>160</i>&nbsp;    }</b>
+<i>161</i>&nbsp;
+<i>162</i>&nbsp;    /**
+<i>163</i>&nbsp;     * Constructs an interval from a start and end instant with the ISO
+<i>164</i>&nbsp;     * default chronology in the specified time zone.
+<i>165</i>&nbsp;     * 
+<i>166</i>&nbsp;     * @param startInstant  start of this interval, as milliseconds from 1970-01-01T00:00:00Z.
+<i>167</i>&nbsp;     * @param endInstant  end of this interval, as milliseconds from 1970-01-01T00:00:00Z.
+<i>168</i>&nbsp;     * @param zone  the time zone to use, null means default zone
+<i>169</i>&nbsp;     * @throws IllegalArgumentException if the end is before the start
+<i>170</i>&nbsp;     * @since 1.5
+<i>171</i>&nbsp;     */
+<i>172</i>&nbsp;    public Interval(long startInstant, long endInstant, DateTimeZone zone) {
+<b class="fc"><i>173</i>&nbsp;        super(startInstant, endInstant, ISOChronology.getInstance(zone));</b>
+<b class="fc"><i>174</i>&nbsp;    }</b>
+<i>175</i>&nbsp;
+<i>176</i>&nbsp;    /**
+<i>177</i>&nbsp;     * Constructs an interval from a start and end instant with the
+<i>178</i>&nbsp;     * specified chronology.
+<i>179</i>&nbsp;     * 
+<i>180</i>&nbsp;     * @param chronology  the chronology to use, null is ISO default
+<i>181</i>&nbsp;     * @param startInstant  start of this interval, as milliseconds from 1970-01-01T00:00:00Z.
+<i>182</i>&nbsp;     * @param endInstant  end of this interval, as milliseconds from 1970-01-01T00:00:00Z.
+<i>183</i>&nbsp;     * @throws IllegalArgumentException if the end is before the start
+<i>184</i>&nbsp;     */
+<i>185</i>&nbsp;    public Interval(long startInstant, long endInstant, Chronology chronology) {
+<b class="fc"><i>186</i>&nbsp;        super(startInstant, endInstant, chronology);</b>
+<b class="fc"><i>187</i>&nbsp;    }</b>
+<i>188</i>&nbsp;
+<i>189</i>&nbsp;    /**
+<i>190</i>&nbsp;     * Constructs an interval from a start and end instant.
+<i>191</i>&nbsp;     * &lt;p&gt;
+<i>192</i>&nbsp;     * The chronology used is that of the start instant.
+<i>193</i>&nbsp;     * 
+<i>194</i>&nbsp;     * @param start  start of this interval, null means now
+<i>195</i>&nbsp;     * @param end  end of this interval, null means now
+<i>196</i>&nbsp;     * @throws IllegalArgumentException if the end is before the start
+<i>197</i>&nbsp;     */
+<i>198</i>&nbsp;    public Interval(ReadableInstant start, ReadableInstant end) {
+<b class="fc"><i>199</i>&nbsp;        super(start, end);</b>
+<b class="fc"><i>200</i>&nbsp;    }</b>
+<i>201</i>&nbsp;
+<i>202</i>&nbsp;    /**
+<i>203</i>&nbsp;     * Constructs an interval from a start instant and a duration.
+<i>204</i>&nbsp;     * 
+<i>205</i>&nbsp;     * @param start  start of this interval, null means now
+<i>206</i>&nbsp;     * @param duration  the duration of this interval, null means zero length
+<i>207</i>&nbsp;     * @throws IllegalArgumentException if the end is before the start
+<i>208</i>&nbsp;     * @throws ArithmeticException if the end instant exceeds the capacity of a long
+<i>209</i>&nbsp;     */
+<i>210</i>&nbsp;    public Interval(ReadableInstant start, ReadableDuration duration) {
+<b class="fc"><i>211</i>&nbsp;        super(start, duration);</b>
+<b class="fc"><i>212</i>&nbsp;    }</b>
+<i>213</i>&nbsp;
+<i>214</i>&nbsp;    /**
+<i>215</i>&nbsp;     * Constructs an interval from a millisecond duration and an end instant.
+<i>216</i>&nbsp;     * 
+<i>217</i>&nbsp;     * @param duration  the duration of this interval, null means zero length
+<i>218</i>&nbsp;     * @param end  end of this interval, null means now
+<i>219</i>&nbsp;     * @throws IllegalArgumentException if the end is before the start
+<i>220</i>&nbsp;     * @throws ArithmeticException if the start instant exceeds the capacity of a long
+<i>221</i>&nbsp;     */
+<i>222</i>&nbsp;    public Interval(ReadableDuration duration, ReadableInstant end) {
+<b class="fc"><i>223</i>&nbsp;        super(duration, end);</b>
+<b class="fc"><i>224</i>&nbsp;    }</b>
+<i>225</i>&nbsp;
+<i>226</i>&nbsp;    /**
+<i>227</i>&nbsp;     * Constructs an interval from a start instant and a time period.
+<i>228</i>&nbsp;     * &lt;p&gt;
+<i>229</i>&nbsp;     * When forming the interval, the chronology from the instant is used
+<i>230</i>&nbsp;     * if present, otherwise the chronology of the period is used.
+<i>231</i>&nbsp;     * 
+<i>232</i>&nbsp;     * @param start  start of this interval, null means now
+<i>233</i>&nbsp;     * @param period  the period of this interval, null means zero length
+<i>234</i>&nbsp;     * @throws IllegalArgumentException if the end is before the start
+<i>235</i>&nbsp;     * @throws ArithmeticException if the end instant exceeds the capacity of a long
+<i>236</i>&nbsp;     */
+<i>237</i>&nbsp;    public Interval(ReadableInstant start, ReadablePeriod period) {
+<b class="fc"><i>238</i>&nbsp;        super(start, period);</b>
+<b class="fc"><i>239</i>&nbsp;    }</b>
+<i>240</i>&nbsp;
+<i>241</i>&nbsp;    /**
+<i>242</i>&nbsp;     * Constructs an interval from a time period and an end instant.
+<i>243</i>&nbsp;     * &lt;p&gt;
+<i>244</i>&nbsp;     * When forming the interval, the chronology from the instant is used
+<i>245</i>&nbsp;     * if present, otherwise the chronology of the period is used.
+<i>246</i>&nbsp;     * 
+<i>247</i>&nbsp;     * @param period  the period of this interval, null means zero length
+<i>248</i>&nbsp;     * @param end  end of this interval, null means now
+<i>249</i>&nbsp;     * @throws IllegalArgumentException if the end is before the start
+<i>250</i>&nbsp;     * @throws ArithmeticException if the start instant exceeds the capacity of a long
+<i>251</i>&nbsp;     */
+<i>252</i>&nbsp;    public Interval(ReadablePeriod period, ReadableInstant end) {
+<b class="fc"><i>253</i>&nbsp;        super(period, end);</b>
+<b class="fc"><i>254</i>&nbsp;    }</b>
+<i>255</i>&nbsp;
+<i>256</i>&nbsp;    /**
+<i>257</i>&nbsp;     * Constructs a time interval by converting or copying from another object.
+<i>258</i>&nbsp;     * &lt;p&gt;
+<i>259</i>&nbsp;     * The recognised object types are defined in
+<i>260</i>&nbsp;     * {@link org.joda.time.convert.ConverterManager ConverterManager} and
+<i>261</i>&nbsp;     * include ReadableInterval and String.
+<i>262</i>&nbsp;     * The String formats are described by {@link ISODateTimeFormat#dateTimeParser()}
+<i>263</i>&nbsp;     * and {@link ISOPeriodFormat#standard()}, and may be &#39;datetime/datetime&#39;,
+<i>264</i>&nbsp;     * &#39;datetime/period&#39; or &#39;period/datetime&#39;.
+<i>265</i>&nbsp;     * 
+<i>266</i>&nbsp;     * @param interval  the time interval to copy
+<i>267</i>&nbsp;     * @throws IllegalArgumentException if the interval is invalid
+<i>268</i>&nbsp;     */
+<i>269</i>&nbsp;    public Interval(Object interval) {
+<b class="fc"><i>270</i>&nbsp;        super(interval, null);</b>
+<b class="fc"><i>271</i>&nbsp;    }</b>
+<i>272</i>&nbsp;
+<i>273</i>&nbsp;    /**
+<i>274</i>&nbsp;     * Constructs a time interval by converting or copying from another object,
+<i>275</i>&nbsp;     * overriding the chronology.
+<i>276</i>&nbsp;     * &lt;p&gt;
+<i>277</i>&nbsp;     * The recognised object types are defined in
+<i>278</i>&nbsp;     * {@link org.joda.time.convert.ConverterManager ConverterManager} and
+<i>279</i>&nbsp;     * include ReadableInterval and String.
+<i>280</i>&nbsp;     * The String formats are described by {@link ISODateTimeFormat#dateTimeParser()}
+<i>281</i>&nbsp;     * and {@link ISOPeriodFormat#standard()}, and may be &#39;datetime/datetime&#39;,
+<i>282</i>&nbsp;     * &#39;datetime/period&#39; or &#39;period/datetime&#39;.
+<i>283</i>&nbsp;     * 
+<i>284</i>&nbsp;     * @param interval  the time interval to copy
+<i>285</i>&nbsp;     * @param chronology  the chronology to use, null means ISO default
+<i>286</i>&nbsp;     * @throws IllegalArgumentException if the interval is invalid
+<i>287</i>&nbsp;     */
+<i>288</i>&nbsp;    public Interval(Object interval, Chronology chronology) {
+<b class="fc"><i>289</i>&nbsp;        super(interval, chronology);</b>
+<b class="fc"><i>290</i>&nbsp;    }</b>
+<i>291</i>&nbsp;
+<i>292</i>&nbsp;    //-----------------------------------------------------------------------
+<i>293</i>&nbsp;    /**
+<i>294</i>&nbsp;     * Get this interval as an immutable &lt;code&gt;Interval&lt;/code&gt; object
+<i>295</i>&nbsp;     * by returning &lt;code&gt;this&lt;/code&gt;.
+<i>296</i>&nbsp;     *
+<i>297</i>&nbsp;     * @return &lt;code&gt;this&lt;/code&gt;
+<i>298</i>&nbsp;     */
+<i>299</i>&nbsp;    public Interval toInterval() {
+<b class="fc"><i>300</i>&nbsp;        return this;</b>
+<i>301</i>&nbsp;    }
+<i>302</i>&nbsp;
+<i>303</i>&nbsp;    //-----------------------------------------------------------------------
+<i>304</i>&nbsp;    /**
+<i>305</i>&nbsp;     * Gets the overlap between this interval and another interval.
+<i>306</i>&nbsp;     * &lt;p&gt;
+<i>307</i>&nbsp;     * Intervals are inclusive of the start instant and exclusive of the end.
+<i>308</i>&nbsp;     * An interval overlaps another if it shares some common part of the
+<i>309</i>&nbsp;     * datetime continuum. This method returns the amount of the overlap,
+<i>310</i>&nbsp;     * only if the intervals actually do overlap.
+<i>311</i>&nbsp;     * If the intervals do not overlap, then null is returned.
+<i>312</i>&nbsp;     * &lt;p&gt;
+<i>313</i>&nbsp;     * When two intervals are compared the result is one of three states:
+<i>314</i>&nbsp;     * (a) they abut, (b) there is a gap between them, (c) they overlap.
+<i>315</i>&nbsp;     * The abuts state takes precedence over the other two, thus a zero duration
+<i>316</i>&nbsp;     * interval at the start of a larger interval abuts and does not overlap.
+<i>317</i>&nbsp;     * &lt;p&gt;
+<i>318</i>&nbsp;     * The chronology of the returned interval is the same as that of
+<i>319</i>&nbsp;     * this interval (the chronology of the interval parameter is not used).
+<i>320</i>&nbsp;     * Note that the use of the chronology was only correctly implemented
+<i>321</i>&nbsp;     * in version 1.3.
+<i>322</i>&nbsp;     *
+<i>323</i>&nbsp;     * @param interval  the interval to examine, null means now
+<i>324</i>&nbsp;     * @return the overlap interval, null if no overlap
+<i>325</i>&nbsp;     * @since 1.1
+<i>326</i>&nbsp;     */
+<i>327</i>&nbsp;    public Interval overlap(ReadableInterval interval) {
+<b class="fc"><i>328</i>&nbsp;        interval = DateTimeUtils.getReadableInterval(interval);</b>
+<b class="fc"><i>329</i>&nbsp;        if (overlaps(interval) == false) {</b>
+<b class="fc"><i>330</i>&nbsp;            return null;</b>
+<i>331</i>&nbsp;        }
+<b class="fc"><i>332</i>&nbsp;        long start = Math.max(getStartMillis(), interval.getStartMillis());</b>
+<b class="fc"><i>333</i>&nbsp;        long end = Math.min(getEndMillis(), interval.getEndMillis());</b>
+<b class="fc"><i>334</i>&nbsp;        return new Interval(start, end, getChronology());</b>
+<i>335</i>&nbsp;    }
+<i>336</i>&nbsp;
+<i>337</i>&nbsp;    //-----------------------------------------------------------------------
+<i>338</i>&nbsp;    /**
+<i>339</i>&nbsp;     * Gets the gap between this interval and another interval.
+<i>340</i>&nbsp;     * The other interval can be either before or after this interval.
+<i>341</i>&nbsp;     * &lt;p&gt;
+<i>342</i>&nbsp;     * Intervals are inclusive of the start instant and exclusive of the end.
+<i>343</i>&nbsp;     * An interval has a gap to another interval if there is a non-zero
+<i>344</i>&nbsp;     * duration between them. This method returns the amount of the gap only
+<i>345</i>&nbsp;     * if the intervals do actually have a gap between them.
+<i>346</i>&nbsp;     * If the intervals overlap or abut, then null is returned.
+<i>347</i>&nbsp;     * &lt;p&gt;
+<i>348</i>&nbsp;     * When two intervals are compared the result is one of three states:
+<i>349</i>&nbsp;     * (a) they abut, (b) there is a gap between them, (c) they overlap.
+<i>350</i>&nbsp;     * The abuts state takes precedence over the other two, thus a zero duration
+<i>351</i>&nbsp;     * interval at the start of a larger interval abuts and does not overlap.
+<i>352</i>&nbsp;     * &lt;p&gt;
+<i>353</i>&nbsp;     * The chronology of the returned interval is the same as that of
+<i>354</i>&nbsp;     * this interval (the chronology of the interval parameter is not used).
+<i>355</i>&nbsp;     * Note that the use of the chronology was only correctly implemented
+<i>356</i>&nbsp;     * in version 1.3.
+<i>357</i>&nbsp;     *
+<i>358</i>&nbsp;     * @param interval  the interval to examine, null means now
+<i>359</i>&nbsp;     * @return the gap interval, null if no gap
+<i>360</i>&nbsp;     * @since 1.1
+<i>361</i>&nbsp;     */
+<i>362</i>&nbsp;    public Interval gap(ReadableInterval interval) {
+<b class="fc"><i>363</i>&nbsp;        interval = DateTimeUtils.getReadableInterval(interval);</b>
+<b class="fc"><i>364</i>&nbsp;        long otherStart = interval.getStartMillis();</b>
+<b class="fc"><i>365</i>&nbsp;        long otherEnd = interval.getEndMillis();</b>
+<b class="fc"><i>366</i>&nbsp;        long thisStart = getStartMillis();</b>
+<b class="fc"><i>367</i>&nbsp;        long thisEnd = getEndMillis();</b>
+<b class="fc"><i>368</i>&nbsp;        if (thisStart &gt; otherEnd) {</b>
+<b class="fc"><i>369</i>&nbsp;            return new Interval(otherEnd, thisStart, getChronology());</b>
+<b class="fc"><i>370</i>&nbsp;        } else if (otherStart &gt; thisEnd) {</b>
+<b class="fc"><i>371</i>&nbsp;            return new Interval(thisEnd, otherStart, getChronology());</b>
+<i>372</i>&nbsp;        } else {
+<b class="fc"><i>373</i>&nbsp;            return null;</b>
+<i>374</i>&nbsp;        }
+<i>375</i>&nbsp;    }
+<i>376</i>&nbsp;
+<i>377</i>&nbsp;    //-----------------------------------------------------------------------
+<i>378</i>&nbsp;    /**
+<i>379</i>&nbsp;     * Does this interval abut with the interval specified.
+<i>380</i>&nbsp;     * &lt;p&gt;
+<i>381</i>&nbsp;     * Intervals are inclusive of the start instant and exclusive of the end.
+<i>382</i>&nbsp;     * An interval abuts if it starts immediately after, or ends immediately
+<i>383</i>&nbsp;     * before this interval without overlap.
+<i>384</i>&nbsp;     * A zero duration interval abuts with itself.
+<i>385</i>&nbsp;     * &lt;p&gt;
+<i>386</i>&nbsp;     * When two intervals are compared the result is one of three states:
+<i>387</i>&nbsp;     * (a) they abut, (b) there is a gap between them, (c) they overlap.
+<i>388</i>&nbsp;     * The abuts state takes precedence over the other two, thus a zero duration
+<i>389</i>&nbsp;     * interval at the start of a larger interval abuts and does not overlap.
+<i>390</i>&nbsp;     * &lt;p&gt;
+<i>391</i>&nbsp;     * For example:
+<i>392</i>&nbsp;     * &lt;pre&gt;
+<i>393</i>&nbsp;     * [09:00 to 10:00) abuts [08:00 to 08:30)  = false (completely before)
+<i>394</i>&nbsp;     * [09:00 to 10:00) abuts [08:00 to 09:00)  = true
+<i>395</i>&nbsp;     * [09:00 to 10:00) abuts [08:00 to 09:01)  = false (overlaps)
+<i>396</i>&nbsp;     * 
+<i>397</i>&nbsp;     * [09:00 to 10:00) abuts [09:00 to 09:00)  = true
+<i>398</i>&nbsp;     * [09:00 to 10:00) abuts [09:00 to 09:01)  = false (overlaps)
+<i>399</i>&nbsp;     * 
+<i>400</i>&nbsp;     * [09:00 to 10:00) abuts [10:00 to 10:00)  = true
+<i>401</i>&nbsp;     * [09:00 to 10:00) abuts [10:00 to 10:30)  = true
+<i>402</i>&nbsp;     * 
+<i>403</i>&nbsp;     * [09:00 to 10:00) abuts [10:30 to 11:00)  = false (completely after)
+<i>404</i>&nbsp;     * 
+<i>405</i>&nbsp;     * [14:00 to 14:00) abuts [14:00 to 14:00)  = true
+<i>406</i>&nbsp;     * [14:00 to 14:00) abuts [14:00 to 15:00)  = true
+<i>407</i>&nbsp;     * [14:00 to 14:00) abuts [13:00 to 14:00)  = true
+<i>408</i>&nbsp;     * &lt;/pre&gt;
+<i>409</i>&nbsp;     *
+<i>410</i>&nbsp;     * @param interval  the interval to examine, null means now
+<i>411</i>&nbsp;     * @return true if the interval abuts
+<i>412</i>&nbsp;     * @since 1.1
+<i>413</i>&nbsp;     */
+<i>414</i>&nbsp;    public boolean abuts(ReadableInterval interval) {
+<b class="fc"><i>415</i>&nbsp;        if (interval == null) {</b>
+<b class="fc"><i>416</i>&nbsp;            long now = DateTimeUtils.currentTimeMillis();</b>
+<b class="fc"><i>417</i>&nbsp;            return (getStartMillis() == now || getEndMillis() == now);</b>
+<i>418</i>&nbsp;        } else {
+<b class="fc"><i>419</i>&nbsp;            return (interval.getEndMillis() == getStartMillis() ||</b>
+<b class="fc"><i>420</i>&nbsp;                    getEndMillis() == interval.getStartMillis());</b>
+<i>421</i>&nbsp;        }
+<i>422</i>&nbsp;    }
+<i>423</i>&nbsp;
+<i>424</i>&nbsp;    //-----------------------------------------------------------------------
+<i>425</i>&nbsp;    /**
+<i>426</i>&nbsp;     * Creates a new interval with the same start and end, but a different chronology.
+<i>427</i>&nbsp;     *
+<i>428</i>&nbsp;     * @param chronology  the chronology to use, null means ISO default
+<i>429</i>&nbsp;     * @return an interval with a different chronology
+<i>430</i>&nbsp;     */
+<i>431</i>&nbsp;    public Interval withChronology(Chronology chronology) {
+<b class="fc"><i>432</i>&nbsp;        if (getChronology() == chronology) {</b>
+<b class="fc"><i>433</i>&nbsp;            return this;</b>
+<i>434</i>&nbsp;        }
+<b class="fc"><i>435</i>&nbsp;        return new Interval(getStartMillis(), getEndMillis(), chronology);</b>
+<i>436</i>&nbsp;    }
+<i>437</i>&nbsp;
+<i>438</i>&nbsp;    /**
+<i>439</i>&nbsp;     * Creates a new interval with the specified start millisecond instant.
+<i>440</i>&nbsp;     *
+<i>441</i>&nbsp;     * @param startInstant  the start instant for the new interval
+<i>442</i>&nbsp;     * @return an interval with the end from this interval and the specified start
+<i>443</i>&nbsp;     * @throws IllegalArgumentException if the resulting interval has end before start
+<i>444</i>&nbsp;     */
+<i>445</i>&nbsp;    public Interval withStartMillis(long startInstant) {
+<b class="fc"><i>446</i>&nbsp;        if (startInstant == getStartMillis()) {</b>
+<b class="fc"><i>447</i>&nbsp;            return this;</b>
+<i>448</i>&nbsp;        }
+<b class="fc"><i>449</i>&nbsp;        return new Interval(startInstant, getEndMillis(), getChronology());</b>
+<i>450</i>&nbsp;    }
+<i>451</i>&nbsp;
+<i>452</i>&nbsp;    /**
+<i>453</i>&nbsp;     * Creates a new interval with the specified start instant.
+<i>454</i>&nbsp;     *
+<i>455</i>&nbsp;     * @param start  the start instant for the new interval, null means now
+<i>456</i>&nbsp;     * @return an interval with the end from this interval and the specified start
+<i>457</i>&nbsp;     * @throws IllegalArgumentException if the resulting interval has end before start
+<i>458</i>&nbsp;     */
+<i>459</i>&nbsp;    public Interval withStart(ReadableInstant start) {
+<b class="fc"><i>460</i>&nbsp;        long startMillis = DateTimeUtils.getInstantMillis(start);</b>
+<b class="fc"><i>461</i>&nbsp;        return withStartMillis(startMillis);</b>
+<i>462</i>&nbsp;    }
+<i>463</i>&nbsp;
+<i>464</i>&nbsp;    /**
+<i>465</i>&nbsp;     * Creates a new interval with the specified end millisecond instant.
+<i>466</i>&nbsp;     *
+<i>467</i>&nbsp;     * @param endInstant  the end instant for the new interval
+<i>468</i>&nbsp;     * @return an interval with the start from this interval and the specified end
+<i>469</i>&nbsp;     * @throws IllegalArgumentException if the resulting interval has end before start
+<i>470</i>&nbsp;     */
+<i>471</i>&nbsp;    public Interval withEndMillis(long endInstant) {
+<b class="fc"><i>472</i>&nbsp;        if (endInstant == getEndMillis()) {</b>
+<b class="fc"><i>473</i>&nbsp;            return this;</b>
+<i>474</i>&nbsp;        }
+<b class="fc"><i>475</i>&nbsp;        return new Interval(getStartMillis(), endInstant, getChronology());</b>
+<i>476</i>&nbsp;    }
+<i>477</i>&nbsp;
+<i>478</i>&nbsp;    /**
+<i>479</i>&nbsp;     * Creates a new interval with the specified end instant.
+<i>480</i>&nbsp;     *
+<i>481</i>&nbsp;     * @param end  the end instant for the new interval, null means now
+<i>482</i>&nbsp;     * @return an interval with the start from this interval and the specified end
+<i>483</i>&nbsp;     * @throws IllegalArgumentException if the resulting interval has end before start
+<i>484</i>&nbsp;     */
+<i>485</i>&nbsp;    public Interval withEnd(ReadableInstant end) {
+<b class="fc"><i>486</i>&nbsp;        long endMillis = DateTimeUtils.getInstantMillis(end);</b>
+<b class="fc"><i>487</i>&nbsp;        return withEndMillis(endMillis);</b>
+<i>488</i>&nbsp;    }
+<i>489</i>&nbsp;
+<i>490</i>&nbsp;    //-----------------------------------------------------------------------
+<i>491</i>&nbsp;    /**
+<i>492</i>&nbsp;     * Creates a new interval with the specified duration after the start instant.
+<i>493</i>&nbsp;     *
+<i>494</i>&nbsp;     * @param duration  the duration to add to the start to get the new end instant, null means zero
+<i>495</i>&nbsp;     * @return an interval with the start from this interval and a calculated end
+<i>496</i>&nbsp;     * @throws IllegalArgumentException if the duration is negative
+<i>497</i>&nbsp;     */
+<i>498</i>&nbsp;    public Interval withDurationAfterStart(ReadableDuration duration) {
+<b class="fc"><i>499</i>&nbsp;        long durationMillis = DateTimeUtils.getDurationMillis(duration);</b>
+<b class="fc"><i>500</i>&nbsp;        if (durationMillis == toDurationMillis()) {</b>
+<b class="fc"><i>501</i>&nbsp;            return this;</b>
+<i>502</i>&nbsp;        }
+<b class="fc"><i>503</i>&nbsp;        Chronology chrono = getChronology();</b>
+<b class="fc"><i>504</i>&nbsp;        long startMillis = getStartMillis();</b>
+<b class="fc"><i>505</i>&nbsp;        long endMillis = chrono.add(startMillis, durationMillis, 1);</b>
+<b class="fc"><i>506</i>&nbsp;        return new Interval(startMillis, endMillis, chrono);</b>
+<i>507</i>&nbsp;    }
+<i>508</i>&nbsp;
+<i>509</i>&nbsp;    /**
+<i>510</i>&nbsp;     * Creates a new interval with the specified duration before the end instant.
+<i>511</i>&nbsp;     *
+<i>512</i>&nbsp;     * @param duration  the duration to subtract from the end to get the new start instant, null means zero
+<i>513</i>&nbsp;     * @return an interval with the end from this interval and a calculated start
+<i>514</i>&nbsp;     * @throws IllegalArgumentException if the duration is negative
+<i>515</i>&nbsp;     */
+<i>516</i>&nbsp;    public Interval withDurationBeforeEnd(ReadableDuration duration) {
+<b class="fc"><i>517</i>&nbsp;        long durationMillis = DateTimeUtils.getDurationMillis(duration);</b>
+<b class="fc"><i>518</i>&nbsp;        if (durationMillis == toDurationMillis()) {</b>
+<b class="fc"><i>519</i>&nbsp;            return this;</b>
+<i>520</i>&nbsp;        }
+<b class="fc"><i>521</i>&nbsp;        Chronology chrono = getChronology();</b>
+<b class="fc"><i>522</i>&nbsp;        long endMillis = getEndMillis();</b>
+<b class="fc"><i>523</i>&nbsp;        long startMillis = chrono.add(endMillis, durationMillis, -1);</b>
+<b class="fc"><i>524</i>&nbsp;        return new Interval(startMillis, endMillis, chrono);</b>
+<i>525</i>&nbsp;    }
+<i>526</i>&nbsp;
+<i>527</i>&nbsp;    //-----------------------------------------------------------------------
+<i>528</i>&nbsp;    /**
+<i>529</i>&nbsp;     * Creates a new interval with the specified period after the start instant.
+<i>530</i>&nbsp;     *
+<i>531</i>&nbsp;     * @param period  the period to add to the start to get the new end instant, null means zero
+<i>532</i>&nbsp;     * @return an interval with the start from this interval and a calculated end
+<i>533</i>&nbsp;     * @throws IllegalArgumentException if the period is negative
+<i>534</i>&nbsp;     */
+<i>535</i>&nbsp;    public Interval withPeriodAfterStart(ReadablePeriod period) {
+<b class="fc"><i>536</i>&nbsp;        if (period == null) {</b>
+<b class="fc"><i>537</i>&nbsp;            return withDurationAfterStart(null);</b>
+<i>538</i>&nbsp;        }
+<b class="fc"><i>539</i>&nbsp;        Chronology chrono = getChronology();</b>
+<b class="fc"><i>540</i>&nbsp;        long startMillis = getStartMillis();</b>
+<b class="fc"><i>541</i>&nbsp;        long endMillis = chrono.add(period, startMillis, 1);</b>
+<b class="fc"><i>542</i>&nbsp;        return new Interval(startMillis, endMillis, chrono);</b>
+<i>543</i>&nbsp;    }
+<i>544</i>&nbsp;
+<i>545</i>&nbsp;    /**
+<i>546</i>&nbsp;     * Creates a new interval with the specified period before the end instant.
+<i>547</i>&nbsp;     *
+<i>548</i>&nbsp;     * @param period the period to subtract from the end to get the new start instant, null means zero
+<i>549</i>&nbsp;     * @return an interval with the end from this interval and a calculated start
+<i>550</i>&nbsp;     * @throws IllegalArgumentException if the period is negative
+<i>551</i>&nbsp;     */
+<i>552</i>&nbsp;    public Interval withPeriodBeforeEnd(ReadablePeriod period) {
+<b class="fc"><i>553</i>&nbsp;        if (period == null) {</b>
+<b class="fc"><i>554</i>&nbsp;            return withDurationBeforeEnd(null);</b>
+<i>555</i>&nbsp;        }
+<b class="fc"><i>556</i>&nbsp;        Chronology chrono = getChronology();</b>
+<b class="fc"><i>557</i>&nbsp;        long endMillis = getEndMillis();</b>
+<b class="fc"><i>558</i>&nbsp;        long startMillis = chrono.add(period, endMillis, -1);</b>
+<b class="fc"><i>559</i>&nbsp;        return new Interval(startMillis, endMillis, chrono);</b>
+<i>560</i>&nbsp;    }
+<i>561</i>&nbsp;
+<i>562</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

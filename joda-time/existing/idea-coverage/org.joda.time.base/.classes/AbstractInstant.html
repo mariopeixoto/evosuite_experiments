@@ -1,0 +1,525 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: AbstractInstant</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time.base</a> ]
+</div>
+
+<h1>Coverage Summary for Class: AbstractInstant (org.joda.time.base)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">AbstractInstant</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (29/ 29)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (62/ 62)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2014 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time.base;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;import java.util.Date;
+<i>19</i>&nbsp;
+<i>20</i>&nbsp;import org.joda.convert.ToString;
+<i>21</i>&nbsp;import org.joda.time.Chronology;
+<i>22</i>&nbsp;import org.joda.time.DateTime;
+<i>23</i>&nbsp;import org.joda.time.DateTimeField;
+<i>24</i>&nbsp;import org.joda.time.DateTimeFieldType;
+<i>25</i>&nbsp;import org.joda.time.DateTimeUtils;
+<i>26</i>&nbsp;import org.joda.time.DateTimeZone;
+<i>27</i>&nbsp;import org.joda.time.Instant;
+<i>28</i>&nbsp;import org.joda.time.MutableDateTime;
+<i>29</i>&nbsp;import org.joda.time.ReadableInstant;
+<i>30</i>&nbsp;import org.joda.time.chrono.ISOChronology;
+<i>31</i>&nbsp;import org.joda.time.field.FieldUtils;
+<i>32</i>&nbsp;import org.joda.time.format.DateTimeFormatter;
+<i>33</i>&nbsp;import org.joda.time.format.ISODateTimeFormat;
+<i>34</i>&nbsp;
+<i>35</i>&nbsp;/**
+<i>36</i>&nbsp; * AbstractInstant provides the common behaviour for instant classes.
+<i>37</i>&nbsp; * &lt;p&gt;
+<i>38</i>&nbsp; * This class has no concept of a chronology, all methods work on the
+<i>39</i>&nbsp; * millisecond instant.
+<i>40</i>&nbsp; * &lt;p&gt;
+<i>41</i>&nbsp; * This class should generally not be used directly by API users. The 
+<i>42</i>&nbsp; * {@link ReadableInstant} interface should be used when different 
+<i>43</i>&nbsp; * kinds of date/time objects are to be referenced.
+<i>44</i>&nbsp; * &lt;p&gt;
+<i>45</i>&nbsp; * Whenever you want to implement &lt;code&gt;ReadableInstant&lt;/code&gt; you should
+<i>46</i>&nbsp; * extend this class.
+<i>47</i>&nbsp; * &lt;p&gt;
+<i>48</i>&nbsp; * AbstractInstant itself is thread-safe and immutable, but subclasses may be
+<i>49</i>&nbsp; * mutable and not thread-safe.
+<i>50</i>&nbsp; *
+<i>51</i>&nbsp; * @author Stephen Colebourne
+<i>52</i>&nbsp; * @author Brian S O&#39;Neill
+<i>53</i>&nbsp; * @since 1.0
+<i>54</i>&nbsp; */
+<i>55</i>&nbsp;public abstract class AbstractInstant implements ReadableInstant {
+<i>56</i>&nbsp;
+<i>57</i>&nbsp;    /**
+<i>58</i>&nbsp;     * Constructor.
+<i>59</i>&nbsp;     */
+<i>60</i>&nbsp;    protected AbstractInstant() {
+<b class="fc"><i>61</i>&nbsp;        super();</b>
+<b class="fc"><i>62</i>&nbsp;    }</b>
+<i>63</i>&nbsp;
+<i>64</i>&nbsp;    //-----------------------------------------------------------------------
+<i>65</i>&nbsp;    /**
+<i>66</i>&nbsp;     * Gets the time zone of the instant from the chronology.
+<i>67</i>&nbsp;     * 
+<i>68</i>&nbsp;     * @return the DateTimeZone that the instant is using, never null
+<i>69</i>&nbsp;     */
+<i>70</i>&nbsp;    public DateTimeZone getZone() {
+<b class="fc"><i>71</i>&nbsp;        return getChronology().getZone();</b>
+<i>72</i>&nbsp;    }
+<i>73</i>&nbsp;
+<i>74</i>&nbsp;    /**
+<i>75</i>&nbsp;     * Get the value of one of the fields of a datetime using the chronology of the instant.
+<i>76</i>&nbsp;     * &lt;p&gt;
+<i>77</i>&nbsp;     * This method uses the chronology of the instant to obtain the value.
+<i>78</i>&nbsp;     * For example:
+<i>79</i>&nbsp;     * &lt;pre&gt;
+<i>80</i>&nbsp;     * DateTime dt = new DateTime();
+<i>81</i>&nbsp;     * int year = dt.get(DateTimeFieldType.year());
+<i>82</i>&nbsp;     * &lt;/pre&gt;
+<i>83</i>&nbsp;     *
+<i>84</i>&nbsp;     * @param type  a field type, usually obtained from DateTimeFieldType, not null
+<i>85</i>&nbsp;     * @return the value of that field
+<i>86</i>&nbsp;     * @throws IllegalArgumentException if the field type is null
+<i>87</i>&nbsp;     */
+<i>88</i>&nbsp;    public int get(DateTimeFieldType type) {
+<b class="fc"><i>89</i>&nbsp;        if (type == null) {</b>
+<b class="fc"><i>90</i>&nbsp;            throw new IllegalArgumentException(&quot;The DateTimeFieldType must not be null&quot;);</b>
+<i>91</i>&nbsp;        }
+<b class="fc"><i>92</i>&nbsp;        return type.getField(getChronology()).get(getMillis());</b>
+<i>93</i>&nbsp;    }
+<i>94</i>&nbsp;
+<i>95</i>&nbsp;    /**
+<i>96</i>&nbsp;     * Checks if the field type specified is supported by this instant and chronology.
+<i>97</i>&nbsp;     * This can be used to avoid exceptions in {@link #get(DateTimeFieldType)}.
+<i>98</i>&nbsp;     *
+<i>99</i>&nbsp;     * @param type  a field type, usually obtained from DateTimeFieldType
+<i>100</i>&nbsp;     * @return true if the field type is supported
+<i>101</i>&nbsp;     */
+<i>102</i>&nbsp;    public boolean isSupported(DateTimeFieldType type) {
+<b class="fc"><i>103</i>&nbsp;        if (type == null) {</b>
+<b class="fc"><i>104</i>&nbsp;            return false;</b>
+<i>105</i>&nbsp;        }
+<b class="fc"><i>106</i>&nbsp;        return type.getField(getChronology()).isSupported();</b>
+<i>107</i>&nbsp;    }
+<i>108</i>&nbsp;
+<i>109</i>&nbsp;    /**
+<i>110</i>&nbsp;     * Get the value of one of the fields of a datetime.
+<i>111</i>&nbsp;     * &lt;p&gt;
+<i>112</i>&nbsp;     * This could be used to get a field using a different Chronology.
+<i>113</i>&nbsp;     * For example:
+<i>114</i>&nbsp;     * &lt;pre&gt;
+<i>115</i>&nbsp;     * Instant dt = new Instant();
+<i>116</i>&nbsp;     * int gjYear = dt.get(Chronology.getCoptic().year());
+<i>117</i>&nbsp;     * &lt;/pre&gt;
+<i>118</i>&nbsp;     * 
+<i>119</i>&nbsp;     * @param field  the DateTimeField to use, not null
+<i>120</i>&nbsp;     * @return the value
+<i>121</i>&nbsp;     * @throws IllegalArgumentException if the field is null
+<i>122</i>&nbsp;     */
+<i>123</i>&nbsp;    public int get(DateTimeField field) {
+<b class="fc"><i>124</i>&nbsp;        if (field == null) {</b>
+<b class="fc"><i>125</i>&nbsp;            throw new IllegalArgumentException(&quot;The DateTimeField must not be null&quot;);</b>
+<i>126</i>&nbsp;        }
+<b class="fc"><i>127</i>&nbsp;        return field.get(getMillis());</b>
+<i>128</i>&nbsp;    }
+<i>129</i>&nbsp;
+<i>130</i>&nbsp;    //-----------------------------------------------------------------------
+<i>131</i>&nbsp;    /**
+<i>132</i>&nbsp;     * Get this object as an Instant.
+<i>133</i>&nbsp;     * 
+<i>134</i>&nbsp;     * @return an Instant using the same millis
+<i>135</i>&nbsp;     */
+<i>136</i>&nbsp;    public Instant toInstant() {
+<b class="fc"><i>137</i>&nbsp;        return new Instant(getMillis());</b>
+<i>138</i>&nbsp;    }
+<i>139</i>&nbsp;
+<i>140</i>&nbsp;    /**
+<i>141</i>&nbsp;     * Get this object as a DateTime in the same zone.
+<i>142</i>&nbsp;     *
+<i>143</i>&nbsp;     * @return a DateTime using the same millis
+<i>144</i>&nbsp;     */
+<i>145</i>&nbsp;    public DateTime toDateTime() {
+<b class="fc"><i>146</i>&nbsp;        return new DateTime(getMillis(), getZone());</b>
+<i>147</i>&nbsp;    }
+<i>148</i>&nbsp;
+<i>149</i>&nbsp;    /**
+<i>150</i>&nbsp;     * Get this object as a DateTime using ISOChronology in the same zone.
+<i>151</i>&nbsp;     *
+<i>152</i>&nbsp;     * @return a DateTime using the same millis with ISOChronology
+<i>153</i>&nbsp;     */
+<i>154</i>&nbsp;    public DateTime toDateTimeISO() {
+<b class="fc"><i>155</i>&nbsp;        return new DateTime(getMillis(), ISOChronology.getInstance(getZone()));</b>
+<i>156</i>&nbsp;    }
+<i>157</i>&nbsp;
+<i>158</i>&nbsp;    /**
+<i>159</i>&nbsp;     * Get this object as a DateTime using the same chronology but a different zone.
+<i>160</i>&nbsp;     * 
+<i>161</i>&nbsp;     * @param zone time zone to apply, or default if null
+<i>162</i>&nbsp;     * @return a DateTime using the same millis
+<i>163</i>&nbsp;     */
+<i>164</i>&nbsp;    public DateTime toDateTime(DateTimeZone zone) {
+<b class="fc"><i>165</i>&nbsp;        Chronology chrono = DateTimeUtils.getChronology(getChronology());</b>
+<b class="fc"><i>166</i>&nbsp;        chrono = chrono.withZone(zone);</b>
+<b class="fc"><i>167</i>&nbsp;        return new DateTime(getMillis(), chrono);</b>
+<i>168</i>&nbsp;    }
+<i>169</i>&nbsp;
+<i>170</i>&nbsp;    /**
+<i>171</i>&nbsp;     * Get this object as a DateTime using the given chronology and its zone.
+<i>172</i>&nbsp;     * 
+<i>173</i>&nbsp;     * @param chronology chronology to apply, or ISOChronology if null
+<i>174</i>&nbsp;     * @return a DateTime using the same millis
+<i>175</i>&nbsp;     */
+<i>176</i>&nbsp;    public DateTime toDateTime(Chronology chronology) {
+<b class="fc"><i>177</i>&nbsp;        return new DateTime(getMillis(), chronology);</b>
+<i>178</i>&nbsp;    }
+<i>179</i>&nbsp;
+<i>180</i>&nbsp;    // NOTE: Although the toMutableDateTime methods could check to see if this
+<i>181</i>&nbsp;    // is already a MutableDateTime and return this casted, it makes it too
+<i>182</i>&nbsp;    // easy to mistakenly modify ReadableDateTime input parameters. Always
+<i>183</i>&nbsp;    // returning a copy prevents this.
+<i>184</i>&nbsp;
+<i>185</i>&nbsp;    /**
+<i>186</i>&nbsp;     * Get this object as a MutableDateTime in the same zone.
+<i>187</i>&nbsp;     *
+<i>188</i>&nbsp;     * @return a MutableDateTime using the same millis
+<i>189</i>&nbsp;     */
+<i>190</i>&nbsp;    public MutableDateTime toMutableDateTime() {
+<b class="fc"><i>191</i>&nbsp;        return new MutableDateTime(getMillis(), getZone());</b>
+<i>192</i>&nbsp;    }
+<i>193</i>&nbsp;
+<i>194</i>&nbsp;    /**
+<i>195</i>&nbsp;     * Get this object as a MutableDateTime using ISOChronology in the same zone.
+<i>196</i>&nbsp;     *
+<i>197</i>&nbsp;     * @return a MutableDateTime using the same millis with ISOChronology
+<i>198</i>&nbsp;     */
+<i>199</i>&nbsp;    public MutableDateTime toMutableDateTimeISO() {
+<b class="fc"><i>200</i>&nbsp;        return new MutableDateTime(getMillis(), ISOChronology.getInstance(getZone()));</b>
+<i>201</i>&nbsp;    }
+<i>202</i>&nbsp;
+<i>203</i>&nbsp;    /**
+<i>204</i>&nbsp;     * Get this object as a MutableDateTime using the same chronology but a different zone.
+<i>205</i>&nbsp;     * 
+<i>206</i>&nbsp;     * @param zone time zone to apply, or default if null
+<i>207</i>&nbsp;     * @return a MutableDateTime using the same millis
+<i>208</i>&nbsp;     */
+<i>209</i>&nbsp;    public MutableDateTime toMutableDateTime(DateTimeZone zone) {
+<b class="fc"><i>210</i>&nbsp;        Chronology chrono = DateTimeUtils.getChronology(getChronology());</b>
+<b class="fc"><i>211</i>&nbsp;        chrono = chrono.withZone(zone);</b>
+<b class="fc"><i>212</i>&nbsp;        return new MutableDateTime(getMillis(), chrono);</b>
+<i>213</i>&nbsp;    }
+<i>214</i>&nbsp;
+<i>215</i>&nbsp;    /**
+<i>216</i>&nbsp;     * Get this object as a MutableDateTime using the given chronology and its zone.
+<i>217</i>&nbsp;     * 
+<i>218</i>&nbsp;     * @param chronology chronology to apply, or ISOChronology if null
+<i>219</i>&nbsp;     * @return a MutableDateTime using the same millis
+<i>220</i>&nbsp;     */
+<i>221</i>&nbsp;    public MutableDateTime toMutableDateTime(Chronology chronology) {
+<b class="fc"><i>222</i>&nbsp;        return new MutableDateTime(getMillis(), chronology);</b>
+<i>223</i>&nbsp;    }
+<i>224</i>&nbsp;
+<i>225</i>&nbsp;    //-----------------------------------------------------------------------
+<i>226</i>&nbsp;    /**
+<i>227</i>&nbsp;     * Get the date time as a &lt;code&gt;java.util.Date&lt;/code&gt;.
+<i>228</i>&nbsp;     * &lt;p&gt;
+<i>229</i>&nbsp;     * The &lt;code&gt;Date&lt;/code&gt; object created has exactly the same millisecond
+<i>230</i>&nbsp;     * instant as this object.
+<i>231</i>&nbsp;     *
+<i>232</i>&nbsp;     * @return a Date initialised with this datetime
+<i>233</i>&nbsp;     */
+<i>234</i>&nbsp;    public Date toDate() {
+<b class="fc"><i>235</i>&nbsp;        return new Date(getMillis());</b>
+<i>236</i>&nbsp;    }
+<i>237</i>&nbsp;
+<i>238</i>&nbsp;    //-----------------------------------------------------------------------
+<i>239</i>&nbsp;    /**
+<i>240</i>&nbsp;     * Compares this object with the specified object for equality based
+<i>241</i>&nbsp;     * on the millisecond instant, chronology and time zone.
+<i>242</i>&nbsp;     * &lt;p&gt;
+<i>243</i>&nbsp;     * Two objects which represent the same instant in time, but are in
+<i>244</i>&nbsp;     * different time zones (based on time zone id), will be considered to
+<i>245</i>&nbsp;     * be different. Only two objects with the same {@link DateTimeZone},
+<i>246</i>&nbsp;     * {@link Chronology} and instant are equal.
+<i>247</i>&nbsp;     * &lt;p&gt;
+<i>248</i>&nbsp;     * See {@link #isEqual(ReadableInstant)} for an equals method that
+<i>249</i>&nbsp;     * ignores the Chronology and time zone.
+<i>250</i>&nbsp;     * &lt;p&gt;
+<i>251</i>&nbsp;     * All ReadableInstant instances are accepted.
+<i>252</i>&nbsp;     *
+<i>253</i>&nbsp;     * @param readableInstant  a readable instant to check against
+<i>254</i>&nbsp;     * @return true if millisecond and chronology are equal, false if
+<i>255</i>&nbsp;     *  not or the instant is null or of an incorrect type
+<i>256</i>&nbsp;     */
+<i>257</i>&nbsp;    public boolean equals(Object readableInstant) {
+<i>258</i>&nbsp;        // must be to fulfil ReadableInstant contract
+<b class="fc"><i>259</i>&nbsp;        if (this == readableInstant) {</b>
+<b class="fc"><i>260</i>&nbsp;            return true;</b>
+<i>261</i>&nbsp;        }
+<b class="fc"><i>262</i>&nbsp;        if (readableInstant instanceof ReadableInstant == false) {</b>
+<b class="fc"><i>263</i>&nbsp;            return false;</b>
+<i>264</i>&nbsp;        }
+<b class="fc"><i>265</i>&nbsp;        ReadableInstant otherInstant = (ReadableInstant) readableInstant;</b>
+<b class="fc"><i>266</i>&nbsp;        return</b>
+<b class="fc"><i>267</i>&nbsp;            getMillis() == otherInstant.getMillis() &amp;&amp;</b>
+<b class="fc"><i>268</i>&nbsp;            FieldUtils.equals(getChronology(), otherInstant.getChronology());</b>
+<i>269</i>&nbsp;    }
+<i>270</i>&nbsp;
+<i>271</i>&nbsp;    /**
+<i>272</i>&nbsp;     * Gets a hash code for the instant as defined in &lt;code&gt;ReadableInstant&lt;/code&gt;.
+<i>273</i>&nbsp;     *
+<i>274</i>&nbsp;     * @return a suitable hash code
+<i>275</i>&nbsp;     */
+<i>276</i>&nbsp;    public int hashCode() {
+<i>277</i>&nbsp;        // must be to fulfil ReadableInstant contract
+<b class="fc"><i>278</i>&nbsp;        return</b>
+<b class="fc"><i>279</i>&nbsp;            ((int) (getMillis() ^ (getMillis() &gt;&gt;&gt; 32))) +</b>
+<b class="fc"><i>280</i>&nbsp;            (getChronology().hashCode());</b>
+<i>281</i>&nbsp;    }
+<i>282</i>&nbsp;
+<i>283</i>&nbsp;    /**
+<i>284</i>&nbsp;     * Compares this object with the specified object for ascending
+<i>285</i>&nbsp;     * millisecond instant order. This ordering is inconsistent with
+<i>286</i>&nbsp;     * equals, as it ignores the Chronology.
+<i>287</i>&nbsp;     * &lt;p&gt;
+<i>288</i>&nbsp;     * All ReadableInstant instances are accepted.
+<i>289</i>&nbsp;     *
+<i>290</i>&nbsp;     * @param other  a readable instant to check against
+<i>291</i>&nbsp;     * @return negative value if this is less, 0 if equal, or positive value if greater
+<i>292</i>&nbsp;     * @throws NullPointerException if the object is null
+<i>293</i>&nbsp;     * @throws ClassCastException if the object type is not supported
+<i>294</i>&nbsp;     */
+<i>295</i>&nbsp;    public int compareTo(ReadableInstant other) {
+<b class="fc"><i>296</i>&nbsp;        if (this == other) {</b>
+<b class="fc"><i>297</i>&nbsp;            return 0;</b>
+<i>298</i>&nbsp;        }
+<i>299</i>&nbsp;        
+<b class="fc"><i>300</i>&nbsp;        long otherMillis = other.getMillis();</b>
+<b class="fc"><i>301</i>&nbsp;        long thisMillis = getMillis();</b>
+<i>302</i>&nbsp;        
+<i>303</i>&nbsp;        // cannot do (thisMillis - otherMillis) as can overflow
+<b class="fc"><i>304</i>&nbsp;        if (thisMillis == otherMillis) {</b>
+<b class="fc"><i>305</i>&nbsp;            return 0;</b>
+<i>306</i>&nbsp;        }
+<b class="fc"><i>307</i>&nbsp;        if (thisMillis &lt; otherMillis) {</b>
+<b class="fc"><i>308</i>&nbsp;            return -1;</b>
+<i>309</i>&nbsp;        } else {
+<b class="fc"><i>310</i>&nbsp;            return 1;</b>
+<i>311</i>&nbsp;        }
+<i>312</i>&nbsp;    }
+<i>313</i>&nbsp;
+<i>314</i>&nbsp;    //-----------------------------------------------------------------------
+<i>315</i>&nbsp;    /**
+<i>316</i>&nbsp;     * Is this instant strictly after the millisecond instant passed in
+<i>317</i>&nbsp;     * comparing solely by millisecond.
+<i>318</i>&nbsp;     *
+<i>319</i>&nbsp;     * @param instant  a millisecond instant to check against
+<i>320</i>&nbsp;     * @return true if this instant is strictly after the instant passed in
+<i>321</i>&nbsp;     */
+<i>322</i>&nbsp;    public boolean isAfter(long instant) {
+<b class="fc"><i>323</i>&nbsp;        return (getMillis() &gt; instant);</b>
+<i>324</i>&nbsp;    }
+<i>325</i>&nbsp;
+<i>326</i>&nbsp;    /**
+<i>327</i>&nbsp;     * Is this instant strictly after the current instant
+<i>328</i>&nbsp;     * comparing solely by millisecond.
+<i>329</i>&nbsp;     * 
+<i>330</i>&nbsp;     * @return true if this instant is strictly after the current instant
+<i>331</i>&nbsp;     */
+<i>332</i>&nbsp;    public boolean isAfterNow() {
+<b class="fc"><i>333</i>&nbsp;        return isAfter(DateTimeUtils.currentTimeMillis());</b>
+<i>334</i>&nbsp;    }
+<i>335</i>&nbsp;
+<i>336</i>&nbsp;    /**
+<i>337</i>&nbsp;     * Is this instant strictly after the instant passed in
+<i>338</i>&nbsp;     * comparing solely by millisecond.
+<i>339</i>&nbsp;     *
+<i>340</i>&nbsp;     * @param instant  an instant to check against, null means now
+<i>341</i>&nbsp;     * @return true if the instant is strictly after the instant passed in
+<i>342</i>&nbsp;     */
+<i>343</i>&nbsp;    public boolean isAfter(ReadableInstant instant) {
+<b class="fc"><i>344</i>&nbsp;        long instantMillis = DateTimeUtils.getInstantMillis(instant);</b>
+<b class="fc"><i>345</i>&nbsp;        return isAfter(instantMillis);</b>
+<i>346</i>&nbsp;    }
+<i>347</i>&nbsp;
+<i>348</i>&nbsp;    //-----------------------------------------------------------------------
+<i>349</i>&nbsp;    /**
+<i>350</i>&nbsp;     * Is this instant strictly before the millisecond instant passed in
+<i>351</i>&nbsp;     * comparing solely by millisecond.
+<i>352</i>&nbsp;     *
+<i>353</i>&nbsp;     * @param instant  a millisecond instant to check against
+<i>354</i>&nbsp;     * @return true if this instant is strictly before the instant passed in
+<i>355</i>&nbsp;     */
+<i>356</i>&nbsp;    public boolean isBefore(long instant) {
+<b class="fc"><i>357</i>&nbsp;        return (getMillis() &lt; instant);</b>
+<i>358</i>&nbsp;    }
+<i>359</i>&nbsp;
+<i>360</i>&nbsp;    /**
+<i>361</i>&nbsp;     * Is this instant strictly before the current instant
+<i>362</i>&nbsp;     * comparing solely by millisecond.
+<i>363</i>&nbsp;     * 
+<i>364</i>&nbsp;     * @return true if this instant is strictly before the current instant
+<i>365</i>&nbsp;     */
+<i>366</i>&nbsp;    public boolean isBeforeNow() {
+<b class="fc"><i>367</i>&nbsp;        return isBefore(DateTimeUtils.currentTimeMillis());</b>
+<i>368</i>&nbsp;    }
+<i>369</i>&nbsp;
+<i>370</i>&nbsp;    /**
+<i>371</i>&nbsp;     * Is this instant strictly before the instant passed in
+<i>372</i>&nbsp;     * comparing solely by millisecond.
+<i>373</i>&nbsp;     *
+<i>374</i>&nbsp;     * @param instant  an instant to check against, null means now
+<i>375</i>&nbsp;     * @return true if the instant is strictly before the instant passed in
+<i>376</i>&nbsp;     */
+<i>377</i>&nbsp;    public boolean isBefore(ReadableInstant instant) {
+<b class="fc"><i>378</i>&nbsp;        long instantMillis = DateTimeUtils.getInstantMillis(instant);</b>
+<b class="fc"><i>379</i>&nbsp;        return isBefore(instantMillis);</b>
+<i>380</i>&nbsp;    }
+<i>381</i>&nbsp;
+<i>382</i>&nbsp;    //-----------------------------------------------------------------------
+<i>383</i>&nbsp;    /**
+<i>384</i>&nbsp;     * Is this instant equal to the millisecond instant passed in
+<i>385</i>&nbsp;     * comparing solely by millisecond.
+<i>386</i>&nbsp;     *
+<i>387</i>&nbsp;     * @param instant  a millisecond instant to check against
+<i>388</i>&nbsp;     * @return true if this instant is equal to the instant passed in
+<i>389</i>&nbsp;     */
+<i>390</i>&nbsp;    public boolean isEqual(long instant) {
+<b class="fc"><i>391</i>&nbsp;        return (getMillis() == instant);</b>
+<i>392</i>&nbsp;    }
+<i>393</i>&nbsp;
+<i>394</i>&nbsp;    /**
+<i>395</i>&nbsp;     * Is this instant equal to the current instant
+<i>396</i>&nbsp;     * comparing solely by millisecond.
+<i>397</i>&nbsp;     * 
+<i>398</i>&nbsp;     * @return true if this instant is equal to the current instant
+<i>399</i>&nbsp;     */
+<i>400</i>&nbsp;    public boolean isEqualNow() {
+<b class="fc"><i>401</i>&nbsp;        return isEqual(DateTimeUtils.currentTimeMillis());</b>
+<i>402</i>&nbsp;    }
+<i>403</i>&nbsp;
+<i>404</i>&nbsp;    /**
+<i>405</i>&nbsp;     * Is this instant equal to the instant passed in
+<i>406</i>&nbsp;     * comparing solely by millisecond.
+<i>407</i>&nbsp;     *
+<i>408</i>&nbsp;     * @param instant  an instant to check against, null means now
+<i>409</i>&nbsp;     * @return true if the instant is equal to the instant passed in
+<i>410</i>&nbsp;     */
+<i>411</i>&nbsp;    public boolean isEqual(ReadableInstant instant) {
+<b class="fc"><i>412</i>&nbsp;        long instantMillis = DateTimeUtils.getInstantMillis(instant);</b>
+<b class="fc"><i>413</i>&nbsp;        return isEqual(instantMillis);</b>
+<i>414</i>&nbsp;    }
+<i>415</i>&nbsp;
+<i>416</i>&nbsp;    //-----------------------------------------------------------------------
+<i>417</i>&nbsp;    /**
+<i>418</i>&nbsp;     * Output the date time in ISO8601 format (yyyy-MM-ddTHH:mm:ss.SSSZZ).
+<i>419</i>&nbsp;     * 
+<i>420</i>&nbsp;     * @return ISO8601 time formatted string, not null
+<i>421</i>&nbsp;     */
+<i>422</i>&nbsp;    @ToString
+<i>423</i>&nbsp;    public String toString() {
+<b class="fc"><i>424</i>&nbsp;        return ISODateTimeFormat.dateTime().print(this);</b>
+<i>425</i>&nbsp;    }
+<i>426</i>&nbsp;
+<i>427</i>&nbsp;    //-----------------------------------------------------------------------
+<i>428</i>&nbsp;    /**
+<i>429</i>&nbsp;     * Uses the specified formatter to convert this partial to a String.
+<i>430</i>&nbsp;     *
+<i>431</i>&nbsp;     * @param formatter  the formatter to use, null means use &lt;code&gt;toString()&lt;/code&gt;.
+<i>432</i>&nbsp;     * @return the formatted string, not null
+<i>433</i>&nbsp;     * @since 1.1
+<i>434</i>&nbsp;     */
+<i>435</i>&nbsp;    public String toString(DateTimeFormatter formatter) {
+<b class="fc"><i>436</i>&nbsp;        if (formatter == null) {</b>
+<b class="fc"><i>437</i>&nbsp;            return toString();</b>
+<i>438</i>&nbsp;        }
+<b class="fc"><i>439</i>&nbsp;        return formatter.print(this);</b>
+<i>440</i>&nbsp;    }
+<i>441</i>&nbsp;
+<i>442</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

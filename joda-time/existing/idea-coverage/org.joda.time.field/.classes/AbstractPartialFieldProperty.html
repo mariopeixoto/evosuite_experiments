@@ -1,0 +1,443 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: AbstractPartialFieldProperty</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time.field</a> ]
+</div>
+
+<h1>Coverage Summary for Class: AbstractPartialFieldProperty (org.joda.time.field)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">AbstractPartialFieldProperty</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (21/ 21)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (50/ 50)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2006 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time.field;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;import java.util.Locale;
+<i>19</i>&nbsp;
+<i>20</i>&nbsp;import org.joda.time.DateTimeField;
+<i>21</i>&nbsp;import org.joda.time.DateTimeFieldType;
+<i>22</i>&nbsp;import org.joda.time.DurationField;
+<i>23</i>&nbsp;import org.joda.time.ReadableInstant;
+<i>24</i>&nbsp;import org.joda.time.ReadablePartial;
+<i>25</i>&nbsp;
+<i>26</i>&nbsp;/**
+<i>27</i>&nbsp; * AbstractPartialFieldProperty is a base class for binding a
+<i>28</i>&nbsp; * ReadablePartial to a DateTimeField.
+<i>29</i>&nbsp; * &lt;p&gt;
+<i>30</i>&nbsp; * It allows the date and time manipulation code to be field based yet
+<i>31</i>&nbsp; * still easy to use.
+<i>32</i>&nbsp; *
+<i>33</i>&nbsp; * @author Stephen Colebourne
+<i>34</i>&nbsp; * @author Brian S O&#39;Neill
+<i>35</i>&nbsp; * @since 1.0
+<i>36</i>&nbsp; */
+<i>37</i>&nbsp;public abstract class AbstractPartialFieldProperty {
+<i>38</i>&nbsp;
+<i>39</i>&nbsp;    /**
+<i>40</i>&nbsp;     * Constructor.
+<i>41</i>&nbsp;     */
+<i>42</i>&nbsp;    protected AbstractPartialFieldProperty() {
+<b class="fc"><i>43</i>&nbsp;        super();</b>
+<b class="fc"><i>44</i>&nbsp;    }</b>
+<i>45</i>&nbsp;
+<i>46</i>&nbsp;    //-----------------------------------------------------------------------
+<i>47</i>&nbsp;    /**
+<i>48</i>&nbsp;     * Gets the field being used.
+<i>49</i>&nbsp;     * 
+<i>50</i>&nbsp;     * @return the field
+<i>51</i>&nbsp;     */
+<i>52</i>&nbsp;    public abstract DateTimeField getField();
+<i>53</i>&nbsp;
+<i>54</i>&nbsp;    /**
+<i>55</i>&nbsp;     * Gets the field type being used.
+<i>56</i>&nbsp;     * 
+<i>57</i>&nbsp;     * @return the field type
+<i>58</i>&nbsp;     */
+<i>59</i>&nbsp;    public DateTimeFieldType getFieldType() {
+<b class="fc"><i>60</i>&nbsp;        return getField().getType();</b>
+<i>61</i>&nbsp;    }
+<i>62</i>&nbsp;
+<i>63</i>&nbsp;    /**
+<i>64</i>&nbsp;     * Gets the name of the field.
+<i>65</i>&nbsp;     * 
+<i>66</i>&nbsp;     * @return the field name
+<i>67</i>&nbsp;     */
+<i>68</i>&nbsp;    public String getName() {
+<b class="fc"><i>69</i>&nbsp;        return getField().getName();</b>
+<i>70</i>&nbsp;    }
+<i>71</i>&nbsp;
+<i>72</i>&nbsp;    /**
+<i>73</i>&nbsp;     * Gets the partial instant being used.
+<i>74</i>&nbsp;     * 
+<i>75</i>&nbsp;     * @return the partial instant
+<i>76</i>&nbsp;     */
+<i>77</i>&nbsp;    protected abstract ReadablePartial getReadablePartial();
+<i>78</i>&nbsp;
+<i>79</i>&nbsp;    //-----------------------------------------------------------------------
+<i>80</i>&nbsp;    /**
+<i>81</i>&nbsp;     * Gets the value of this property from the instant.
+<i>82</i>&nbsp;     * &lt;p&gt;
+<i>83</i>&nbsp;     * For example, the following two lines of code are equivalent:
+<i>84</i>&nbsp;     * &lt;pre&gt;
+<i>85</i>&nbsp;     * partial.getDayOfMonth();
+<i>86</i>&nbsp;     * partial.dayOfMonth().get();
+<i>87</i>&nbsp;     * &lt;/pre&gt;
+<i>88</i>&nbsp;     * 
+<i>89</i>&nbsp;     * @return the current value
+<i>90</i>&nbsp;     */
+<i>91</i>&nbsp;    public abstract int get();
+<i>92</i>&nbsp;
+<i>93</i>&nbsp;    /**
+<i>94</i>&nbsp;     * Gets the value of this property from the instant as a string.
+<i>95</i>&nbsp;     * &lt;p&gt;
+<i>96</i>&nbsp;     * This method returns the value converted to a &lt;code&gt;String&lt;/code&gt;
+<i>97</i>&nbsp;     * using &lt;code&gt;Integer.toString&lt;/code&gt;. This method does NOT return
+<i>98</i>&nbsp;     * textual descriptions such as &#39;Monday&#39; or &#39;January&#39;.
+<i>99</i>&nbsp;     * See {@link #getAsText()} and {@link #getAsShortText()} for those.
+<i>100</i>&nbsp;     * 
+<i>101</i>&nbsp;     * @return the current value
+<i>102</i>&nbsp;     * @see DateTimeField#get
+<i>103</i>&nbsp;     * @since 1.1
+<i>104</i>&nbsp;     */
+<i>105</i>&nbsp;    public String getAsString() {
+<b class="fc"><i>106</i>&nbsp;        return Integer.toString(get());</b>
+<i>107</i>&nbsp;    }
+<i>108</i>&nbsp;
+<i>109</i>&nbsp;    /**
+<i>110</i>&nbsp;     * Gets the textual value of this property from the instant as a
+<i>111</i>&nbsp;     * string in the default locale.
+<i>112</i>&nbsp;     * &lt;p&gt;
+<i>113</i>&nbsp;     * This method returns the value converted to a &lt;code&gt;String&lt;/code&gt;
+<i>114</i>&nbsp;     * returning the appropriate textual description wherever possible.
+<i>115</i>&nbsp;     * Thus, a day of week of 1 would return &#39;Monday&#39; in English.
+<i>116</i>&nbsp;     * 
+<i>117</i>&nbsp;     * @return the current text value
+<i>118</i>&nbsp;     * @see DateTimeField#getAsText
+<i>119</i>&nbsp;     */
+<i>120</i>&nbsp;    public String getAsText() {
+<b class="fc"><i>121</i>&nbsp;        return getAsText(null);</b>
+<i>122</i>&nbsp;    }
+<i>123</i>&nbsp;
+<i>124</i>&nbsp;    /**
+<i>125</i>&nbsp;     * Gets the textual value of this property from the instant as a
+<i>126</i>&nbsp;     * string in the specified locale.
+<i>127</i>&nbsp;     * &lt;p&gt;
+<i>128</i>&nbsp;     * This method returns the value converted to a &lt;code&gt;String&lt;/code&gt;
+<i>129</i>&nbsp;     * returning the appropriate textual description wherever possible.
+<i>130</i>&nbsp;     * Thus, a day of week of 1 would return &#39;Monday&#39; in English.
+<i>131</i>&nbsp;     * 
+<i>132</i>&nbsp;     * @param locale  locale to use for selecting a text symbol, null means default
+<i>133</i>&nbsp;     * @return the current text value
+<i>134</i>&nbsp;     * @see DateTimeField#getAsText
+<i>135</i>&nbsp;     */
+<i>136</i>&nbsp;    public String getAsText(Locale locale) {
+<b class="fc"><i>137</i>&nbsp;        return getField().getAsText(getReadablePartial(), get(), locale);</b>
+<i>138</i>&nbsp;    }
+<i>139</i>&nbsp;
+<i>140</i>&nbsp;    /**
+<i>141</i>&nbsp;     * Gets the short textual value of this property from the instant as a
+<i>142</i>&nbsp;     * string in the default locale.
+<i>143</i>&nbsp;     * &lt;p&gt;
+<i>144</i>&nbsp;     * This method returns the value converted to a &lt;code&gt;String&lt;/code&gt;
+<i>145</i>&nbsp;     * returning the appropriate textual description wherever possible.
+<i>146</i>&nbsp;     * Thus, a day of week of 1 would return &#39;Mon&#39; in English.
+<i>147</i>&nbsp;     * 
+<i>148</i>&nbsp;     * @return the current text value
+<i>149</i>&nbsp;     * @see DateTimeField#getAsShortText
+<i>150</i>&nbsp;     */
+<i>151</i>&nbsp;    public String getAsShortText() {
+<b class="fc"><i>152</i>&nbsp;        return getAsShortText(null);</b>
+<i>153</i>&nbsp;    }
+<i>154</i>&nbsp;
+<i>155</i>&nbsp;    /**
+<i>156</i>&nbsp;     * Gets the short textual value of this property from the instant as a
+<i>157</i>&nbsp;     * string in the specified locale.
+<i>158</i>&nbsp;     * &lt;p&gt;
+<i>159</i>&nbsp;     * This method returns the value converted to a &lt;code&gt;String&lt;/code&gt;
+<i>160</i>&nbsp;     * returning the appropriate textual description wherever possible.
+<i>161</i>&nbsp;     * Thus, a day of week of 1 would return &#39;Mon&#39; in English.
+<i>162</i>&nbsp;     * 
+<i>163</i>&nbsp;     * @param locale  locale to use for selecting a text symbol, null means default
+<i>164</i>&nbsp;     * @return the current text value
+<i>165</i>&nbsp;     * @see DateTimeField#getAsShortText
+<i>166</i>&nbsp;     */
+<i>167</i>&nbsp;    public String getAsShortText(Locale locale) {
+<b class="fc"><i>168</i>&nbsp;        return getField().getAsShortText(getReadablePartial(), get(), locale);</b>
+<i>169</i>&nbsp;    }
+<i>170</i>&nbsp;
+<i>171</i>&nbsp;    //-----------------------------------------------------------------------
+<i>172</i>&nbsp;    /**
+<i>173</i>&nbsp;     * Returns the duration per unit value of this field. For example, if this
+<i>174</i>&nbsp;     * field represents &quot;hour of day&quot;, then the duration is an hour.
+<i>175</i>&nbsp;     *
+<i>176</i>&nbsp;     * @return the duration of this field, or UnsupportedDurationField
+<i>177</i>&nbsp;     */
+<i>178</i>&nbsp;    public DurationField getDurationField() {
+<b class="fc"><i>179</i>&nbsp;        return getField().getDurationField();</b>
+<i>180</i>&nbsp;    }
+<i>181</i>&nbsp;
+<i>182</i>&nbsp;    /**
+<i>183</i>&nbsp;     * Returns the range duration of this field. For example, if this field
+<i>184</i>&nbsp;     * represents &quot;hour of day&quot;, then the range duration is a day.
+<i>185</i>&nbsp;     *
+<i>186</i>&nbsp;     * @return the range duration of this field, or null if field has no range
+<i>187</i>&nbsp;     */
+<i>188</i>&nbsp;    public DurationField getRangeDurationField() {
+<b class="fc"><i>189</i>&nbsp;        return getField().getRangeDurationField();</b>
+<i>190</i>&nbsp;    }
+<i>191</i>&nbsp;
+<i>192</i>&nbsp;    //-----------------------------------------------------------------------
+<i>193</i>&nbsp;    /**
+<i>194</i>&nbsp;     * Gets the minimum value for the field ignoring the current time.
+<i>195</i>&nbsp;     * 
+<i>196</i>&nbsp;     * @return the minimum value
+<i>197</i>&nbsp;     * @see DateTimeField#getMinimumValue
+<i>198</i>&nbsp;     */
+<i>199</i>&nbsp;    public int getMinimumValueOverall() {
+<b class="fc"><i>200</i>&nbsp;        return getField().getMinimumValue();</b>
+<i>201</i>&nbsp;    }
+<i>202</i>&nbsp;
+<i>203</i>&nbsp;    /**
+<i>204</i>&nbsp;     * Gets the minimum value for this field given the current field values.
+<i>205</i>&nbsp;     * 
+<i>206</i>&nbsp;     * @return the minimum value
+<i>207</i>&nbsp;     * @see DateTimeField#getMinimumValue
+<i>208</i>&nbsp;     */
+<i>209</i>&nbsp;    public int getMinimumValue() {
+<b class="fc"><i>210</i>&nbsp;        return getField().getMinimumValue(getReadablePartial());</b>
+<i>211</i>&nbsp;    }
+<i>212</i>&nbsp;
+<i>213</i>&nbsp;    /**
+<i>214</i>&nbsp;     * Gets the maximum value for the field ignoring the current time.
+<i>215</i>&nbsp;     * 
+<i>216</i>&nbsp;     * @return the maximum value
+<i>217</i>&nbsp;     * @see DateTimeField#getMaximumValue
+<i>218</i>&nbsp;     */
+<i>219</i>&nbsp;    public int getMaximumValueOverall() {
+<b class="fc"><i>220</i>&nbsp;        return getField().getMaximumValue();</b>
+<i>221</i>&nbsp;    }
+<i>222</i>&nbsp;
+<i>223</i>&nbsp;    /**
+<i>224</i>&nbsp;     * Gets the maximum value for this field given the current field values.
+<i>225</i>&nbsp;     * 
+<i>226</i>&nbsp;     * @return the maximum value
+<i>227</i>&nbsp;     * @see DateTimeField#getMaximumValue
+<i>228</i>&nbsp;     */
+<i>229</i>&nbsp;    public int getMaximumValue() {
+<b class="fc"><i>230</i>&nbsp;        return getField().getMaximumValue(getReadablePartial());</b>
+<i>231</i>&nbsp;    }
+<i>232</i>&nbsp;
+<i>233</i>&nbsp;    //-----------------------------------------------------------------------
+<i>234</i>&nbsp;    /**
+<i>235</i>&nbsp;     * Gets the maximum text length for the field.
+<i>236</i>&nbsp;     * 
+<i>237</i>&nbsp;     * @param locale  optional locale to use for selecting a text symbol
+<i>238</i>&nbsp;     * @return the maximum length
+<i>239</i>&nbsp;     * @see DateTimeField#getMaximumTextLength
+<i>240</i>&nbsp;     */
+<i>241</i>&nbsp;    public int getMaximumTextLength(Locale locale) {
+<b class="fc"><i>242</i>&nbsp;        return getField().getMaximumTextLength(locale);</b>
+<i>243</i>&nbsp;    }
+<i>244</i>&nbsp;
+<i>245</i>&nbsp;    /**
+<i>246</i>&nbsp;     * Gets the maximum short text length for the field.
+<i>247</i>&nbsp;     * 
+<i>248</i>&nbsp;     * @param locale  optional locale to use for selecting a text symbol
+<i>249</i>&nbsp;     * @return the maximum length
+<i>250</i>&nbsp;     * @see DateTimeField#getMaximumShortTextLength
+<i>251</i>&nbsp;     */
+<i>252</i>&nbsp;    public int getMaximumShortTextLength(Locale locale) {
+<b class="fc"><i>253</i>&nbsp;        return getField().getMaximumShortTextLength(locale);</b>
+<i>254</i>&nbsp;    }
+<i>255</i>&nbsp;
+<i>256</i>&nbsp;    //-----------------------------------------------------------------------
+<i>257</i>&nbsp;    /**
+<i>258</i>&nbsp;     * Compare this field to the same field on another instant.
+<i>259</i>&nbsp;     * &lt;p&gt;
+<i>260</i>&nbsp;     * The comparison is based on the value of the same field type, irrespective
+<i>261</i>&nbsp;     * of any difference in chronology. Thus, if this property represents the
+<i>262</i>&nbsp;     * hourOfDay field, then the hourOfDay field of the other instant will be queried
+<i>263</i>&nbsp;     * whether in the same chronology or not.
+<i>264</i>&nbsp;     * 
+<i>265</i>&nbsp;     * @param instant  the instant to compare to
+<i>266</i>&nbsp;     * @return negative value if this is less, 0 if equal, or positive value if greater
+<i>267</i>&nbsp;     * @throws IllegalArgumentException if the instant is null or the instant
+<i>268</i>&nbsp;     *  doesn&#39;t support the field of this property
+<i>269</i>&nbsp;     */
+<i>270</i>&nbsp;    public int compareTo(ReadableInstant instant) {
+<b class="fc"><i>271</i>&nbsp;        if (instant == null) {</b>
+<b class="fc"><i>272</i>&nbsp;            throw new IllegalArgumentException(&quot;The instant must not be null&quot;);</b>
+<i>273</i>&nbsp;        }
+<b class="fc"><i>274</i>&nbsp;        int thisValue = get();</b>
+<b class="fc"><i>275</i>&nbsp;        int otherValue = instant.get(getFieldType());</b>
+<b class="fc"><i>276</i>&nbsp;        if (thisValue &lt; otherValue) {</b>
+<b class="fc"><i>277</i>&nbsp;            return -1;</b>
+<b class="fc"><i>278</i>&nbsp;        } else if (thisValue &gt; otherValue) {</b>
+<b class="fc"><i>279</i>&nbsp;            return 1;</b>
+<i>280</i>&nbsp;        } else {
+<b class="fc"><i>281</i>&nbsp;            return 0;</b>
+<i>282</i>&nbsp;        }
+<i>283</i>&nbsp;    }
+<i>284</i>&nbsp;
+<i>285</i>&nbsp;    /**
+<i>286</i>&nbsp;     * Compare this field to the same field on another partial instant.
+<i>287</i>&nbsp;     * &lt;p&gt;
+<i>288</i>&nbsp;     * The comparison is based on the value of the same field type, irrespective
+<i>289</i>&nbsp;     * of any difference in chronology. Thus, if this property represents the
+<i>290</i>&nbsp;     * hourOfDay field, then the hourOfDay field of the other partial will be queried
+<i>291</i>&nbsp;     * whether in the same chronology or not.
+<i>292</i>&nbsp;     * 
+<i>293</i>&nbsp;     * @param partial  the partial to compare to
+<i>294</i>&nbsp;     * @return negative value if this is less, 0 if equal, or positive value if greater
+<i>295</i>&nbsp;     * @throws IllegalArgumentException if the instant is null
+<i>296</i>&nbsp;     * @throws IllegalArgumentException if the field of this property cannot be queried
+<i>297</i>&nbsp;     *  on the specified instant
+<i>298</i>&nbsp;     */
+<i>299</i>&nbsp;    public int compareTo(ReadablePartial partial) {
+<b class="fc"><i>300</i>&nbsp;        if (partial == null) {</b>
+<b class="fc"><i>301</i>&nbsp;            throw new IllegalArgumentException(&quot;The instant must not be null&quot;);</b>
+<i>302</i>&nbsp;        }
+<b class="fc"><i>303</i>&nbsp;        int thisValue = get();</b>
+<b class="fc"><i>304</i>&nbsp;        int otherValue = partial.get(getFieldType());</b>
+<b class="fc"><i>305</i>&nbsp;        if (thisValue &lt; otherValue) {</b>
+<b class="fc"><i>306</i>&nbsp;            return -1;</b>
+<b class="fc"><i>307</i>&nbsp;        } else if (thisValue &gt; otherValue) {</b>
+<b class="fc"><i>308</i>&nbsp;            return 1;</b>
+<i>309</i>&nbsp;        } else {
+<b class="fc"><i>310</i>&nbsp;            return 0;</b>
+<i>311</i>&nbsp;        }
+<i>312</i>&nbsp;    }
+<i>313</i>&nbsp;
+<i>314</i>&nbsp;    //-----------------------------------------------------------------------
+<i>315</i>&nbsp;    /**
+<i>316</i>&nbsp;     * Compares this property to another.
+<i>317</i>&nbsp;     * 
+<i>318</i>&nbsp;     * @param object  the object to compare to
+<i>319</i>&nbsp;     * @return true if equal
+<i>320</i>&nbsp;     */
+<i>321</i>&nbsp;    public boolean equals(Object object) {
+<b class="fc"><i>322</i>&nbsp;        if (this == object) {</b>
+<b class="fc"><i>323</i>&nbsp;            return true;</b>
+<i>324</i>&nbsp;        }
+<b class="fc"><i>325</i>&nbsp;        if (object instanceof AbstractPartialFieldProperty == false) {</b>
+<b class="fc"><i>326</i>&nbsp;            return false;</b>
+<i>327</i>&nbsp;        }
+<b class="fc"><i>328</i>&nbsp;        AbstractPartialFieldProperty other = (AbstractPartialFieldProperty) object;</b>
+<b class="fc"><i>329</i>&nbsp;        return</b>
+<b class="fc"><i>330</i>&nbsp;            get() == other.get() &amp;&amp;</b>
+<b class="fc"><i>331</i>&nbsp;            getFieldType() == other.getFieldType() &amp;&amp;</b>
+<b class="fc"><i>332</i>&nbsp;            FieldUtils.equals(getReadablePartial().getChronology(), other.getReadablePartial().getChronology());</b>
+<i>333</i>&nbsp;    }
+<i>334</i>&nbsp;
+<i>335</i>&nbsp;    //-----------------------------------------------------------------------
+<i>336</i>&nbsp;    /**
+<i>337</i>&nbsp;     * Gets a suitable hashcode for the object.
+<i>338</i>&nbsp;     * 
+<i>339</i>&nbsp;     * @return the hashcode
+<i>340</i>&nbsp;     * @since 1.3
+<i>341</i>&nbsp;     */
+<i>342</i>&nbsp;    public int hashCode() {
+<b class="fc"><i>343</i>&nbsp;        int hash = 19;</b>
+<b class="fc"><i>344</i>&nbsp;        hash = 13 * hash + get();</b>
+<b class="fc"><i>345</i>&nbsp;        hash = 13 * hash + getFieldType().hashCode();</b>
+<b class="fc"><i>346</i>&nbsp;        hash = 13 * hash + getReadablePartial().getChronology().hashCode();</b>
+<b class="fc"><i>347</i>&nbsp;        return hash;</b>
+<i>348</i>&nbsp;    }
+<i>349</i>&nbsp;
+<i>350</i>&nbsp;    //-----------------------------------------------------------------------
+<i>351</i>&nbsp;    /**
+<i>352</i>&nbsp;     * Output a debugging string.
+<i>353</i>&nbsp;     * 
+<i>354</i>&nbsp;     * @return debugging string
+<i>355</i>&nbsp;     */
+<i>356</i>&nbsp;    public String toString() {
+<b class="fc"><i>357</i>&nbsp;        return &quot;Property[&quot; + getName() + &quot;]&quot;;</b>
+<i>358</i>&nbsp;    }
+<i>359</i>&nbsp;
+<i>360</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

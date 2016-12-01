@@ -1,0 +1,199 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: ReadableDuration</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time</a> ]
+</div>
+
+<h1>Coverage Summary for Class: ReadableDuration (org.joda.time)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+</tr>
+<tr>
+  <td class="name">ReadableDuration</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2009 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;/**
+<i>19</i>&nbsp; * Defines an exact duration of time in milliseconds.
+<i>20</i>&nbsp; * &lt;p&gt;
+<i>21</i>&nbsp; * The implementation of this interface may be mutable or immutable. This
+<i>22</i>&nbsp; * interface only gives access to retrieve data, never to change it.
+<i>23</i>&nbsp; * &lt;p&gt;
+<i>24</i>&nbsp; * Methods that are passed a duration as a parameter will treat &lt;code&gt;null&lt;/code&gt;
+<i>25</i>&nbsp; * as a zero length duration.
+<i>26</i>&nbsp; * &lt;p&gt;
+<i>27</i>&nbsp; * The {@code compareTo} method is no longer defined in this class in version 2.0.
+<i>28</i>&nbsp; * Instead, the definition is simply inherited from the {@code Comparable} interface.
+<i>29</i>&nbsp; * This approach is necessary to preserve binary compatibility.
+<i>30</i>&nbsp; * The definition of the comparison is ascending order by millisecond duration.
+<i>31</i>&nbsp; * Implementors are recommended to extend {@code AbstractInstant} instead of this interface.
+<i>32</i>&nbsp; *
+<i>33</i>&nbsp; * @see ReadableInterval
+<i>34</i>&nbsp; * @see ReadablePeriod
+<i>35</i>&nbsp; * @author Brian S O&#39;Neill
+<i>36</i>&nbsp; * @author Stephen Colebourne
+<i>37</i>&nbsp; * @since 1.0
+<i>38</i>&nbsp; */
+<i>39</i>&nbsp;public interface ReadableDuration extends Comparable&lt;ReadableDuration&gt; {
+<i>40</i>&nbsp;
+<i>41</i>&nbsp;    /**
+<i>42</i>&nbsp;     * Gets the total length of this duration in milliseconds.
+<i>43</i>&nbsp;     *
+<i>44</i>&nbsp;     * @return the total length of the time duration in milliseconds.
+<i>45</i>&nbsp;     */
+<i>46</i>&nbsp;    long getMillis();
+<i>47</i>&nbsp;
+<i>48</i>&nbsp;    //-----------------------------------------------------------------------
+<i>49</i>&nbsp;    /**
+<i>50</i>&nbsp;     * Get this duration as an immutable &lt;code&gt;Duration&lt;/code&gt; object.
+<i>51</i>&nbsp;     * &lt;p&gt;
+<i>52</i>&nbsp;     * This will either typecast this instance, or create a new &lt;code&gt;Duration&lt;/code&gt;.
+<i>53</i>&nbsp;     * 
+<i>54</i>&nbsp;     * @return a Duration created using the millisecond duration from this instance
+<i>55</i>&nbsp;     */
+<i>56</i>&nbsp;    Duration toDuration();
+<i>57</i>&nbsp;
+<i>58</i>&nbsp;    //-----------------------------------------------------------------------
+<i>59</i>&nbsp;    /**
+<i>60</i>&nbsp;     * Converts this duration to a Period instance using the standard period type
+<i>61</i>&nbsp;     * and the ISO chronology.
+<i>62</i>&nbsp;     * &lt;p&gt;
+<i>63</i>&nbsp;     * Only precise fields in the period type will be used. Thus, only the hour,
+<i>64</i>&nbsp;     * minute, second and millisecond fields on the period will be used.
+<i>65</i>&nbsp;     * The year, month, week and day fields will not be populated.
+<i>66</i>&nbsp;     * &lt;p&gt;
+<i>67</i>&nbsp;     * If the duration is small, less than one day, then this method will perform
+<i>68</i>&nbsp;     * as you might expect and split the fields evenly.
+<i>69</i>&nbsp;     * If the duration is larger than one day then all the remaining duration will
+<i>70</i>&nbsp;     * be stored in the largest available field, hours in this case.
+<i>71</i>&nbsp;     * &lt;p&gt;
+<i>72</i>&nbsp;     * For example, a duration effectively equal to (365 + 60 + 5) days will be
+<i>73</i>&nbsp;     * converted to ((365 + 60 + 5) * 24) hours by this constructor.
+<i>74</i>&nbsp;     * &lt;p&gt;
+<i>75</i>&nbsp;     * For more control over the conversion process, you must pair the duration with
+<i>76</i>&nbsp;     * an instant, see {@link Period#Period(ReadableInstant,ReadableDuration)}.
+<i>77</i>&nbsp;     * 
+<i>78</i>&nbsp;     * @return a Period created using the millisecond duration from this instance
+<i>79</i>&nbsp;     */
+<i>80</i>&nbsp;    Period toPeriod();
+<i>81</i>&nbsp;
+<i>82</i>&nbsp;    //-----------------------------------------------------------------------
+<i>83</i>&nbsp;    // Method is no longer defined here as that would break generic backwards compatibility
+<i>84</i>&nbsp;//    /**
+<i>85</i>&nbsp;//     * Compares this duration with the specified duration based on length.
+<i>86</i>&nbsp;//     *
+<i>87</i>&nbsp;//     * @param obj  a duration to check against
+<i>88</i>&nbsp;//     * @return negative value if this is less, 0 if equal, or positive value if greater
+<i>89</i>&nbsp;//     * @throws NullPointerException if the object is null
+<i>90</i>&nbsp;//     * @throws ClassCastException if the given object is not supported
+<i>91</i>&nbsp;//     */
+<i>92</i>&nbsp;//    int compareTo(ReadableDuration obj);
+<i>93</i>&nbsp;
+<i>94</i>&nbsp;    /**
+<i>95</i>&nbsp;     * Is the length of this duration equal to the duration passed in.
+<i>96</i>&nbsp;     *
+<i>97</i>&nbsp;     * @param duration  another duration to compare to, null means zero milliseconds
+<i>98</i>&nbsp;     * @return true if this duration is equal to the duration passed in
+<i>99</i>&nbsp;     */
+<i>100</i>&nbsp;    boolean isEqual(ReadableDuration duration);
+<i>101</i>&nbsp;
+<i>102</i>&nbsp;    /**
+<i>103</i>&nbsp;     * Is the length of this duration longer than the duration passed in.
+<i>104</i>&nbsp;     *
+<i>105</i>&nbsp;     * @param duration  another duration to compare to, null means zero milliseconds
+<i>106</i>&nbsp;     * @return true if this duration is greater than the duration passed in
+<i>107</i>&nbsp;     */
+<i>108</i>&nbsp;    boolean isLongerThan(ReadableDuration duration);
+<i>109</i>&nbsp;
+<i>110</i>&nbsp;    /**
+<i>111</i>&nbsp;     * Is the length of this duration shorter than the duration passed in.
+<i>112</i>&nbsp;     *
+<i>113</i>&nbsp;     * @param duration  another duration to compare to, null means zero milliseconds
+<i>114</i>&nbsp;     * @return true if this duration is less than the duration passed in
+<i>115</i>&nbsp;     */
+<i>116</i>&nbsp;    boolean isShorterThan(ReadableDuration duration);
+<i>117</i>&nbsp;
+<i>118</i>&nbsp;    //-----------------------------------------------------------------------
+<i>119</i>&nbsp;    /**
+<i>120</i>&nbsp;     * Compares this object with the specified object for equality based
+<i>121</i>&nbsp;     * on the millisecond length. All ReadableDuration instances are accepted.
+<i>122</i>&nbsp;     *
+<i>123</i>&nbsp;     * @param readableDuration  a readable duration to check against
+<i>124</i>&nbsp;     * @return true if the length of the duration is equal
+<i>125</i>&nbsp;     */
+<i>126</i>&nbsp;    boolean equals(Object readableDuration);
+<i>127</i>&nbsp;
+<i>128</i>&nbsp;    /**
+<i>129</i>&nbsp;     * Gets a hash code for the duration that is compatable with the 
+<i>130</i>&nbsp;     * equals method.
+<i>131</i>&nbsp;     * The following formula must be used:
+<i>132</i>&nbsp;     * &lt;pre&gt;
+<i>133</i>&nbsp;     *  long len = getMillis();
+<i>134</i>&nbsp;     *  return (int) (len ^ (len &gt;&gt;&gt; 32));
+<i>135</i>&nbsp;     * &lt;/pre&gt;
+<i>136</i>&nbsp;     *
+<i>137</i>&nbsp;     * @return a hash code
+<i>138</i>&nbsp;     */
+<i>139</i>&nbsp;    int hashCode();
+<i>140</i>&nbsp;
+<i>141</i>&nbsp;    //-----------------------------------------------------------------------
+<i>142</i>&nbsp;    /**
+<i>143</i>&nbsp;     * Gets the value as a String in the ISO8601 duration format using hours,
+<i>144</i>&nbsp;     * minutes and seconds (including fractional milliseconds).
+<i>145</i>&nbsp;     * &lt;p&gt;
+<i>146</i>&nbsp;     * For example, &quot;PT6H3M7S&quot; represents 6 hours, 3 minutes, 7 seconds.
+<i>147</i>&nbsp;     *
+<i>148</i>&nbsp;     * @return the value as an ISO8601 string
+<i>149</i>&nbsp;     */
+<i>150</i>&nbsp;    String toString();
+<i>151</i>&nbsp;
+<i>152</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,119 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: InstantConverter</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time.convert</a> ]
+</div>
+
+<h1>Coverage Summary for Class: InstantConverter (org.joda.time.convert)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+</tr>
+<tr>
+  <td class="name">InstantConverter</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2005 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time.convert;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;import org.joda.time.Chronology;
+<i>19</i>&nbsp;import org.joda.time.DateTimeZone;
+<i>20</i>&nbsp;
+<i>21</i>&nbsp;/**
+<i>22</i>&nbsp; * InstantConverter defines how an object is converted to milliseconds/chronology.
+<i>23</i>&nbsp; * &lt;p&gt;
+<i>24</i>&nbsp; * The two methods in this interface must be called in order, as the
+<i>25</i>&nbsp; * &lt;code&gt;getInstantMillis&lt;/code&gt; method relies on the result of the
+<i>26</i>&nbsp; * &lt;code&gt;getChronology&lt;/code&gt; method being passed in.
+<i>27</i>&nbsp; *
+<i>28</i>&nbsp; * @author Stephen Colebourne
+<i>29</i>&nbsp; * @since 1.0
+<i>30</i>&nbsp; */
+<i>31</i>&nbsp;public interface InstantConverter extends Converter {
+<i>32</i>&nbsp;
+<i>33</i>&nbsp;    /**
+<i>34</i>&nbsp;     * Extracts the chronology from an object of this converter&#39;s type
+<i>35</i>&nbsp;     * where the time zone is specified.
+<i>36</i>&nbsp;     * 
+<i>37</i>&nbsp;     * @param object  the object to convert
+<i>38</i>&nbsp;     * @param zone  the specified zone to use, null means default zone
+<i>39</i>&nbsp;     * @return the chronology, never null
+<i>40</i>&nbsp;     * @throws ClassCastException if the object is invalid
+<i>41</i>&nbsp;     */
+<i>42</i>&nbsp;    Chronology getChronology(Object object, DateTimeZone zone);
+<i>43</i>&nbsp;
+<i>44</i>&nbsp;    /**
+<i>45</i>&nbsp;     * Extracts the chronology from an object of this converter&#39;s type
+<i>46</i>&nbsp;     * where the chronology may be specified.
+<i>47</i>&nbsp;     * &lt;p&gt;
+<i>48</i>&nbsp;     * If the chronology is non-null it should be used. If it is null, then the
+<i>49</i>&nbsp;     * object should be queried, and if it has no chronology then ISO default is used.
+<i>50</i>&nbsp;     * 
+<i>51</i>&nbsp;     * @param object  the object to convert
+<i>52</i>&nbsp;     * @param chrono  the chronology to use, null means use object
+<i>53</i>&nbsp;     * @return the chronology, never null
+<i>54</i>&nbsp;     * @throws ClassCastException if the object is invalid
+<i>55</i>&nbsp;     */
+<i>56</i>&nbsp;    Chronology getChronology(Object object, Chronology chrono);
+<i>57</i>&nbsp;
+<i>58</i>&nbsp;    //-----------------------------------------------------------------------
+<i>59</i>&nbsp;    /**
+<i>60</i>&nbsp;     * Extracts the millis from an object of this converter&#39;s type.
+<i>61</i>&nbsp;     * &lt;p&gt;
+<i>62</i>&nbsp;     * The chronology passed in is the result of the call to &lt;code&gt;getChronology&lt;/code&gt;.
+<i>63</i>&nbsp;     * 
+<i>64</i>&nbsp;     * @param object  the object to convert
+<i>65</i>&nbsp;     * @param chrono  the chronology to use, which is the non-null result of getChronology()
+<i>66</i>&nbsp;     * @return the millisecond instant
+<i>67</i>&nbsp;     * @throws ClassCastException if the object is invalid
+<i>68</i>&nbsp;     * @throws IllegalArgumentException if object conversion fails
+<i>69</i>&nbsp;     */
+<i>70</i>&nbsp;    long getInstantMillis(Object object, Chronology chrono);
+<i>71</i>&nbsp;
+<i>72</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

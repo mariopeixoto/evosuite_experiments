@@ -1,0 +1,1337 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: TimeOfDay</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time</a> ]
+</div>
+
+<h1>Coverage Summary for Class: TimeOfDay (org.joda.time)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">TimeOfDay</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (55/ 55)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (131/ 131)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">TimeOfDay$Property</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (13/ 13)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (26/ 26)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (68/ 68)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (157/ 157)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2011 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;import java.io.Serializable;
+<i>19</i>&nbsp;import java.util.Calendar;
+<i>20</i>&nbsp;import java.util.Date;
+<i>21</i>&nbsp;import java.util.Locale;
+<i>22</i>&nbsp;
+<i>23</i>&nbsp;import org.joda.time.base.BasePartial;
+<i>24</i>&nbsp;import org.joda.time.chrono.ISOChronology;
+<i>25</i>&nbsp;import org.joda.time.field.AbstractPartialFieldProperty;
+<i>26</i>&nbsp;import org.joda.time.field.FieldUtils;
+<i>27</i>&nbsp;import org.joda.time.format.ISODateTimeFormat;
+<i>28</i>&nbsp;
+<i>29</i>&nbsp;/**
+<i>30</i>&nbsp; * TimeOfDay is an immutable partial supporting the hour, minute, second
+<i>31</i>&nbsp; * and millisecond fields.
+<i>32</i>&nbsp; * &lt;p&gt;
+<i>33</i>&nbsp; * NOTE: This class only supports the four fields listed above. Thus, you
+<i>34</i>&nbsp; * cannot query the millisOfDay or secondOfDay fields for example.
+<i>35</i>&nbsp; * The new &lt;code&gt;LocalTime&lt;/code&gt; class removes this restriction.
+<i>36</i>&nbsp; * &lt;p&gt;
+<i>37</i>&nbsp; * Calculations on TimeOfDay are performed using a {@link Chronology}.
+<i>38</i>&nbsp; * This chronology is set to be in the UTC time zone for all calculations.
+<i>39</i>&nbsp; * &lt;p&gt;
+<i>40</i>&nbsp; * Each individual field can be queried in two ways:
+<i>41</i>&nbsp; * &lt;ul&gt;
+<i>42</i>&nbsp; * &lt;li&gt;&lt;code&gt;getHourOfDay()&lt;/code&gt;
+<i>43</i>&nbsp; * &lt;li&gt;&lt;code&gt;hourOfDay().get()&lt;/code&gt;
+<i>44</i>&nbsp; * &lt;/ul&gt;
+<i>45</i>&nbsp; * The second technique also provides access to other useful methods on the
+<i>46</i>&nbsp; * field:
+<i>47</i>&nbsp; * &lt;ul&gt;
+<i>48</i>&nbsp; * &lt;li&gt;numeric value - &lt;code&gt;hourOfDay().get()&lt;/code&gt;
+<i>49</i>&nbsp; * &lt;li&gt;text value - &lt;code&gt;hourOfDay().getAsText()&lt;/code&gt;
+<i>50</i>&nbsp; * &lt;li&gt;short text value - &lt;code&gt;hourOfDay().getAsShortText()&lt;/code&gt;
+<i>51</i>&nbsp; * &lt;li&gt;maximum/minimum values - &lt;code&gt;hourOfDay().getMaximumValue()&lt;/code&gt;
+<i>52</i>&nbsp; * &lt;li&gt;add/subtract - &lt;code&gt;hourOfDay().addToCopy()&lt;/code&gt;
+<i>53</i>&nbsp; * &lt;li&gt;set - &lt;code&gt;hourOfDay().setCopy()&lt;/code&gt;
+<i>54</i>&nbsp; * &lt;/ul&gt;
+<i>55</i>&nbsp; * &lt;p&gt;
+<i>56</i>&nbsp; * TimeOfDay is thread-safe and immutable, provided that the Chronology is as well.
+<i>57</i>&nbsp; * All standard Chronology classes supplied are thread-safe and immutable.
+<i>58</i>&nbsp; *
+<i>59</i>&nbsp; * @author Stephen Colebourne
+<i>60</i>&nbsp; * @author Brian S O&#39;Neill
+<i>61</i>&nbsp; * @since 1.0
+<i>62</i>&nbsp; * @deprecated Use LocalTime which has a much better internal implementation and
+<i>63</i>&nbsp; *  has been available since 1.3
+<i>64</i>&nbsp; */
+<i>65</i>&nbsp;@Deprecated
+<i>66</i>&nbsp;public final class TimeOfDay
+<i>67</i>&nbsp;        extends BasePartial
+<i>68</i>&nbsp;        implements ReadablePartial, Serializable {
+<i>69</i>&nbsp;    // NOTE: No toDateTime(YearMonthDay) as semantics are confusing when
+<i>70</i>&nbsp;    // different chronologies
+<i>71</i>&nbsp;
+<i>72</i>&nbsp;    /** Serialization version */
+<i>73</i>&nbsp;    private static final long serialVersionUID = 3633353405803318660L;
+<i>74</i>&nbsp;    /** The singleton set of field types */
+<b class="fc"><i>75</i>&nbsp;    private static final DateTimeFieldType[] FIELD_TYPES = new DateTimeFieldType[] {</b>
+<b class="fc"><i>76</i>&nbsp;        DateTimeFieldType.hourOfDay(),</b>
+<b class="fc"><i>77</i>&nbsp;        DateTimeFieldType.minuteOfHour(),</b>
+<b class="fc"><i>78</i>&nbsp;        DateTimeFieldType.secondOfMinute(),</b>
+<b class="fc"><i>79</i>&nbsp;        DateTimeFieldType.millisOfSecond(),</b>
+<i>80</i>&nbsp;    };
+<i>81</i>&nbsp;
+<i>82</i>&nbsp;    /** Constant for midnight. */
+<b class="fc"><i>83</i>&nbsp;    public static final TimeOfDay MIDNIGHT = new TimeOfDay(0, 0, 0, 0);</b>
+<i>84</i>&nbsp;
+<i>85</i>&nbsp;    /** The index of the hourOfDay field in the field array */
+<i>86</i>&nbsp;    public static final int HOUR_OF_DAY = 0;
+<i>87</i>&nbsp;    /** The index of the minuteOfHour field in the field array */
+<i>88</i>&nbsp;    public static final int MINUTE_OF_HOUR = 1;
+<i>89</i>&nbsp;    /** The index of the secondOfMinute field in the field array */
+<i>90</i>&nbsp;    public static final int SECOND_OF_MINUTE = 2;
+<i>91</i>&nbsp;    /** The index of the millisOfSecond field in the field array */
+<i>92</i>&nbsp;    public static final int MILLIS_OF_SECOND = 3;
+<i>93</i>&nbsp;
+<i>94</i>&nbsp;    //-----------------------------------------------------------------------
+<i>95</i>&nbsp;    /**
+<i>96</i>&nbsp;     * Constructs a TimeOfDay from a &lt;code&gt;java.util.Calendar&lt;/code&gt;
+<i>97</i>&nbsp;     * using exactly the same field values avoiding any time zone effects.
+<i>98</i>&nbsp;     * &lt;p&gt;
+<i>99</i>&nbsp;     * Each field is queried from the Calendar and assigned to the TimeOfDay.
+<i>100</i>&nbsp;     * This is useful to ensure that the field values are the same in the
+<i>101</i>&nbsp;     * created TimeOfDay no matter what the time zone is. For example, if
+<i>102</i>&nbsp;     * the Calendar states that the time is 04:29, then the created TimeOfDay
+<i>103</i>&nbsp;     * will always have the time 04:29 irrespective of time zone issues.
+<i>104</i>&nbsp;     * &lt;p&gt;
+<i>105</i>&nbsp;     * This factory method ignores the type of the calendar and always
+<i>106</i>&nbsp;     * creates a TimeOfDay with ISO chronology.
+<i>107</i>&nbsp;     *
+<i>108</i>&nbsp;     * @param calendar  the Calendar to extract fields from
+<i>109</i>&nbsp;     * @return the created TimeOfDay
+<i>110</i>&nbsp;     * @throws IllegalArgumentException if the calendar is null
+<i>111</i>&nbsp;     * @throws IllegalArgumentException if the time is invalid for the ISO chronology
+<i>112</i>&nbsp;     * @since 1.2
+<i>113</i>&nbsp;     */
+<i>114</i>&nbsp;    public static TimeOfDay fromCalendarFields(Calendar calendar) {
+<b class="fc"><i>115</i>&nbsp;        if (calendar == null) {</b>
+<b class="fc"><i>116</i>&nbsp;            throw new IllegalArgumentException(&quot;The calendar must not be null&quot;);</b>
+<i>117</i>&nbsp;        }
+<b class="fc"><i>118</i>&nbsp;        return new TimeOfDay(</b>
+<b class="fc"><i>119</i>&nbsp;            calendar.get(Calendar.HOUR_OF_DAY),</b>
+<b class="fc"><i>120</i>&nbsp;            calendar.get(Calendar.MINUTE),</b>
+<b class="fc"><i>121</i>&nbsp;            calendar.get(Calendar.SECOND),</b>
+<b class="fc"><i>122</i>&nbsp;            calendar.get(Calendar.MILLISECOND)</b>
+<i>123</i>&nbsp;        );
+<i>124</i>&nbsp;    }
+<i>125</i>&nbsp;
+<i>126</i>&nbsp;    /**
+<i>127</i>&nbsp;     * Constructs a TimeOfDay from a &lt;code&gt;java.util.Date&lt;/code&gt;
+<i>128</i>&nbsp;     * using exactly the same field values avoiding any time zone effects.
+<i>129</i>&nbsp;     * &lt;p&gt;
+<i>130</i>&nbsp;     * Each field is queried from the Date and assigned to the TimeOfDay.
+<i>131</i>&nbsp;     * This is useful to ensure that the field values are the same in the
+<i>132</i>&nbsp;     * created TimeOfDay no matter what the time zone is. For example, if
+<i>133</i>&nbsp;     * the Calendar states that the time is 04:29, then the created TimeOfDay
+<i>134</i>&nbsp;     * will always have the time 04:29 irrespective of time zone issues.
+<i>135</i>&nbsp;     * &lt;p&gt;
+<i>136</i>&nbsp;     * This factory method always creates a TimeOfDay with ISO chronology.
+<i>137</i>&nbsp;     *
+<i>138</i>&nbsp;     * @param date  the Date to extract fields from
+<i>139</i>&nbsp;     * @return the created TimeOfDay
+<i>140</i>&nbsp;     * @throws IllegalArgumentException if the calendar is null
+<i>141</i>&nbsp;     * @throws IllegalArgumentException if the date is invalid for the ISO chronology
+<i>142</i>&nbsp;     * @since 1.2
+<i>143</i>&nbsp;     */
+<i>144</i>&nbsp;    public static TimeOfDay fromDateFields(Date date) {
+<b class="fc"><i>145</i>&nbsp;        if (date == null) {</b>
+<b class="fc"><i>146</i>&nbsp;            throw new IllegalArgumentException(&quot;The date must not be null&quot;);</b>
+<i>147</i>&nbsp;        }
+<b class="fc"><i>148</i>&nbsp;        return new TimeOfDay(</b>
+<b class="fc"><i>149</i>&nbsp;            date.getHours(),</b>
+<b class="fc"><i>150</i>&nbsp;            date.getMinutes(),</b>
+<b class="fc"><i>151</i>&nbsp;            date.getSeconds(),</b>
+<b class="fc"><i>152</i>&nbsp;            (((int) (date.getTime() % 1000)) + 1000) % 1000</b>
+<i>153</i>&nbsp;        );
+<i>154</i>&nbsp;    }
+<i>155</i>&nbsp;
+<i>156</i>&nbsp;    //-----------------------------------------------------------------------
+<i>157</i>&nbsp;    /**
+<i>158</i>&nbsp;     * Constructs a TimeOfDay from the specified millis of day using the
+<i>159</i>&nbsp;     * ISO chronology.
+<i>160</i>&nbsp;     * &lt;p&gt;
+<i>161</i>&nbsp;     * The millisOfDay value may exceed the number of millis in one day,
+<i>162</i>&nbsp;     * but additional days will be ignored.
+<i>163</i>&nbsp;     * This method uses the UTC time zone internally.
+<i>164</i>&nbsp;     *
+<i>165</i>&nbsp;     * @param millisOfDay  the number of milliseconds into a day to convert
+<i>166</i>&nbsp;     */
+<i>167</i>&nbsp;    public static TimeOfDay fromMillisOfDay(long millisOfDay) {
+<b class="fc"><i>168</i>&nbsp;        return fromMillisOfDay(millisOfDay, null);</b>
+<i>169</i>&nbsp;    }
+<i>170</i>&nbsp;
+<i>171</i>&nbsp;    /**
+<i>172</i>&nbsp;     * Constructs a TimeOfDay from the specified millis of day using the
+<i>173</i>&nbsp;     * specified chronology.
+<i>174</i>&nbsp;     * &lt;p&gt;
+<i>175</i>&nbsp;     * The millisOfDay value may exceed the number of millis in one day,
+<i>176</i>&nbsp;     * but additional days will be ignored.
+<i>177</i>&nbsp;     * This method uses the UTC time zone internally.
+<i>178</i>&nbsp;     *
+<i>179</i>&nbsp;     * @param millisOfDay  the number of milliseconds into a day to convert
+<i>180</i>&nbsp;     * @param chrono  the chronology, null means ISO chronology
+<i>181</i>&nbsp;     */
+<i>182</i>&nbsp;    public static TimeOfDay fromMillisOfDay(long millisOfDay, Chronology chrono) {
+<b class="fc"><i>183</i>&nbsp;        chrono = DateTimeUtils.getChronology(chrono);</b>
+<b class="fc"><i>184</i>&nbsp;        chrono = chrono.withUTC();</b>
+<b class="fc"><i>185</i>&nbsp;        return new TimeOfDay(millisOfDay, chrono);</b>
+<i>186</i>&nbsp;    }
+<i>187</i>&nbsp;
+<i>188</i>&nbsp;    // Constructors
+<i>189</i>&nbsp;    //-----------------------------------------------------------------------
+<i>190</i>&nbsp;    /**
+<i>191</i>&nbsp;     * Constructs a TimeOfDay with the current time, using ISOChronology in
+<i>192</i>&nbsp;     * the default zone to extract the fields.
+<i>193</i>&nbsp;     * &lt;p&gt;
+<i>194</i>&nbsp;     * The constructor uses the default time zone, resulting in the local time
+<i>195</i>&nbsp;     * being initialised. Once the constructor is complete, all further calculations
+<i>196</i>&nbsp;     * are performed without reference to a timezone (by switching to UTC).
+<i>197</i>&nbsp;     */
+<i>198</i>&nbsp;    public TimeOfDay() {
+<b class="fc"><i>199</i>&nbsp;        super();</b>
+<b class="fc"><i>200</i>&nbsp;    }</b>
+<i>201</i>&nbsp;
+<i>202</i>&nbsp;    /**
+<i>203</i>&nbsp;     * Constructs a TimeOfDay with the current time, using ISOChronology in
+<i>204</i>&nbsp;     * the specified zone to extract the fields.
+<i>205</i>&nbsp;     * &lt;p&gt;
+<i>206</i>&nbsp;     * The constructor uses the specified time zone to obtain the current time.
+<i>207</i>&nbsp;     * Once the constructor is complete, all further calculations
+<i>208</i>&nbsp;     * are performed without reference to a timezone (by switching to UTC).
+<i>209</i>&nbsp;     * 
+<i>210</i>&nbsp;     * @param zone  the zone to use, null means default zone
+<i>211</i>&nbsp;     * @since 1.1
+<i>212</i>&nbsp;     */
+<i>213</i>&nbsp;    public TimeOfDay(DateTimeZone zone) {
+<b class="fc"><i>214</i>&nbsp;        super(ISOChronology.getInstance(zone));</b>
+<b class="fc"><i>215</i>&nbsp;    }</b>
+<i>216</i>&nbsp;
+<i>217</i>&nbsp;    /**
+<i>218</i>&nbsp;     * Constructs a TimeOfDay with the current time, using the specified chronology
+<i>219</i>&nbsp;     * and zone to extract the fields.
+<i>220</i>&nbsp;     * &lt;p&gt;
+<i>221</i>&nbsp;     * The constructor uses the time zone of the chronology specified.
+<i>222</i>&nbsp;     * Once the constructor is complete, all further calculations are performed
+<i>223</i>&nbsp;     * without reference to a timezone (by switching to UTC).
+<i>224</i>&nbsp;     *
+<i>225</i>&nbsp;     * @param chronology  the chronology, null means ISOChronology in the default zone
+<i>226</i>&nbsp;     */
+<i>227</i>&nbsp;    public TimeOfDay(Chronology chronology) {
+<b class="fc"><i>228</i>&nbsp;        super(chronology);</b>
+<b class="fc"><i>229</i>&nbsp;    }</b>
+<i>230</i>&nbsp;
+<i>231</i>&nbsp;    /**
+<i>232</i>&nbsp;     * Constructs a TimeOfDay extracting the partial fields from the specified
+<i>233</i>&nbsp;     * milliseconds using the ISOChronology in the default zone.
+<i>234</i>&nbsp;     * &lt;p&gt;
+<i>235</i>&nbsp;     * The constructor uses the default time zone, resulting in the local time
+<i>236</i>&nbsp;     * being initialised. Once the constructor is complete, all further calculations
+<i>237</i>&nbsp;     * are performed without reference to a timezone (by switching to UTC).
+<i>238</i>&nbsp;     *
+<i>239</i>&nbsp;     * @param instant  the milliseconds from 1970-01-01T00:00:00Z
+<i>240</i>&nbsp;     */
+<i>241</i>&nbsp;    public TimeOfDay(long instant) {
+<b class="fc"><i>242</i>&nbsp;        super(instant);</b>
+<b class="fc"><i>243</i>&nbsp;    }</b>
+<i>244</i>&nbsp;
+<i>245</i>&nbsp;    /**
+<i>246</i>&nbsp;     * Constructs a TimeOfDay extracting the partial fields from the specified
+<i>247</i>&nbsp;     * milliseconds using the chronology provided.
+<i>248</i>&nbsp;     * &lt;p&gt;
+<i>249</i>&nbsp;     * The constructor uses the time zone of the chronology specified.
+<i>250</i>&nbsp;     * Once the constructor is complete, all further calculations are performed
+<i>251</i>&nbsp;     * without reference to a timezone (by switching to UTC).
+<i>252</i>&nbsp;     *
+<i>253</i>&nbsp;     * @param instant  the milliseconds from 1970-01-01T00:00:00Z
+<i>254</i>&nbsp;     * @param chronology  the chronology, null means ISOChronology in the default zone
+<i>255</i>&nbsp;     */
+<i>256</i>&nbsp;    public TimeOfDay(long instant, Chronology chronology) {
+<b class="fc"><i>257</i>&nbsp;        super(instant, chronology);</b>
+<b class="fc"><i>258</i>&nbsp;    }</b>
+<i>259</i>&nbsp;
+<i>260</i>&nbsp;    /**
+<i>261</i>&nbsp;     * Constructs a TimeOfDay from an Object that represents a time.
+<i>262</i>&nbsp;     * &lt;p&gt;
+<i>263</i>&nbsp;     * The recognised object types are defined in
+<i>264</i>&nbsp;     * {@link org.joda.time.convert.ConverterManager ConverterManager} and
+<i>265</i>&nbsp;     * include ReadableInstant, String, Calendar and Date.
+<i>266</i>&nbsp;     * The String formats are described by {@link ISODateTimeFormat#timeParser()}.
+<i>267</i>&nbsp;     * &lt;p&gt;
+<i>268</i>&nbsp;     * The chronology used will be derived from the object, defaulting to ISO.
+<i>269</i>&nbsp;     * &lt;p&gt;
+<i>270</i>&nbsp;     * NOTE: Prior to v1.3 the string format was described by
+<i>271</i>&nbsp;     * {@link ISODateTimeFormat#dateTimeParser()}. Dates are now rejected.
+<i>272</i>&nbsp;     *
+<i>273</i>&nbsp;     * @param instant  the datetime object, null means now
+<i>274</i>&nbsp;     * @throws IllegalArgumentException if the instant is invalid
+<i>275</i>&nbsp;     */
+<i>276</i>&nbsp;    public TimeOfDay(Object instant) {
+<b class="fc"><i>277</i>&nbsp;        super(instant, null, ISODateTimeFormat.timeParser());</b>
+<b class="fc"><i>278</i>&nbsp;    }</b>
+<i>279</i>&nbsp;
+<i>280</i>&nbsp;    /**
+<i>281</i>&nbsp;     * Constructs a TimeOfDay from an Object that represents a time, using the
+<i>282</i>&nbsp;     * specified chronology.
+<i>283</i>&nbsp;     * &lt;p&gt;
+<i>284</i>&nbsp;     * The recognised object types are defined in
+<i>285</i>&nbsp;     * {@link org.joda.time.convert.ConverterManager ConverterManager} and
+<i>286</i>&nbsp;     * include ReadableInstant, String, Calendar and Date.
+<i>287</i>&nbsp;     * The String formats are described by {@link ISODateTimeFormat#timeParser()}.
+<i>288</i>&nbsp;     * &lt;p&gt;
+<i>289</i>&nbsp;     * The constructor uses the time zone of the chronology specified.
+<i>290</i>&nbsp;     * Once the constructor is complete, all further calculations are performed
+<i>291</i>&nbsp;     * without reference to a timezone (by switching to UTC).
+<i>292</i>&nbsp;     * The specified chronology overrides that of the object.
+<i>293</i>&nbsp;     * &lt;p&gt;
+<i>294</i>&nbsp;     * NOTE: Prior to v1.3 the string format was described by
+<i>295</i>&nbsp;     * {@link ISODateTimeFormat#dateTimeParser()}. Dates are now rejected.
+<i>296</i>&nbsp;     *
+<i>297</i>&nbsp;     * @param instant  the datetime object, null means now
+<i>298</i>&nbsp;     * @param chronology  the chronology, null means ISO default
+<i>299</i>&nbsp;     * @throws IllegalArgumentException if the instant is invalid
+<i>300</i>&nbsp;     */
+<i>301</i>&nbsp;    public TimeOfDay(Object instant, Chronology chronology) {
+<b class="fc"><i>302</i>&nbsp;        super(instant, DateTimeUtils.getChronology(chronology), ISODateTimeFormat.timeParser());</b>
+<b class="fc"><i>303</i>&nbsp;    }</b>
+<i>304</i>&nbsp;
+<i>305</i>&nbsp;    /**
+<i>306</i>&nbsp;     * Constructs a TimeOfDay with specified hour and minute and zero seconds and milliseconds
+<i>307</i>&nbsp;     * using &lt;code&gt;ISOChronology&lt;/code&gt; in the default zone.
+<i>308</i>&nbsp;     * &lt;p&gt;
+<i>309</i>&nbsp;     * The constructor uses the no time zone initialising the fields as provided.
+<i>310</i>&nbsp;     * Once the constructor is complete, all further calculations
+<i>311</i>&nbsp;     * are performed without reference to a timezone (by switching to UTC).
+<i>312</i>&nbsp;     *
+<i>313</i>&nbsp;     * @param hourOfDay  the hour of the day
+<i>314</i>&nbsp;     * @param minuteOfHour  the minute of the hour
+<i>315</i>&nbsp;     */
+<i>316</i>&nbsp;    public TimeOfDay(int hourOfDay, int minuteOfHour) {
+<b class="fc"><i>317</i>&nbsp;        this(hourOfDay, minuteOfHour, 0, 0, null);</b>
+<b class="fc"><i>318</i>&nbsp;    }</b>
+<i>319</i>&nbsp;
+<i>320</i>&nbsp;    /**
+<i>321</i>&nbsp;     * Constructs a TimeOfDay with specified hour and minute and zero seconds and milliseconds.
+<i>322</i>&nbsp;     * &lt;p&gt;
+<i>323</i>&nbsp;     * The constructor uses the time zone of the chronology specified.
+<i>324</i>&nbsp;     * Once the constructor is complete, all further calculations are performed
+<i>325</i>&nbsp;     * without reference to a timezone (by switching to UTC).
+<i>326</i>&nbsp;     *
+<i>327</i>&nbsp;     * @param hourOfDay  the hour of the day
+<i>328</i>&nbsp;     * @param minuteOfHour  the minute of the hour
+<i>329</i>&nbsp;     * @param chronology  the chronology, null means ISOChronology in the default zone
+<i>330</i>&nbsp;     */
+<i>331</i>&nbsp;    public TimeOfDay(int hourOfDay, int minuteOfHour, Chronology chronology) {
+<b class="fc"><i>332</i>&nbsp;        this(hourOfDay, minuteOfHour, 0, 0, chronology);</b>
+<b class="fc"><i>333</i>&nbsp;    }</b>
+<i>334</i>&nbsp;
+<i>335</i>&nbsp;    /**
+<i>336</i>&nbsp;     * Constructs a TimeOfDay with specified time field values and zero milliseconds
+<i>337</i>&nbsp;     * using &lt;code&gt;ISOChronology&lt;/code&gt; in the default zone.
+<i>338</i>&nbsp;     * &lt;p&gt;
+<i>339</i>&nbsp;     * The constructor uses the no time zone initialising the fields as provided.
+<i>340</i>&nbsp;     * Once the constructor is complete, all further calculations
+<i>341</i>&nbsp;     * are performed without reference to a timezone (by switching to UTC).
+<i>342</i>&nbsp;     *
+<i>343</i>&nbsp;     * @param hourOfDay  the hour of the day
+<i>344</i>&nbsp;     * @param minuteOfHour  the minute of the hour
+<i>345</i>&nbsp;     * @param secondOfMinute  the second of the minute
+<i>346</i>&nbsp;     */
+<i>347</i>&nbsp;    public TimeOfDay(int hourOfDay, int minuteOfHour, int secondOfMinute) {
+<b class="fc"><i>348</i>&nbsp;        this(hourOfDay, minuteOfHour, secondOfMinute, 0, null);</b>
+<b class="fc"><i>349</i>&nbsp;    }</b>
+<i>350</i>&nbsp;
+<i>351</i>&nbsp;    /**
+<i>352</i>&nbsp;     * Constructs a TimeOfDay with specified time field values and zero milliseconds.
+<i>353</i>&nbsp;     * &lt;p&gt;
+<i>354</i>&nbsp;     * The constructor uses the time zone of the chronology specified.
+<i>355</i>&nbsp;     * Once the constructor is complete, all further calculations are performed
+<i>356</i>&nbsp;     * without reference to a timezone (by switching to UTC).
+<i>357</i>&nbsp;     *
+<i>358</i>&nbsp;     * @param hourOfDay  the hour of the day
+<i>359</i>&nbsp;     * @param minuteOfHour  the minute of the hour
+<i>360</i>&nbsp;     * @param secondOfMinute  the second of the minute
+<i>361</i>&nbsp;     * @param chronology  the chronology, null means ISOChronology in the default zone
+<i>362</i>&nbsp;     */
+<i>363</i>&nbsp;    public TimeOfDay(int hourOfDay, int minuteOfHour, int secondOfMinute, Chronology chronology) {
+<b class="fc"><i>364</i>&nbsp;        this(hourOfDay, minuteOfHour, secondOfMinute, 0, chronology);</b>
+<b class="fc"><i>365</i>&nbsp;    }</b>
+<i>366</i>&nbsp;
+<i>367</i>&nbsp;    /**
+<i>368</i>&nbsp;     * Constructs a TimeOfDay with specified time field values using
+<i>369</i>&nbsp;     * &lt;code&gt;ISOChronology&lt;/code&gt; in the default zone.
+<i>370</i>&nbsp;     * &lt;p&gt;
+<i>371</i>&nbsp;     * The constructor uses the no time zone initialising the fields as provided.
+<i>372</i>&nbsp;     * Once the constructor is complete, all further calculations
+<i>373</i>&nbsp;     * are performed without reference to a timezone (by switching to UTC).
+<i>374</i>&nbsp;     *
+<i>375</i>&nbsp;     * @param hourOfDay  the hour of the day
+<i>376</i>&nbsp;     * @param minuteOfHour  the minute of the hour
+<i>377</i>&nbsp;     * @param secondOfMinute  the second of the minute
+<i>378</i>&nbsp;     * @param millisOfSecond  the millisecond of the second
+<i>379</i>&nbsp;     */
+<i>380</i>&nbsp;    public TimeOfDay(int hourOfDay, int minuteOfHour, int secondOfMinute, int millisOfSecond) {
+<b class="fc"><i>381</i>&nbsp;        this(hourOfDay, minuteOfHour, secondOfMinute, millisOfSecond, null);</b>
+<b class="fc"><i>382</i>&nbsp;    }</b>
+<i>383</i>&nbsp;
+<i>384</i>&nbsp;    /**
+<i>385</i>&nbsp;     * Constructs a TimeOfDay with specified time field values and chronology.
+<i>386</i>&nbsp;     * &lt;p&gt;
+<i>387</i>&nbsp;     * The constructor uses the time zone of the chronology specified.
+<i>388</i>&nbsp;     * Once the constructor is complete, all further calculations are performed
+<i>389</i>&nbsp;     * without reference to a timezone (by switching to UTC).
+<i>390</i>&nbsp;     *
+<i>391</i>&nbsp;     * @param hourOfDay  the hour of the day
+<i>392</i>&nbsp;     * @param minuteOfHour  the minute of the hour
+<i>393</i>&nbsp;     * @param secondOfMinute  the second of the minute
+<i>394</i>&nbsp;     * @param millisOfSecond  the millisecond of the second
+<i>395</i>&nbsp;     * @param chronology  the chronology, null means ISOChronology in the default zone
+<i>396</i>&nbsp;     */
+<i>397</i>&nbsp;    public TimeOfDay(int hourOfDay, int minuteOfHour,
+<i>398</i>&nbsp;            int secondOfMinute, int millisOfSecond, Chronology chronology) {
+<b class="fc"><i>399</i>&nbsp;        super(new int[] {hourOfDay, minuteOfHour, secondOfMinute, millisOfSecond}, chronology);</b>
+<b class="fc"><i>400</i>&nbsp;    }</b>
+<i>401</i>&nbsp;
+<i>402</i>&nbsp;    /**
+<i>403</i>&nbsp;     * Constructs a TimeOfDay with chronology from this instance and new values.
+<i>404</i>&nbsp;     *
+<i>405</i>&nbsp;     * @param partial  the partial to base this new instance on
+<i>406</i>&nbsp;     * @param values  the new set of values
+<i>407</i>&nbsp;     */
+<i>408</i>&nbsp;    TimeOfDay(TimeOfDay partial, int[] values) {
+<b class="fc"><i>409</i>&nbsp;        super(partial, values);</b>
+<b class="fc"><i>410</i>&nbsp;    }</b>
+<i>411</i>&nbsp;
+<i>412</i>&nbsp;    /**
+<i>413</i>&nbsp;     * Constructs a TimeOfDay with values from this instance and a new chronology.
+<i>414</i>&nbsp;     *
+<i>415</i>&nbsp;     * @param partial  the partial to base this new instance on
+<i>416</i>&nbsp;     * @param chrono  the new chronology
+<i>417</i>&nbsp;     */
+<i>418</i>&nbsp;    TimeOfDay(TimeOfDay partial, Chronology chrono) {
+<b class="fc"><i>419</i>&nbsp;        super(partial, chrono);</b>
+<b class="fc"><i>420</i>&nbsp;    }</b>
+<i>421</i>&nbsp;
+<i>422</i>&nbsp;    //-----------------------------------------------------------------------
+<i>423</i>&nbsp;    /**
+<i>424</i>&nbsp;     * Gets the number of fields in this partial.
+<i>425</i>&nbsp;     * 
+<i>426</i>&nbsp;     * @return the field count
+<i>427</i>&nbsp;     */
+<i>428</i>&nbsp;    public int size() {
+<b class="fc"><i>429</i>&nbsp;        return 4;</b>
+<i>430</i>&nbsp;    }
+<i>431</i>&nbsp;
+<i>432</i>&nbsp;    /**
+<i>433</i>&nbsp;     * Gets the field for a specific index in the chronology specified.
+<i>434</i>&nbsp;     * &lt;p&gt;
+<i>435</i>&nbsp;     * This method must not use any instance variables.
+<i>436</i>&nbsp;     * 
+<i>437</i>&nbsp;     * @param index  the index to retrieve
+<i>438</i>&nbsp;     * @param chrono  the chronology to use
+<i>439</i>&nbsp;     * @return the field
+<i>440</i>&nbsp;     */
+<i>441</i>&nbsp;    protected DateTimeField getField(int index, Chronology chrono) {
+<b class="fc"><i>442</i>&nbsp;        switch (index) {</b>
+<i>443</i>&nbsp;            case HOUR_OF_DAY:
+<b class="fc"><i>444</i>&nbsp;                return chrono.hourOfDay();</b>
+<i>445</i>&nbsp;            case MINUTE_OF_HOUR:
+<b class="fc"><i>446</i>&nbsp;                return chrono.minuteOfHour();</b>
+<i>447</i>&nbsp;            case SECOND_OF_MINUTE:
+<b class="fc"><i>448</i>&nbsp;                return chrono.secondOfMinute();</b>
+<i>449</i>&nbsp;            case MILLIS_OF_SECOND:
+<b class="fc"><i>450</i>&nbsp;                return chrono.millisOfSecond();</b>
+<i>451</i>&nbsp;            default:
+<b class="fc"><i>452</i>&nbsp;                throw new IndexOutOfBoundsException(&quot;Invalid index: &quot; + index);</b>
+<i>453</i>&nbsp;        }
+<i>454</i>&nbsp;    }
+<i>455</i>&nbsp;
+<i>456</i>&nbsp;    /**
+<i>457</i>&nbsp;     * Gets the field type at the specified index.
+<i>458</i>&nbsp;     *
+<i>459</i>&nbsp;     * @param index  the index to retrieve
+<i>460</i>&nbsp;     * @return the field at the specified index
+<i>461</i>&nbsp;     * @throws IndexOutOfBoundsException if the index is invalid
+<i>462</i>&nbsp;     */
+<i>463</i>&nbsp;    public DateTimeFieldType getFieldType(int index) {
+<b class="fc"><i>464</i>&nbsp;        return FIELD_TYPES[index];</b>
+<i>465</i>&nbsp;    }
+<i>466</i>&nbsp;
+<i>467</i>&nbsp;    /**
+<i>468</i>&nbsp;     * Gets an array of the field type of each of the fields that this partial supports.
+<i>469</i>&nbsp;     * &lt;p&gt;
+<i>470</i>&nbsp;     * The fields are returned largest to smallest, Hour, Minute, Second, Millis.
+<i>471</i>&nbsp;     *
+<i>472</i>&nbsp;     * @return the array of field types (cloned), largest to smallest
+<i>473</i>&nbsp;     */
+<i>474</i>&nbsp;    public DateTimeFieldType[] getFieldTypes() {
+<b class="fc"><i>475</i>&nbsp;        return (DateTimeFieldType[]) FIELD_TYPES.clone();</b>
+<i>476</i>&nbsp;    }
+<i>477</i>&nbsp;
+<i>478</i>&nbsp;    //-----------------------------------------------------------------------
+<i>479</i>&nbsp;    /**
+<i>480</i>&nbsp;     * Returns a copy of this time with the specified chronology.
+<i>481</i>&nbsp;     * This instance is immutable and unaffected by this method call.
+<i>482</i>&nbsp;     * &lt;p&gt;
+<i>483</i>&nbsp;     * This method retains the values of the fields, thus the result will
+<i>484</i>&nbsp;     * typically refer to a different instant.
+<i>485</i>&nbsp;     * &lt;p&gt;
+<i>486</i>&nbsp;     * The time zone of the specified chronology is ignored, as TimeOfDay
+<i>487</i>&nbsp;     * operates without a time zone.
+<i>488</i>&nbsp;     *
+<i>489</i>&nbsp;     * @param newChronology  the new chronology, null means ISO
+<i>490</i>&nbsp;     * @return a copy of this datetime with a different chronology
+<i>491</i>&nbsp;     * @throws IllegalArgumentException if the values are invalid for the new chronology
+<i>492</i>&nbsp;     */
+<i>493</i>&nbsp;    public TimeOfDay withChronologyRetainFields(Chronology newChronology) {
+<b class="fc"><i>494</i>&nbsp;        newChronology = DateTimeUtils.getChronology(newChronology);</b>
+<b class="fc"><i>495</i>&nbsp;        newChronology = newChronology.withUTC();</b>
+<b class="fc"><i>496</i>&nbsp;        if (newChronology == getChronology()) {</b>
+<b class="fc"><i>497</i>&nbsp;            return this;</b>
+<i>498</i>&nbsp;        } else {
+<b class="fc"><i>499</i>&nbsp;            TimeOfDay newTimeOfDay = new TimeOfDay(this, newChronology);</b>
+<b class="fc"><i>500</i>&nbsp;            newChronology.validate(newTimeOfDay, getValues());</b>
+<b class="fc"><i>501</i>&nbsp;            return newTimeOfDay;</b>
+<i>502</i>&nbsp;        }
+<i>503</i>&nbsp;    }
+<i>504</i>&nbsp;
+<i>505</i>&nbsp;    /**
+<i>506</i>&nbsp;     * Returns a copy of this time with the specified field set to a new value.
+<i>507</i>&nbsp;     * &lt;p&gt;
+<i>508</i>&nbsp;     * For example, if the field type is &lt;code&gt;minuteOfHour&lt;/code&gt; then the day
+<i>509</i>&nbsp;     * would be changed in the returned instance.
+<i>510</i>&nbsp;     * &lt;p&gt;
+<i>511</i>&nbsp;     * These three lines are equivalent:
+<i>512</i>&nbsp;     * &lt;pre&gt;
+<i>513</i>&nbsp;     * TimeOfDay updated = tod.withField(DateTimeFieldType.minuteOfHour(), 6);
+<i>514</i>&nbsp;     * TimeOfDay updated = tod.minuteOfHour().setCopy(6);
+<i>515</i>&nbsp;     * TimeOfDay updated = tod.property(DateTimeFieldType.minuteOfHour()).setCopy(6);
+<i>516</i>&nbsp;     * &lt;/pre&gt;
+<i>517</i>&nbsp;     *
+<i>518</i>&nbsp;     * @param fieldType  the field type to set, not null
+<i>519</i>&nbsp;     * @param value  the value to set
+<i>520</i>&nbsp;     * @return a copy of this instance with the field set
+<i>521</i>&nbsp;     * @throws IllegalArgumentException if the value is null or invalid
+<i>522</i>&nbsp;     */
+<i>523</i>&nbsp;    public TimeOfDay withField(DateTimeFieldType fieldType, int value) {
+<b class="fc"><i>524</i>&nbsp;        int index = indexOfSupported(fieldType);</b>
+<b class="fc"><i>525</i>&nbsp;        if (value == getValue(index)) {</b>
+<b class="fc"><i>526</i>&nbsp;            return this;</b>
+<i>527</i>&nbsp;        }
+<b class="fc"><i>528</i>&nbsp;        int[] newValues = getValues();</b>
+<b class="fc"><i>529</i>&nbsp;        newValues = getField(index).set(this, index, newValues, value);</b>
+<b class="fc"><i>530</i>&nbsp;        return new TimeOfDay(this, newValues);</b>
+<i>531</i>&nbsp;    }
+<i>532</i>&nbsp;
+<i>533</i>&nbsp;    /**
+<i>534</i>&nbsp;     * Returns a copy of this time with the value of the specified field increased,
+<i>535</i>&nbsp;     * wrapping to what would be a new day if required.
+<i>536</i>&nbsp;     * &lt;p&gt;
+<i>537</i>&nbsp;     * If the addition is zero, then &lt;code&gt;this&lt;/code&gt; is returned.
+<i>538</i>&nbsp;     * &lt;p&gt;
+<i>539</i>&nbsp;     * These three lines are equivalent:
+<i>540</i>&nbsp;     * &lt;pre&gt;
+<i>541</i>&nbsp;     * TimeOfDay added = tod.withFieldAdded(DurationFieldType.minutes(), 6);
+<i>542</i>&nbsp;     * TimeOfDay added = tod.plusMinutes(6);
+<i>543</i>&nbsp;     * TimeOfDay added = tod.minuteOfHour().addToCopy(6);
+<i>544</i>&nbsp;     * &lt;/pre&gt;
+<i>545</i>&nbsp;     * 
+<i>546</i>&nbsp;     * @param fieldType  the field type to add to, not null
+<i>547</i>&nbsp;     * @param amount  the amount to add
+<i>548</i>&nbsp;     * @return a copy of this instance with the field updated
+<i>549</i>&nbsp;     * @throws IllegalArgumentException if the value is null or invalid
+<i>550</i>&nbsp;     * @throws ArithmeticException if the new datetime exceeds the capacity
+<i>551</i>&nbsp;     */
+<i>552</i>&nbsp;    public TimeOfDay withFieldAdded(DurationFieldType fieldType, int amount) {
+<b class="fc"><i>553</i>&nbsp;        int index = indexOfSupported(fieldType);</b>
+<b class="fc"><i>554</i>&nbsp;        if (amount == 0) {</b>
+<b class="fc"><i>555</i>&nbsp;            return this;</b>
+<i>556</i>&nbsp;        }
+<b class="fc"><i>557</i>&nbsp;        int[] newValues = getValues();</b>
+<b class="fc"><i>558</i>&nbsp;        newValues = getField(index).addWrapPartial(this, index, newValues, amount);</b>
+<b class="fc"><i>559</i>&nbsp;        return new TimeOfDay(this, newValues);</b>
+<i>560</i>&nbsp;    }
+<i>561</i>&nbsp;
+<i>562</i>&nbsp;    /**
+<i>563</i>&nbsp;     * Returns a copy of this time with the specified period added,
+<i>564</i>&nbsp;     * wrapping to what would be a new day if required.
+<i>565</i>&nbsp;     * &lt;p&gt;
+<i>566</i>&nbsp;     * If the addition is zero, then &lt;code&gt;this&lt;/code&gt; is returned.
+<i>567</i>&nbsp;     * Fields in the period that aren&#39;t present in the partial are ignored.
+<i>568</i>&nbsp;     * &lt;p&gt;
+<i>569</i>&nbsp;     * This method is typically used to add multiple copies of complex
+<i>570</i>&nbsp;     * period instances. Adding one field is best achieved using methods
+<i>571</i>&nbsp;     * like {@link #withFieldAdded(DurationFieldType, int)}
+<i>572</i>&nbsp;     * or {@link #plusHours(int)}.
+<i>573</i>&nbsp;     * 
+<i>574</i>&nbsp;     * @param period  the period to add to this one, null means zero
+<i>575</i>&nbsp;     * @param scalar  the amount of times to add, such as -1 to subtract once
+<i>576</i>&nbsp;     * @return a copy of this instance with the period added
+<i>577</i>&nbsp;     * @throws ArithmeticException if the new datetime exceeds the capacity
+<i>578</i>&nbsp;     */
+<i>579</i>&nbsp;    public TimeOfDay withPeriodAdded(ReadablePeriod period, int scalar) {
+<b class="fc"><i>580</i>&nbsp;        if (period == null || scalar == 0) {</b>
+<b class="fc"><i>581</i>&nbsp;            return this;</b>
+<i>582</i>&nbsp;        }
+<b class="fc"><i>583</i>&nbsp;        int[] newValues = getValues();</b>
+<b class="fc"><i>584</i>&nbsp;        for (int i = 0; i &lt; period.size(); i++) {</b>
+<b class="fc"><i>585</i>&nbsp;            DurationFieldType fieldType = period.getFieldType(i);</b>
+<b class="fc"><i>586</i>&nbsp;            int index = indexOf(fieldType);</b>
+<b class="fc"><i>587</i>&nbsp;            if (index &gt;= 0) {</b>
+<b class="fc"><i>588</i>&nbsp;                newValues = getField(index).addWrapPartial(this, index, newValues,</b>
+<b class="fc"><i>589</i>&nbsp;                        FieldUtils.safeMultiply(period.getValue(i), scalar));</b>
+<i>590</i>&nbsp;            }
+<i>591</i>&nbsp;        }
+<b class="fc"><i>592</i>&nbsp;        return new TimeOfDay(this, newValues);</b>
+<i>593</i>&nbsp;    }
+<i>594</i>&nbsp;
+<i>595</i>&nbsp;    //-----------------------------------------------------------------------
+<i>596</i>&nbsp;    /**
+<i>597</i>&nbsp;     * Returns a copy of this time with the specified period added,
+<i>598</i>&nbsp;     * wrapping to what would be a new day if required.
+<i>599</i>&nbsp;     * &lt;p&gt;
+<i>600</i>&nbsp;     * If the amount is zero or null, then &lt;code&gt;this&lt;/code&gt; is returned.
+<i>601</i>&nbsp;     * &lt;p&gt;
+<i>602</i>&nbsp;     * This method is typically used to add complex period instances.
+<i>603</i>&nbsp;     * Adding one field is best achieved using methods
+<i>604</i>&nbsp;     * like {@link #plusHours(int)}.
+<i>605</i>&nbsp;     * 
+<i>606</i>&nbsp;     * @param period  the duration to add to this one, null means zero
+<i>607</i>&nbsp;     * @return a copy of this instance with the period added
+<i>608</i>&nbsp;     * @throws ArithmeticException if the new datetime exceeds the capacity of a long
+<i>609</i>&nbsp;     */
+<i>610</i>&nbsp;    public TimeOfDay plus(ReadablePeriod period) {
+<b class="fc"><i>611</i>&nbsp;        return withPeriodAdded(period, 1);</b>
+<i>612</i>&nbsp;    }
+<i>613</i>&nbsp;
+<i>614</i>&nbsp;    //-----------------------------------------------------------------------
+<i>615</i>&nbsp;    /**
+<i>616</i>&nbsp;     * Returns a copy of this time plus the specified number of hours.
+<i>617</i>&nbsp;     * &lt;p&gt;
+<i>618</i>&nbsp;     * This time instance is immutable and unaffected by this method call.
+<i>619</i>&nbsp;     * &lt;p&gt;
+<i>620</i>&nbsp;     * The following three lines are identical in effect:
+<i>621</i>&nbsp;     * &lt;pre&gt;
+<i>622</i>&nbsp;     * TimeOfDay added = dt.plusHours(6);
+<i>623</i>&nbsp;     * TimeOfDay added = dt.plus(Period.hours(6));
+<i>624</i>&nbsp;     * TimeOfDay added = dt.withFieldAdded(DurationFieldType.hours(), 6);
+<i>625</i>&nbsp;     * &lt;/pre&gt;
+<i>626</i>&nbsp;     *
+<i>627</i>&nbsp;     * @param hours  the amount of hours to add, may be negative
+<i>628</i>&nbsp;     * @return the new time plus the increased hours
+<i>629</i>&nbsp;     * @since 1.1
+<i>630</i>&nbsp;     */
+<i>631</i>&nbsp;    public TimeOfDay plusHours(int hours) {
+<b class="fc"><i>632</i>&nbsp;        return withFieldAdded(DurationFieldType.hours(), hours);</b>
+<i>633</i>&nbsp;    }
+<i>634</i>&nbsp;
+<i>635</i>&nbsp;    /**
+<i>636</i>&nbsp;     * Returns a copy of this time plus the specified number of minutes.
+<i>637</i>&nbsp;     * &lt;p&gt;
+<i>638</i>&nbsp;     * This time instance is immutable and unaffected by this method call.
+<i>639</i>&nbsp;     * &lt;p&gt;
+<i>640</i>&nbsp;     * The following three lines are identical in effect:
+<i>641</i>&nbsp;     * &lt;pre&gt;
+<i>642</i>&nbsp;     * TimeOfDay added = dt.plusMinutes(6);
+<i>643</i>&nbsp;     * TimeOfDay added = dt.plus(Period.minutes(6));
+<i>644</i>&nbsp;     * TimeOfDay added = dt.withFieldAdded(DurationFieldType.minutes(), 6);
+<i>645</i>&nbsp;     * &lt;/pre&gt;
+<i>646</i>&nbsp;     *
+<i>647</i>&nbsp;     * @param minutes  the amount of minutes to add, may be negative
+<i>648</i>&nbsp;     * @return the new time plus the increased minutes
+<i>649</i>&nbsp;     * @since 1.1
+<i>650</i>&nbsp;     */
+<i>651</i>&nbsp;    public TimeOfDay plusMinutes(int minutes) {
+<b class="fc"><i>652</i>&nbsp;        return withFieldAdded(DurationFieldType.minutes(), minutes);</b>
+<i>653</i>&nbsp;    }
+<i>654</i>&nbsp;
+<i>655</i>&nbsp;    /**
+<i>656</i>&nbsp;     * Returns a copy of this time plus the specified number of seconds.
+<i>657</i>&nbsp;     * &lt;p&gt;
+<i>658</i>&nbsp;     * This time instance is immutable and unaffected by this method call.
+<i>659</i>&nbsp;     * &lt;p&gt;
+<i>660</i>&nbsp;     * The following three lines are identical in effect:
+<i>661</i>&nbsp;     * &lt;pre&gt;
+<i>662</i>&nbsp;     * TimeOfDay added = dt.plusSeconds(6);
+<i>663</i>&nbsp;     * TimeOfDay added = dt.plus(Period.seconds(6));
+<i>664</i>&nbsp;     * TimeOfDay added = dt.withFieldAdded(DurationFieldType.seconds(), 6);
+<i>665</i>&nbsp;     * &lt;/pre&gt;
+<i>666</i>&nbsp;     *
+<i>667</i>&nbsp;     * @param seconds  the amount of seconds to add, may be negative
+<i>668</i>&nbsp;     * @return the new time plus the increased seconds
+<i>669</i>&nbsp;     * @since 1.1
+<i>670</i>&nbsp;     */
+<i>671</i>&nbsp;    public TimeOfDay plusSeconds(int seconds) {
+<b class="fc"><i>672</i>&nbsp;        return withFieldAdded(DurationFieldType.seconds(), seconds);</b>
+<i>673</i>&nbsp;    }
+<i>674</i>&nbsp;
+<i>675</i>&nbsp;    /**
+<i>676</i>&nbsp;     * Returns a copy of this time plus the specified number of millis.
+<i>677</i>&nbsp;     * &lt;p&gt;
+<i>678</i>&nbsp;     * This time instance is immutable and unaffected by this method call.
+<i>679</i>&nbsp;     * &lt;p&gt;
+<i>680</i>&nbsp;     * The following three lines are identical in effect:
+<i>681</i>&nbsp;     * &lt;pre&gt;
+<i>682</i>&nbsp;     * TimeOfDay added = dt.plusMillis(6);
+<i>683</i>&nbsp;     * TimeOfDay added = dt.plus(Period.millis(6));
+<i>684</i>&nbsp;     * TimeOfDay added = dt.withFieldAdded(DurationFieldType.millis(), 6);
+<i>685</i>&nbsp;     * &lt;/pre&gt;
+<i>686</i>&nbsp;     *
+<i>687</i>&nbsp;     * @param millis  the amount of millis to add, may be negative
+<i>688</i>&nbsp;     * @return the new time plus the increased millis
+<i>689</i>&nbsp;     * @since 1.1
+<i>690</i>&nbsp;     */
+<i>691</i>&nbsp;    public TimeOfDay plusMillis(int millis) {
+<b class="fc"><i>692</i>&nbsp;        return withFieldAdded(DurationFieldType.millis(), millis);</b>
+<i>693</i>&nbsp;    }
+<i>694</i>&nbsp;
+<i>695</i>&nbsp;    //-----------------------------------------------------------------------
+<i>696</i>&nbsp;    /**
+<i>697</i>&nbsp;     * Returns a copy of this time with the specified period taken away,
+<i>698</i>&nbsp;     * wrapping to what would be a new day if required.
+<i>699</i>&nbsp;     * &lt;p&gt;
+<i>700</i>&nbsp;     * If the amount is zero or null, then &lt;code&gt;this&lt;/code&gt; is returned.
+<i>701</i>&nbsp;     * &lt;p&gt;
+<i>702</i>&nbsp;     * This method is typically used to subtract complex period instances.
+<i>703</i>&nbsp;     * Subtracting one field is best achieved using methods
+<i>704</i>&nbsp;     * like {@link #minusHours(int)}.
+<i>705</i>&nbsp;     * 
+<i>706</i>&nbsp;     * @param period  the period to reduce this instant by
+<i>707</i>&nbsp;     * @return a copy of this instance with the period taken away
+<i>708</i>&nbsp;     * @throws ArithmeticException if the new time exceeds capacity
+<i>709</i>&nbsp;     */
+<i>710</i>&nbsp;    public TimeOfDay minus(ReadablePeriod period) {
+<b class="fc"><i>711</i>&nbsp;        return withPeriodAdded(period, -1);</b>
+<i>712</i>&nbsp;    }
+<i>713</i>&nbsp;
+<i>714</i>&nbsp;    //-----------------------------------------------------------------------
+<i>715</i>&nbsp;    /**
+<i>716</i>&nbsp;     * Returns a copy of this time minus the specified number of hours.
+<i>717</i>&nbsp;     * &lt;p&gt;
+<i>718</i>&nbsp;     * This time instance is immutable and unaffected by this method call.
+<i>719</i>&nbsp;     * &lt;p&gt;
+<i>720</i>&nbsp;     * The following three lines are identical in effect:
+<i>721</i>&nbsp;     * &lt;pre&gt;
+<i>722</i>&nbsp;     * TimeOfDay subtracted = dt.minusHours(6);
+<i>723</i>&nbsp;     * TimeOfDay subtracted = dt.minus(Period.hours(6));
+<i>724</i>&nbsp;     * TimeOfDay subtracted = dt.withFieldAdded(DurationFieldType.hours(), -6);
+<i>725</i>&nbsp;     * &lt;/pre&gt;
+<i>726</i>&nbsp;     *
+<i>727</i>&nbsp;     * @param hours  the amount of hours to subtract, may be negative
+<i>728</i>&nbsp;     * @return the new time minus the increased hours
+<i>729</i>&nbsp;     * @since 1.1
+<i>730</i>&nbsp;     */
+<i>731</i>&nbsp;    public TimeOfDay minusHours(int hours) {
+<b class="fc"><i>732</i>&nbsp;        return withFieldAdded(DurationFieldType.hours(), FieldUtils.safeNegate(hours));</b>
+<i>733</i>&nbsp;    }
+<i>734</i>&nbsp;
+<i>735</i>&nbsp;    /**
+<i>736</i>&nbsp;     * Returns a copy of this time minus the specified number of minutes.
+<i>737</i>&nbsp;     * &lt;p&gt;
+<i>738</i>&nbsp;     * This time instance is immutable and unaffected by this method call.
+<i>739</i>&nbsp;     * &lt;p&gt;
+<i>740</i>&nbsp;     * The following three lines are identical in effect:
+<i>741</i>&nbsp;     * &lt;pre&gt;
+<i>742</i>&nbsp;     * TimeOfDay subtracted = dt.minusMinutes(6);
+<i>743</i>&nbsp;     * TimeOfDay subtracted = dt.minus(Period.minutes(6));
+<i>744</i>&nbsp;     * TimeOfDay subtracted = dt.withFieldAdded(DurationFieldType.minutes(), -6);
+<i>745</i>&nbsp;     * &lt;/pre&gt;
+<i>746</i>&nbsp;     *
+<i>747</i>&nbsp;     * @param minutes  the amount of minutes to subtract, may be negative
+<i>748</i>&nbsp;     * @return the new time minus the increased minutes
+<i>749</i>&nbsp;     * @since 1.1
+<i>750</i>&nbsp;     */
+<i>751</i>&nbsp;    public TimeOfDay minusMinutes(int minutes) {
+<b class="fc"><i>752</i>&nbsp;        return withFieldAdded(DurationFieldType.minutes(), FieldUtils.safeNegate(minutes));</b>
+<i>753</i>&nbsp;    }
+<i>754</i>&nbsp;
+<i>755</i>&nbsp;    /**
+<i>756</i>&nbsp;     * Returns a copy of this time minus the specified number of seconds.
+<i>757</i>&nbsp;     * &lt;p&gt;
+<i>758</i>&nbsp;     * This time instance is immutable and unaffected by this method call.
+<i>759</i>&nbsp;     * &lt;p&gt;
+<i>760</i>&nbsp;     * The following three lines are identical in effect:
+<i>761</i>&nbsp;     * &lt;pre&gt;
+<i>762</i>&nbsp;     * TimeOfDay subtracted = dt.minusSeconds(6);
+<i>763</i>&nbsp;     * TimeOfDay subtracted = dt.minus(Period.seconds(6));
+<i>764</i>&nbsp;     * TimeOfDay subtracted = dt.withFieldAdded(DurationFieldType.seconds(), -6);
+<i>765</i>&nbsp;     * &lt;/pre&gt;
+<i>766</i>&nbsp;     *
+<i>767</i>&nbsp;     * @param seconds  the amount of seconds to subtract, may be negative
+<i>768</i>&nbsp;     * @return the new time minus the increased seconds
+<i>769</i>&nbsp;     * @since 1.1
+<i>770</i>&nbsp;     */
+<i>771</i>&nbsp;    public TimeOfDay minusSeconds(int seconds) {
+<b class="fc"><i>772</i>&nbsp;        return withFieldAdded(DurationFieldType.seconds(), FieldUtils.safeNegate(seconds));</b>
+<i>773</i>&nbsp;    }
+<i>774</i>&nbsp;
+<i>775</i>&nbsp;    /**
+<i>776</i>&nbsp;     * Returns a copy of this time minus the specified number of millis.
+<i>777</i>&nbsp;     * &lt;p&gt;
+<i>778</i>&nbsp;     * This time instance is immutable and unaffected by this method call.
+<i>779</i>&nbsp;     * &lt;p&gt;
+<i>780</i>&nbsp;     * The following three lines are identical in effect:
+<i>781</i>&nbsp;     * &lt;pre&gt;
+<i>782</i>&nbsp;     * TimeOfDay subtracted = dt.minusMillis(6);
+<i>783</i>&nbsp;     * TimeOfDay subtracted = dt.minus(Period.millis(6));
+<i>784</i>&nbsp;     * TimeOfDay subtracted = dt.withFieldAdded(DurationFieldType.millis(), -6);
+<i>785</i>&nbsp;     * &lt;/pre&gt;
+<i>786</i>&nbsp;     *
+<i>787</i>&nbsp;     * @param millis  the amount of millis to subtract, may be negative
+<i>788</i>&nbsp;     * @return the new time minus the increased millis
+<i>789</i>&nbsp;     * @since 1.1
+<i>790</i>&nbsp;     */
+<i>791</i>&nbsp;    public TimeOfDay minusMillis(int millis) {
+<b class="fc"><i>792</i>&nbsp;        return withFieldAdded(DurationFieldType.millis(), FieldUtils.safeNegate(millis));</b>
+<i>793</i>&nbsp;    }
+<i>794</i>&nbsp;
+<i>795</i>&nbsp;    //-----------------------------------------------------------------------
+<i>796</i>&nbsp;    /**
+<i>797</i>&nbsp;     * Gets the property object for the specified type, which contains
+<i>798</i>&nbsp;     * many useful methods.
+<i>799</i>&nbsp;     *
+<i>800</i>&nbsp;     * @param type  the field type to get the property for
+<i>801</i>&nbsp;     * @return the property object
+<i>802</i>&nbsp;     * @throws IllegalArgumentException if the field is null or unsupported
+<i>803</i>&nbsp;     */
+<i>804</i>&nbsp;    public Property property(DateTimeFieldType type) {
+<b class="fc"><i>805</i>&nbsp;        return new Property(this, indexOfSupported(type));</b>
+<i>806</i>&nbsp;    }
+<i>807</i>&nbsp;
+<i>808</i>&nbsp;    //-----------------------------------------------------------------------
+<i>809</i>&nbsp;    /**
+<i>810</i>&nbsp;     * Converts this object to a LocalTime with the same time and chronology.
+<i>811</i>&nbsp;     *
+<i>812</i>&nbsp;     * @return a LocalTime with the same time and chronology
+<i>813</i>&nbsp;     * @since 1.3
+<i>814</i>&nbsp;     */
+<i>815</i>&nbsp;    public LocalTime toLocalTime() {
+<b class="fc"><i>816</i>&nbsp;        return new LocalTime(getHourOfDay(), getMinuteOfHour(),</b>
+<b class="fc"><i>817</i>&nbsp;                getSecondOfMinute(), getMillisOfSecond(), getChronology());</b>
+<i>818</i>&nbsp;    }
+<i>819</i>&nbsp;
+<i>820</i>&nbsp;    //-----------------------------------------------------------------------
+<i>821</i>&nbsp;    /**
+<i>822</i>&nbsp;     * Converts this partial to a full datetime using the default time zone
+<i>823</i>&nbsp;     * setting the time fields from this instance and the date fields from
+<i>824</i>&nbsp;     * the current time.
+<i>825</i>&nbsp;     *
+<i>826</i>&nbsp;     * @return this date as a datetime with the time as the current time
+<i>827</i>&nbsp;     */
+<i>828</i>&nbsp;    public DateTime toDateTimeToday() {
+<b class="fc"><i>829</i>&nbsp;        return toDateTimeToday(null);</b>
+<i>830</i>&nbsp;    }
+<i>831</i>&nbsp;
+<i>832</i>&nbsp;    /**
+<i>833</i>&nbsp;     * Converts this partial to a full datetime using the specified time zone
+<i>834</i>&nbsp;     * setting the time fields from this instance and the date fields from
+<i>835</i>&nbsp;     * the current time.
+<i>836</i>&nbsp;     * &lt;p&gt;
+<i>837</i>&nbsp;     * This method uses the chronology from this instance plus the time zone
+<i>838</i>&nbsp;     * specified.
+<i>839</i>&nbsp;     *
+<i>840</i>&nbsp;     * @param zone  the zone to use, null means default
+<i>841</i>&nbsp;     * @return this date as a datetime with the time as the current time
+<i>842</i>&nbsp;     */
+<i>843</i>&nbsp;    public DateTime toDateTimeToday(DateTimeZone zone) {
+<b class="fc"><i>844</i>&nbsp;        Chronology chrono = getChronology().withZone(zone);</b>
+<b class="fc"><i>845</i>&nbsp;        long instantMillis = DateTimeUtils.currentTimeMillis();</b>
+<b class="fc"><i>846</i>&nbsp;        long resolved = chrono.set(this, instantMillis);</b>
+<b class="fc"><i>847</i>&nbsp;        return new DateTime(resolved, chrono);</b>
+<i>848</i>&nbsp;    }
+<i>849</i>&nbsp;
+<i>850</i>&nbsp;    //-----------------------------------------------------------------------
+<i>851</i>&nbsp;    /**
+<i>852</i>&nbsp;     * Get the hour of day (0-23) field value.
+<i>853</i>&nbsp;     *
+<i>854</i>&nbsp;     * @return the hour of day
+<i>855</i>&nbsp;     */
+<i>856</i>&nbsp;    public int getHourOfDay() {
+<b class="fc"><i>857</i>&nbsp;        return getValue(HOUR_OF_DAY);</b>
+<i>858</i>&nbsp;    }
+<i>859</i>&nbsp;
+<i>860</i>&nbsp;    /**
+<i>861</i>&nbsp;     * Get the minute of hour field value.
+<i>862</i>&nbsp;     *
+<i>863</i>&nbsp;     * @return the minute of hour
+<i>864</i>&nbsp;     */
+<i>865</i>&nbsp;    public int getMinuteOfHour() {
+<b class="fc"><i>866</i>&nbsp;        return getValue(MINUTE_OF_HOUR);</b>
+<i>867</i>&nbsp;    }
+<i>868</i>&nbsp;
+<i>869</i>&nbsp;    /**
+<i>870</i>&nbsp;     * Get the second of minute field value.
+<i>871</i>&nbsp;     *
+<i>872</i>&nbsp;     * @return the second of minute
+<i>873</i>&nbsp;     */
+<i>874</i>&nbsp;    public int getSecondOfMinute() {
+<b class="fc"><i>875</i>&nbsp;        return getValue(SECOND_OF_MINUTE);</b>
+<i>876</i>&nbsp;    }
+<i>877</i>&nbsp;
+<i>878</i>&nbsp;    /**
+<i>879</i>&nbsp;     * Get the millis of second field value.
+<i>880</i>&nbsp;     *
+<i>881</i>&nbsp;     * @return the millis of second
+<i>882</i>&nbsp;     */
+<i>883</i>&nbsp;    public int getMillisOfSecond() {
+<b class="fc"><i>884</i>&nbsp;        return getValue(MILLIS_OF_SECOND);</b>
+<i>885</i>&nbsp;    }
+<i>886</i>&nbsp;
+<i>887</i>&nbsp;    //-----------------------------------------------------------------------
+<i>888</i>&nbsp;    /**
+<i>889</i>&nbsp;     * Returns a copy of this time with the hour of day field updated.
+<i>890</i>&nbsp;     * &lt;p&gt;
+<i>891</i>&nbsp;     * TimeOfDay is immutable, so there are no set methods.
+<i>892</i>&nbsp;     * Instead, this method returns a new instance with the value of
+<i>893</i>&nbsp;     * hour of day changed.
+<i>894</i>&nbsp;     *
+<i>895</i>&nbsp;     * @param hour  the hour of day to set
+<i>896</i>&nbsp;     * @return a copy of this object with the field set
+<i>897</i>&nbsp;     * @throws IllegalArgumentException if the value is invalid
+<i>898</i>&nbsp;     * @since 1.3
+<i>899</i>&nbsp;     */
+<i>900</i>&nbsp;    public TimeOfDay withHourOfDay(int hour) {
+<b class="fc"><i>901</i>&nbsp;        int[] newValues = getValues();</b>
+<b class="fc"><i>902</i>&nbsp;        newValues = getChronology().hourOfDay().set(this, HOUR_OF_DAY, newValues, hour);</b>
+<b class="fc"><i>903</i>&nbsp;        return new TimeOfDay(this, newValues);</b>
+<i>904</i>&nbsp;    }
+<i>905</i>&nbsp;
+<i>906</i>&nbsp;    /**
+<i>907</i>&nbsp;     * Returns a copy of this time with the minute of hour field updated.
+<i>908</i>&nbsp;     * &lt;p&gt;
+<i>909</i>&nbsp;     * TimeOfDay is immutable, so there are no set methods.
+<i>910</i>&nbsp;     * Instead, this method returns a new instance with the value of
+<i>911</i>&nbsp;     * minute of hour changed.
+<i>912</i>&nbsp;     *
+<i>913</i>&nbsp;     * @param minute  the minute of hour to set
+<i>914</i>&nbsp;     * @return a copy of this object with the field set
+<i>915</i>&nbsp;     * @throws IllegalArgumentException if the value is invalid
+<i>916</i>&nbsp;     * @since 1.3
+<i>917</i>&nbsp;     */
+<i>918</i>&nbsp;    public TimeOfDay withMinuteOfHour(int minute) {
+<b class="fc"><i>919</i>&nbsp;        int[] newValues = getValues();</b>
+<b class="fc"><i>920</i>&nbsp;        newValues = getChronology().minuteOfHour().set(this, MINUTE_OF_HOUR, newValues, minute);</b>
+<b class="fc"><i>921</i>&nbsp;        return new TimeOfDay(this, newValues);</b>
+<i>922</i>&nbsp;    }
+<i>923</i>&nbsp;
+<i>924</i>&nbsp;    /**
+<i>925</i>&nbsp;     * Returns a copy of this time with the second of minute field updated.
+<i>926</i>&nbsp;     * &lt;p&gt;
+<i>927</i>&nbsp;     * TimeOfDay is immutable, so there are no set methods.
+<i>928</i>&nbsp;     * Instead, this method returns a new instance with the value of
+<i>929</i>&nbsp;     * second of minute changed.
+<i>930</i>&nbsp;     *
+<i>931</i>&nbsp;     * @param second  the second of minute to set
+<i>932</i>&nbsp;     * @return a copy of this object with the field set
+<i>933</i>&nbsp;     * @throws IllegalArgumentException if the value is invalid
+<i>934</i>&nbsp;     * @since 1.3
+<i>935</i>&nbsp;     */
+<i>936</i>&nbsp;    public TimeOfDay withSecondOfMinute(int second) {
+<b class="fc"><i>937</i>&nbsp;        int[] newValues = getValues();</b>
+<b class="fc"><i>938</i>&nbsp;        newValues = getChronology().secondOfMinute().set(this, SECOND_OF_MINUTE, newValues, second);</b>
+<b class="fc"><i>939</i>&nbsp;        return new TimeOfDay(this, newValues);</b>
+<i>940</i>&nbsp;    }
+<i>941</i>&nbsp;
+<i>942</i>&nbsp;    /**
+<i>943</i>&nbsp;     * Returns a copy of this time with the millis of second field updated.
+<i>944</i>&nbsp;     * &lt;p&gt;
+<i>945</i>&nbsp;     * TimeOfDay is immutable, so there are no set methods.
+<i>946</i>&nbsp;     * Instead, this method returns a new instance with the value of
+<i>947</i>&nbsp;     * millis of second changed.
+<i>948</i>&nbsp;     *
+<i>949</i>&nbsp;     * @param millis  the millis of second to set
+<i>950</i>&nbsp;     * @return a copy of this object with the field set
+<i>951</i>&nbsp;     * @throws IllegalArgumentException if the value is invalid
+<i>952</i>&nbsp;     * @since 1.3
+<i>953</i>&nbsp;     */
+<i>954</i>&nbsp;    public TimeOfDay withMillisOfSecond(int millis) {
+<b class="fc"><i>955</i>&nbsp;        int[] newValues = getValues();</b>
+<b class="fc"><i>956</i>&nbsp;        newValues = getChronology().millisOfSecond().set(this, MILLIS_OF_SECOND, newValues, millis);</b>
+<b class="fc"><i>957</i>&nbsp;        return new TimeOfDay(this, newValues);</b>
+<i>958</i>&nbsp;    }
+<i>959</i>&nbsp;
+<i>960</i>&nbsp;    //-----------------------------------------------------------------------
+<i>961</i>&nbsp;    /**
+<i>962</i>&nbsp;     * Get the hour of day field property which provides access to advanced functionality.
+<i>963</i>&nbsp;     * 
+<i>964</i>&nbsp;     * @return the hour of day property
+<i>965</i>&nbsp;     */
+<i>966</i>&nbsp;    public Property hourOfDay() {
+<b class="fc"><i>967</i>&nbsp;        return new Property(this, HOUR_OF_DAY);</b>
+<i>968</i>&nbsp;    }
+<i>969</i>&nbsp;
+<i>970</i>&nbsp;    /**
+<i>971</i>&nbsp;     * Get the minute of hour field property which provides access to advanced functionality.
+<i>972</i>&nbsp;     * 
+<i>973</i>&nbsp;     * @return the minute of hour property
+<i>974</i>&nbsp;     */
+<i>975</i>&nbsp;    public Property minuteOfHour() {
+<b class="fc"><i>976</i>&nbsp;        return new Property(this, MINUTE_OF_HOUR);</b>
+<i>977</i>&nbsp;    }
+<i>978</i>&nbsp;
+<i>979</i>&nbsp;    /**
+<i>980</i>&nbsp;     * Get the second of minute field property which provides access to advanced functionality.
+<i>981</i>&nbsp;     * 
+<i>982</i>&nbsp;     * @return the second of minute property
+<i>983</i>&nbsp;     */
+<i>984</i>&nbsp;    public Property secondOfMinute() {
+<b class="fc"><i>985</i>&nbsp;        return new Property(this, SECOND_OF_MINUTE);</b>
+<i>986</i>&nbsp;    }
+<i>987</i>&nbsp;
+<i>988</i>&nbsp;    /**
+<i>989</i>&nbsp;     * Get the millis of second property which provides access to advanced functionality.
+<i>990</i>&nbsp;     * 
+<i>991</i>&nbsp;     * @return the millis of second property
+<i>992</i>&nbsp;     */
+<i>993</i>&nbsp;    public Property millisOfSecond() {
+<b class="fc"><i>994</i>&nbsp;        return new Property(this, MILLIS_OF_SECOND);</b>
+<i>995</i>&nbsp;    }
+<i>996</i>&nbsp;
+<i>997</i>&nbsp;    //-----------------------------------------------------------------------
+<i>998</i>&nbsp;    /**
+<i>999</i>&nbsp;     * Output the time in the ISO8601 format THH:mm:ss.SSS.
+<i>1000</i>&nbsp;     * 
+<i>1001</i>&nbsp;     * @return ISO8601 formatted string
+<i>1002</i>&nbsp;     */
+<i>1003</i>&nbsp;    public String toString() {
+<b class="fc"><i>1004</i>&nbsp;        return ISODateTimeFormat.tTime().print(this);</b>
+<i>1005</i>&nbsp;    }
+<i>1006</i>&nbsp;
+<i>1007</i>&nbsp;    //-----------------------------------------------------------------------
+<i>1008</i>&nbsp;    /**
+<i>1009</i>&nbsp;     * The property class for &lt;code&gt;TimeOfDay&lt;/code&gt;.
+<i>1010</i>&nbsp;     * &lt;p&gt;
+<i>1011</i>&nbsp;     * This class binds a &lt;code&gt;TimeOfDay&lt;/code&gt; to a &lt;code&gt;DateTimeField&lt;/code&gt;.
+<i>1012</i>&nbsp;     * 
+<i>1013</i>&nbsp;     * @author Stephen Colebourne
+<i>1014</i>&nbsp;     * @since 1.0
+<i>1015</i>&nbsp;     * @deprecated Use LocalTime which has a much better internal implementation
+<i>1016</i>&nbsp;     */
+<i>1017</i>&nbsp;    @Deprecated
+<i>1018</i>&nbsp;    public static class Property extends AbstractPartialFieldProperty implements Serializable {
+<i>1019</i>&nbsp;
+<i>1020</i>&nbsp;        /** Serialization version */
+<i>1021</i>&nbsp;        private static final long serialVersionUID = 5598459141741063833L;
+<i>1022</i>&nbsp;
+<i>1023</i>&nbsp;        /** The partial */
+<i>1024</i>&nbsp;        private final TimeOfDay iTimeOfDay;
+<i>1025</i>&nbsp;        /** The field index */
+<i>1026</i>&nbsp;        private final int iFieldIndex;
+<i>1027</i>&nbsp;
+<i>1028</i>&nbsp;        /**
+<i>1029</i>&nbsp;         * Constructs a property.
+<i>1030</i>&nbsp;         * 
+<i>1031</i>&nbsp;         * @param partial  the partial instance
+<i>1032</i>&nbsp;         * @param fieldIndex  the index in the partial
+<i>1033</i>&nbsp;         */
+<i>1034</i>&nbsp;        Property(TimeOfDay partial, int fieldIndex) {
+<b class="fc"><i>1035</i>&nbsp;            super();</b>
+<b class="fc"><i>1036</i>&nbsp;            iTimeOfDay = partial;</b>
+<b class="fc"><i>1037</i>&nbsp;            iFieldIndex = fieldIndex;</b>
+<b class="fc"><i>1038</i>&nbsp;        }</b>
+<i>1039</i>&nbsp;
+<i>1040</i>&nbsp;        /**
+<i>1041</i>&nbsp;         * Gets the field that this property uses.
+<i>1042</i>&nbsp;         * 
+<i>1043</i>&nbsp;         * @return the field
+<i>1044</i>&nbsp;         */
+<i>1045</i>&nbsp;        public DateTimeField getField() {
+<b class="fc"><i>1046</i>&nbsp;            return iTimeOfDay.getField(iFieldIndex);</b>
+<i>1047</i>&nbsp;        }
+<i>1048</i>&nbsp;
+<i>1049</i>&nbsp;        /**
+<i>1050</i>&nbsp;         * Gets the partial that this property belongs to.
+<i>1051</i>&nbsp;         * 
+<i>1052</i>&nbsp;         * @return the partial
+<i>1053</i>&nbsp;         */
+<i>1054</i>&nbsp;        protected ReadablePartial getReadablePartial() {
+<b class="fc"><i>1055</i>&nbsp;            return iTimeOfDay;</b>
+<i>1056</i>&nbsp;        }
+<i>1057</i>&nbsp;
+<i>1058</i>&nbsp;        /**
+<i>1059</i>&nbsp;         * Gets the partial that this property belongs to.
+<i>1060</i>&nbsp;         * 
+<i>1061</i>&nbsp;         * @return the partial
+<i>1062</i>&nbsp;         */
+<i>1063</i>&nbsp;        public TimeOfDay getTimeOfDay() {
+<b class="fc"><i>1064</i>&nbsp;            return iTimeOfDay;</b>
+<i>1065</i>&nbsp;        }
+<i>1066</i>&nbsp;
+<i>1067</i>&nbsp;        /**
+<i>1068</i>&nbsp;         * Gets the value of this field.
+<i>1069</i>&nbsp;         * 
+<i>1070</i>&nbsp;         * @return the field value
+<i>1071</i>&nbsp;         */
+<i>1072</i>&nbsp;        public int get() {
+<b class="fc"><i>1073</i>&nbsp;            return iTimeOfDay.getValue(iFieldIndex);</b>
+<i>1074</i>&nbsp;        }
+<i>1075</i>&nbsp;
+<i>1076</i>&nbsp;        //-----------------------------------------------------------------------
+<i>1077</i>&nbsp;        /**
+<i>1078</i>&nbsp;         * Adds to the value of this field in a copy of this TimeOfDay,
+<i>1079</i>&nbsp;         * wrapping to what would be the next day if necessary.
+<i>1080</i>&nbsp;         * &lt;p&gt;
+<i>1081</i>&nbsp;         * The value will be added to this field. If the value is too large to be
+<i>1082</i>&nbsp;         * added solely to this field then it will affect larger fields.
+<i>1083</i>&nbsp;         * Smaller fields are unaffected.
+<i>1084</i>&nbsp;         * &lt;p&gt;
+<i>1085</i>&nbsp;         * If the result would be too large, beyond 23:59:59:999, then the
+<i>1086</i>&nbsp;         * calculation wraps to 00:00:00.000. For the alternate strict behaviour
+<i>1087</i>&nbsp;         * with no wrapping see {@link #addNoWrapToCopy(int)}.
+<i>1088</i>&nbsp;         * &lt;p&gt;
+<i>1089</i>&nbsp;         * The TimeOfDay attached to this property is unchanged by this call.
+<i>1090</i>&nbsp;         * Instead, a new instance is returned.
+<i>1091</i>&nbsp;         * 
+<i>1092</i>&nbsp;         * @param valueToAdd  the value to add to the field in the copy
+<i>1093</i>&nbsp;         * @return a copy of the TimeOfDay with the field value changed
+<i>1094</i>&nbsp;         * @throws IllegalArgumentException if the value isn&#39;t valid
+<i>1095</i>&nbsp;         */
+<i>1096</i>&nbsp;        public TimeOfDay addToCopy(int valueToAdd) {
+<b class="fc"><i>1097</i>&nbsp;            int[] newValues = iTimeOfDay.getValues();</b>
+<b class="fc"><i>1098</i>&nbsp;            newValues = getField().addWrapPartial(iTimeOfDay, iFieldIndex, newValues, valueToAdd);</b>
+<b class="fc"><i>1099</i>&nbsp;            return new TimeOfDay(iTimeOfDay, newValues);</b>
+<i>1100</i>&nbsp;        }
+<i>1101</i>&nbsp;
+<i>1102</i>&nbsp;        /**
+<i>1103</i>&nbsp;         * Adds to the value of this field in a copy of this TimeOfDay,
+<i>1104</i>&nbsp;         * throwing an Exception if the bounds are exceeded.
+<i>1105</i>&nbsp;         * &lt;p&gt;
+<i>1106</i>&nbsp;         * The value will be added to this field. If the value is too large to be
+<i>1107</i>&nbsp;         * added solely to this field then it will affect larger fields.
+<i>1108</i>&nbsp;         * Smaller fields are unaffected.
+<i>1109</i>&nbsp;         * &lt;p&gt;
+<i>1110</i>&nbsp;         * If the result would be too large (beyond 23:59:59:999) or too
+<i>1111</i>&nbsp;         * small (less than 00:00:00.000) then an Execption is thrown.
+<i>1112</i>&nbsp;         * For the alternate behaviour which wraps to the next &#39;day&#39;,
+<i>1113</i>&nbsp;         * see {@link #addToCopy(int)}.
+<i>1114</i>&nbsp;         * &lt;p&gt;
+<i>1115</i>&nbsp;         * The TimeOfDay attached to this property is unchanged by this call.
+<i>1116</i>&nbsp;         * Instead, a new instance is returned.
+<i>1117</i>&nbsp;         * 
+<i>1118</i>&nbsp;         * @param valueToAdd  the value to add to the field in the copy
+<i>1119</i>&nbsp;         * @return a copy of the TimeOfDay with the field value changed
+<i>1120</i>&nbsp;         * @throws IllegalArgumentException if the value isn&#39;t valid
+<i>1121</i>&nbsp;         */
+<i>1122</i>&nbsp;        public TimeOfDay addNoWrapToCopy(int valueToAdd) {
+<b class="fc"><i>1123</i>&nbsp;            int[] newValues = iTimeOfDay.getValues();</b>
+<b class="fc"><i>1124</i>&nbsp;            newValues = getField().add(iTimeOfDay, iFieldIndex, newValues, valueToAdd);</b>
+<b class="fc"><i>1125</i>&nbsp;            return new TimeOfDay(iTimeOfDay, newValues);</b>
+<i>1126</i>&nbsp;        }
+<i>1127</i>&nbsp;
+<i>1128</i>&nbsp;        /**
+<i>1129</i>&nbsp;         * Adds to the value of this field in a copy of this TimeOfDay wrapping
+<i>1130</i>&nbsp;         * within this field if the maximum value is reached.
+<i>1131</i>&nbsp;         * &lt;p&gt;
+<i>1132</i>&nbsp;         * The value will be added to this field. If the value is too large to be
+<i>1133</i>&nbsp;         * added solely to this field then it wraps within this field.
+<i>1134</i>&nbsp;         * Other fields are unaffected.
+<i>1135</i>&nbsp;         * &lt;p&gt;
+<i>1136</i>&nbsp;         * For example,
+<i>1137</i>&nbsp;         * &lt;code&gt;12:59:37&lt;/code&gt; addWrapField one minute returns &lt;code&gt;12:00:37&lt;/code&gt;.
+<i>1138</i>&nbsp;         * &lt;p&gt;
+<i>1139</i>&nbsp;         * The TimeOfDay attached to this property is unchanged by this call.
+<i>1140</i>&nbsp;         * Instead, a new instance is returned.
+<i>1141</i>&nbsp;         * 
+<i>1142</i>&nbsp;         * @param valueToAdd  the value to add to the field in the copy
+<i>1143</i>&nbsp;         * @return a copy of the TimeOfDay with the field value changed
+<i>1144</i>&nbsp;         * @throws IllegalArgumentException if the value isn&#39;t valid
+<i>1145</i>&nbsp;         */
+<i>1146</i>&nbsp;        public TimeOfDay addWrapFieldToCopy(int valueToAdd) {
+<b class="fc"><i>1147</i>&nbsp;            int[] newValues = iTimeOfDay.getValues();</b>
+<b class="fc"><i>1148</i>&nbsp;            newValues = getField().addWrapField(iTimeOfDay, iFieldIndex, newValues, valueToAdd);</b>
+<b class="fc"><i>1149</i>&nbsp;            return new TimeOfDay(iTimeOfDay, newValues);</b>
+<i>1150</i>&nbsp;        }
+<i>1151</i>&nbsp;
+<i>1152</i>&nbsp;        //-----------------------------------------------------------------------
+<i>1153</i>&nbsp;        /**
+<i>1154</i>&nbsp;         * Sets this field in a copy of the TimeOfDay.
+<i>1155</i>&nbsp;         * &lt;p&gt;
+<i>1156</i>&nbsp;         * The TimeOfDay attached to this property is unchanged by this call.
+<i>1157</i>&nbsp;         * Instead, a new instance is returned.
+<i>1158</i>&nbsp;         * 
+<i>1159</i>&nbsp;         * @param value  the value to set the field in the copy to
+<i>1160</i>&nbsp;         * @return a copy of the TimeOfDay with the field value changed
+<i>1161</i>&nbsp;         * @throws IllegalArgumentException if the value isn&#39;t valid
+<i>1162</i>&nbsp;         */
+<i>1163</i>&nbsp;        public TimeOfDay setCopy(int value) {
+<b class="fc"><i>1164</i>&nbsp;            int[] newValues = iTimeOfDay.getValues();</b>
+<b class="fc"><i>1165</i>&nbsp;            newValues = getField().set(iTimeOfDay, iFieldIndex, newValues, value);</b>
+<b class="fc"><i>1166</i>&nbsp;            return new TimeOfDay(iTimeOfDay, newValues);</b>
+<i>1167</i>&nbsp;        }
+<i>1168</i>&nbsp;
+<i>1169</i>&nbsp;        /**
+<i>1170</i>&nbsp;         * Sets this field in a copy of the TimeOfDay to a parsed text value.
+<i>1171</i>&nbsp;         * &lt;p&gt;
+<i>1172</i>&nbsp;         * The TimeOfDay attached to this property is unchanged by this call.
+<i>1173</i>&nbsp;         * Instead, a new instance is returned.
+<i>1174</i>&nbsp;         * 
+<i>1175</i>&nbsp;         * @param text  the text value to set
+<i>1176</i>&nbsp;         * @param locale  optional locale to use for selecting a text symbol
+<i>1177</i>&nbsp;         * @return a copy of the TimeOfDay with the field value changed
+<i>1178</i>&nbsp;         * @throws IllegalArgumentException if the text value isn&#39;t valid
+<i>1179</i>&nbsp;         */
+<i>1180</i>&nbsp;        public TimeOfDay setCopy(String text, Locale locale) {
+<b class="fc"><i>1181</i>&nbsp;            int[] newValues = iTimeOfDay.getValues();</b>
+<b class="fc"><i>1182</i>&nbsp;            newValues = getField().set(iTimeOfDay, iFieldIndex, newValues, text, locale);</b>
+<b class="fc"><i>1183</i>&nbsp;            return new TimeOfDay(iTimeOfDay, newValues);</b>
+<i>1184</i>&nbsp;        }
+<i>1185</i>&nbsp;
+<i>1186</i>&nbsp;        /**
+<i>1187</i>&nbsp;         * Sets this field in a copy of the TimeOfDay to a parsed text value.
+<i>1188</i>&nbsp;         * &lt;p&gt;
+<i>1189</i>&nbsp;         * The TimeOfDay attached to this property is unchanged by this call.
+<i>1190</i>&nbsp;         * Instead, a new instance is returned.
+<i>1191</i>&nbsp;         * 
+<i>1192</i>&nbsp;         * @param text  the text value to set
+<i>1193</i>&nbsp;         * @return a copy of the TimeOfDay with the field value changed
+<i>1194</i>&nbsp;         * @throws IllegalArgumentException if the text value isn&#39;t valid
+<i>1195</i>&nbsp;         */
+<i>1196</i>&nbsp;        public TimeOfDay setCopy(String text) {
+<b class="fc"><i>1197</i>&nbsp;            return setCopy(text, null);</b>
+<i>1198</i>&nbsp;        }
+<i>1199</i>&nbsp;
+<i>1200</i>&nbsp;        //-----------------------------------------------------------------------
+<i>1201</i>&nbsp;        /**
+<i>1202</i>&nbsp;         * Returns a new TimeOfDay with this field set to the maximum value
+<i>1203</i>&nbsp;         * for this field.
+<i>1204</i>&nbsp;         * &lt;p&gt;
+<i>1205</i>&nbsp;         * The TimeOfDay attached to this property is unchanged by this call.
+<i>1206</i>&nbsp;         *
+<i>1207</i>&nbsp;         * @return a copy of the TimeOfDay with this field set to its maximum
+<i>1208</i>&nbsp;         * @since 1.2
+<i>1209</i>&nbsp;         */
+<i>1210</i>&nbsp;        public TimeOfDay withMaximumValue() {
+<b class="fc"><i>1211</i>&nbsp;            return setCopy(getMaximumValue());</b>
+<i>1212</i>&nbsp;        }
+<i>1213</i>&nbsp;
+<i>1214</i>&nbsp;        /**
+<i>1215</i>&nbsp;         * Returns a new TimeOfDay with this field set to the minimum value
+<i>1216</i>&nbsp;         * for this field.
+<i>1217</i>&nbsp;         * &lt;p&gt;
+<i>1218</i>&nbsp;         * The TimeOfDay attached to this property is unchanged by this call.
+<i>1219</i>&nbsp;         *
+<i>1220</i>&nbsp;         * @return a copy of the TimeOfDay with this field set to its minimum
+<i>1221</i>&nbsp;         * @since 1.2
+<i>1222</i>&nbsp;         */
+<i>1223</i>&nbsp;        public TimeOfDay withMinimumValue() {
+<b class="fc"><i>1224</i>&nbsp;            return setCopy(getMinimumValue());</b>
+<i>1225</i>&nbsp;        }
+<i>1226</i>&nbsp;    }
+<i>1227</i>&nbsp;
+<i>1228</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

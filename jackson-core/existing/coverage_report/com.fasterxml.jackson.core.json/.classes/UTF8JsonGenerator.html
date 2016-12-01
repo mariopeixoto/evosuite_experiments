@@ -1,0 +1,2119 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: UTF8JsonGenerator</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.fasterxml.jackson.core.json</a> ]
+</div>
+
+<h1>Coverage Summary for Class: UTF8JsonGenerator (com.fasterxml.jackson.core.json)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">UTF8JsonGenerator</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    78.9%
+  </span>
+  <span class="absValue">
+    (60/ 76)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    68.8%
+  </span>
+  <span class="absValue">
+    (700/ 1018)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package com.fasterxml.jackson.core.json;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import java.io.*;
+<i>4</i>&nbsp;import java.math.BigDecimal;
+<i>5</i>&nbsp;import java.math.BigInteger;
+<i>6</i>&nbsp;
+<i>7</i>&nbsp;import com.fasterxml.jackson.core.*;
+<i>8</i>&nbsp;import com.fasterxml.jackson.core.io.*;
+<i>9</i>&nbsp;
+<i>10</i>&nbsp;public class UTF8JsonGenerator
+<i>11</i>&nbsp;    extends JsonGeneratorImpl
+<i>12</i>&nbsp;{
+<i>13</i>&nbsp;    private final static byte BYTE_u = (byte) &#39;u&#39;;
+<i>14</i>&nbsp;
+<i>15</i>&nbsp;    private final static byte BYTE_0 = (byte) &#39;0&#39;;
+<i>16</i>&nbsp;
+<i>17</i>&nbsp;    private final static byte BYTE_LBRACKET = (byte) &#39;[&#39;;
+<i>18</i>&nbsp;    private final static byte BYTE_RBRACKET = (byte) &#39;]&#39;;
+<i>19</i>&nbsp;    private final static byte BYTE_LCURLY = (byte) &#39;{&#39;;
+<i>20</i>&nbsp;    private final static byte BYTE_RCURLY = (byte) &#39;}&#39;;
+<i>21</i>&nbsp;
+<i>22</i>&nbsp;    private final static byte BYTE_BACKSLASH = (byte) &#39;\\&#39;;
+<i>23</i>&nbsp;    private final static byte BYTE_COMMA = (byte) &#39;,&#39;;
+<i>24</i>&nbsp;    private final static byte BYTE_COLON = (byte) &#39;:&#39;;
+<i>25</i>&nbsp;
+<i>26</i>&nbsp;    // intermediate copies only made up to certain length...
+<i>27</i>&nbsp;    private final static int MAX_BYTES_TO_BUFFER = 512;
+<i>28</i>&nbsp;
+<b class="fc"><i>29</i>&nbsp;    private final static byte[] HEX_CHARS = CharTypes.copyHexBytes();</b>
+<i>30</i>&nbsp;
+<b class="fc"><i>31</i>&nbsp;    private final static byte[] NULL_BYTES = { &#39;n&#39;, &#39;u&#39;, &#39;l&#39;, &#39;l&#39; };</b>
+<b class="fc"><i>32</i>&nbsp;    private final static byte[] TRUE_BYTES = { &#39;t&#39;, &#39;r&#39;, &#39;u&#39;, &#39;e&#39; };</b>
+<b class="fc"><i>33</i>&nbsp;    private final static byte[] FALSE_BYTES = { &#39;f&#39;, &#39;a&#39;, &#39;l&#39;, &#39;s&#39;, &#39;e&#39; };</b>
+<i>34</i>&nbsp;
+<i>35</i>&nbsp;    /*
+<i>36</i>&nbsp;    /**********************************************************
+<i>37</i>&nbsp;    /* Configuration
+<i>38</i>&nbsp;    /**********************************************************
+<i>39</i>&nbsp;     */
+<i>40</i>&nbsp;
+<i>41</i>&nbsp;    /**
+<i>42</i>&nbsp;     * Underlying output stream used for writing JSON content.
+<i>43</i>&nbsp;     */
+<i>44</i>&nbsp;    final protected OutputStream _outputStream;
+<i>45</i>&nbsp;
+<i>46</i>&nbsp;    /**
+<i>47</i>&nbsp;     * Character used for quoting JSON Object property names
+<i>48</i>&nbsp;     * and String values.
+<i>49</i>&nbsp;     *
+<i>50</i>&nbsp;     * @since 2.8
+<i>51</i>&nbsp;     */
+<b class="fc"><i>52</i>&nbsp;    protected byte _quoteChar = &#39;&quot;&#39;; // TODO: make configurable</b>
+<i>53</i>&nbsp;    
+<i>54</i>&nbsp;    /*
+<i>55</i>&nbsp;    /**********************************************************
+<i>56</i>&nbsp;    /* Output buffering
+<i>57</i>&nbsp;    /**********************************************************
+<i>58</i>&nbsp;     */
+<i>59</i>&nbsp;
+<i>60</i>&nbsp;    /**
+<i>61</i>&nbsp;     * Intermediate buffer in which contents are buffered before
+<i>62</i>&nbsp;     * being written using {@link #_outputStream}.
+<i>63</i>&nbsp;     */
+<i>64</i>&nbsp;    protected byte[] _outputBuffer;
+<i>65</i>&nbsp;
+<i>66</i>&nbsp;    /**
+<i>67</i>&nbsp;     * Pointer to the position right beyond the last character to output
+<i>68</i>&nbsp;     * (end marker; may be past the buffer)
+<i>69</i>&nbsp;     */
+<i>70</i>&nbsp;    protected int _outputTail;
+<i>71</i>&nbsp;
+<i>72</i>&nbsp;    /**
+<i>73</i>&nbsp;     * End marker of the output buffer; one past the last valid position
+<i>74</i>&nbsp;     * within the buffer.
+<i>75</i>&nbsp;     */
+<i>76</i>&nbsp;    protected final int _outputEnd;
+<i>77</i>&nbsp;
+<i>78</i>&nbsp;    /**
+<i>79</i>&nbsp;     * Maximum number of &lt;code&gt;char&lt;/code&gt;s that we know will always fit
+<i>80</i>&nbsp;     * in the output buffer after escaping
+<i>81</i>&nbsp;     */
+<i>82</i>&nbsp;    protected final int _outputMaxContiguous;
+<i>83</i>&nbsp;
+<i>84</i>&nbsp;    /**
+<i>85</i>&nbsp;     * Intermediate buffer in which characters of a String are copied
+<i>86</i>&nbsp;     * before being encoded.
+<i>87</i>&nbsp;     */
+<i>88</i>&nbsp;    protected char[] _charBuffer;
+<i>89</i>&nbsp;
+<i>90</i>&nbsp;    /**
+<i>91</i>&nbsp;     * Length of &lt;code&gt;_charBuffer&lt;/code&gt;
+<i>92</i>&nbsp;     */
+<i>93</i>&nbsp;    protected final int _charBufferLength;
+<i>94</i>&nbsp;
+<i>95</i>&nbsp;    /**
+<i>96</i>&nbsp;     * 6 character temporary buffer allocated if needed, for constructing
+<i>97</i>&nbsp;     * escape sequences
+<i>98</i>&nbsp;     */
+<i>99</i>&nbsp;    protected byte[] _entityBuffer;
+<i>100</i>&nbsp;
+<i>101</i>&nbsp;    /**
+<i>102</i>&nbsp;     * Flag that indicates whether the output buffer is recycable (and
+<i>103</i>&nbsp;     * needs to be returned to recycler once we are done) or not.
+<i>104</i>&nbsp;     */
+<i>105</i>&nbsp;    protected boolean _bufferRecyclable;
+<i>106</i>&nbsp;
+<i>107</i>&nbsp;    /*
+<i>108</i>&nbsp;    /**********************************************************
+<i>109</i>&nbsp;    /* Life-cycle
+<i>110</i>&nbsp;    /**********************************************************
+<i>111</i>&nbsp;     */
+<i>112</i>&nbsp;
+<i>113</i>&nbsp;    public UTF8JsonGenerator(IOContext ctxt, int features, ObjectCodec codec,
+<i>114</i>&nbsp;            OutputStream out)
+<i>115</i>&nbsp;    {
+<b class="fc"><i>116</i>&nbsp;        super(ctxt, features, codec);</b>
+<b class="fc"><i>117</i>&nbsp;        _outputStream = out;</b>
+<b class="fc"><i>118</i>&nbsp;        _bufferRecyclable = true;</b>
+<b class="fc"><i>119</i>&nbsp;        _outputBuffer = ctxt.allocWriteEncodingBuffer();</b>
+<b class="fc"><i>120</i>&nbsp;        _outputEnd = _outputBuffer.length;</b>
+<i>121</i>&nbsp;
+<i>122</i>&nbsp;        /* To be exact, each char can take up to 6 bytes when escaped (Unicode
+<i>123</i>&nbsp;         * escape with backslash, &#39;u&#39; and 4 hex digits); but to avoid fluctuation,
+<i>124</i>&nbsp;         * we will actually round down to only do up to 1/8 number of chars
+<i>125</i>&nbsp;         */
+<b class="fc"><i>126</i>&nbsp;        _outputMaxContiguous = _outputEnd &gt;&gt; 3;</b>
+<b class="fc"><i>127</i>&nbsp;        _charBuffer = ctxt.allocConcatBuffer();</b>
+<b class="fc"><i>128</i>&nbsp;        _charBufferLength = _charBuffer.length;</b>
+<i>129</i>&nbsp;
+<i>130</i>&nbsp;        // By default we use this feature to determine additional quoting
+<b class="fc"><i>131</i>&nbsp;        if (isEnabled(Feature.ESCAPE_NON_ASCII)) {</b>
+<b class="nc"><i>132</i>&nbsp;            setHighestNonEscapedChar(127);</b>
+<i>133</i>&nbsp;        }
+<b class="fc"><i>134</i>&nbsp;    }</b>
+<i>135</i>&nbsp;    
+<i>136</i>&nbsp;    public UTF8JsonGenerator(IOContext ctxt, int features, ObjectCodec codec,
+<i>137</i>&nbsp;            OutputStream out,
+<i>138</i>&nbsp;            byte[] outputBuffer, int outputOffset, boolean bufferRecyclable)
+<i>139</i>&nbsp;    {
+<i>140</i>&nbsp;        
+<b class="nc"><i>141</i>&nbsp;        super(ctxt, features, codec);</b>
+<b class="nc"><i>142</i>&nbsp;        _outputStream = out;</b>
+<b class="nc"><i>143</i>&nbsp;        _bufferRecyclable = bufferRecyclable;</b>
+<b class="nc"><i>144</i>&nbsp;        _outputTail = outputOffset;</b>
+<b class="nc"><i>145</i>&nbsp;        _outputBuffer = outputBuffer;</b>
+<b class="nc"><i>146</i>&nbsp;        _outputEnd = _outputBuffer.length;</b>
+<i>147</i>&nbsp;        // up to 6 bytes per char (see above), rounded up to 1/8
+<b class="nc"><i>148</i>&nbsp;        _outputMaxContiguous = (_outputEnd &gt;&gt; 3);</b>
+<b class="nc"><i>149</i>&nbsp;        _charBuffer = ctxt.allocConcatBuffer();</b>
+<b class="nc"><i>150</i>&nbsp;        _charBufferLength = _charBuffer.length;</b>
+<b class="nc"><i>151</i>&nbsp;    }</b>
+<i>152</i>&nbsp;
+<i>153</i>&nbsp;    /*
+<i>154</i>&nbsp;    /**********************************************************
+<i>155</i>&nbsp;    /* Overridden configuration methods
+<i>156</i>&nbsp;    /**********************************************************
+<i>157</i>&nbsp;     */
+<i>158</i>&nbsp;    
+<i>159</i>&nbsp;    @Override
+<i>160</i>&nbsp;    public Object getOutputTarget() {
+<b class="fc"><i>161</i>&nbsp;        return _outputStream;</b>
+<i>162</i>&nbsp;    }
+<i>163</i>&nbsp;
+<i>164</i>&nbsp;    @Override
+<i>165</i>&nbsp;    public int getOutputBuffered() {
+<i>166</i>&nbsp;        // Assuming tail is always valid, set to 0 on close
+<b class="fc"><i>167</i>&nbsp;        return _outputTail;</b>
+<i>168</i>&nbsp;    }
+<i>169</i>&nbsp;
+<i>170</i>&nbsp;    /*
+<i>171</i>&nbsp;    /**********************************************************
+<i>172</i>&nbsp;    /* Overridden methods
+<i>173</i>&nbsp;    /**********************************************************
+<i>174</i>&nbsp;     */
+<i>175</i>&nbsp;
+<i>176</i>&nbsp;    @Override
+<i>177</i>&nbsp;    public void writeFieldName(String name)  throws IOException
+<i>178</i>&nbsp;    {
+<b class="fc"><i>179</i>&nbsp;        if (_cfgPrettyPrinter != null) {</b>
+<b class="fc"><i>180</i>&nbsp;            _writePPFieldName(name);</b>
+<b class="fc"><i>181</i>&nbsp;            return;</b>
+<i>182</i>&nbsp;        }
+<b class="fc"><i>183</i>&nbsp;        final int status = _writeContext.writeFieldName(name);</b>
+<b class="fc"><i>184</i>&nbsp;        if (status == JsonWriteContext.STATUS_EXPECT_VALUE) {</b>
+<b class="fc"><i>185</i>&nbsp;            _reportError(&quot;Can not write a field name, expecting a value&quot;);</b>
+<i>186</i>&nbsp;        }
+<b class="fc"><i>187</i>&nbsp;        if (status == JsonWriteContext.STATUS_OK_AFTER_COMMA) { // need comma</b>
+<b class="fc"><i>188</i>&nbsp;            if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>189</i>&nbsp;                _flushBuffer();</b>
+<i>190</i>&nbsp;            }
+<b class="fc"><i>191</i>&nbsp;            _outputBuffer[_outputTail++] = BYTE_COMMA;</b>
+<i>192</i>&nbsp;        }
+<i>193</i>&nbsp;        /* To support [JACKSON-46], we&#39;ll do this:
+<i>194</i>&nbsp;         * (Question: should quoting of spaces (etc) still be enabled?)
+<i>195</i>&nbsp;         */
+<b class="fc"><i>196</i>&nbsp;        if (_cfgUnqNames) {</b>
+<b class="fc"><i>197</i>&nbsp;            _writeStringSegments(name, false);</b>
+<b class="fc"><i>198</i>&nbsp;            return;</b>
+<i>199</i>&nbsp;        }
+<b class="fc"><i>200</i>&nbsp;        final int len = name.length();</b>
+<i>201</i>&nbsp;        // Does it fit in buffer?
+<b class="fc"><i>202</i>&nbsp;        if (len &gt; _charBufferLength) { // no, offline</b>
+<b class="nc"><i>203</i>&nbsp;            _writeStringSegments(name, true);</b>
+<b class="nc"><i>204</i>&nbsp;            return;</b>
+<i>205</i>&nbsp;        }
+<b class="fc"><i>206</i>&nbsp;        if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>207</i>&nbsp;            _flushBuffer();</b>
+<i>208</i>&nbsp;        }
+<b class="fc"><i>209</i>&nbsp;        _outputBuffer[_outputTail++] = _quoteChar;</b>
+<i>210</i>&nbsp;        // But as one segment, or multiple?
+<b class="fc"><i>211</i>&nbsp;        if (len &lt;= _outputMaxContiguous) {</b>
+<b class="fc"><i>212</i>&nbsp;            if ((_outputTail + len) &gt; _outputEnd) { // caller must ensure enough space</b>
+<b class="nc"><i>213</i>&nbsp;                _flushBuffer();</b>
+<i>214</i>&nbsp;            }
+<b class="fc"><i>215</i>&nbsp;            _writeStringSegment(name, 0, len);</b>
+<i>216</i>&nbsp;        } else {
+<b class="nc"><i>217</i>&nbsp;            _writeStringSegments(name, 0, len);</b>
+<i>218</i>&nbsp;        }
+<i>219</i>&nbsp;        // and closing quotes; need room for one more char:
+<b class="fc"><i>220</i>&nbsp;        if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>221</i>&nbsp;            _flushBuffer();</b>
+<i>222</i>&nbsp;        }
+<b class="fc"><i>223</i>&nbsp;        _outputBuffer[_outputTail++] = _quoteChar;</b>
+<b class="fc"><i>224</i>&nbsp;    }</b>
+<i>225</i>&nbsp;    
+<i>226</i>&nbsp;    @Override
+<i>227</i>&nbsp;    public void writeFieldName(SerializableString name) throws IOException
+<i>228</i>&nbsp;    {
+<b class="fc"><i>229</i>&nbsp;        if (_cfgPrettyPrinter != null) {</b>
+<b class="nc"><i>230</i>&nbsp;            _writePPFieldName(name);</b>
+<b class="nc"><i>231</i>&nbsp;            return;</b>
+<i>232</i>&nbsp;        }
+<b class="fc"><i>233</i>&nbsp;        final int status = _writeContext.writeFieldName(name.getValue());</b>
+<b class="fc"><i>234</i>&nbsp;        if (status == JsonWriteContext.STATUS_EXPECT_VALUE) {</b>
+<b class="nc"><i>235</i>&nbsp;            _reportError(&quot;Can not write a field name, expecting a value&quot;);</b>
+<i>236</i>&nbsp;        }
+<b class="fc"><i>237</i>&nbsp;        if (status == JsonWriteContext.STATUS_OK_AFTER_COMMA) {</b>
+<b class="fc"><i>238</i>&nbsp;            if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>239</i>&nbsp;                _flushBuffer();</b>
+<i>240</i>&nbsp;            }
+<b class="fc"><i>241</i>&nbsp;            _outputBuffer[_outputTail++] = BYTE_COMMA;</b>
+<i>242</i>&nbsp;        }
+<b class="fc"><i>243</i>&nbsp;        if (_cfgUnqNames) {</b>
+<b class="nc"><i>244</i>&nbsp;            _writeUnq(name);</b>
+<b class="nc"><i>245</i>&nbsp;            return;</b>
+<i>246</i>&nbsp;        }
+<b class="fc"><i>247</i>&nbsp;        if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>248</i>&nbsp;            _flushBuffer();</b>
+<i>249</i>&nbsp;        }
+<b class="fc"><i>250</i>&nbsp;        _outputBuffer[_outputTail++] = _quoteChar;</b>
+<b class="fc"><i>251</i>&nbsp;        int len = name.appendQuotedUTF8(_outputBuffer, _outputTail);</b>
+<b class="fc"><i>252</i>&nbsp;        if (len &lt; 0) { // couldn&#39;t append, bit longer processing</b>
+<b class="nc"><i>253</i>&nbsp;            _writeBytes(name.asQuotedUTF8());</b>
+<i>254</i>&nbsp;        } else {
+<b class="fc"><i>255</i>&nbsp;            _outputTail += len;</b>
+<i>256</i>&nbsp;        }
+<b class="fc"><i>257</i>&nbsp;        if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>258</i>&nbsp;            _flushBuffer();</b>
+<i>259</i>&nbsp;        }
+<b class="fc"><i>260</i>&nbsp;        _outputBuffer[_outputTail++] = _quoteChar;</b>
+<b class="fc"><i>261</i>&nbsp;    }    </b>
+<i>262</i>&nbsp;
+<i>263</i>&nbsp;    private final void _writeUnq(SerializableString name) throws IOException {
+<b class="nc"><i>264</i>&nbsp;        int len = name.appendQuotedUTF8(_outputBuffer, _outputTail);</b>
+<b class="nc"><i>265</i>&nbsp;        if (len &lt; 0) {</b>
+<b class="nc"><i>266</i>&nbsp;            _writeBytes(name.asQuotedUTF8());</b>
+<i>267</i>&nbsp;        } else {
+<b class="nc"><i>268</i>&nbsp;            _outputTail += len;</b>
+<i>269</i>&nbsp;        }
+<b class="nc"><i>270</i>&nbsp;    }</b>
+<i>271</i>&nbsp;    
+<i>272</i>&nbsp;    /*
+<i>273</i>&nbsp;    /**********************************************************
+<i>274</i>&nbsp;    /* Output method implementations, structural
+<i>275</i>&nbsp;    /**********************************************************
+<i>276</i>&nbsp;     */
+<i>277</i>&nbsp;
+<i>278</i>&nbsp;    @Override
+<i>279</i>&nbsp;    public final void writeStartArray() throws IOException
+<i>280</i>&nbsp;    {
+<b class="fc"><i>281</i>&nbsp;        _verifyValueWrite(&quot;start an array&quot;);</b>
+<b class="fc"><i>282</i>&nbsp;        _writeContext = _writeContext.createChildArrayContext();</b>
+<b class="fc"><i>283</i>&nbsp;        if (_cfgPrettyPrinter != null) {</b>
+<b class="fc"><i>284</i>&nbsp;            _cfgPrettyPrinter.writeStartArray(this);</b>
+<i>285</i>&nbsp;        } else {
+<b class="fc"><i>286</i>&nbsp;            if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>287</i>&nbsp;                _flushBuffer();</b>
+<i>288</i>&nbsp;            }
+<b class="fc"><i>289</i>&nbsp;            _outputBuffer[_outputTail++] = BYTE_LBRACKET;</b>
+<i>290</i>&nbsp;        }
+<b class="fc"><i>291</i>&nbsp;    }</b>
+<i>292</i>&nbsp;
+<i>293</i>&nbsp;    @Override
+<i>294</i>&nbsp;    public final void writeEndArray() throws IOException
+<i>295</i>&nbsp;    {
+<b class="fc"><i>296</i>&nbsp;        if (!_writeContext.inArray()) {</b>
+<b class="nc"><i>297</i>&nbsp;            _reportError(&quot;Current context not Array but &quot;+_writeContext.typeDesc());</b>
+<i>298</i>&nbsp;        }
+<b class="fc"><i>299</i>&nbsp;        if (_cfgPrettyPrinter != null) {</b>
+<b class="fc"><i>300</i>&nbsp;            _cfgPrettyPrinter.writeEndArray(this, _writeContext.getEntryCount());</b>
+<i>301</i>&nbsp;        } else {
+<b class="fc"><i>302</i>&nbsp;            if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>303</i>&nbsp;                _flushBuffer();</b>
+<i>304</i>&nbsp;            }
+<b class="fc"><i>305</i>&nbsp;            _outputBuffer[_outputTail++] = BYTE_RBRACKET;</b>
+<i>306</i>&nbsp;        }
+<b class="fc"><i>307</i>&nbsp;        _writeContext = _writeContext.clearAndGetParent();</b>
+<b class="fc"><i>308</i>&nbsp;    }</b>
+<i>309</i>&nbsp;
+<i>310</i>&nbsp;    @Override
+<i>311</i>&nbsp;    public final void writeStartObject() throws IOException
+<i>312</i>&nbsp;    {
+<b class="fc"><i>313</i>&nbsp;        _verifyValueWrite(&quot;start an object&quot;);</b>
+<b class="fc"><i>314</i>&nbsp;        _writeContext = _writeContext.createChildObjectContext();</b>
+<b class="fc"><i>315</i>&nbsp;        if (_cfgPrettyPrinter != null) {</b>
+<b class="fc"><i>316</i>&nbsp;            _cfgPrettyPrinter.writeStartObject(this);</b>
+<i>317</i>&nbsp;        } else {
+<b class="fc"><i>318</i>&nbsp;            if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>319</i>&nbsp;                _flushBuffer();</b>
+<i>320</i>&nbsp;            }
+<b class="fc"><i>321</i>&nbsp;            _outputBuffer[_outputTail++] = BYTE_LCURLY;</b>
+<i>322</i>&nbsp;        }
+<b class="fc"><i>323</i>&nbsp;    }</b>
+<i>324</i>&nbsp;
+<i>325</i>&nbsp;    @Override // since 2.8
+<i>326</i>&nbsp;    public void writeStartObject(Object forValue) throws IOException
+<i>327</i>&nbsp;    {
+<b class="nc"><i>328</i>&nbsp;        _verifyValueWrite(&quot;start an object&quot;);</b>
+<b class="nc"><i>329</i>&nbsp;        JsonWriteContext ctxt = _writeContext.createChildObjectContext();</b>
+<b class="nc"><i>330</i>&nbsp;        _writeContext = ctxt;</b>
+<b class="nc"><i>331</i>&nbsp;        if (forValue != null) {</b>
+<b class="nc"><i>332</i>&nbsp;            ctxt.setCurrentValue(forValue);</b>
+<i>333</i>&nbsp;        }
+<b class="nc"><i>334</i>&nbsp;        if (_cfgPrettyPrinter != null) {</b>
+<b class="nc"><i>335</i>&nbsp;            _cfgPrettyPrinter.writeStartObject(this);</b>
+<i>336</i>&nbsp;        } else {
+<b class="nc"><i>337</i>&nbsp;            if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>338</i>&nbsp;                _flushBuffer();</b>
+<i>339</i>&nbsp;            }
+<b class="nc"><i>340</i>&nbsp;            _outputBuffer[_outputTail++] = &#39;{&#39;;</b>
+<i>341</i>&nbsp;        }
+<b class="nc"><i>342</i>&nbsp;    }</b>
+<i>343</i>&nbsp;    
+<i>344</i>&nbsp;    @Override
+<i>345</i>&nbsp;    public final void writeEndObject() throws IOException
+<i>346</i>&nbsp;    {
+<b class="fc"><i>347</i>&nbsp;        if (!_writeContext.inObject()) {</b>
+<b class="nc"><i>348</i>&nbsp;            _reportError(&quot;Current context not Object but &quot;+_writeContext.typeDesc());</b>
+<i>349</i>&nbsp;        }
+<b class="fc"><i>350</i>&nbsp;        if (_cfgPrettyPrinter != null) {</b>
+<b class="fc"><i>351</i>&nbsp;            _cfgPrettyPrinter.writeEndObject(this, _writeContext.getEntryCount());</b>
+<i>352</i>&nbsp;        } else {
+<b class="fc"><i>353</i>&nbsp;            if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>354</i>&nbsp;                _flushBuffer();</b>
+<i>355</i>&nbsp;            }
+<b class="fc"><i>356</i>&nbsp;            _outputBuffer[_outputTail++] = BYTE_RCURLY;</b>
+<i>357</i>&nbsp;        }
+<b class="fc"><i>358</i>&nbsp;        _writeContext = _writeContext.clearAndGetParent();</b>
+<b class="fc"><i>359</i>&nbsp;    }</b>
+<i>360</i>&nbsp;
+<i>361</i>&nbsp;    /**
+<i>362</i>&nbsp;     * Specialized version of &lt;code&gt;_writeFieldName&lt;/code&gt;, off-lined
+<i>363</i>&nbsp;     * to keep the &quot;fast path&quot; as simple (and hopefully fast) as possible.
+<i>364</i>&nbsp;     */
+<i>365</i>&nbsp;    protected final void _writePPFieldName(String name) throws IOException
+<i>366</i>&nbsp;    {
+<b class="fc"><i>367</i>&nbsp;        int status = _writeContext.writeFieldName(name);</b>
+<b class="fc"><i>368</i>&nbsp;        if (status == JsonWriteContext.STATUS_EXPECT_VALUE) {</b>
+<b class="nc"><i>369</i>&nbsp;            _reportError(&quot;Can not write a field name, expecting a value&quot;);</b>
+<i>370</i>&nbsp;        }
+<b class="fc"><i>371</i>&nbsp;        if ((status == JsonWriteContext.STATUS_OK_AFTER_COMMA)) {</b>
+<b class="fc"><i>372</i>&nbsp;            _cfgPrettyPrinter.writeObjectEntrySeparator(this);</b>
+<i>373</i>&nbsp;        } else {
+<b class="fc"><i>374</i>&nbsp;            _cfgPrettyPrinter.beforeObjectEntries(this);</b>
+<i>375</i>&nbsp;        }
+<b class="fc"><i>376</i>&nbsp;        if (_cfgUnqNames) {</b>
+<b class="nc"><i>377</i>&nbsp;            _writeStringSegments(name, false);</b>
+<b class="nc"><i>378</i>&nbsp;            return;</b>
+<i>379</i>&nbsp;        }
+<b class="fc"><i>380</i>&nbsp;        final int len = name.length();</b>
+<b class="fc"><i>381</i>&nbsp;        if (len &gt; _charBufferLength) {</b>
+<b class="nc"><i>382</i>&nbsp;            _writeStringSegments(name, true);</b>
+<b class="nc"><i>383</i>&nbsp;            return;</b>
+<i>384</i>&nbsp;        }
+<b class="fc"><i>385</i>&nbsp;        if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>386</i>&nbsp;            _flushBuffer();</b>
+<i>387</i>&nbsp;        }
+<b class="fc"><i>388</i>&nbsp;        _outputBuffer[_outputTail++] = _quoteChar;</b>
+<b class="fc"><i>389</i>&nbsp;        name.getChars(0, len, _charBuffer, 0);</b>
+<i>390</i>&nbsp;        // But as one segment, or multiple?
+<b class="fc"><i>391</i>&nbsp;        if (len &lt;= _outputMaxContiguous) {</b>
+<b class="fc"><i>392</i>&nbsp;            if ((_outputTail + len) &gt; _outputEnd) { // caller must ensure enough space</b>
+<b class="nc"><i>393</i>&nbsp;                _flushBuffer();</b>
+<i>394</i>&nbsp;            }
+<b class="fc"><i>395</i>&nbsp;            _writeStringSegment(_charBuffer, 0, len);</b>
+<i>396</i>&nbsp;        } else {
+<b class="nc"><i>397</i>&nbsp;            _writeStringSegments(_charBuffer, 0, len);</b>
+<i>398</i>&nbsp;        }
+<b class="fc"><i>399</i>&nbsp;        if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>400</i>&nbsp;            _flushBuffer();</b>
+<i>401</i>&nbsp;        }
+<b class="fc"><i>402</i>&nbsp;        _outputBuffer[_outputTail++] = _quoteChar;</b>
+<b class="fc"><i>403</i>&nbsp;    }</b>
+<i>404</i>&nbsp;
+<i>405</i>&nbsp;    protected final void _writePPFieldName(SerializableString name) throws IOException
+<i>406</i>&nbsp;    {
+<b class="nc"><i>407</i>&nbsp;        final int status = _writeContext.writeFieldName(name.getValue());</b>
+<b class="nc"><i>408</i>&nbsp;        if (status == JsonWriteContext.STATUS_EXPECT_VALUE) {</b>
+<b class="nc"><i>409</i>&nbsp;            _reportError(&quot;Can not write a field name, expecting a value&quot;);</b>
+<i>410</i>&nbsp;        }
+<b class="nc"><i>411</i>&nbsp;        if (status == JsonWriteContext.STATUS_OK_AFTER_COMMA) {</b>
+<b class="nc"><i>412</i>&nbsp;            _cfgPrettyPrinter.writeObjectEntrySeparator(this);</b>
+<i>413</i>&nbsp;        } else {
+<b class="nc"><i>414</i>&nbsp;            _cfgPrettyPrinter.beforeObjectEntries(this);</b>
+<i>415</i>&nbsp;        }
+<i>416</i>&nbsp;
+<b class="nc"><i>417</i>&nbsp;        final boolean addQuotes = !_cfgUnqNames; // standard</b>
+<b class="nc"><i>418</i>&nbsp;        if (addQuotes) {</b>
+<b class="nc"><i>419</i>&nbsp;            if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>420</i>&nbsp;                _flushBuffer();</b>
+<i>421</i>&nbsp;            }
+<b class="nc"><i>422</i>&nbsp;            _outputBuffer[_outputTail++] = _quoteChar;</b>
+<i>423</i>&nbsp;        }
+<b class="nc"><i>424</i>&nbsp;        _writeBytes(name.asQuotedUTF8());</b>
+<b class="nc"><i>425</i>&nbsp;        if (addQuotes) {</b>
+<b class="nc"><i>426</i>&nbsp;            if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>427</i>&nbsp;                _flushBuffer();</b>
+<i>428</i>&nbsp;            }
+<b class="nc"><i>429</i>&nbsp;            _outputBuffer[_outputTail++] = _quoteChar;</b>
+<i>430</i>&nbsp;        }
+<b class="nc"><i>431</i>&nbsp;    }</b>
+<i>432</i>&nbsp;    
+<i>433</i>&nbsp;    /*
+<i>434</i>&nbsp;    /**********************************************************
+<i>435</i>&nbsp;    /* Output method implementations, textual
+<i>436</i>&nbsp;    /**********************************************************
+<i>437</i>&nbsp;     */
+<i>438</i>&nbsp;
+<i>439</i>&nbsp;    @Override
+<i>440</i>&nbsp;    public void writeString(String text) throws IOException
+<i>441</i>&nbsp;    {
+<b class="fc"><i>442</i>&nbsp;        _verifyValueWrite(WRITE_STRING);</b>
+<b class="fc"><i>443</i>&nbsp;        if (text == null) {</b>
+<b class="nc"><i>444</i>&nbsp;            _writeNull();</b>
+<b class="nc"><i>445</i>&nbsp;            return;</b>
+<i>446</i>&nbsp;        }
+<i>447</i>&nbsp;        // First: if we can&#39;t guarantee it all fits, quoted, within output, offline
+<b class="fc"><i>448</i>&nbsp;        final int len = text.length();</b>
+<b class="fc"><i>449</i>&nbsp;        if (len &gt; _outputMaxContiguous) { // nope: off-line handling</b>
+<b class="fc"><i>450</i>&nbsp;            _writeStringSegments(text, true);</b>
+<b class="fc"><i>451</i>&nbsp;            return;</b>
+<i>452</i>&nbsp;        }
+<b class="fc"><i>453</i>&nbsp;        if ((_outputTail + len) &gt;= _outputEnd) {</b>
+<b class="nc"><i>454</i>&nbsp;            _flushBuffer();</b>
+<i>455</i>&nbsp;        }
+<b class="fc"><i>456</i>&nbsp;        _outputBuffer[_outputTail++] = _quoteChar;</b>
+<b class="fc"><i>457</i>&nbsp;        _writeStringSegment(text, 0, len); // we checked space already above</b>
+<b class="fc"><i>458</i>&nbsp;        if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>459</i>&nbsp;            _flushBuffer();</b>
+<i>460</i>&nbsp;        }
+<b class="fc"><i>461</i>&nbsp;        _outputBuffer[_outputTail++] = _quoteChar;</b>
+<b class="fc"><i>462</i>&nbsp;    }</b>
+<i>463</i>&nbsp;
+<i>464</i>&nbsp;    @Override
+<i>465</i>&nbsp;    public void writeString(char[] text, int offset, int len) throws IOException
+<i>466</i>&nbsp;    {
+<b class="fc"><i>467</i>&nbsp;        _verifyValueWrite(WRITE_STRING);</b>
+<b class="fc"><i>468</i>&nbsp;        if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>469</i>&nbsp;            _flushBuffer();</b>
+<i>470</i>&nbsp;        }
+<b class="fc"><i>471</i>&nbsp;        _outputBuffer[_outputTail++] = _quoteChar;</b>
+<i>472</i>&nbsp;        // One or multiple segments?
+<b class="fc"><i>473</i>&nbsp;        if (len &lt;= _outputMaxContiguous) {</b>
+<b class="fc"><i>474</i>&nbsp;            if ((_outputTail + len) &gt; _outputEnd) { // caller must ensure enough space</b>
+<b class="nc"><i>475</i>&nbsp;                _flushBuffer();</b>
+<i>476</i>&nbsp;            }
+<b class="fc"><i>477</i>&nbsp;            _writeStringSegment(text, offset, len);</b>
+<i>478</i>&nbsp;        } else {
+<b class="fc"><i>479</i>&nbsp;            _writeStringSegments(text, offset, len);</b>
+<i>480</i>&nbsp;        }
+<i>481</i>&nbsp;        // And finally, closing quotes
+<b class="fc"><i>482</i>&nbsp;        if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>483</i>&nbsp;            _flushBuffer();</b>
+<i>484</i>&nbsp;        }
+<b class="fc"><i>485</i>&nbsp;        _outputBuffer[_outputTail++] = _quoteChar;</b>
+<b class="fc"><i>486</i>&nbsp;    }</b>
+<i>487</i>&nbsp;
+<i>488</i>&nbsp;    @Override
+<i>489</i>&nbsp;    public final void writeString(SerializableString text) throws IOException
+<i>490</i>&nbsp;    {
+<b class="nc"><i>491</i>&nbsp;        _verifyValueWrite(WRITE_STRING);</b>
+<b class="nc"><i>492</i>&nbsp;        if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>493</i>&nbsp;            _flushBuffer();</b>
+<i>494</i>&nbsp;        }
+<b class="nc"><i>495</i>&nbsp;        _outputBuffer[_outputTail++] = _quoteChar;</b>
+<b class="nc"><i>496</i>&nbsp;        int len = text.appendQuotedUTF8(_outputBuffer, _outputTail);</b>
+<b class="nc"><i>497</i>&nbsp;        if (len &lt; 0) {</b>
+<b class="nc"><i>498</i>&nbsp;            _writeBytes(text.asQuotedUTF8());</b>
+<i>499</i>&nbsp;        } else {
+<b class="nc"><i>500</i>&nbsp;            _outputTail += len;</b>
+<i>501</i>&nbsp;        }
+<b class="nc"><i>502</i>&nbsp;        if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>503</i>&nbsp;            _flushBuffer();</b>
+<i>504</i>&nbsp;        }
+<b class="nc"><i>505</i>&nbsp;        _outputBuffer[_outputTail++] = _quoteChar;</b>
+<b class="nc"><i>506</i>&nbsp;    }</b>
+<i>507</i>&nbsp;    
+<i>508</i>&nbsp;    @Override
+<i>509</i>&nbsp;    public void writeRawUTF8String(byte[] text, int offset, int length) throws IOException
+<i>510</i>&nbsp;    {
+<b class="fc"><i>511</i>&nbsp;        _verifyValueWrite(WRITE_STRING);</b>
+<b class="fc"><i>512</i>&nbsp;        if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>513</i>&nbsp;            _flushBuffer();</b>
+<i>514</i>&nbsp;        }
+<b class="fc"><i>515</i>&nbsp;        _outputBuffer[_outputTail++] = _quoteChar;</b>
+<b class="fc"><i>516</i>&nbsp;        _writeBytes(text, offset, length);</b>
+<b class="fc"><i>517</i>&nbsp;        if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>518</i>&nbsp;            _flushBuffer();</b>
+<i>519</i>&nbsp;        }
+<b class="fc"><i>520</i>&nbsp;        _outputBuffer[_outputTail++] = _quoteChar;</b>
+<b class="fc"><i>521</i>&nbsp;    }</b>
+<i>522</i>&nbsp;
+<i>523</i>&nbsp;    @Override
+<i>524</i>&nbsp;    public void writeUTF8String(byte[] text, int offset, int len) throws IOException
+<i>525</i>&nbsp;    {
+<b class="fc"><i>526</i>&nbsp;        _verifyValueWrite(WRITE_STRING);</b>
+<b class="fc"><i>527</i>&nbsp;        if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>528</i>&nbsp;            _flushBuffer();</b>
+<i>529</i>&nbsp;        }
+<b class="fc"><i>530</i>&nbsp;        _outputBuffer[_outputTail++] = _quoteChar;</b>
+<i>531</i>&nbsp;        // One or multiple segments?
+<b class="fc"><i>532</i>&nbsp;        if (len &lt;= _outputMaxContiguous) {</b>
+<b class="fc"><i>533</i>&nbsp;            _writeUTF8Segment(text, offset, len);</b>
+<i>534</i>&nbsp;        } else {
+<b class="fc"><i>535</i>&nbsp;            _writeUTF8Segments(text, offset, len);</b>
+<i>536</i>&nbsp;        }
+<b class="fc"><i>537</i>&nbsp;        if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>538</i>&nbsp;            _flushBuffer();</b>
+<i>539</i>&nbsp;        }
+<b class="fc"><i>540</i>&nbsp;        _outputBuffer[_outputTail++] = _quoteChar;</b>
+<b class="fc"><i>541</i>&nbsp;    }</b>
+<i>542</i>&nbsp;
+<i>543</i>&nbsp;    /*
+<i>544</i>&nbsp;    /**********************************************************
+<i>545</i>&nbsp;    /* Output method implementations, unprocessed (&quot;raw&quot;)
+<i>546</i>&nbsp;    /**********************************************************
+<i>547</i>&nbsp;     */
+<i>548</i>&nbsp;
+<i>549</i>&nbsp;    @Override
+<i>550</i>&nbsp;    public void writeRaw(String text) throws IOException {
+<b class="fc"><i>551</i>&nbsp;        final int len = text.length();</b>
+<b class="fc"><i>552</i>&nbsp;        final char[] buf = _charBuffer;</b>
+<b class="fc"><i>553</i>&nbsp;        if (len &lt;= buf.length) {</b>
+<b class="fc"><i>554</i>&nbsp;            text.getChars(0, len, buf, 0);</b>
+<b class="fc"><i>555</i>&nbsp;            writeRaw(buf, 0, len);</b>
+<i>556</i>&nbsp;        } else {
+<b class="fc"><i>557</i>&nbsp;            writeRaw(text, 0, len);</b>
+<i>558</i>&nbsp;        }
+<b class="fc"><i>559</i>&nbsp;    }</b>
+<i>560</i>&nbsp;
+<i>561</i>&nbsp;    @Override
+<i>562</i>&nbsp;    public void writeRaw(String text, int offset, int len) throws IOException
+<i>563</i>&nbsp;    {
+<b class="fc"><i>564</i>&nbsp;        final char[] buf = _charBuffer;</b>
+<i>565</i>&nbsp;
+<i>566</i>&nbsp;        // minor optimization: see if we can just get and copy
+<b class="fc"><i>567</i>&nbsp;        if (len &lt;= buf.length) {</b>
+<b class="nc"><i>568</i>&nbsp;            text.getChars(offset, offset+len, buf, 0);</b>
+<b class="nc"><i>569</i>&nbsp;            writeRaw(buf, 0, len);</b>
+<b class="nc"><i>570</i>&nbsp;            return;</b>
+<i>571</i>&nbsp;        }
+<i>572</i>&nbsp;
+<i>573</i>&nbsp;        // If not, need segmented approach. For speed, let&#39;s also use input buffer
+<i>574</i>&nbsp;        // size that is guaranteed to fit in output buffer; each char can expand to
+<i>575</i>&nbsp;        // at most 3 bytes, so at most 1/3 of buffer size.
+<b class="fc"><i>576</i>&nbsp;        final int maxChunk = (_outputEnd &gt;&gt; 2) + (_outputEnd &gt;&gt; 4); // == (1/4 + 1/16) == 5/16</b>
+<b class="fc"><i>577</i>&nbsp;        final int maxBytes = maxChunk * 3;</b>
+<i>578</i>&nbsp;
+<b class="fc"><i>579</i>&nbsp;        while (len &gt; 0) {</b>
+<b class="fc"><i>580</i>&nbsp;            int len2 = Math.min(maxChunk, len);</b>
+<b class="fc"><i>581</i>&nbsp;            text.getChars(offset, offset+len2, buf, 0);</b>
+<b class="fc"><i>582</i>&nbsp;            if ((_outputTail + maxBytes) &gt; _outputEnd) {</b>
+<b class="fc"><i>583</i>&nbsp;                _flushBuffer();</b>
+<i>584</i>&nbsp;            }
+<i>585</i>&nbsp;            // If this is NOT the last segment and if the last character looks like
+<i>586</i>&nbsp;            // split surrogate second half, drop it
+<b class="fc"><i>587</i>&nbsp;            if (len &gt; 0) {</b>
+<b class="fc"><i>588</i>&nbsp;                char ch = buf[len2-1];</b>
+<b class="fc"><i>589</i>&nbsp;                if ((ch &gt;= SURR1_FIRST) &amp;&amp; (ch &lt;= SURR1_LAST)) {</b>
+<b class="fc"><i>590</i>&nbsp;                    --len2;</b>
+<i>591</i>&nbsp;                }
+<i>592</i>&nbsp;            }
+<b class="fc"><i>593</i>&nbsp;            _writeRawSegment(buf, 0, len2);</b>
+<b class="fc"><i>594</i>&nbsp;            offset += len2;</b>
+<b class="fc"><i>595</i>&nbsp;            len -= len2;</b>
+<b class="fc"><i>596</i>&nbsp;        }</b>
+<b class="fc"><i>597</i>&nbsp;    }</b>
+<i>598</i>&nbsp;
+<i>599</i>&nbsp;    @Override
+<i>600</i>&nbsp;    public void writeRaw(SerializableString text) throws IOException
+<i>601</i>&nbsp;    {
+<b class="fc"><i>602</i>&nbsp;        byte[] raw = text.asUnquotedUTF8();</b>
+<b class="fc"><i>603</i>&nbsp;        if (raw.length &gt; 0) {</b>
+<b class="fc"><i>604</i>&nbsp;            _writeBytes(raw);</b>
+<i>605</i>&nbsp;        }
+<b class="fc"><i>606</i>&nbsp;    }</b>
+<i>607</i>&nbsp;
+<i>608</i>&nbsp;    // since 2.5
+<i>609</i>&nbsp;    @Override
+<i>610</i>&nbsp;    public void writeRawValue(SerializableString text) throws IOException {
+<b class="fc"><i>611</i>&nbsp;        _verifyValueWrite(WRITE_RAW);</b>
+<b class="fc"><i>612</i>&nbsp;        byte[] raw = text.asUnquotedUTF8();</b>
+<b class="fc"><i>613</i>&nbsp;        if (raw.length &gt; 0) {</b>
+<b class="fc"><i>614</i>&nbsp;            _writeBytes(raw);</b>
+<i>615</i>&nbsp;        }
+<b class="fc"><i>616</i>&nbsp;    }</b>
+<i>617</i>&nbsp;
+<i>618</i>&nbsp;    // @TODO: rewrite for speed...
+<i>619</i>&nbsp;    @Override
+<i>620</i>&nbsp;    public final void writeRaw(char[] cbuf, int offset, int len) throws IOException
+<i>621</i>&nbsp;    {
+<i>622</i>&nbsp;        // First: if we have 3 x charCount spaces, we know it&#39;ll fit just fine
+<i>623</i>&nbsp;        {
+<b class="fc"><i>624</i>&nbsp;            int len3 = len+len+len;</b>
+<b class="fc"><i>625</i>&nbsp;            if ((_outputTail + len3) &gt; _outputEnd) {</b>
+<i>626</i>&nbsp;                // maybe we could flush?
+<b class="fc"><i>627</i>&nbsp;                if (_outputEnd &lt; len3) { // wouldn&#39;t be enough...</b>
+<b class="fc"><i>628</i>&nbsp;                    _writeSegmentedRaw(cbuf, offset, len);</b>
+<b class="fc"><i>629</i>&nbsp;                    return;</b>
+<i>630</i>&nbsp;                }
+<i>631</i>&nbsp;                // yes, flushing brings enough space
+<b class="fc"><i>632</i>&nbsp;                _flushBuffer();</b>
+<i>633</i>&nbsp;            }
+<i>634</i>&nbsp;        }
+<b class="fc"><i>635</i>&nbsp;        len += offset; // now marks the end</b>
+<i>636</i>&nbsp;
+<i>637</i>&nbsp;        // Note: here we know there is enough room, hence no output boundary checks
+<i>638</i>&nbsp;        main_loop:
+<b class="fc"><i>639</i>&nbsp;        while (offset &lt; len) {</b>
+<i>640</i>&nbsp;            inner_loop:
+<i>641</i>&nbsp;            while (true) {
+<b class="fc"><i>642</i>&nbsp;                int ch = (int) cbuf[offset];</b>
+<b class="fc"><i>643</i>&nbsp;                if (ch &gt; 0x7F) {</b>
+<b class="fc"><i>644</i>&nbsp;                    break inner_loop;</b>
+<i>645</i>&nbsp;                }
+<b class="fc"><i>646</i>&nbsp;                _outputBuffer[_outputTail++] = (byte) ch;</b>
+<b class="fc"><i>647</i>&nbsp;                if (++offset &gt;= len) {</b>
+<b class="fc"><i>648</i>&nbsp;                    break main_loop;</b>
+<i>649</i>&nbsp;                }
+<b class="fc"><i>650</i>&nbsp;            }</b>
+<b class="fc"><i>651</i>&nbsp;            char ch = cbuf[offset++];</b>
+<b class="fc"><i>652</i>&nbsp;            if (ch &lt; 0x800) { // 2-byte?</b>
+<b class="nc"><i>653</i>&nbsp;                _outputBuffer[_outputTail++] = (byte) (0xc0 | (ch &gt;&gt; 6));</b>
+<b class="nc"><i>654</i>&nbsp;                _outputBuffer[_outputTail++] = (byte) (0x80 | (ch &amp; 0x3f));</b>
+<i>655</i>&nbsp;            } else {
+<b class="fc"><i>656</i>&nbsp;                offset = _outputRawMultiByteChar(ch, cbuf, offset, len);</b>
+<i>657</i>&nbsp;            }
+<b class="fc"><i>658</i>&nbsp;        }</b>
+<b class="fc"><i>659</i>&nbsp;    }</b>
+<i>660</i>&nbsp;
+<i>661</i>&nbsp;    @Override
+<i>662</i>&nbsp;    public void writeRaw(char ch) throws IOException
+<i>663</i>&nbsp;    {
+<b class="fc"><i>664</i>&nbsp;        if ((_outputTail + 3) &gt;= _outputEnd) {</b>
+<b class="nc"><i>665</i>&nbsp;            _flushBuffer();</b>
+<i>666</i>&nbsp;        }
+<b class="fc"><i>667</i>&nbsp;        final byte[] bbuf = _outputBuffer;</b>
+<b class="fc"><i>668</i>&nbsp;        if (ch &lt;= 0x7F) {</b>
+<b class="fc"><i>669</i>&nbsp;            bbuf[_outputTail++] = (byte) ch;</b>
+<b class="nc"><i>670</i>&nbsp;        } else  if (ch &lt; 0x800) { // 2-byte?</b>
+<b class="nc"><i>671</i>&nbsp;            bbuf[_outputTail++] = (byte) (0xc0 | (ch &gt;&gt; 6));</b>
+<b class="nc"><i>672</i>&nbsp;            bbuf[_outputTail++] = (byte) (0x80 | (ch &amp; 0x3f));</b>
+<i>673</i>&nbsp;        } else {
+<b class="nc"><i>674</i>&nbsp;            /*offset =*/ _outputRawMultiByteChar(ch, null, 0, 0);</b>
+<i>675</i>&nbsp;        }
+<b class="fc"><i>676</i>&nbsp;    }</b>
+<i>677</i>&nbsp;
+<i>678</i>&nbsp;    /**
+<i>679</i>&nbsp;     * Helper method called when it is possible that output of raw section
+<i>680</i>&nbsp;     * to output may cross buffer boundary
+<i>681</i>&nbsp;     */
+<i>682</i>&nbsp;    private final void _writeSegmentedRaw(char[] cbuf, int offset, int len) throws IOException
+<i>683</i>&nbsp;    {
+<b class="fc"><i>684</i>&nbsp;        final int end = _outputEnd;</b>
+<b class="fc"><i>685</i>&nbsp;        final byte[] bbuf = _outputBuffer;</b>
+<b class="fc"><i>686</i>&nbsp;        final int inputEnd = offset + len;</b>
+<i>687</i>&nbsp;        
+<i>688</i>&nbsp;        main_loop:
+<b class="fc"><i>689</i>&nbsp;        while (offset &lt; inputEnd) {</b>
+<i>690</i>&nbsp;            inner_loop:
+<i>691</i>&nbsp;            while (true) {
+<b class="fc"><i>692</i>&nbsp;                int ch = (int) cbuf[offset];</b>
+<b class="fc"><i>693</i>&nbsp;                if (ch &gt;= 0x80) {</b>
+<b class="fc"><i>694</i>&nbsp;                    break inner_loop;</b>
+<i>695</i>&nbsp;                }
+<i>696</i>&nbsp;                // !!! TODO: fast(er) writes (roll input, output checks in one)
+<b class="fc"><i>697</i>&nbsp;                if (_outputTail &gt;= end) {</b>
+<b class="nc"><i>698</i>&nbsp;                    _flushBuffer();</b>
+<i>699</i>&nbsp;                }
+<b class="fc"><i>700</i>&nbsp;                bbuf[_outputTail++] = (byte) ch;</b>
+<b class="fc"><i>701</i>&nbsp;                if (++offset &gt;= inputEnd) {</b>
+<b class="fc"><i>702</i>&nbsp;                    break main_loop;</b>
+<i>703</i>&nbsp;                }
+<b class="fc"><i>704</i>&nbsp;            }</b>
+<b class="fc"><i>705</i>&nbsp;            if ((_outputTail + 3) &gt;= _outputEnd) {</b>
+<b class="nc"><i>706</i>&nbsp;                _flushBuffer();</b>
+<i>707</i>&nbsp;            }
+<b class="fc"><i>708</i>&nbsp;            char ch = cbuf[offset++];</b>
+<b class="fc"><i>709</i>&nbsp;            if (ch &lt; 0x800) { // 2-byte?</b>
+<b class="nc"><i>710</i>&nbsp;                bbuf[_outputTail++] = (byte) (0xc0 | (ch &gt;&gt; 6));</b>
+<b class="nc"><i>711</i>&nbsp;                bbuf[_outputTail++] = (byte) (0x80 | (ch &amp; 0x3f));</b>
+<i>712</i>&nbsp;            } else {
+<b class="fc"><i>713</i>&nbsp;                offset = _outputRawMultiByteChar(ch, cbuf, offset, inputEnd);</b>
+<i>714</i>&nbsp;            }
+<b class="fc"><i>715</i>&nbsp;        }</b>
+<b class="fc"><i>716</i>&nbsp;    }</b>
+<i>717</i>&nbsp;
+<i>718</i>&nbsp;    /**
+<i>719</i>&nbsp;     * Helper method that is called for segmented write of raw content
+<i>720</i>&nbsp;     * when explicitly outputting a segment of longer thing.
+<i>721</i>&nbsp;     * Caller has to take care of ensuring there&#39;s no split surrogate
+<i>722</i>&nbsp;     * pair at the end (that is, last char can not be first part of a
+<i>723</i>&nbsp;     * surrogate char pair).
+<i>724</i>&nbsp;     *
+<i>725</i>&nbsp;     * @since 2.8.2
+<i>726</i>&nbsp;     */
+<i>727</i>&nbsp;    private void _writeRawSegment(char[] cbuf, int offset, int end) throws IOException
+<i>728</i>&nbsp;    {
+<i>729</i>&nbsp;        main_loop:
+<b class="fc"><i>730</i>&nbsp;        while (offset &lt; end) {</b>
+<i>731</i>&nbsp;            inner_loop:
+<i>732</i>&nbsp;            while (true) {
+<b class="fc"><i>733</i>&nbsp;                int ch = (int) cbuf[offset];</b>
+<b class="fc"><i>734</i>&nbsp;                if (ch &gt; 0x7F) {</b>
+<b class="fc"><i>735</i>&nbsp;                    break inner_loop;</b>
+<i>736</i>&nbsp;                }
+<b class="fc"><i>737</i>&nbsp;                _outputBuffer[_outputTail++] = (byte) ch;</b>
+<b class="fc"><i>738</i>&nbsp;                if (++offset &gt;= end) {</b>
+<b class="fc"><i>739</i>&nbsp;                    break main_loop;</b>
+<i>740</i>&nbsp;                }
+<b class="fc"><i>741</i>&nbsp;            }</b>
+<b class="fc"><i>742</i>&nbsp;            char ch = cbuf[offset++];</b>
+<b class="fc"><i>743</i>&nbsp;            if (ch &lt; 0x800) { // 2-byte?</b>
+<b class="nc"><i>744</i>&nbsp;                _outputBuffer[_outputTail++] = (byte) (0xc0 | (ch &gt;&gt; 6));</b>
+<b class="nc"><i>745</i>&nbsp;                _outputBuffer[_outputTail++] = (byte) (0x80 | (ch &amp; 0x3f));</b>
+<i>746</i>&nbsp;            } else {
+<b class="fc"><i>747</i>&nbsp;                offset = _outputRawMultiByteChar(ch, cbuf, offset, end);</b>
+<i>748</i>&nbsp;            }
+<b class="fc"><i>749</i>&nbsp;        }</b>
+<b class="fc"><i>750</i>&nbsp;    }</b>
+<i>751</i>&nbsp;
+<i>752</i>&nbsp;    /*
+<i>753</i>&nbsp;    /**********************************************************
+<i>754</i>&nbsp;    /* Output method implementations, base64-encoded binary
+<i>755</i>&nbsp;    /**********************************************************
+<i>756</i>&nbsp;     */
+<i>757</i>&nbsp;
+<i>758</i>&nbsp;    @Override
+<i>759</i>&nbsp;    public void writeBinary(Base64Variant b64variant,
+<i>760</i>&nbsp;            byte[] data, int offset, int len)
+<i>761</i>&nbsp;        throws IOException, JsonGenerationException
+<i>762</i>&nbsp;    {
+<b class="fc"><i>763</i>&nbsp;        _verifyValueWrite(WRITE_BINARY);</b>
+<i>764</i>&nbsp;        // Starting quotes
+<b class="fc"><i>765</i>&nbsp;        if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>766</i>&nbsp;            _flushBuffer();</b>
+<i>767</i>&nbsp;        }
+<b class="fc"><i>768</i>&nbsp;        _outputBuffer[_outputTail++] = _quoteChar;</b>
+<b class="fc"><i>769</i>&nbsp;        _writeBinary(b64variant, data, offset, offset+len);</b>
+<i>770</i>&nbsp;        // and closing quotes
+<b class="fc"><i>771</i>&nbsp;        if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>772</i>&nbsp;            _flushBuffer();</b>
+<i>773</i>&nbsp;        }
+<b class="fc"><i>774</i>&nbsp;        _outputBuffer[_outputTail++] = _quoteChar;</b>
+<b class="fc"><i>775</i>&nbsp;    }</b>
+<i>776</i>&nbsp;
+<i>777</i>&nbsp;    @Override
+<i>778</i>&nbsp;    public int writeBinary(Base64Variant b64variant,
+<i>779</i>&nbsp;            InputStream data, int dataLength)
+<i>780</i>&nbsp;        throws IOException, JsonGenerationException
+<i>781</i>&nbsp;    {
+<b class="fc"><i>782</i>&nbsp;        _verifyValueWrite(WRITE_BINARY);</b>
+<i>783</i>&nbsp;        // Starting quotes
+<b class="fc"><i>784</i>&nbsp;        if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>785</i>&nbsp;            _flushBuffer();</b>
+<i>786</i>&nbsp;        }
+<b class="fc"><i>787</i>&nbsp;        _outputBuffer[_outputTail++] = _quoteChar;</b>
+<b class="fc"><i>788</i>&nbsp;        byte[] encodingBuffer = _ioContext.allocBase64Buffer();</b>
+<i>789</i>&nbsp;        int bytes;
+<i>790</i>&nbsp;        try {
+<b class="fc"><i>791</i>&nbsp;            if (dataLength &lt; 0) { // length unknown</b>
+<b class="fc"><i>792</i>&nbsp;                bytes = _writeBinary(b64variant, data, encodingBuffer);</b>
+<i>793</i>&nbsp;            } else {
+<b class="fc"><i>794</i>&nbsp;                int missing = _writeBinary(b64variant, data, encodingBuffer, dataLength);</b>
+<b class="fc"><i>795</i>&nbsp;                if (missing &gt; 0) {</b>
+<b class="nc"><i>796</i>&nbsp;                    _reportError(&quot;Too few bytes available: missing &quot;+missing+&quot; bytes (out of &quot;+dataLength+&quot;)&quot;);</b>
+<i>797</i>&nbsp;                }
+<b class="fc"><i>798</i>&nbsp;                bytes = dataLength;</b>
+<i>799</i>&nbsp;            }
+<i>800</i>&nbsp;        } finally {
+<b class="fc"><i>801</i>&nbsp;            _ioContext.releaseBase64Buffer(encodingBuffer);</b>
+<b class="fc"><i>802</i>&nbsp;        }</b>
+<i>803</i>&nbsp;        // and closing quotes
+<b class="fc"><i>804</i>&nbsp;        if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>805</i>&nbsp;            _flushBuffer();</b>
+<i>806</i>&nbsp;        }
+<b class="fc"><i>807</i>&nbsp;        _outputBuffer[_outputTail++] = _quoteChar;</b>
+<b class="fc"><i>808</i>&nbsp;        return bytes;</b>
+<i>809</i>&nbsp;    }
+<i>810</i>&nbsp;    
+<i>811</i>&nbsp;    /*
+<i>812</i>&nbsp;    /**********************************************************
+<i>813</i>&nbsp;    /* Output method implementations, primitive
+<i>814</i>&nbsp;    /**********************************************************
+<i>815</i>&nbsp;     */
+<i>816</i>&nbsp;
+<i>817</i>&nbsp;    @Override
+<i>818</i>&nbsp;    public void writeNumber(short s) throws IOException
+<i>819</i>&nbsp;    {
+<b class="nc"><i>820</i>&nbsp;        _verifyValueWrite(WRITE_NUMBER);</b>
+<i>821</i>&nbsp;        // up to 5 digits and possible minus sign
+<b class="nc"><i>822</i>&nbsp;        if ((_outputTail + 6) &gt;= _outputEnd) {</b>
+<b class="nc"><i>823</i>&nbsp;            _flushBuffer();</b>
+<i>824</i>&nbsp;        }
+<b class="nc"><i>825</i>&nbsp;        if (_cfgNumbersAsStrings) {</b>
+<b class="nc"><i>826</i>&nbsp;            _writeQuotedShort(s);</b>
+<b class="nc"><i>827</i>&nbsp;            return;</b>
+<i>828</i>&nbsp;        }
+<b class="nc"><i>829</i>&nbsp;        _outputTail = NumberOutput.outputInt(s, _outputBuffer, _outputTail);</b>
+<b class="nc"><i>830</i>&nbsp;    }</b>
+<i>831</i>&nbsp;    
+<i>832</i>&nbsp;    private final void _writeQuotedShort(short s) throws IOException {
+<b class="nc"><i>833</i>&nbsp;        if ((_outputTail + 8) &gt;= _outputEnd) {</b>
+<b class="nc"><i>834</i>&nbsp;            _flushBuffer();</b>
+<i>835</i>&nbsp;        }
+<b class="nc"><i>836</i>&nbsp;        _outputBuffer[_outputTail++] = _quoteChar;</b>
+<b class="nc"><i>837</i>&nbsp;        _outputTail = NumberOutput.outputInt(s, _outputBuffer, _outputTail);</b>
+<b class="nc"><i>838</i>&nbsp;        _outputBuffer[_outputTail++] = _quoteChar;</b>
+<b class="nc"><i>839</i>&nbsp;    } </b>
+<i>840</i>&nbsp;    
+<i>841</i>&nbsp;    @Override
+<i>842</i>&nbsp;    public void writeNumber(int i) throws IOException
+<i>843</i>&nbsp;    {
+<b class="fc"><i>844</i>&nbsp;        _verifyValueWrite(WRITE_NUMBER);</b>
+<i>845</i>&nbsp;        // up to 10 digits and possible minus sign
+<b class="fc"><i>846</i>&nbsp;        if ((_outputTail + 11) &gt;= _outputEnd) {</b>
+<b class="fc"><i>847</i>&nbsp;            _flushBuffer();</b>
+<i>848</i>&nbsp;        }
+<b class="fc"><i>849</i>&nbsp;        if (_cfgNumbersAsStrings) {</b>
+<b class="nc"><i>850</i>&nbsp;            _writeQuotedInt(i);</b>
+<b class="nc"><i>851</i>&nbsp;            return;</b>
+<i>852</i>&nbsp;        }
+<b class="fc"><i>853</i>&nbsp;        _outputTail = NumberOutput.outputInt(i, _outputBuffer, _outputTail);</b>
+<b class="fc"><i>854</i>&nbsp;    }</b>
+<i>855</i>&nbsp;
+<i>856</i>&nbsp;    private final void _writeQuotedInt(int i) throws IOException
+<i>857</i>&nbsp;    {
+<b class="nc"><i>858</i>&nbsp;        if ((_outputTail + 13) &gt;= _outputEnd) {</b>
+<b class="nc"><i>859</i>&nbsp;            _flushBuffer();</b>
+<i>860</i>&nbsp;        }
+<b class="nc"><i>861</i>&nbsp;        _outputBuffer[_outputTail++] = _quoteChar;</b>
+<b class="nc"><i>862</i>&nbsp;        _outputTail = NumberOutput.outputInt(i, _outputBuffer, _outputTail);</b>
+<b class="nc"><i>863</i>&nbsp;        _outputBuffer[_outputTail++] = _quoteChar;</b>
+<b class="nc"><i>864</i>&nbsp;    }    </b>
+<i>865</i>&nbsp;
+<i>866</i>&nbsp;    @Override
+<i>867</i>&nbsp;    public void writeNumber(long l) throws IOException
+<i>868</i>&nbsp;    {
+<b class="fc"><i>869</i>&nbsp;        _verifyValueWrite(WRITE_NUMBER);</b>
+<b class="fc"><i>870</i>&nbsp;        if (_cfgNumbersAsStrings) {</b>
+<b class="nc"><i>871</i>&nbsp;            _writeQuotedLong(l);</b>
+<b class="nc"><i>872</i>&nbsp;            return;</b>
+<i>873</i>&nbsp;        }
+<b class="fc"><i>874</i>&nbsp;        if ((_outputTail + 21) &gt;= _outputEnd) {</b>
+<i>875</i>&nbsp;            // up to 20 digits, minus sign
+<b class="fc"><i>876</i>&nbsp;            _flushBuffer();</b>
+<i>877</i>&nbsp;        }
+<b class="fc"><i>878</i>&nbsp;        _outputTail = NumberOutput.outputLong(l, _outputBuffer, _outputTail);</b>
+<b class="fc"><i>879</i>&nbsp;    }</b>
+<i>880</i>&nbsp;
+<i>881</i>&nbsp;    private final void _writeQuotedLong(long l) throws IOException
+<i>882</i>&nbsp;    {
+<b class="nc"><i>883</i>&nbsp;        if ((_outputTail + 23) &gt;= _outputEnd) {</b>
+<b class="nc"><i>884</i>&nbsp;            _flushBuffer();</b>
+<i>885</i>&nbsp;        }
+<b class="nc"><i>886</i>&nbsp;        _outputBuffer[_outputTail++] = _quoteChar;</b>
+<b class="nc"><i>887</i>&nbsp;        _outputTail = NumberOutput.outputLong(l, _outputBuffer, _outputTail);</b>
+<b class="nc"><i>888</i>&nbsp;        _outputBuffer[_outputTail++] = _quoteChar;</b>
+<b class="nc"><i>889</i>&nbsp;    }</b>
+<i>890</i>&nbsp;
+<i>891</i>&nbsp;    @Override
+<i>892</i>&nbsp;    public void writeNumber(BigInteger value) throws IOException
+<i>893</i>&nbsp;    {
+<b class="nc"><i>894</i>&nbsp;        _verifyValueWrite(WRITE_NUMBER);</b>
+<b class="nc"><i>895</i>&nbsp;        if (value == null) {</b>
+<b class="nc"><i>896</i>&nbsp;            _writeNull();</b>
+<b class="nc"><i>897</i>&nbsp;        } else if (_cfgNumbersAsStrings) {</b>
+<b class="nc"><i>898</i>&nbsp;            _writeQuotedRaw(value.toString());</b>
+<i>899</i>&nbsp;        } else {
+<b class="nc"><i>900</i>&nbsp;            writeRaw(value.toString());</b>
+<i>901</i>&nbsp;        }
+<b class="nc"><i>902</i>&nbsp;    }</b>
+<i>903</i>&nbsp;
+<i>904</i>&nbsp;    
+<i>905</i>&nbsp;    @Override
+<i>906</i>&nbsp;    public void writeNumber(double d) throws IOException
+<i>907</i>&nbsp;    {
+<b class="fc"><i>908</i>&nbsp;        if (_cfgNumbersAsStrings ||</b>
+<b class="fc"><i>909</i>&nbsp;            (((Double.isNaN(d) || Double.isInfinite(d))</b>
+<b class="nc"><i>910</i>&nbsp;                &amp;&amp; Feature.QUOTE_NON_NUMERIC_NUMBERS.enabledIn(_features)))) {</b>
+<b class="nc"><i>911</i>&nbsp;            writeString(String.valueOf(d));</b>
+<b class="nc"><i>912</i>&nbsp;            return;</b>
+<i>913</i>&nbsp;        }
+<i>914</i>&nbsp;        // What is the max length for doubles? 40 chars?
+<b class="fc"><i>915</i>&nbsp;        _verifyValueWrite(WRITE_NUMBER);</b>
+<b class="fc"><i>916</i>&nbsp;        writeRaw(String.valueOf(d));</b>
+<b class="fc"><i>917</i>&nbsp;    }</b>
+<i>918</i>&nbsp;
+<i>919</i>&nbsp;    @Override
+<i>920</i>&nbsp;    public void writeNumber(float f) throws IOException
+<i>921</i>&nbsp;    {
+<b class="nc"><i>922</i>&nbsp;        if (_cfgNumbersAsStrings ||</b>
+<i>923</i>&nbsp;            // [JACKSON-139]
+<b class="nc"><i>924</i>&nbsp;            (((Float.isNaN(f) || Float.isInfinite(f))</b>
+<b class="nc"><i>925</i>&nbsp;                &amp;&amp; Feature.QUOTE_NON_NUMERIC_NUMBERS.enabledIn(_features)))) {</b>
+<b class="nc"><i>926</i>&nbsp;            writeString(String.valueOf(f));</b>
+<b class="nc"><i>927</i>&nbsp;            return;</b>
+<i>928</i>&nbsp;        }
+<i>929</i>&nbsp;        // What is the max length for floats?
+<b class="nc"><i>930</i>&nbsp;        _verifyValueWrite(WRITE_NUMBER);</b>
+<b class="nc"><i>931</i>&nbsp;        writeRaw(String.valueOf(f));</b>
+<b class="nc"><i>932</i>&nbsp;    }</b>
+<i>933</i>&nbsp;
+<i>934</i>&nbsp;    @Override
+<i>935</i>&nbsp;    public void writeNumber(BigDecimal value) throws IOException
+<i>936</i>&nbsp;    {
+<i>937</i>&nbsp;        // Don&#39;t really know max length for big decimal, no point checking
+<b class="fc"><i>938</i>&nbsp;        _verifyValueWrite(WRITE_NUMBER);</b>
+<b class="fc"><i>939</i>&nbsp;        if (value == null) {</b>
+<b class="nc"><i>940</i>&nbsp;            _writeNull();</b>
+<b class="fc"><i>941</i>&nbsp;        } else  if (_cfgNumbersAsStrings) {</b>
+<b class="fc"><i>942</i>&nbsp;            _writeQuotedRaw(_asString(value));</b>
+<i>943</i>&nbsp;        } else {
+<b class="fc"><i>944</i>&nbsp;            writeRaw(_asString(value));</b>
+<i>945</i>&nbsp;        }
+<b class="fc"><i>946</i>&nbsp;    }</b>
+<i>947</i>&nbsp;
+<i>948</i>&nbsp;    @Override
+<i>949</i>&nbsp;    public void writeNumber(String encodedValue) throws IOException
+<i>950</i>&nbsp;    {
+<b class="nc"><i>951</i>&nbsp;        _verifyValueWrite(WRITE_NUMBER);</b>
+<b class="nc"><i>952</i>&nbsp;        if (_cfgNumbersAsStrings) {</b>
+<b class="nc"><i>953</i>&nbsp;            _writeQuotedRaw(encodedValue);            </b>
+<i>954</i>&nbsp;        } else {
+<b class="nc"><i>955</i>&nbsp;            writeRaw(encodedValue);</b>
+<i>956</i>&nbsp;        }
+<b class="nc"><i>957</i>&nbsp;    }</b>
+<i>958</i>&nbsp;
+<i>959</i>&nbsp;    private final void _writeQuotedRaw(String value) throws IOException
+<i>960</i>&nbsp;    {
+<b class="fc"><i>961</i>&nbsp;        if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>962</i>&nbsp;            _flushBuffer();</b>
+<i>963</i>&nbsp;        }
+<b class="fc"><i>964</i>&nbsp;        _outputBuffer[_outputTail++] = _quoteChar;</b>
+<b class="fc"><i>965</i>&nbsp;        writeRaw(value);</b>
+<b class="fc"><i>966</i>&nbsp;        if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>967</i>&nbsp;            _flushBuffer();</b>
+<i>968</i>&nbsp;        }
+<b class="fc"><i>969</i>&nbsp;        _outputBuffer[_outputTail++] = _quoteChar;</b>
+<b class="fc"><i>970</i>&nbsp;    }</b>
+<i>971</i>&nbsp;    
+<i>972</i>&nbsp;    @Override
+<i>973</i>&nbsp;    public void writeBoolean(boolean state) throws IOException
+<i>974</i>&nbsp;    {
+<b class="fc"><i>975</i>&nbsp;        _verifyValueWrite(WRITE_BOOLEAN);</b>
+<b class="fc"><i>976</i>&nbsp;        if ((_outputTail + 5) &gt;= _outputEnd) {</b>
+<b class="nc"><i>977</i>&nbsp;            _flushBuffer();</b>
+<i>978</i>&nbsp;        }
+<b class="fc"><i>979</i>&nbsp;        byte[] keyword = state ? TRUE_BYTES : FALSE_BYTES;</b>
+<b class="fc"><i>980</i>&nbsp;        int len = keyword.length;</b>
+<b class="fc"><i>981</i>&nbsp;        System.arraycopy(keyword, 0, _outputBuffer, _outputTail, len);</b>
+<b class="fc"><i>982</i>&nbsp;        _outputTail += len;</b>
+<b class="fc"><i>983</i>&nbsp;    }</b>
+<i>984</i>&nbsp;
+<i>985</i>&nbsp;    @Override
+<i>986</i>&nbsp;    public void writeNull() throws IOException
+<i>987</i>&nbsp;    {
+<b class="fc"><i>988</i>&nbsp;        _verifyValueWrite(WRITE_NULL);</b>
+<b class="fc"><i>989</i>&nbsp;        _writeNull();</b>
+<b class="fc"><i>990</i>&nbsp;    }</b>
+<i>991</i>&nbsp;
+<i>992</i>&nbsp;    /*
+<i>993</i>&nbsp;    /**********************************************************
+<i>994</i>&nbsp;    /* Implementations for other methods
+<i>995</i>&nbsp;    /**********************************************************
+<i>996</i>&nbsp;     */
+<i>997</i>&nbsp;
+<i>998</i>&nbsp;    @Override
+<i>999</i>&nbsp;    protected final void _verifyValueWrite(String typeMsg) throws IOException
+<i>1000</i>&nbsp;    {
+<b class="fc"><i>1001</i>&nbsp;        final int status = _writeContext.writeValue();</b>
+<b class="fc"><i>1002</i>&nbsp;        if (_cfgPrettyPrinter != null) {</b>
+<i>1003</i>&nbsp;            // Otherwise, pretty printer knows what to do...
+<b class="fc"><i>1004</i>&nbsp;            _verifyPrettyValueWrite(typeMsg, status);</b>
+<b class="fc"><i>1005</i>&nbsp;            return;</b>
+<i>1006</i>&nbsp;        }
+<i>1007</i>&nbsp;        byte b;
+<b class="fc"><i>1008</i>&nbsp;        switch (status) {</b>
+<i>1009</i>&nbsp;        case JsonWriteContext.STATUS_OK_AS_IS:
+<i>1010</i>&nbsp;        default:
+<b class="fc"><i>1011</i>&nbsp;            return;</b>
+<i>1012</i>&nbsp;        case JsonWriteContext.STATUS_OK_AFTER_COMMA:
+<b class="fc"><i>1013</i>&nbsp;            b = BYTE_COMMA;</b>
+<b class="fc"><i>1014</i>&nbsp;            break;</b>
+<i>1015</i>&nbsp;        case JsonWriteContext.STATUS_OK_AFTER_COLON:
+<b class="fc"><i>1016</i>&nbsp;            b = BYTE_COLON;</b>
+<b class="fc"><i>1017</i>&nbsp;            break;</b>
+<i>1018</i>&nbsp;        case JsonWriteContext.STATUS_OK_AFTER_SPACE: // root-value separator
+<b class="fc"><i>1019</i>&nbsp;            if (_rootValueSeparator != null) {</b>
+<b class="fc"><i>1020</i>&nbsp;                byte[] raw = _rootValueSeparator.asUnquotedUTF8();</b>
+<b class="fc"><i>1021</i>&nbsp;                if (raw.length &gt; 0) {</b>
+<b class="fc"><i>1022</i>&nbsp;                    _writeBytes(raw);</b>
+<i>1023</i>&nbsp;                }
+<i>1024</i>&nbsp;            }
+<b class="fc"><i>1025</i>&nbsp;            return;</b>
+<i>1026</i>&nbsp;        case JsonWriteContext.STATUS_EXPECT_NAME:
+<b class="fc"><i>1027</i>&nbsp;            _reportCantWriteValueExpectName(typeMsg);</b>
+<b class="nc"><i>1028</i>&nbsp;            return;</b>
+<i>1029</i>&nbsp;        }
+<b class="fc"><i>1030</i>&nbsp;        if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>1031</i>&nbsp;            _flushBuffer();</b>
+<i>1032</i>&nbsp;        }
+<b class="fc"><i>1033</i>&nbsp;        _outputBuffer[_outputTail++] = b;</b>
+<b class="fc"><i>1034</i>&nbsp;    }</b>
+<i>1035</i>&nbsp;
+<i>1036</i>&nbsp;    /*
+<i>1037</i>&nbsp;    /**********************************************************
+<i>1038</i>&nbsp;    /* Low-level output handling
+<i>1039</i>&nbsp;    /**********************************************************
+<i>1040</i>&nbsp;     */
+<i>1041</i>&nbsp;
+<i>1042</i>&nbsp;    @Override
+<i>1043</i>&nbsp;    public void flush() throws IOException
+<i>1044</i>&nbsp;    {
+<b class="fc"><i>1045</i>&nbsp;        _flushBuffer();</b>
+<b class="fc"><i>1046</i>&nbsp;        if (_outputStream != null) {</b>
+<b class="fc"><i>1047</i>&nbsp;            if (isEnabled(Feature.FLUSH_PASSED_TO_STREAM)) {</b>
+<b class="fc"><i>1048</i>&nbsp;                _outputStream.flush();</b>
+<i>1049</i>&nbsp;            }
+<i>1050</i>&nbsp;        }
+<b class="fc"><i>1051</i>&nbsp;    }</b>
+<i>1052</i>&nbsp;
+<i>1053</i>&nbsp;    @Override
+<i>1054</i>&nbsp;    public void close() throws IOException
+<i>1055</i>&nbsp;    {
+<b class="fc"><i>1056</i>&nbsp;        super.close();</b>
+<i>1057</i>&nbsp;
+<i>1058</i>&nbsp;        /* 05-Dec-2008, tatu: To add [JACKSON-27], need to close open
+<i>1059</i>&nbsp;         *   scopes.
+<i>1060</i>&nbsp;         */
+<i>1061</i>&nbsp;        // First: let&#39;s see that we still have buffers...
+<b class="fc"><i>1062</i>&nbsp;        if ((_outputBuffer != null)</b>
+<b class="fc"><i>1063</i>&nbsp;            &amp;&amp; isEnabled(Feature.AUTO_CLOSE_JSON_CONTENT)) {</b>
+<i>1064</i>&nbsp;            while (true) {
+<b class="fc"><i>1065</i>&nbsp;                JsonStreamContext ctxt = getOutputContext();</b>
+<b class="fc"><i>1066</i>&nbsp;                if (ctxt.inArray()) {</b>
+<b class="fc"><i>1067</i>&nbsp;                    writeEndArray();</b>
+<b class="fc"><i>1068</i>&nbsp;                } else if (ctxt.inObject()) {</b>
+<b class="fc"><i>1069</i>&nbsp;                    writeEndObject();</b>
+<i>1070</i>&nbsp;                } else {
+<i>1071</i>&nbsp;                    break;
+<i>1072</i>&nbsp;                }
+<b class="fc"><i>1073</i>&nbsp;            }</b>
+<i>1074</i>&nbsp;        }
+<b class="fc"><i>1075</i>&nbsp;        _flushBuffer();</b>
+<b class="fc"><i>1076</i>&nbsp;        _outputTail = 0; // just to ensure we don&#39;t think there&#39;s anything buffered</b>
+<i>1077</i>&nbsp;
+<i>1078</i>&nbsp;        /* 25-Nov-2008, tatus: As per [JACKSON-16] we are not to call close()
+<i>1079</i>&nbsp;         *   on the underlying Reader, unless we &quot;own&quot; it, or auto-closing
+<i>1080</i>&nbsp;         *   feature is enabled.
+<i>1081</i>&nbsp;         *   One downside: when using UTF8Writer, underlying buffer(s)
+<i>1082</i>&nbsp;         *   may not be properly recycled if we don&#39;t close the writer.
+<i>1083</i>&nbsp;         */
+<b class="fc"><i>1084</i>&nbsp;        if (_outputStream != null) {</b>
+<b class="fc"><i>1085</i>&nbsp;            if (_ioContext.isResourceManaged() || isEnabled(Feature.AUTO_CLOSE_TARGET)) {</b>
+<b class="fc"><i>1086</i>&nbsp;                _outputStream.close();</b>
+<b class="fc"><i>1087</i>&nbsp;            } else if (isEnabled(Feature.FLUSH_PASSED_TO_STREAM)) {</b>
+<i>1088</i>&nbsp;                // If we can&#39;t close it, we should at least flush
+<b class="fc"><i>1089</i>&nbsp;                _outputStream.flush();</b>
+<i>1090</i>&nbsp;            }
+<i>1091</i>&nbsp;        }
+<i>1092</i>&nbsp;        // Internal buffer(s) generator has can now be released as well
+<b class="fc"><i>1093</i>&nbsp;        _releaseBuffers();</b>
+<b class="fc"><i>1094</i>&nbsp;    }</b>
+<i>1095</i>&nbsp;
+<i>1096</i>&nbsp;    @Override
+<i>1097</i>&nbsp;    protected void _releaseBuffers()
+<i>1098</i>&nbsp;    {
+<b class="fc"><i>1099</i>&nbsp;        byte[] buf = _outputBuffer;</b>
+<b class="fc"><i>1100</i>&nbsp;        if (buf != null &amp;&amp; _bufferRecyclable) {</b>
+<b class="fc"><i>1101</i>&nbsp;            _outputBuffer = null;</b>
+<b class="fc"><i>1102</i>&nbsp;            _ioContext.releaseWriteEncodingBuffer(buf);</b>
+<i>1103</i>&nbsp;        }
+<b class="fc"><i>1104</i>&nbsp;        char[] cbuf = _charBuffer;</b>
+<b class="fc"><i>1105</i>&nbsp;        if (cbuf != null) {</b>
+<b class="fc"><i>1106</i>&nbsp;            _charBuffer = null;</b>
+<b class="fc"><i>1107</i>&nbsp;            _ioContext.releaseConcatBuffer(cbuf);</b>
+<i>1108</i>&nbsp;        }
+<b class="fc"><i>1109</i>&nbsp;    }</b>
+<i>1110</i>&nbsp;
+<i>1111</i>&nbsp;    /*
+<i>1112</i>&nbsp;    /**********************************************************
+<i>1113</i>&nbsp;    /* Internal methods, low-level writing, raw bytes
+<i>1114</i>&nbsp;    /**********************************************************
+<i>1115</i>&nbsp;     */
+<i>1116</i>&nbsp;
+<i>1117</i>&nbsp;    private final void _writeBytes(byte[] bytes) throws IOException
+<i>1118</i>&nbsp;    {
+<b class="fc"><i>1119</i>&nbsp;        final int len = bytes.length;</b>
+<b class="fc"><i>1120</i>&nbsp;        if ((_outputTail + len) &gt; _outputEnd) {</b>
+<b class="nc"><i>1121</i>&nbsp;            _flushBuffer();</b>
+<i>1122</i>&nbsp;            // still not enough?
+<b class="nc"><i>1123</i>&nbsp;            if (len &gt; MAX_BYTES_TO_BUFFER) {</b>
+<b class="nc"><i>1124</i>&nbsp;                _outputStream.write(bytes, 0, len);</b>
+<b class="nc"><i>1125</i>&nbsp;                return;</b>
+<i>1126</i>&nbsp;            }
+<i>1127</i>&nbsp;        }
+<b class="fc"><i>1128</i>&nbsp;        System.arraycopy(bytes, 0, _outputBuffer, _outputTail, len);</b>
+<b class="fc"><i>1129</i>&nbsp;        _outputTail += len;</b>
+<b class="fc"><i>1130</i>&nbsp;    }</b>
+<i>1131</i>&nbsp;
+<i>1132</i>&nbsp;    private final void _writeBytes(byte[] bytes, int offset, int len) throws IOException
+<i>1133</i>&nbsp;    {
+<b class="fc"><i>1134</i>&nbsp;        if ((_outputTail + len) &gt; _outputEnd) {</b>
+<b class="fc"><i>1135</i>&nbsp;            _flushBuffer();</b>
+<i>1136</i>&nbsp;            // still not enough?
+<b class="fc"><i>1137</i>&nbsp;            if (len &gt; MAX_BYTES_TO_BUFFER) {</b>
+<b class="fc"><i>1138</i>&nbsp;                _outputStream.write(bytes, offset, len);</b>
+<b class="fc"><i>1139</i>&nbsp;                return;</b>
+<i>1140</i>&nbsp;            }
+<i>1141</i>&nbsp;        }
+<b class="fc"><i>1142</i>&nbsp;        System.arraycopy(bytes, offset, _outputBuffer, _outputTail, len);</b>
+<b class="fc"><i>1143</i>&nbsp;        _outputTail += len;</b>
+<b class="fc"><i>1144</i>&nbsp;    }</b>
+<i>1145</i>&nbsp;
+<i>1146</i>&nbsp;    /*
+<i>1147</i>&nbsp;    /**********************************************************
+<i>1148</i>&nbsp;    /* Internal methods, mid-level writing, String segments
+<i>1149</i>&nbsp;    /**********************************************************
+<i>1150</i>&nbsp;     */
+<i>1151</i>&nbsp;    
+<i>1152</i>&nbsp;    /**
+<i>1153</i>&nbsp;     * Method called when String to write is long enough not to fit
+<i>1154</i>&nbsp;     * completely in temporary copy buffer. If so, we will actually
+<i>1155</i>&nbsp;     * copy it in small enough chunks so it can be directly fed
+<i>1156</i>&nbsp;     * to single-segment writes (instead of maximum slices that
+<i>1157</i>&nbsp;     * would fit in copy buffer)
+<i>1158</i>&nbsp;     */
+<i>1159</i>&nbsp;    private final void _writeStringSegments(String text, boolean addQuotes) throws IOException
+<i>1160</i>&nbsp;    {
+<b class="fc"><i>1161</i>&nbsp;        if (addQuotes) {</b>
+<b class="fc"><i>1162</i>&nbsp;            if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>1163</i>&nbsp;                _flushBuffer();</b>
+<i>1164</i>&nbsp;            }
+<b class="fc"><i>1165</i>&nbsp;            _outputBuffer[_outputTail++] = _quoteChar;        </b>
+<i>1166</i>&nbsp;        }
+<i>1167</i>&nbsp;
+<b class="fc"><i>1168</i>&nbsp;        int left = text.length();</b>
+<b class="fc"><i>1169</i>&nbsp;        int offset = 0;</b>
+<i>1170</i>&nbsp;
+<b class="fc"><i>1171</i>&nbsp;        while (left &gt; 0) {</b>
+<b class="fc"><i>1172</i>&nbsp;            int len = Math.min(_outputMaxContiguous, left);</b>
+<b class="fc"><i>1173</i>&nbsp;            if ((_outputTail + len) &gt; _outputEnd) { // caller must ensure enough space</b>
+<b class="fc"><i>1174</i>&nbsp;                _flushBuffer();</b>
+<i>1175</i>&nbsp;            }
+<b class="fc"><i>1176</i>&nbsp;            _writeStringSegment(text, offset, len);</b>
+<b class="fc"><i>1177</i>&nbsp;            offset += len;</b>
+<b class="fc"><i>1178</i>&nbsp;            left -= len;</b>
+<b class="fc"><i>1179</i>&nbsp;        }</b>
+<i>1180</i>&nbsp;
+<b class="fc"><i>1181</i>&nbsp;        if (addQuotes) {</b>
+<b class="fc"><i>1182</i>&nbsp;            if (_outputTail &gt;= _outputEnd) {</b>
+<b class="nc"><i>1183</i>&nbsp;                _flushBuffer();</b>
+<i>1184</i>&nbsp;            }
+<b class="fc"><i>1185</i>&nbsp;            _outputBuffer[_outputTail++] = _quoteChar;</b>
+<i>1186</i>&nbsp;        }
+<b class="fc"><i>1187</i>&nbsp;    }</b>
+<i>1188</i>&nbsp;
+<i>1189</i>&nbsp;    /**
+<i>1190</i>&nbsp;     * Method called when character sequence to write is long enough that
+<i>1191</i>&nbsp;     * its maximum encoded and escaped form is not guaranteed to fit in
+<i>1192</i>&nbsp;     * the output buffer. If so, we will need to choose smaller output
+<i>1193</i>&nbsp;     * chunks to write at a time.
+<i>1194</i>&nbsp;     */
+<i>1195</i>&nbsp;    private final void _writeStringSegments(char[] cbuf, int offset, int totalLen) throws IOException
+<i>1196</i>&nbsp;    {
+<i>1197</i>&nbsp;        do {
+<b class="fc"><i>1198</i>&nbsp;            int len = Math.min(_outputMaxContiguous, totalLen);</b>
+<b class="fc"><i>1199</i>&nbsp;            if ((_outputTail + len) &gt; _outputEnd) { // caller must ensure enough space</b>
+<b class="fc"><i>1200</i>&nbsp;                _flushBuffer();</b>
+<i>1201</i>&nbsp;            }
+<b class="fc"><i>1202</i>&nbsp;            _writeStringSegment(cbuf, offset, len);</b>
+<b class="fc"><i>1203</i>&nbsp;            offset += len;</b>
+<b class="fc"><i>1204</i>&nbsp;            totalLen -= len;</b>
+<b class="fc"><i>1205</i>&nbsp;        } while (totalLen &gt; 0);</b>
+<b class="fc"><i>1206</i>&nbsp;    }</b>
+<i>1207</i>&nbsp;
+<i>1208</i>&nbsp;    private final void _writeStringSegments(String text, int offset, int totalLen) throws IOException
+<i>1209</i>&nbsp;    {
+<i>1210</i>&nbsp;        do {
+<b class="nc"><i>1211</i>&nbsp;            int len = Math.min(_outputMaxContiguous, totalLen);</b>
+<b class="nc"><i>1212</i>&nbsp;            if ((_outputTail + len) &gt; _outputEnd) { // caller must ensure enough space</b>
+<b class="nc"><i>1213</i>&nbsp;                _flushBuffer();</b>
+<i>1214</i>&nbsp;            }
+<b class="nc"><i>1215</i>&nbsp;            _writeStringSegment(text, offset, len);</b>
+<b class="nc"><i>1216</i>&nbsp;            offset += len;</b>
+<b class="nc"><i>1217</i>&nbsp;            totalLen -= len;</b>
+<b class="nc"><i>1218</i>&nbsp;        } while (totalLen &gt; 0);</b>
+<b class="nc"><i>1219</i>&nbsp;    }</b>
+<i>1220</i>&nbsp;
+<i>1221</i>&nbsp;    /*
+<i>1222</i>&nbsp;    /**********************************************************
+<i>1223</i>&nbsp;    /* Internal methods, low-level writing, text segments
+<i>1224</i>&nbsp;    /**********************************************************
+<i>1225</i>&nbsp;     */
+<i>1226</i>&nbsp;
+<i>1227</i>&nbsp;    /**
+<i>1228</i>&nbsp;     * This method called when the string content is already in
+<i>1229</i>&nbsp;     * a char buffer, and its maximum total encoded and escaped length
+<i>1230</i>&nbsp;     * can not exceed size of the output buffer.
+<i>1231</i>&nbsp;     * Caller must ensure that there is enough space in output buffer,
+<i>1232</i>&nbsp;     * assuming case of all non-escaped ASCII characters, as well as
+<i>1233</i>&nbsp;     * potentially enough space for other cases (but not necessarily flushed)
+<i>1234</i>&nbsp;     */
+<i>1235</i>&nbsp;    private final void _writeStringSegment(char[] cbuf, int offset, int len)
+<i>1236</i>&nbsp;        throws IOException
+<i>1237</i>&nbsp;    {
+<i>1238</i>&nbsp;        // note: caller MUST ensure (via flushing) there&#39;s room for ASCII only
+<i>1239</i>&nbsp;        
+<i>1240</i>&nbsp;        // Fast+tight loop for ASCII-only, no-escaping-needed output
+<b class="fc"><i>1241</i>&nbsp;        len += offset; // becomes end marker, then</b>
+<i>1242</i>&nbsp;
+<b class="fc"><i>1243</i>&nbsp;        int outputPtr = _outputTail;</b>
+<b class="fc"><i>1244</i>&nbsp;        final byte[] outputBuffer = _outputBuffer;</b>
+<b class="fc"><i>1245</i>&nbsp;        final int[] escCodes = _outputEscapes;</b>
+<i>1246</i>&nbsp;
+<b class="fc"><i>1247</i>&nbsp;        while (offset &lt; len) {</b>
+<b class="fc"><i>1248</i>&nbsp;            int ch = cbuf[offset];</b>
+<i>1249</i>&nbsp;            // note: here we know that (ch &gt; 0x7F) will cover case of escaping non-ASCII too:
+<b class="fc"><i>1250</i>&nbsp;            if (ch &gt; 0x7F || escCodes[ch] != 0) {</b>
+<b class="fc"><i>1251</i>&nbsp;                break;</b>
+<i>1252</i>&nbsp;            }
+<b class="fc"><i>1253</i>&nbsp;            outputBuffer[outputPtr++] = (byte) ch;</b>
+<b class="fc"><i>1254</i>&nbsp;            ++offset;</b>
+<b class="fc"><i>1255</i>&nbsp;        }</b>
+<b class="fc"><i>1256</i>&nbsp;        _outputTail = outputPtr;</b>
+<b class="fc"><i>1257</i>&nbsp;        if (offset &lt; len) {</b>
+<i>1258</i>&nbsp;            // [JACKSON-106]
+<b class="fc"><i>1259</i>&nbsp;            if (_characterEscapes != null) {</b>
+<b class="nc"><i>1260</i>&nbsp;                _writeCustomStringSegment2(cbuf, offset, len);</b>
+<i>1261</i>&nbsp;            // [JACKSON-102]
+<b class="fc"><i>1262</i>&nbsp;            } else if (_maximumNonEscapedChar == 0) {</b>
+<b class="fc"><i>1263</i>&nbsp;                _writeStringSegment2(cbuf, offset, len);</b>
+<i>1264</i>&nbsp;            } else {
+<b class="nc"><i>1265</i>&nbsp;                _writeStringSegmentASCII2(cbuf, offset, len);</b>
+<i>1266</i>&nbsp;            }
+<i>1267</i>&nbsp;
+<i>1268</i>&nbsp;        }
+<b class="fc"><i>1269</i>&nbsp;    }</b>
+<i>1270</i>&nbsp;
+<i>1271</i>&nbsp;    private final void _writeStringSegment(String text, int offset, int len) throws IOException
+<i>1272</i>&nbsp;    {
+<i>1273</i>&nbsp;        // note: caller MUST ensure (via flushing) there&#39;s room for ASCII only
+<i>1274</i>&nbsp;        // Fast+tight loop for ASCII-only, no-escaping-needed output
+<b class="fc"><i>1275</i>&nbsp;        len += offset; // becomes end marker, then</b>
+<i>1276</i>&nbsp;
+<b class="fc"><i>1277</i>&nbsp;        int outputPtr = _outputTail;</b>
+<b class="fc"><i>1278</i>&nbsp;        final byte[] outputBuffer = _outputBuffer;</b>
+<b class="fc"><i>1279</i>&nbsp;        final int[] escCodes = _outputEscapes;</b>
+<i>1280</i>&nbsp;
+<b class="fc"><i>1281</i>&nbsp;        while (offset &lt; len) {</b>
+<b class="fc"><i>1282</i>&nbsp;            int ch = text.charAt(offset);</b>
+<i>1283</i>&nbsp;            // note: here we know that (ch &gt; 0x7F) will cover case of escaping non-ASCII too:
+<b class="fc"><i>1284</i>&nbsp;            if (ch &gt; 0x7F || escCodes[ch] != 0) {</b>
+<b class="fc"><i>1285</i>&nbsp;                break;</b>
+<i>1286</i>&nbsp;            }
+<b class="fc"><i>1287</i>&nbsp;            outputBuffer[outputPtr++] = (byte) ch;</b>
+<b class="fc"><i>1288</i>&nbsp;            ++offset;</b>
+<b class="fc"><i>1289</i>&nbsp;        }</b>
+<b class="fc"><i>1290</i>&nbsp;        _outputTail = outputPtr;</b>
+<b class="fc"><i>1291</i>&nbsp;        if (offset &lt; len) {</b>
+<b class="fc"><i>1292</i>&nbsp;            if (_characterEscapes != null) {</b>
+<b class="fc"><i>1293</i>&nbsp;                _writeCustomStringSegment2(text, offset, len);</b>
+<b class="fc"><i>1294</i>&nbsp;            } else if (_maximumNonEscapedChar == 0) {</b>
+<b class="fc"><i>1295</i>&nbsp;                _writeStringSegment2(text, offset, len);</b>
+<i>1296</i>&nbsp;            } else {
+<b class="fc"><i>1297</i>&nbsp;                _writeStringSegmentASCII2(text, offset, len);</b>
+<i>1298</i>&nbsp;            }
+<i>1299</i>&nbsp;        }
+<b class="fc"><i>1300</i>&nbsp;    }</b>
+<i>1301</i>&nbsp;
+<i>1302</i>&nbsp;    /**
+<i>1303</i>&nbsp;     * Secondary method called when content contains characters to escape,
+<i>1304</i>&nbsp;     * and/or multi-byte UTF-8 characters.
+<i>1305</i>&nbsp;     */
+<i>1306</i>&nbsp;    private final void _writeStringSegment2(final char[] cbuf, int offset, final int end) throws IOException
+<i>1307</i>&nbsp;    {
+<i>1308</i>&nbsp;        // Ok: caller guarantees buffer can have room; but that may require flushing:
+<b class="fc"><i>1309</i>&nbsp;        if ((_outputTail +  6 * (end - offset)) &gt; _outputEnd) {</b>
+<b class="fc"><i>1310</i>&nbsp;            _flushBuffer();</b>
+<i>1311</i>&nbsp;        }
+<i>1312</i>&nbsp;
+<b class="fc"><i>1313</i>&nbsp;        int outputPtr = _outputTail;</b>
+<i>1314</i>&nbsp;
+<b class="fc"><i>1315</i>&nbsp;        final byte[] outputBuffer = _outputBuffer;</b>
+<b class="fc"><i>1316</i>&nbsp;        final int[] escCodes = _outputEscapes;</b>
+<i>1317</i>&nbsp;        
+<b class="fc"><i>1318</i>&nbsp;        while (offset &lt; end) {</b>
+<b class="fc"><i>1319</i>&nbsp;            int ch = cbuf[offset++];</b>
+<b class="fc"><i>1320</i>&nbsp;            if (ch &lt;= 0x7F) {</b>
+<b class="fc"><i>1321</i>&nbsp;                 if (escCodes[ch] == 0) {</b>
+<b class="fc"><i>1322</i>&nbsp;                     outputBuffer[outputPtr++] = (byte) ch;</b>
+<b class="fc"><i>1323</i>&nbsp;                     continue;</b>
+<i>1324</i>&nbsp;                 }
+<b class="fc"><i>1325</i>&nbsp;                 int escape = escCodes[ch];</b>
+<b class="fc"><i>1326</i>&nbsp;                 if (escape &gt; 0) { // 2-char escape, fine</b>
+<b class="fc"><i>1327</i>&nbsp;                     outputBuffer[outputPtr++] = BYTE_BACKSLASH;</b>
+<b class="fc"><i>1328</i>&nbsp;                     outputBuffer[outputPtr++] = (byte) escape;</b>
+<i>1329</i>&nbsp;                 } else {
+<i>1330</i>&nbsp;                     // ctrl-char, 6-byte escape...
+<b class="fc"><i>1331</i>&nbsp;                     outputPtr = _writeGenericEscape(ch, outputPtr);</b>
+<i>1332</i>&nbsp;                }
+<b class="fc"><i>1333</i>&nbsp;                continue;</b>
+<i>1334</i>&nbsp;            }
+<b class="fc"><i>1335</i>&nbsp;            if (ch &lt;= 0x7FF) { // fine, just needs 2 byte output</b>
+<b class="fc"><i>1336</i>&nbsp;                outputBuffer[outputPtr++] = (byte) (0xc0 | (ch &gt;&gt; 6));</b>
+<b class="fc"><i>1337</i>&nbsp;                outputBuffer[outputPtr++] = (byte) (0x80 | (ch &amp; 0x3f));</b>
+<i>1338</i>&nbsp;            } else {
+<b class="fc"><i>1339</i>&nbsp;                outputPtr = _outputMultiByteChar(ch, outputPtr);</b>
+<i>1340</i>&nbsp;            }
+<b class="fc"><i>1341</i>&nbsp;        }</b>
+<b class="fc"><i>1342</i>&nbsp;        _outputTail = outputPtr;</b>
+<b class="fc"><i>1343</i>&nbsp;    }</b>
+<i>1344</i>&nbsp;
+<i>1345</i>&nbsp;    private final void _writeStringSegment2(final String text, int offset, final int end) throws IOException
+<i>1346</i>&nbsp;    {
+<b class="fc"><i>1347</i>&nbsp;        if ((_outputTail +  6 * (end - offset)) &gt; _outputEnd) {</b>
+<b class="fc"><i>1348</i>&nbsp;            _flushBuffer();</b>
+<i>1349</i>&nbsp;        }
+<i>1350</i>&nbsp;
+<b class="fc"><i>1351</i>&nbsp;        int outputPtr = _outputTail;</b>
+<i>1352</i>&nbsp;
+<b class="fc"><i>1353</i>&nbsp;        final byte[] outputBuffer = _outputBuffer;</b>
+<b class="fc"><i>1354</i>&nbsp;        final int[] escCodes = _outputEscapes;</b>
+<i>1355</i>&nbsp;        
+<b class="fc"><i>1356</i>&nbsp;        while (offset &lt; end) {</b>
+<b class="fc"><i>1357</i>&nbsp;            int ch = text.charAt(offset++);</b>
+<b class="fc"><i>1358</i>&nbsp;            if (ch &lt;= 0x7F) {</b>
+<b class="fc"><i>1359</i>&nbsp;                 if (escCodes[ch] == 0) {</b>
+<b class="fc"><i>1360</i>&nbsp;                     outputBuffer[outputPtr++] = (byte) ch;</b>
+<b class="fc"><i>1361</i>&nbsp;                     continue;</b>
+<i>1362</i>&nbsp;                 }
+<b class="fc"><i>1363</i>&nbsp;                 int escape = escCodes[ch];</b>
+<b class="fc"><i>1364</i>&nbsp;                 if (escape &gt; 0) { // 2-char escape, fine</b>
+<b class="fc"><i>1365</i>&nbsp;                     outputBuffer[outputPtr++] = BYTE_BACKSLASH;</b>
+<b class="fc"><i>1366</i>&nbsp;                     outputBuffer[outputPtr++] = (byte) escape;</b>
+<i>1367</i>&nbsp;                 } else {
+<i>1368</i>&nbsp;                     // ctrl-char, 6-byte escape...
+<b class="fc"><i>1369</i>&nbsp;                     outputPtr = _writeGenericEscape(ch, outputPtr);</b>
+<i>1370</i>&nbsp;                }
+<b class="fc"><i>1371</i>&nbsp;                continue;</b>
+<i>1372</i>&nbsp;            }
+<b class="fc"><i>1373</i>&nbsp;            if (ch &lt;= 0x7FF) { // fine, just needs 2 byte output</b>
+<b class="fc"><i>1374</i>&nbsp;                outputBuffer[outputPtr++] = (byte) (0xc0 | (ch &gt;&gt; 6));</b>
+<b class="fc"><i>1375</i>&nbsp;                outputBuffer[outputPtr++] = (byte) (0x80 | (ch &amp; 0x3f));</b>
+<i>1376</i>&nbsp;            } else {
+<b class="fc"><i>1377</i>&nbsp;                outputPtr = _outputMultiByteChar(ch, outputPtr);</b>
+<i>1378</i>&nbsp;            }
+<b class="fc"><i>1379</i>&nbsp;        }</b>
+<b class="fc"><i>1380</i>&nbsp;        _outputTail = outputPtr;</b>
+<b class="fc"><i>1381</i>&nbsp;    }</b>
+<i>1382</i>&nbsp;    
+<i>1383</i>&nbsp;    /*
+<i>1384</i>&nbsp;    /**********************************************************
+<i>1385</i>&nbsp;    /* Internal methods, low-level writing, text segment
+<i>1386</i>&nbsp;    /* with additional escaping (ASCII or such)
+<i>1387</i>&nbsp;    /**********************************************************
+<i>1388</i>&nbsp;     */
+<i>1389</i>&nbsp;
+<i>1390</i>&nbsp;    /**
+<i>1391</i>&nbsp;     * Same as &lt;code&gt;_writeStringSegment2(char[], ...)&lt;/code., but with
+<i>1392</i>&nbsp;     * additional escaping for high-range code points
+<i>1393</i>&nbsp;     */
+<i>1394</i>&nbsp;    private final void _writeStringSegmentASCII2(final char[] cbuf, int offset, final int end) throws IOException
+<i>1395</i>&nbsp;    {
+<i>1396</i>&nbsp;        // Ok: caller guarantees buffer can have room; but that may require flushing:
+<b class="nc"><i>1397</i>&nbsp;        if ((_outputTail +  6 * (end - offset)) &gt; _outputEnd) {</b>
+<b class="nc"><i>1398</i>&nbsp;            _flushBuffer();</b>
+<i>1399</i>&nbsp;        }
+<i>1400</i>&nbsp;    
+<b class="nc"><i>1401</i>&nbsp;        int outputPtr = _outputTail;</b>
+<i>1402</i>&nbsp;    
+<b class="nc"><i>1403</i>&nbsp;        final byte[] outputBuffer = _outputBuffer;</b>
+<b class="nc"><i>1404</i>&nbsp;        final int[] escCodes = _outputEscapes;</b>
+<b class="nc"><i>1405</i>&nbsp;        final int maxUnescaped = _maximumNonEscapedChar;</b>
+<i>1406</i>&nbsp;        
+<b class="nc"><i>1407</i>&nbsp;        while (offset &lt; end) {</b>
+<b class="nc"><i>1408</i>&nbsp;            int ch = cbuf[offset++];</b>
+<b class="nc"><i>1409</i>&nbsp;            if (ch &lt;= 0x7F) {</b>
+<b class="nc"><i>1410</i>&nbsp;                 if (escCodes[ch] == 0) {</b>
+<b class="nc"><i>1411</i>&nbsp;                     outputBuffer[outputPtr++] = (byte) ch;</b>
+<b class="nc"><i>1412</i>&nbsp;                     continue;</b>
+<i>1413</i>&nbsp;                 }
+<b class="nc"><i>1414</i>&nbsp;                 int escape = escCodes[ch];</b>
+<b class="nc"><i>1415</i>&nbsp;                 if (escape &gt; 0) { // 2-char escape, fine</b>
+<b class="nc"><i>1416</i>&nbsp;                     outputBuffer[outputPtr++] = BYTE_BACKSLASH;</b>
+<b class="nc"><i>1417</i>&nbsp;                     outputBuffer[outputPtr++] = (byte) escape;</b>
+<i>1418</i>&nbsp;                 } else {
+<i>1419</i>&nbsp;                     // ctrl-char, 6-byte escape...
+<b class="nc"><i>1420</i>&nbsp;                     outputPtr = _writeGenericEscape(ch, outputPtr);</b>
+<i>1421</i>&nbsp;                 }
+<b class="nc"><i>1422</i>&nbsp;                 continue;</b>
+<i>1423</i>&nbsp;            }
+<b class="nc"><i>1424</i>&nbsp;            if (ch &gt; maxUnescaped) { // [JACKSON-102] Allow forced escaping if non-ASCII (etc) chars:</b>
+<b class="nc"><i>1425</i>&nbsp;                outputPtr = _writeGenericEscape(ch, outputPtr);</b>
+<b class="nc"><i>1426</i>&nbsp;                continue;</b>
+<i>1427</i>&nbsp;            }
+<b class="nc"><i>1428</i>&nbsp;            if (ch &lt;= 0x7FF) { // fine, just needs 2 byte output</b>
+<b class="nc"><i>1429</i>&nbsp;                outputBuffer[outputPtr++] = (byte) (0xc0 | (ch &gt;&gt; 6));</b>
+<b class="nc"><i>1430</i>&nbsp;                outputBuffer[outputPtr++] = (byte) (0x80 | (ch &amp; 0x3f));</b>
+<i>1431</i>&nbsp;            } else {
+<b class="nc"><i>1432</i>&nbsp;                outputPtr = _outputMultiByteChar(ch, outputPtr);</b>
+<i>1433</i>&nbsp;            }
+<b class="nc"><i>1434</i>&nbsp;        }</b>
+<b class="nc"><i>1435</i>&nbsp;        _outputTail = outputPtr;</b>
+<b class="nc"><i>1436</i>&nbsp;    }</b>
+<i>1437</i>&nbsp;
+<i>1438</i>&nbsp;    private final void _writeStringSegmentASCII2(final String text, int offset, final int end) throws IOException
+<i>1439</i>&nbsp;    {
+<i>1440</i>&nbsp;        // Ok: caller guarantees buffer can have room; but that may require flushing:
+<b class="fc"><i>1441</i>&nbsp;        if ((_outputTail +  6 * (end - offset)) &gt; _outputEnd) {</b>
+<b class="nc"><i>1442</i>&nbsp;            _flushBuffer();</b>
+<i>1443</i>&nbsp;        }
+<i>1444</i>&nbsp;    
+<b class="fc"><i>1445</i>&nbsp;        int outputPtr = _outputTail;</b>
+<i>1446</i>&nbsp;    
+<b class="fc"><i>1447</i>&nbsp;        final byte[] outputBuffer = _outputBuffer;</b>
+<b class="fc"><i>1448</i>&nbsp;        final int[] escCodes = _outputEscapes;</b>
+<b class="fc"><i>1449</i>&nbsp;        final int maxUnescaped = _maximumNonEscapedChar;</b>
+<i>1450</i>&nbsp;        
+<b class="fc"><i>1451</i>&nbsp;        while (offset &lt; end) {</b>
+<b class="fc"><i>1452</i>&nbsp;            int ch = text.charAt(offset++);</b>
+<b class="fc"><i>1453</i>&nbsp;            if (ch &lt;= 0x7F) {</b>
+<b class="fc"><i>1454</i>&nbsp;                 if (escCodes[ch] == 0) {</b>
+<b class="fc"><i>1455</i>&nbsp;                     outputBuffer[outputPtr++] = (byte) ch;</b>
+<b class="fc"><i>1456</i>&nbsp;                     continue;</b>
+<i>1457</i>&nbsp;                 }
+<b class="nc"><i>1458</i>&nbsp;                 int escape = escCodes[ch];</b>
+<b class="nc"><i>1459</i>&nbsp;                 if (escape &gt; 0) { // 2-char escape, fine</b>
+<b class="nc"><i>1460</i>&nbsp;                     outputBuffer[outputPtr++] = BYTE_BACKSLASH;</b>
+<b class="nc"><i>1461</i>&nbsp;                     outputBuffer[outputPtr++] = (byte) escape;</b>
+<i>1462</i>&nbsp;                 } else {
+<i>1463</i>&nbsp;                     // ctrl-char, 6-byte escape...
+<b class="nc"><i>1464</i>&nbsp;                     outputPtr = _writeGenericEscape(ch, outputPtr);</b>
+<i>1465</i>&nbsp;                 }
+<b class="nc"><i>1466</i>&nbsp;                 continue;</b>
+<i>1467</i>&nbsp;            }
+<b class="fc"><i>1468</i>&nbsp;            if (ch &gt; maxUnescaped) { // [JACKSON-102] Allow forced escaping if non-ASCII (etc) chars:</b>
+<b class="fc"><i>1469</i>&nbsp;                outputPtr = _writeGenericEscape(ch, outputPtr);</b>
+<b class="fc"><i>1470</i>&nbsp;                continue;</b>
+<i>1471</i>&nbsp;            }
+<b class="nc"><i>1472</i>&nbsp;            if (ch &lt;= 0x7FF) { // fine, just needs 2 byte output</b>
+<b class="nc"><i>1473</i>&nbsp;                outputBuffer[outputPtr++] = (byte) (0xc0 | (ch &gt;&gt; 6));</b>
+<b class="nc"><i>1474</i>&nbsp;                outputBuffer[outputPtr++] = (byte) (0x80 | (ch &amp; 0x3f));</b>
+<i>1475</i>&nbsp;            } else {
+<b class="nc"><i>1476</i>&nbsp;                outputPtr = _outputMultiByteChar(ch, outputPtr);</b>
+<i>1477</i>&nbsp;            }
+<b class="nc"><i>1478</i>&nbsp;        }</b>
+<b class="fc"><i>1479</i>&nbsp;        _outputTail = outputPtr;</b>
+<b class="fc"><i>1480</i>&nbsp;    }</b>
+<i>1481</i>&nbsp;    
+<i>1482</i>&nbsp;    /*
+<i>1483</i>&nbsp;    /**********************************************************
+<i>1484</i>&nbsp;    /* Internal methods, low-level writing, text segment
+<i>1485</i>&nbsp;    /* with fully custom escaping (and possibly escaping of non-ASCII
+<i>1486</i>&nbsp;    /**********************************************************
+<i>1487</i>&nbsp;     */
+<i>1488</i>&nbsp;
+<i>1489</i>&nbsp;    /**
+<i>1490</i>&nbsp;     * Same as &lt;code&gt;_writeStringSegmentASCII2(char[], ...)&lt;/code., but with
+<i>1491</i>&nbsp;     * additional checking for completely custom escapes
+<i>1492</i>&nbsp;     */
+<i>1493</i>&nbsp;    private final void _writeCustomStringSegment2(final char[] cbuf, int offset, final int end) throws IOException
+<i>1494</i>&nbsp;    {
+<i>1495</i>&nbsp;        // Ok: caller guarantees buffer can have room; but that may require flushing:
+<b class="nc"><i>1496</i>&nbsp;        if ((_outputTail +  6 * (end - offset)) &gt; _outputEnd) {</b>
+<b class="nc"><i>1497</i>&nbsp;            _flushBuffer();</b>
+<i>1498</i>&nbsp;        }
+<b class="nc"><i>1499</i>&nbsp;        int outputPtr = _outputTail;</b>
+<i>1500</i>&nbsp;    
+<b class="nc"><i>1501</i>&nbsp;        final byte[] outputBuffer = _outputBuffer;</b>
+<b class="nc"><i>1502</i>&nbsp;        final int[] escCodes = _outputEscapes;</b>
+<i>1503</i>&nbsp;        // may or may not have this limit
+<b class="nc"><i>1504</i>&nbsp;        final int maxUnescaped = (_maximumNonEscapedChar &lt;= 0) ? 0xFFFF : _maximumNonEscapedChar;</b>
+<b class="nc"><i>1505</i>&nbsp;        final CharacterEscapes customEscapes = _characterEscapes; // non-null</b>
+<i>1506</i>&nbsp;        
+<b class="nc"><i>1507</i>&nbsp;        while (offset &lt; end) {</b>
+<b class="nc"><i>1508</i>&nbsp;            int ch = cbuf[offset++];</b>
+<b class="nc"><i>1509</i>&nbsp;            if (ch &lt;= 0x7F) {</b>
+<b class="nc"><i>1510</i>&nbsp;                 if (escCodes[ch] == 0) {</b>
+<b class="nc"><i>1511</i>&nbsp;                     outputBuffer[outputPtr++] = (byte) ch;</b>
+<b class="nc"><i>1512</i>&nbsp;                     continue;</b>
+<i>1513</i>&nbsp;                 }
+<b class="nc"><i>1514</i>&nbsp;                 int escape = escCodes[ch];</b>
+<b class="nc"><i>1515</i>&nbsp;                 if (escape &gt; 0) { // 2-char escape, fine</b>
+<b class="nc"><i>1516</i>&nbsp;                     outputBuffer[outputPtr++] = BYTE_BACKSLASH;</b>
+<b class="nc"><i>1517</i>&nbsp;                     outputBuffer[outputPtr++] = (byte) escape;</b>
+<b class="nc"><i>1518</i>&nbsp;                 } else if (escape == CharacterEscapes.ESCAPE_CUSTOM) {</b>
+<b class="nc"><i>1519</i>&nbsp;                     SerializableString esc = customEscapes.getEscapeSequence(ch);</b>
+<b class="nc"><i>1520</i>&nbsp;                     if (esc == null) {</b>
+<b class="nc"><i>1521</i>&nbsp;                         _reportError(&quot;Invalid custom escape definitions; custom escape not found for character code 0x&quot;</b>
+<b class="nc"><i>1522</i>&nbsp;                                 +Integer.toHexString(ch)+&quot;, although was supposed to have one&quot;);</b>
+<i>1523</i>&nbsp;                     }
+<b class="nc"><i>1524</i>&nbsp;                     outputPtr = _writeCustomEscape(outputBuffer, outputPtr, esc, end-offset);</b>
+<b class="nc"><i>1525</i>&nbsp;                 } else {</b>
+<i>1526</i>&nbsp;                     // ctrl-char, 6-byte escape...
+<b class="nc"><i>1527</i>&nbsp;                     outputPtr = _writeGenericEscape(ch, outputPtr);</b>
+<i>1528</i>&nbsp;                 }
+<b class="nc"><i>1529</i>&nbsp;                 continue;</b>
+<i>1530</i>&nbsp;            }
+<b class="nc"><i>1531</i>&nbsp;            if (ch &gt; maxUnescaped) { // [JACKSON-102] Allow forced escaping if non-ASCII (etc) chars:</b>
+<b class="nc"><i>1532</i>&nbsp;                outputPtr = _writeGenericEscape(ch, outputPtr);</b>
+<b class="nc"><i>1533</i>&nbsp;                continue;</b>
+<i>1534</i>&nbsp;            }
+<b class="nc"><i>1535</i>&nbsp;            SerializableString esc = customEscapes.getEscapeSequence(ch);</b>
+<b class="nc"><i>1536</i>&nbsp;            if (esc != null) {</b>
+<b class="nc"><i>1537</i>&nbsp;                outputPtr = _writeCustomEscape(outputBuffer, outputPtr, esc, end-offset);</b>
+<b class="nc"><i>1538</i>&nbsp;                continue;</b>
+<i>1539</i>&nbsp;            }
+<b class="nc"><i>1540</i>&nbsp;            if (ch &lt;= 0x7FF) { // fine, just needs 2 byte output</b>
+<b class="nc"><i>1541</i>&nbsp;                outputBuffer[outputPtr++] = (byte) (0xc0 | (ch &gt;&gt; 6));</b>
+<b class="nc"><i>1542</i>&nbsp;                outputBuffer[outputPtr++] = (byte) (0x80 | (ch &amp; 0x3f));</b>
+<i>1543</i>&nbsp;            } else {
+<b class="nc"><i>1544</i>&nbsp;                outputPtr = _outputMultiByteChar(ch, outputPtr);</b>
+<i>1545</i>&nbsp;            }
+<b class="nc"><i>1546</i>&nbsp;        }</b>
+<b class="nc"><i>1547</i>&nbsp;        _outputTail = outputPtr;</b>
+<b class="nc"><i>1548</i>&nbsp;    }</b>
+<i>1549</i>&nbsp;
+<i>1550</i>&nbsp;    private final void _writeCustomStringSegment2(final String text, int offset, final int end) throws IOException
+<i>1551</i>&nbsp;    {
+<i>1552</i>&nbsp;        // Ok: caller guarantees buffer can have room; but that may require flushing:
+<b class="fc"><i>1553</i>&nbsp;        if ((_outputTail +  6 * (end - offset)) &gt; _outputEnd) {</b>
+<b class="nc"><i>1554</i>&nbsp;            _flushBuffer();</b>
+<i>1555</i>&nbsp;        }
+<b class="fc"><i>1556</i>&nbsp;        int outputPtr = _outputTail;</b>
+<i>1557</i>&nbsp;    
+<b class="fc"><i>1558</i>&nbsp;        final byte[] outputBuffer = _outputBuffer;</b>
+<b class="fc"><i>1559</i>&nbsp;        final int[] escCodes = _outputEscapes;</b>
+<i>1560</i>&nbsp;        // may or may not have this limit
+<b class="fc"><i>1561</i>&nbsp;        final int maxUnescaped = (_maximumNonEscapedChar &lt;= 0) ? 0xFFFF : _maximumNonEscapedChar;</b>
+<b class="fc"><i>1562</i>&nbsp;        final CharacterEscapes customEscapes = _characterEscapes; // non-null</b>
+<i>1563</i>&nbsp;        
+<b class="fc"><i>1564</i>&nbsp;        while (offset &lt; end) {</b>
+<b class="fc"><i>1565</i>&nbsp;            int ch = text.charAt(offset++);</b>
+<b class="fc"><i>1566</i>&nbsp;            if (ch &lt;= 0x7F) {</b>
+<b class="fc"><i>1567</i>&nbsp;                 if (escCodes[ch] == 0) {</b>
+<b class="fc"><i>1568</i>&nbsp;                     outputBuffer[outputPtr++] = (byte) ch;</b>
+<b class="fc"><i>1569</i>&nbsp;                     continue;</b>
+<i>1570</i>&nbsp;                 }
+<b class="fc"><i>1571</i>&nbsp;                 int escape = escCodes[ch];</b>
+<b class="fc"><i>1572</i>&nbsp;                 if (escape &gt; 0) { // 2-char escape, fine</b>
+<b class="fc"><i>1573</i>&nbsp;                     outputBuffer[outputPtr++] = BYTE_BACKSLASH;</b>
+<b class="fc"><i>1574</i>&nbsp;                     outputBuffer[outputPtr++] = (byte) escape;</b>
+<b class="fc"><i>1575</i>&nbsp;                 } else if (escape == CharacterEscapes.ESCAPE_CUSTOM) {</b>
+<b class="fc"><i>1576</i>&nbsp;                     SerializableString esc = customEscapes.getEscapeSequence(ch);</b>
+<b class="fc"><i>1577</i>&nbsp;                     if (esc == null) {</b>
+<b class="nc"><i>1578</i>&nbsp;                         _reportError(&quot;Invalid custom escape definitions; custom escape not found for character code 0x&quot;</b>
+<b class="nc"><i>1579</i>&nbsp;                                 +Integer.toHexString(ch)+&quot;, although was supposed to have one&quot;);</b>
+<i>1580</i>&nbsp;                     }
+<b class="fc"><i>1581</i>&nbsp;                     outputPtr = _writeCustomEscape(outputBuffer, outputPtr, esc, end-offset);</b>
+<b class="fc"><i>1582</i>&nbsp;                 } else {</b>
+<i>1583</i>&nbsp;                     // ctrl-char, 6-byte escape...
+<b class="fc"><i>1584</i>&nbsp;                     outputPtr = _writeGenericEscape(ch, outputPtr);</b>
+<i>1585</i>&nbsp;                 }
+<b class="fc"><i>1586</i>&nbsp;                 continue;</b>
+<i>1587</i>&nbsp;            }
+<b class="fc"><i>1588</i>&nbsp;            if (ch &gt; maxUnescaped) { // [JACKSON-102] Allow forced escaping if non-ASCII (etc) chars:</b>
+<b class="nc"><i>1589</i>&nbsp;                outputPtr = _writeGenericEscape(ch, outputPtr);</b>
+<b class="nc"><i>1590</i>&nbsp;                continue;</b>
+<i>1591</i>&nbsp;            }
+<b class="fc"><i>1592</i>&nbsp;            SerializableString esc = customEscapes.getEscapeSequence(ch);</b>
+<b class="fc"><i>1593</i>&nbsp;            if (esc != null) {</b>
+<b class="fc"><i>1594</i>&nbsp;                outputPtr = _writeCustomEscape(outputBuffer, outputPtr, esc, end-offset);</b>
+<b class="fc"><i>1595</i>&nbsp;                continue;</b>
+<i>1596</i>&nbsp;            }
+<b class="nc"><i>1597</i>&nbsp;            if (ch &lt;= 0x7FF) { // fine, just needs 2 byte output</b>
+<b class="nc"><i>1598</i>&nbsp;                outputBuffer[outputPtr++] = (byte) (0xc0 | (ch &gt;&gt; 6));</b>
+<b class="nc"><i>1599</i>&nbsp;                outputBuffer[outputPtr++] = (byte) (0x80 | (ch &amp; 0x3f));</b>
+<i>1600</i>&nbsp;            } else {
+<b class="nc"><i>1601</i>&nbsp;                outputPtr = _outputMultiByteChar(ch, outputPtr);</b>
+<i>1602</i>&nbsp;            }
+<b class="nc"><i>1603</i>&nbsp;        }</b>
+<b class="fc"><i>1604</i>&nbsp;        _outputTail = outputPtr;</b>
+<b class="fc"><i>1605</i>&nbsp;    }</b>
+<i>1606</i>&nbsp;
+<i>1607</i>&nbsp;    private final int _writeCustomEscape(byte[] outputBuffer, int outputPtr, SerializableString esc, int remainingChars)
+<i>1608</i>&nbsp;        throws IOException, JsonGenerationException
+<i>1609</i>&nbsp;    {
+<b class="fc"><i>1610</i>&nbsp;        byte[] raw = esc.asUnquotedUTF8(); // must be escaped at this point, shouldn&#39;t double-quote</b>
+<b class="fc"><i>1611</i>&nbsp;        int len = raw.length;</b>
+<b class="fc"><i>1612</i>&nbsp;        if (len &gt; 6) { // may violate constraints we have, do offline</b>
+<b class="nc"><i>1613</i>&nbsp;            return _handleLongCustomEscape(outputBuffer, outputPtr, _outputEnd, raw, remainingChars);</b>
+<i>1614</i>&nbsp;        }
+<i>1615</i>&nbsp;        // otherwise will fit without issues, so:
+<b class="fc"><i>1616</i>&nbsp;        System.arraycopy(raw, 0, outputBuffer, outputPtr, len);</b>
+<b class="fc"><i>1617</i>&nbsp;        return (outputPtr + len);</b>
+<i>1618</i>&nbsp;    }
+<i>1619</i>&nbsp;    
+<i>1620</i>&nbsp;    private final int _handleLongCustomEscape(byte[] outputBuffer, int outputPtr, int outputEnd, byte[] raw,
+<i>1621</i>&nbsp;            int remainingChars)
+<i>1622</i>&nbsp;        throws IOException, JsonGenerationException
+<i>1623</i>&nbsp;    {
+<b class="nc"><i>1624</i>&nbsp;        int len = raw.length;</b>
+<b class="nc"><i>1625</i>&nbsp;        if ((outputPtr + len) &gt; outputEnd) {</b>
+<b class="nc"><i>1626</i>&nbsp;            _outputTail = outputPtr;</b>
+<b class="nc"><i>1627</i>&nbsp;            _flushBuffer();</b>
+<b class="nc"><i>1628</i>&nbsp;            outputPtr = _outputTail;</b>
+<b class="nc"><i>1629</i>&nbsp;            if (len &gt; outputBuffer.length) { // very unlikely, but possible...</b>
+<b class="nc"><i>1630</i>&nbsp;                _outputStream.write(raw, 0, len);</b>
+<b class="nc"><i>1631</i>&nbsp;                return outputPtr;</b>
+<i>1632</i>&nbsp;            }
+<b class="nc"><i>1633</i>&nbsp;            System.arraycopy(raw, 0, outputBuffer, outputPtr, len);</b>
+<b class="nc"><i>1634</i>&nbsp;            outputPtr += len;</b>
+<i>1635</i>&nbsp;        }
+<i>1636</i>&nbsp;        // but is the invariant still obeyed? If not, flush once more
+<b class="nc"><i>1637</i>&nbsp;        if ((outputPtr +  6 * remainingChars) &gt; outputEnd) {</b>
+<b class="nc"><i>1638</i>&nbsp;            _flushBuffer();</b>
+<b class="nc"><i>1639</i>&nbsp;            return _outputTail;</b>
+<i>1640</i>&nbsp;        }
+<b class="nc"><i>1641</i>&nbsp;        return outputPtr;</b>
+<i>1642</i>&nbsp;    }
+<i>1643</i>&nbsp;
+<i>1644</i>&nbsp;    /*
+<i>1645</i>&nbsp;    /**********************************************************
+<i>1646</i>&nbsp;    /* Internal methods, low-level writing, &quot;raw UTF-8&quot; segments
+<i>1647</i>&nbsp;    /**********************************************************
+<i>1648</i>&nbsp;     */
+<i>1649</i>&nbsp;    
+<i>1650</i>&nbsp;    /**
+<i>1651</i>&nbsp;     * Method called when UTF-8 encoded (but NOT yet escaped!) content is not guaranteed
+<i>1652</i>&nbsp;     * to fit in the output buffer after escaping; as such, we just need to
+<i>1653</i>&nbsp;     * chunk writes.
+<i>1654</i>&nbsp;     */
+<i>1655</i>&nbsp;    private final void _writeUTF8Segments(byte[] utf8, int offset, int totalLen)
+<i>1656</i>&nbsp;        throws IOException, JsonGenerationException
+<i>1657</i>&nbsp;    {
+<i>1658</i>&nbsp;        do {
+<b class="fc"><i>1659</i>&nbsp;            int len = Math.min(_outputMaxContiguous, totalLen);</b>
+<b class="fc"><i>1660</i>&nbsp;            _writeUTF8Segment(utf8, offset, len);</b>
+<b class="fc"><i>1661</i>&nbsp;            offset += len;</b>
+<b class="fc"><i>1662</i>&nbsp;            totalLen -= len;</b>
+<b class="fc"><i>1663</i>&nbsp;        } while (totalLen &gt; 0);</b>
+<b class="fc"><i>1664</i>&nbsp;    }</b>
+<i>1665</i>&nbsp;    
+<i>1666</i>&nbsp;    private final void _writeUTF8Segment(byte[] utf8, final int offset, final int len)
+<i>1667</i>&nbsp;        throws IOException, JsonGenerationException
+<i>1668</i>&nbsp;    {
+<i>1669</i>&nbsp;        // fast loop to see if escaping is needed; don&#39;t copy, just look
+<b class="fc"><i>1670</i>&nbsp;        final int[] escCodes = _outputEscapes;</b>
+<i>1671</i>&nbsp;
+<b class="fc"><i>1672</i>&nbsp;        for (int ptr = offset, end = offset + len; ptr &lt; end; ) {</b>
+<i>1673</i>&nbsp;            // 28-Feb-2011, tatu: escape codes just cover 7-bit range, so:
+<b class="fc"><i>1674</i>&nbsp;            int ch = utf8[ptr++];</b>
+<b class="fc"><i>1675</i>&nbsp;            if ((ch &gt;= 0) &amp;&amp; escCodes[ch] != 0) {</b>
+<b class="fc"><i>1676</i>&nbsp;                _writeUTF8Segment2(utf8, offset, len);</b>
+<b class="fc"><i>1677</i>&nbsp;                return;</b>
+<i>1678</i>&nbsp;            }
+<b class="fc"><i>1679</i>&nbsp;        }</b>
+<i>1680</i>&nbsp;        
+<i>1681</i>&nbsp;        // yes, fine, just copy the sucker
+<b class="fc"><i>1682</i>&nbsp;        if ((_outputTail + len) &gt; _outputEnd) { // enough room or need to flush?</b>
+<b class="nc"><i>1683</i>&nbsp;            _flushBuffer(); // but yes once we flush (caller guarantees length restriction)</b>
+<i>1684</i>&nbsp;        }
+<b class="fc"><i>1685</i>&nbsp;        System.arraycopy(utf8, offset, _outputBuffer, _outputTail, len);</b>
+<b class="fc"><i>1686</i>&nbsp;        _outputTail += len;</b>
+<b class="fc"><i>1687</i>&nbsp;    }</b>
+<i>1688</i>&nbsp;
+<i>1689</i>&nbsp;    private final void _writeUTF8Segment2(final byte[] utf8, int offset, int len)
+<i>1690</i>&nbsp;        throws IOException, JsonGenerationException
+<i>1691</i>&nbsp;    {
+<b class="fc"><i>1692</i>&nbsp;        int outputPtr = _outputTail;</b>
+<i>1693</i>&nbsp;
+<i>1694</i>&nbsp;        // Ok: caller guarantees buffer can have room; but that may require flushing:
+<b class="fc"><i>1695</i>&nbsp;        if ((outputPtr + (len * 6)) &gt; _outputEnd) {</b>
+<b class="fc"><i>1696</i>&nbsp;            _flushBuffer();</b>
+<b class="fc"><i>1697</i>&nbsp;            outputPtr = _outputTail;</b>
+<i>1698</i>&nbsp;        }
+<i>1699</i>&nbsp;        
+<b class="fc"><i>1700</i>&nbsp;        final byte[] outputBuffer = _outputBuffer;</b>
+<b class="fc"><i>1701</i>&nbsp;        final int[] escCodes = _outputEscapes;</b>
+<b class="fc"><i>1702</i>&nbsp;        len += offset; // so &#39;len&#39; becomes &#39;end&#39;</b>
+<i>1703</i>&nbsp;        
+<b class="fc"><i>1704</i>&nbsp;        while (offset &lt; len) {</b>
+<b class="fc"><i>1705</i>&nbsp;            byte b = utf8[offset++];</b>
+<b class="fc"><i>1706</i>&nbsp;            int ch = b;</b>
+<b class="fc"><i>1707</i>&nbsp;            if (ch &lt; 0 || escCodes[ch] == 0) {</b>
+<b class="fc"><i>1708</i>&nbsp;                outputBuffer[outputPtr++] = b;</b>
+<b class="fc"><i>1709</i>&nbsp;                continue;</b>
+<i>1710</i>&nbsp;            }
+<b class="fc"><i>1711</i>&nbsp;            int escape = escCodes[ch];</b>
+<b class="fc"><i>1712</i>&nbsp;            if (escape &gt; 0) { // 2-char escape, fine</b>
+<b class="fc"><i>1713</i>&nbsp;                outputBuffer[outputPtr++] = BYTE_BACKSLASH;</b>
+<b class="fc"><i>1714</i>&nbsp;                outputBuffer[outputPtr++] = (byte) escape;</b>
+<i>1715</i>&nbsp;            } else {
+<i>1716</i>&nbsp;                // ctrl-char, 6-byte escape...
+<b class="fc"><i>1717</i>&nbsp;                outputPtr = _writeGenericEscape(ch, outputPtr);</b>
+<i>1718</i>&nbsp;            }
+<b class="fc"><i>1719</i>&nbsp;        }</b>
+<b class="fc"><i>1720</i>&nbsp;        _outputTail = outputPtr;</b>
+<b class="fc"><i>1721</i>&nbsp;    }</b>
+<i>1722</i>&nbsp;    
+<i>1723</i>&nbsp;    /*
+<i>1724</i>&nbsp;    /**********************************************************
+<i>1725</i>&nbsp;    /* Internal methods, low-level writing, base64 encoded
+<i>1726</i>&nbsp;    /**********************************************************
+<i>1727</i>&nbsp;     */
+<i>1728</i>&nbsp;    
+<i>1729</i>&nbsp;    protected final void _writeBinary(Base64Variant b64variant,
+<i>1730</i>&nbsp;            byte[] input, int inputPtr, final int inputEnd)
+<i>1731</i>&nbsp;        throws IOException, JsonGenerationException
+<i>1732</i>&nbsp;    {
+<i>1733</i>&nbsp;        // Encoding is by chunks of 3 input, 4 output chars, so:
+<b class="fc"><i>1734</i>&nbsp;        int safeInputEnd = inputEnd - 3;</b>
+<i>1735</i>&nbsp;        // Let&#39;s also reserve room for possible (and quoted) lf char each round
+<b class="fc"><i>1736</i>&nbsp;        int safeOutputEnd = _outputEnd - 6;</b>
+<b class="fc"><i>1737</i>&nbsp;        int chunksBeforeLF = b64variant.getMaxLineLength() &gt;&gt; 2;</b>
+<i>1738</i>&nbsp;
+<i>1739</i>&nbsp;        // Ok, first we loop through all full triplets of data:
+<b class="fc"><i>1740</i>&nbsp;        while (inputPtr &lt;= safeInputEnd) {</b>
+<b class="fc"><i>1741</i>&nbsp;            if (_outputTail &gt; safeOutputEnd) { // need to flush</b>
+<b class="fc"><i>1742</i>&nbsp;                _flushBuffer();</b>
+<i>1743</i>&nbsp;            }
+<i>1744</i>&nbsp;            // First, mash 3 bytes into lsb of 32-bit int
+<b class="fc"><i>1745</i>&nbsp;            int b24 = ((int) input[inputPtr++]) &lt;&lt; 8;</b>
+<b class="fc"><i>1746</i>&nbsp;            b24 |= ((int) input[inputPtr++]) &amp; 0xFF;</b>
+<b class="fc"><i>1747</i>&nbsp;            b24 = (b24 &lt;&lt; 8) | (((int) input[inputPtr++]) &amp; 0xFF);</b>
+<b class="fc"><i>1748</i>&nbsp;            _outputTail = b64variant.encodeBase64Chunk(b24, _outputBuffer, _outputTail);</b>
+<b class="fc"><i>1749</i>&nbsp;            if (--chunksBeforeLF &lt;= 0) {</b>
+<i>1750</i>&nbsp;                // note: must quote in JSON value
+<b class="nc"><i>1751</i>&nbsp;                _outputBuffer[_outputTail++] = &#39;\\&#39;;</b>
+<b class="nc"><i>1752</i>&nbsp;                _outputBuffer[_outputTail++] = &#39;n&#39;;</b>
+<b class="nc"><i>1753</i>&nbsp;                chunksBeforeLF = b64variant.getMaxLineLength() &gt;&gt; 2;</b>
+<i>1754</i>&nbsp;            }
+<b class="fc"><i>1755</i>&nbsp;        }</b>
+<i>1756</i>&nbsp;
+<i>1757</i>&nbsp;        // And then we may have 1 or 2 leftover bytes to encode
+<b class="fc"><i>1758</i>&nbsp;        int inputLeft = inputEnd - inputPtr; // 0, 1 or 2</b>
+<b class="fc"><i>1759</i>&nbsp;        if (inputLeft &gt; 0) { // yes, but do we have room for output?</b>
+<b class="fc"><i>1760</i>&nbsp;            if (_outputTail &gt; safeOutputEnd) { // don&#39;t really need 6 bytes but...</b>
+<b class="nc"><i>1761</i>&nbsp;                _flushBuffer();</b>
+<i>1762</i>&nbsp;            }
+<b class="fc"><i>1763</i>&nbsp;            int b24 = ((int) input[inputPtr++]) &lt;&lt; 16;</b>
+<b class="fc"><i>1764</i>&nbsp;            if (inputLeft == 2) {</b>
+<b class="fc"><i>1765</i>&nbsp;                b24 |= (((int) input[inputPtr++]) &amp; 0xFF) &lt;&lt; 8;</b>
+<i>1766</i>&nbsp;            }
+<b class="fc"><i>1767</i>&nbsp;            _outputTail = b64variant.encodeBase64Partial(b24, inputLeft, _outputBuffer, _outputTail);</b>
+<i>1768</i>&nbsp;        }
+<b class="fc"><i>1769</i>&nbsp;    }</b>
+<i>1770</i>&nbsp;
+<i>1771</i>&nbsp;    // write-method called when length is definitely known
+<i>1772</i>&nbsp;    protected final int _writeBinary(Base64Variant b64variant,
+<i>1773</i>&nbsp;            InputStream data, byte[] readBuffer, int bytesLeft)
+<i>1774</i>&nbsp;        throws IOException, JsonGenerationException
+<i>1775</i>&nbsp;    {
+<b class="fc"><i>1776</i>&nbsp;        int inputPtr = 0;</b>
+<b class="fc"><i>1777</i>&nbsp;        int inputEnd = 0;</b>
+<b class="fc"><i>1778</i>&nbsp;        int lastFullOffset = -3;       </b>
+<i>1779</i>&nbsp;        
+<i>1780</i>&nbsp;        // Let&#39;s also reserve room for possible (and quoted) LF char each round
+<b class="fc"><i>1781</i>&nbsp;        int safeOutputEnd = _outputEnd - 6;</b>
+<b class="fc"><i>1782</i>&nbsp;        int chunksBeforeLF = b64variant.getMaxLineLength() &gt;&gt; 2;</b>
+<i>1783</i>&nbsp;
+<b class="fc"><i>1784</i>&nbsp;        while (bytesLeft &gt; 2) { // main loop for full triplets</b>
+<b class="fc"><i>1785</i>&nbsp;            if (inputPtr &gt; lastFullOffset) {</b>
+<b class="fc"><i>1786</i>&nbsp;                inputEnd = _readMore(data, readBuffer, inputPtr, inputEnd, bytesLeft);</b>
+<b class="fc"><i>1787</i>&nbsp;                inputPtr = 0;</b>
+<b class="fc"><i>1788</i>&nbsp;                if (inputEnd &lt; 3) { // required to try to read to have at least 3 bytes</b>
+<b class="nc"><i>1789</i>&nbsp;                    break;</b>
+<i>1790</i>&nbsp;                }
+<b class="fc"><i>1791</i>&nbsp;                lastFullOffset = inputEnd-3;</b>
+<i>1792</i>&nbsp;            }
+<b class="fc"><i>1793</i>&nbsp;            if (_outputTail &gt; safeOutputEnd) { // need to flush</b>
+<b class="nc"><i>1794</i>&nbsp;                _flushBuffer();</b>
+<i>1795</i>&nbsp;            }
+<b class="fc"><i>1796</i>&nbsp;            int b24 = ((int) readBuffer[inputPtr++]) &lt;&lt; 8;</b>
+<b class="fc"><i>1797</i>&nbsp;            b24 |= ((int) readBuffer[inputPtr++]) &amp; 0xFF;</b>
+<b class="fc"><i>1798</i>&nbsp;            b24 = (b24 &lt;&lt; 8) | (((int) readBuffer[inputPtr++]) &amp; 0xFF);</b>
+<b class="fc"><i>1799</i>&nbsp;            bytesLeft -= 3;</b>
+<b class="fc"><i>1800</i>&nbsp;            _outputTail = b64variant.encodeBase64Chunk(b24, _outputBuffer, _outputTail);</b>
+<b class="fc"><i>1801</i>&nbsp;            if (--chunksBeforeLF &lt;= 0) {</b>
+<b class="fc"><i>1802</i>&nbsp;                _outputBuffer[_outputTail++] = &#39;\\&#39;;</b>
+<b class="fc"><i>1803</i>&nbsp;                _outputBuffer[_outputTail++] = &#39;n&#39;;</b>
+<b class="fc"><i>1804</i>&nbsp;                chunksBeforeLF = b64variant.getMaxLineLength() &gt;&gt; 2;</b>
+<i>1805</i>&nbsp;            }
+<b class="fc"><i>1806</i>&nbsp;        }</b>
+<i>1807</i>&nbsp;        
+<i>1808</i>&nbsp;        // And then we may have 1 or 2 leftover bytes to encode
+<b class="fc"><i>1809</i>&nbsp;        if (bytesLeft &gt; 0) {</b>
+<b class="fc"><i>1810</i>&nbsp;            inputEnd = _readMore(data, readBuffer, inputPtr, inputEnd, bytesLeft);</b>
+<b class="fc"><i>1811</i>&nbsp;            inputPtr = 0;</b>
+<b class="fc"><i>1812</i>&nbsp;            if (inputEnd &gt; 0) { // yes, but do we have room for output?</b>
+<b class="fc"><i>1813</i>&nbsp;                if (_outputTail &gt; safeOutputEnd) { // don&#39;t really need 6 bytes but...</b>
+<b class="nc"><i>1814</i>&nbsp;                    _flushBuffer();</b>
+<i>1815</i>&nbsp;                }
+<b class="fc"><i>1816</i>&nbsp;                int b24 = ((int) readBuffer[inputPtr++]) &lt;&lt; 16;</b>
+<i>1817</i>&nbsp;                int amount;
+<b class="fc"><i>1818</i>&nbsp;                if (inputPtr &lt; inputEnd) {</b>
+<b class="fc"><i>1819</i>&nbsp;                    b24 |= (((int) readBuffer[inputPtr]) &amp; 0xFF) &lt;&lt; 8;</b>
+<b class="fc"><i>1820</i>&nbsp;                    amount = 2;</b>
+<i>1821</i>&nbsp;                } else {
+<b class="fc"><i>1822</i>&nbsp;                    amount = 1;</b>
+<i>1823</i>&nbsp;                }
+<b class="fc"><i>1824</i>&nbsp;                _outputTail = b64variant.encodeBase64Partial(b24, amount, _outputBuffer, _outputTail);</b>
+<b class="fc"><i>1825</i>&nbsp;                bytesLeft -= amount;</b>
+<i>1826</i>&nbsp;            }
+<i>1827</i>&nbsp;        }
+<b class="fc"><i>1828</i>&nbsp;        return bytesLeft;</b>
+<i>1829</i>&nbsp;    }
+<i>1830</i>&nbsp;
+<i>1831</i>&nbsp;    // write method when length is unknown
+<i>1832</i>&nbsp;    protected final int _writeBinary(Base64Variant b64variant,
+<i>1833</i>&nbsp;            InputStream data, byte[] readBuffer)
+<i>1834</i>&nbsp;        throws IOException, JsonGenerationException
+<i>1835</i>&nbsp;    {
+<b class="fc"><i>1836</i>&nbsp;        int inputPtr = 0;</b>
+<b class="fc"><i>1837</i>&nbsp;        int inputEnd = 0;</b>
+<b class="fc"><i>1838</i>&nbsp;        int lastFullOffset = -3;</b>
+<b class="fc"><i>1839</i>&nbsp;        int bytesDone = 0;</b>
+<i>1840</i>&nbsp;        
+<i>1841</i>&nbsp;        // Let&#39;s also reserve room for possible (and quoted) LF char each round
+<b class="fc"><i>1842</i>&nbsp;        int safeOutputEnd = _outputEnd - 6;</b>
+<b class="fc"><i>1843</i>&nbsp;        int chunksBeforeLF = b64variant.getMaxLineLength() &gt;&gt; 2;</b>
+<i>1844</i>&nbsp;
+<i>1845</i>&nbsp;        // Ok, first we loop through all full triplets of data:
+<i>1846</i>&nbsp;        while (true) {
+<b class="fc"><i>1847</i>&nbsp;            if (inputPtr &gt; lastFullOffset) { // need to load more</b>
+<b class="fc"><i>1848</i>&nbsp;                inputEnd = _readMore(data, readBuffer, inputPtr, inputEnd, readBuffer.length);</b>
+<b class="fc"><i>1849</i>&nbsp;                inputPtr = 0;</b>
+<b class="fc"><i>1850</i>&nbsp;                if (inputEnd &lt; 3) { // required to try to read to have at least 3 bytes</b>
+<b class="fc"><i>1851</i>&nbsp;                    break;</b>
+<i>1852</i>&nbsp;                }
+<b class="fc"><i>1853</i>&nbsp;                lastFullOffset = inputEnd-3;</b>
+<i>1854</i>&nbsp;            }
+<b class="fc"><i>1855</i>&nbsp;            if (_outputTail &gt; safeOutputEnd) { // need to flush</b>
+<b class="nc"><i>1856</i>&nbsp;                _flushBuffer();</b>
+<i>1857</i>&nbsp;            }
+<i>1858</i>&nbsp;            // First, mash 3 bytes into lsb of 32-bit int
+<b class="fc"><i>1859</i>&nbsp;            int b24 = ((int) readBuffer[inputPtr++]) &lt;&lt; 8;</b>
+<b class="fc"><i>1860</i>&nbsp;            b24 |= ((int) readBuffer[inputPtr++]) &amp; 0xFF;</b>
+<b class="fc"><i>1861</i>&nbsp;            b24 = (b24 &lt;&lt; 8) | (((int) readBuffer[inputPtr++]) &amp; 0xFF);</b>
+<b class="fc"><i>1862</i>&nbsp;            bytesDone += 3;</b>
+<b class="fc"><i>1863</i>&nbsp;            _outputTail = b64variant.encodeBase64Chunk(b24, _outputBuffer, _outputTail);</b>
+<b class="fc"><i>1864</i>&nbsp;            if (--chunksBeforeLF &lt;= 0) {</b>
+<b class="fc"><i>1865</i>&nbsp;                _outputBuffer[_outputTail++] = &#39;\\&#39;;</b>
+<b class="fc"><i>1866</i>&nbsp;                _outputBuffer[_outputTail++] = &#39;n&#39;;</b>
+<b class="fc"><i>1867</i>&nbsp;                chunksBeforeLF = b64variant.getMaxLineLength() &gt;&gt; 2;</b>
+<i>1868</i>&nbsp;            }
+<b class="fc"><i>1869</i>&nbsp;        }</b>
+<i>1870</i>&nbsp;
+<i>1871</i>&nbsp;        // And then we may have 1 or 2 leftover bytes to encode
+<b class="fc"><i>1872</i>&nbsp;        if (inputPtr &lt; inputEnd) { // yes, but do we have room for output?</b>
+<b class="fc"><i>1873</i>&nbsp;            if (_outputTail &gt; safeOutputEnd) { // don&#39;t really need 6 bytes but...</b>
+<b class="nc"><i>1874</i>&nbsp;                _flushBuffer();</b>
+<i>1875</i>&nbsp;            }
+<b class="fc"><i>1876</i>&nbsp;            int b24 = ((int) readBuffer[inputPtr++]) &lt;&lt; 16;</b>
+<b class="fc"><i>1877</i>&nbsp;            int amount = 1;</b>
+<b class="fc"><i>1878</i>&nbsp;            if (inputPtr &lt; inputEnd) {</b>
+<b class="fc"><i>1879</i>&nbsp;                b24 |= (((int) readBuffer[inputPtr]) &amp; 0xFF) &lt;&lt; 8;</b>
+<b class="fc"><i>1880</i>&nbsp;                amount = 2;</b>
+<i>1881</i>&nbsp;            }
+<b class="fc"><i>1882</i>&nbsp;            bytesDone += amount;</b>
+<b class="fc"><i>1883</i>&nbsp;            _outputTail = b64variant.encodeBase64Partial(b24, amount, _outputBuffer, _outputTail);</b>
+<i>1884</i>&nbsp;        }
+<b class="fc"><i>1885</i>&nbsp;        return bytesDone;</b>
+<i>1886</i>&nbsp;    }
+<i>1887</i>&nbsp;    
+<i>1888</i>&nbsp;    private final int _readMore(InputStream in,
+<i>1889</i>&nbsp;            byte[] readBuffer, int inputPtr, int inputEnd,
+<i>1890</i>&nbsp;            int maxRead) throws IOException
+<i>1891</i>&nbsp;    {
+<i>1892</i>&nbsp;        // anything to shift to front?
+<b class="fc"><i>1893</i>&nbsp;        int i = 0;</b>
+<b class="fc"><i>1894</i>&nbsp;        while (inputPtr &lt; inputEnd) {</b>
+<b class="fc"><i>1895</i>&nbsp;            readBuffer[i++]  = readBuffer[inputPtr++];</b>
+<i>1896</i>&nbsp;        }
+<b class="fc"><i>1897</i>&nbsp;        inputPtr = 0;</b>
+<b class="fc"><i>1898</i>&nbsp;        inputEnd = i;</b>
+<b class="fc"><i>1899</i>&nbsp;        maxRead = Math.min(maxRead, readBuffer.length);</b>
+<i>1900</i>&nbsp;        
+<i>1901</i>&nbsp;        do {
+<b class="fc"><i>1902</i>&nbsp;            int length = maxRead - inputEnd;</b>
+<b class="fc"><i>1903</i>&nbsp;            if (length == 0) {</b>
+<b class="fc"><i>1904</i>&nbsp;                break;</b>
+<i>1905</i>&nbsp;            }
+<b class="fc"><i>1906</i>&nbsp;            int count = in.read(readBuffer, inputEnd, length);            </b>
+<b class="fc"><i>1907</i>&nbsp;            if (count &lt; 0) {</b>
+<b class="fc"><i>1908</i>&nbsp;                return inputEnd;</b>
+<i>1909</i>&nbsp;            }
+<b class="fc"><i>1910</i>&nbsp;            inputEnd += count;</b>
+<b class="fc"><i>1911</i>&nbsp;        } while (inputEnd &lt; 3);</b>
+<b class="fc"><i>1912</i>&nbsp;        return inputEnd;</b>
+<i>1913</i>&nbsp;    }
+<i>1914</i>&nbsp;    
+<i>1915</i>&nbsp;    /*
+<i>1916</i>&nbsp;    /**********************************************************
+<i>1917</i>&nbsp;    /* Internal methods, character escapes/encoding
+<i>1918</i>&nbsp;    /**********************************************************
+<i>1919</i>&nbsp;     */
+<i>1920</i>&nbsp;    
+<i>1921</i>&nbsp;    /**
+<i>1922</i>&nbsp;     * Method called to output a character that is beyond range of
+<i>1923</i>&nbsp;     * 1- and 2-byte UTF-8 encodings, when outputting &quot;raw&quot; 
+<i>1924</i>&nbsp;     * text (meaning it is not to be escaped or quoted)
+<i>1925</i>&nbsp;     */
+<i>1926</i>&nbsp;    private final int _outputRawMultiByteChar(int ch, char[] cbuf, int inputOffset, int inputEnd)
+<i>1927</i>&nbsp;        throws IOException
+<i>1928</i>&nbsp;    {
+<i>1929</i>&nbsp;        // Let&#39;s handle surrogates gracefully (as 4 byte output):
+<b class="fc"><i>1930</i>&nbsp;        if (ch &gt;= SURR1_FIRST) {</b>
+<b class="fc"><i>1931</i>&nbsp;            if (ch &lt;= SURR2_LAST) { // yes, outside of BMP</b>
+<i>1932</i>&nbsp;                // Do we have second part?
+<b class="fc"><i>1933</i>&nbsp;                if (inputOffset &gt;= inputEnd || cbuf == null) { // nope... have to note down</b>
+<b class="nc"><i>1934</i>&nbsp;                    _reportError(String.format(</b>
+<b class="nc"><i>1935</i>&nbsp;&quot;Split surrogate on writeRaw() input (last character): first character 0x%4x&quot;, ch));</b>
+<i>1936</i>&nbsp;                }
+<b class="fc"><i>1937</i>&nbsp;                _outputSurrogates(ch, cbuf[inputOffset]);</b>
+<b class="fc"><i>1938</i>&nbsp;                return inputOffset+1;</b>
+<i>1939</i>&nbsp;            }
+<i>1940</i>&nbsp;        }
+<b class="nc"><i>1941</i>&nbsp;        final byte[] bbuf = _outputBuffer;</b>
+<b class="nc"><i>1942</i>&nbsp;        bbuf[_outputTail++] = (byte) (0xe0 | (ch &gt;&gt; 12));</b>
+<b class="nc"><i>1943</i>&nbsp;        bbuf[_outputTail++] = (byte) (0x80 | ((ch &gt;&gt; 6) &amp; 0x3f));</b>
+<b class="nc"><i>1944</i>&nbsp;        bbuf[_outputTail++] = (byte) (0x80 | (ch &amp; 0x3f));</b>
+<b class="nc"><i>1945</i>&nbsp;        return inputOffset;</b>
+<i>1946</i>&nbsp;    }
+<i>1947</i>&nbsp;
+<i>1948</i>&nbsp;    protected final void _outputSurrogates(int surr1, int surr2) throws IOException
+<i>1949</i>&nbsp;    {
+<b class="fc"><i>1950</i>&nbsp;        int c = _decodeSurrogate(surr1, surr2);</b>
+<b class="fc"><i>1951</i>&nbsp;        if ((_outputTail + 4) &gt; _outputEnd) {</b>
+<b class="nc"><i>1952</i>&nbsp;            _flushBuffer();</b>
+<i>1953</i>&nbsp;        }
+<b class="fc"><i>1954</i>&nbsp;        final byte[] bbuf = _outputBuffer;</b>
+<b class="fc"><i>1955</i>&nbsp;        bbuf[_outputTail++] = (byte) (0xf0 | (c &gt;&gt; 18));</b>
+<b class="fc"><i>1956</i>&nbsp;        bbuf[_outputTail++] = (byte) (0x80 | ((c &gt;&gt; 12) &amp; 0x3f));</b>
+<b class="fc"><i>1957</i>&nbsp;        bbuf[_outputTail++] = (byte) (0x80 | ((c &gt;&gt; 6) &amp; 0x3f));</b>
+<b class="fc"><i>1958</i>&nbsp;        bbuf[_outputTail++] = (byte) (0x80 | (c &amp; 0x3f));</b>
+<b class="fc"><i>1959</i>&nbsp;    }</b>
+<i>1960</i>&nbsp;    
+<i>1961</i>&nbsp;    /**
+<i>1962</i>&nbsp;     * 
+<i>1963</i>&nbsp;     * @param ch
+<i>1964</i>&nbsp;     * @param outputPtr Position within output buffer to append multi-byte in
+<i>1965</i>&nbsp;     * 
+<i>1966</i>&nbsp;     * @return New output position after appending
+<i>1967</i>&nbsp;     * 
+<i>1968</i>&nbsp;     * @throws IOException
+<i>1969</i>&nbsp;     */
+<i>1970</i>&nbsp;    private final int _outputMultiByteChar(int ch, int outputPtr) throws IOException
+<i>1971</i>&nbsp;    {
+<b class="fc"><i>1972</i>&nbsp;        byte[] bbuf = _outputBuffer;</b>
+<b class="fc"><i>1973</i>&nbsp;        if (ch &gt;= SURR1_FIRST &amp;&amp; ch &lt;= SURR2_LAST) { // yes, outside of BMP; add an escape</b>
+<i>1974</i>&nbsp;            // 23-Nov-2015, tatu: As per [core#223], may or may not want escapes;
+<i>1975</i>&nbsp;            //   it would be added here... but as things are, we do not have proper
+<i>1976</i>&nbsp;            //   access yet...
+<i>1977</i>&nbsp;//            if (Feature.ESCAPE_UTF8_SURROGATES.enabledIn(_features)) {
+<b class="fc"><i>1978</i>&nbsp;                bbuf[outputPtr++] = BYTE_BACKSLASH;</b>
+<b class="fc"><i>1979</i>&nbsp;                bbuf[outputPtr++] = BYTE_u;</b>
+<i>1980</i>&nbsp;                
+<b class="fc"><i>1981</i>&nbsp;                bbuf[outputPtr++] = HEX_CHARS[(ch &gt;&gt; 12) &amp; 0xF];</b>
+<b class="fc"><i>1982</i>&nbsp;                bbuf[outputPtr++] = HEX_CHARS[(ch &gt;&gt; 8) &amp; 0xF];</b>
+<b class="fc"><i>1983</i>&nbsp;                bbuf[outputPtr++] = HEX_CHARS[(ch &gt;&gt; 4) &amp; 0xF];</b>
+<b class="fc"><i>1984</i>&nbsp;                bbuf[outputPtr++] = HEX_CHARS[ch &amp; 0xF];</b>
+<i>1985</i>&nbsp;//            } else { ... }
+<i>1986</i>&nbsp;        } else {
+<b class="fc"><i>1987</i>&nbsp;            bbuf[outputPtr++] = (byte) (0xe0 | (ch &gt;&gt; 12));</b>
+<b class="fc"><i>1988</i>&nbsp;            bbuf[outputPtr++] = (byte) (0x80 | ((ch &gt;&gt; 6) &amp; 0x3f));</b>
+<b class="fc"><i>1989</i>&nbsp;            bbuf[outputPtr++] = (byte) (0x80 | (ch &amp; 0x3f));</b>
+<i>1990</i>&nbsp;        }
+<b class="fc"><i>1991</i>&nbsp;        return outputPtr;</b>
+<i>1992</i>&nbsp;    }
+<i>1993</i>&nbsp;
+<i>1994</i>&nbsp;    private final void _writeNull() throws IOException
+<i>1995</i>&nbsp;    {
+<b class="fc"><i>1996</i>&nbsp;        if ((_outputTail + 4) &gt;= _outputEnd) {</b>
+<b class="nc"><i>1997</i>&nbsp;            _flushBuffer();</b>
+<i>1998</i>&nbsp;        }
+<b class="fc"><i>1999</i>&nbsp;        System.arraycopy(NULL_BYTES, 0, _outputBuffer, _outputTail, 4);</b>
+<b class="fc"><i>2000</i>&nbsp;        _outputTail += 4;</b>
+<b class="fc"><i>2001</i>&nbsp;    }</b>
+<i>2002</i>&nbsp;        
+<i>2003</i>&nbsp;    /**
+<i>2004</i>&nbsp;     * Method called to write a generic Unicode escape for given character.
+<i>2005</i>&nbsp;     * 
+<i>2006</i>&nbsp;     * @param charToEscape Character to escape using escape sequence (\\uXXXX)
+<i>2007</i>&nbsp;     */
+<i>2008</i>&nbsp;    private int _writeGenericEscape(int charToEscape, int outputPtr) throws IOException
+<i>2009</i>&nbsp;    {
+<b class="fc"><i>2010</i>&nbsp;        final byte[] bbuf = _outputBuffer;</b>
+<b class="fc"><i>2011</i>&nbsp;        bbuf[outputPtr++] = BYTE_BACKSLASH;</b>
+<b class="fc"><i>2012</i>&nbsp;        bbuf[outputPtr++] = BYTE_u;</b>
+<b class="fc"><i>2013</i>&nbsp;        if (charToEscape &gt; 0xFF) {</b>
+<b class="fc"><i>2014</i>&nbsp;            int hi = (charToEscape &gt;&gt; 8) &amp; 0xFF;</b>
+<b class="fc"><i>2015</i>&nbsp;            bbuf[outputPtr++] = HEX_CHARS[hi &gt;&gt; 4];</b>
+<b class="fc"><i>2016</i>&nbsp;            bbuf[outputPtr++] = HEX_CHARS[hi &amp; 0xF];</b>
+<b class="fc"><i>2017</i>&nbsp;            charToEscape &amp;= 0xFF;</b>
+<b class="fc"><i>2018</i>&nbsp;        } else {</b>
+<b class="fc"><i>2019</i>&nbsp;            bbuf[outputPtr++] = BYTE_0;</b>
+<b class="fc"><i>2020</i>&nbsp;            bbuf[outputPtr++] = BYTE_0;</b>
+<i>2021</i>&nbsp;        }
+<i>2022</i>&nbsp;        // We know it&#39;s a control char, so only the last 2 chars are non-0
+<b class="fc"><i>2023</i>&nbsp;        bbuf[outputPtr++] = HEX_CHARS[charToEscape &gt;&gt; 4];</b>
+<b class="fc"><i>2024</i>&nbsp;        bbuf[outputPtr++] = HEX_CHARS[charToEscape &amp; 0xF];</b>
+<b class="fc"><i>2025</i>&nbsp;        return outputPtr;</b>
+<i>2026</i>&nbsp;    }
+<i>2027</i>&nbsp;
+<i>2028</i>&nbsp;    protected final void _flushBuffer() throws IOException
+<i>2029</i>&nbsp;    {
+<b class="fc"><i>2030</i>&nbsp;        int len = _outputTail;</b>
+<b class="fc"><i>2031</i>&nbsp;        if (len &gt; 0) {</b>
+<b class="fc"><i>2032</i>&nbsp;            _outputTail = 0;</b>
+<b class="fc"><i>2033</i>&nbsp;            _outputStream.write(_outputBuffer, 0, len);</b>
+<i>2034</i>&nbsp;        }
+<b class="fc"><i>2035</i>&nbsp;    }</b>
+<i>2036</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 04:22</div>
+</div>
+</body>
+</html>

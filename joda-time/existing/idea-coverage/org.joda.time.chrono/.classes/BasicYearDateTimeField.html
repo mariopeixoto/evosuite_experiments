@@ -1,0 +1,237 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: BasicYearDateTimeField</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time.chrono</a> ]
+</div>
+
+<h1>Coverage Summary for Class: BasicYearDateTimeField (org.joda.time.chrono)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">BasicYearDateTimeField</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    94.7%
+  </span>
+  <span class="absValue">
+    (18/ 19)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    97.6%
+  </span>
+  <span class="absValue">
+    (41/ 42)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2015 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time.chrono;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;import org.joda.time.DateTimeFieldType;
+<i>19</i>&nbsp;import org.joda.time.DurationField;
+<i>20</i>&nbsp;import org.joda.time.field.FieldUtils;
+<i>21</i>&nbsp;import org.joda.time.field.ImpreciseDateTimeField;
+<i>22</i>&nbsp;
+<i>23</i>&nbsp;/**
+<i>24</i>&nbsp; * A year field suitable for many calendars.
+<i>25</i>&nbsp; *
+<i>26</i>&nbsp; * @author Guy Allard
+<i>27</i>&nbsp; * @author Stephen Colebourne
+<i>28</i>&nbsp; * @author Brian S O&#39;Neill
+<i>29</i>&nbsp; * @since 1.1, refactored from GJYearDateTimeField
+<i>30</i>&nbsp; */
+<i>31</i>&nbsp;class BasicYearDateTimeField extends ImpreciseDateTimeField {
+<i>32</i>&nbsp;
+<i>33</i>&nbsp;    /** Serialization version. */
+<i>34</i>&nbsp;    @SuppressWarnings(&quot;unused&quot;)
+<i>35</i>&nbsp;    private static final long serialVersionUID = -98628754872287L;
+<i>36</i>&nbsp;
+<i>37</i>&nbsp;    /** The underlying basic chronology. */
+<i>38</i>&nbsp;    protected final BasicChronology iChronology;
+<i>39</i>&nbsp;
+<i>40</i>&nbsp;    /**
+<i>41</i>&nbsp;     * Restricted constructor.
+<i>42</i>&nbsp;     * 
+<i>43</i>&nbsp;     * @param chronology  the chronology this field belogs to
+<i>44</i>&nbsp;     */
+<i>45</i>&nbsp;    BasicYearDateTimeField(BasicChronology chronology) {
+<b class="fc"><i>46</i>&nbsp;        super(DateTimeFieldType.year(), chronology.getAverageMillisPerYear());</b>
+<b class="fc"><i>47</i>&nbsp;        iChronology = chronology;</b>
+<b class="fc"><i>48</i>&nbsp;    }</b>
+<i>49</i>&nbsp;
+<i>50</i>&nbsp;    public boolean isLenient() {
+<b class="fc"><i>51</i>&nbsp;        return false;</b>
+<i>52</i>&nbsp;    }
+<i>53</i>&nbsp;
+<i>54</i>&nbsp;    public int get(long instant) {
+<b class="fc"><i>55</i>&nbsp;        return iChronology.getYear(instant);</b>
+<i>56</i>&nbsp;    }
+<i>57</i>&nbsp;
+<i>58</i>&nbsp;    public long add(long instant, int years) {
+<b class="fc"><i>59</i>&nbsp;        if (years == 0) {</b>
+<b class="fc"><i>60</i>&nbsp;            return instant;</b>
+<i>61</i>&nbsp;        }
+<b class="fc"><i>62</i>&nbsp;        int thisYear = get(instant);</b>
+<b class="fc"><i>63</i>&nbsp;        int newYear = FieldUtils.safeAdd(thisYear, years);</b>
+<b class="fc"><i>64</i>&nbsp;        return set(instant, newYear);</b>
+<i>65</i>&nbsp;    }
+<i>66</i>&nbsp;
+<i>67</i>&nbsp;    public long add(long instant, long years) {
+<b class="fc"><i>68</i>&nbsp;        return add(instant, FieldUtils.safeToInt(years));</b>
+<i>69</i>&nbsp;    }
+<i>70</i>&nbsp;
+<i>71</i>&nbsp;    public long addWrapField(long instant, int years) {
+<b class="fc"><i>72</i>&nbsp;        if (years == 0) {</b>
+<b class="fc"><i>73</i>&nbsp;            return instant;</b>
+<i>74</i>&nbsp;        }
+<i>75</i>&nbsp;        // Return newly calculated millis value
+<b class="fc"><i>76</i>&nbsp;        int thisYear = iChronology.getYear(instant);</b>
+<b class="fc"><i>77</i>&nbsp;        int wrappedYear = FieldUtils.getWrappedValue</b>
+<b class="fc"><i>78</i>&nbsp;            (thisYear, years, iChronology.getMinYear(), iChronology.getMaxYear());</b>
+<b class="fc"><i>79</i>&nbsp;        return set(instant, wrappedYear);</b>
+<i>80</i>&nbsp;    }
+<i>81</i>&nbsp;
+<i>82</i>&nbsp;    public long set(long instant, int year) {
+<b class="fc"><i>83</i>&nbsp;        FieldUtils.verifyValueBounds</b>
+<b class="fc"><i>84</i>&nbsp;            (this, year, iChronology.getMinYear(), iChronology.getMaxYear());</b>
+<b class="fc"><i>85</i>&nbsp;        return iChronology.setYear(instant, year);</b>
+<i>86</i>&nbsp;    }
+<i>87</i>&nbsp;
+<i>88</i>&nbsp;    @Override
+<i>89</i>&nbsp;    public long setExtended(long instant, int year) {
+<b class="fc"><i>90</i>&nbsp;        FieldUtils.verifyValueBounds(</b>
+<b class="fc"><i>91</i>&nbsp;                this, year, iChronology.getMinYear() - 1, iChronology.getMaxYear() + 1);</b>
+<b class="fc"><i>92</i>&nbsp;        return iChronology.setYear(instant, year);</b>
+<i>93</i>&nbsp;    }
+<i>94</i>&nbsp;
+<i>95</i>&nbsp;    public long getDifferenceAsLong(long minuendInstant, long subtrahendInstant) {
+<b class="fc"><i>96</i>&nbsp;        if (minuendInstant &lt; subtrahendInstant) {</b>
+<b class="fc"><i>97</i>&nbsp;            return -iChronology.getYearDifference(subtrahendInstant, minuendInstant);</b>
+<i>98</i>&nbsp;        }
+<b class="fc"><i>99</i>&nbsp;        return iChronology.getYearDifference(minuendInstant, subtrahendInstant);</b>
+<i>100</i>&nbsp;    }
+<i>101</i>&nbsp;
+<i>102</i>&nbsp;    public DurationField getRangeDurationField() {
+<b class="fc"><i>103</i>&nbsp;        return null;</b>
+<i>104</i>&nbsp;    }
+<i>105</i>&nbsp;
+<i>106</i>&nbsp;    public boolean isLeap(long instant) {
+<b class="fc"><i>107</i>&nbsp;        return iChronology.isLeapYear(get(instant));</b>
+<i>108</i>&nbsp;    }
+<i>109</i>&nbsp;
+<i>110</i>&nbsp;    public int getLeapAmount(long instant) {
+<b class="fc"><i>111</i>&nbsp;        if (iChronology.isLeapYear(get(instant))) {</b>
+<b class="fc"><i>112</i>&nbsp;            return 1;</b>
+<i>113</i>&nbsp;        } else {
+<b class="fc"><i>114</i>&nbsp;            return 0;</b>
+<i>115</i>&nbsp;        }
+<i>116</i>&nbsp;    }
+<i>117</i>&nbsp;
+<i>118</i>&nbsp;    public DurationField getLeapDurationField() {
+<b class="fc"><i>119</i>&nbsp;        return iChronology.days();</b>
+<i>120</i>&nbsp;    }
+<i>121</i>&nbsp;
+<i>122</i>&nbsp;    public int getMinimumValue() {
+<b class="fc"><i>123</i>&nbsp;        return iChronology.getMinYear();</b>
+<i>124</i>&nbsp;    }
+<i>125</i>&nbsp;
+<i>126</i>&nbsp;    public int getMaximumValue() {
+<b class="fc"><i>127</i>&nbsp;        return iChronology.getMaxYear();</b>
+<i>128</i>&nbsp;    }
+<i>129</i>&nbsp;
+<i>130</i>&nbsp;    public long roundFloor(long instant) {
+<b class="fc"><i>131</i>&nbsp;        return iChronology.getYearMillis(get(instant));</b>
+<i>132</i>&nbsp;    }
+<i>133</i>&nbsp;
+<i>134</i>&nbsp;    public long roundCeiling(long instant) {
+<b class="fc"><i>135</i>&nbsp;        int year = get(instant);</b>
+<b class="fc"><i>136</i>&nbsp;        long yearStartMillis = iChronology.getYearMillis(year);</b>
+<b class="fc"><i>137</i>&nbsp;        if (instant != yearStartMillis) {</b>
+<i>138</i>&nbsp;            // Bump up to start of next year.
+<b class="fc"><i>139</i>&nbsp;            instant = iChronology.getYearMillis(year + 1);</b>
+<i>140</i>&nbsp;        }
+<b class="fc"><i>141</i>&nbsp;        return instant;</b>
+<i>142</i>&nbsp;    }
+<i>143</i>&nbsp;
+<i>144</i>&nbsp;    public long remainder(long instant) {
+<b class="fc"><i>145</i>&nbsp;        return instant - roundFloor(instant);</b>
+<i>146</i>&nbsp;    }
+<i>147</i>&nbsp;
+<i>148</i>&nbsp;    /**
+<i>149</i>&nbsp;     * Serialization singleton
+<i>150</i>&nbsp;     */
+<i>151</i>&nbsp;    private Object readResolve() {
+<b class="nc"><i>152</i>&nbsp;        return iChronology.year();</b>
+<i>153</i>&nbsp;    }
+<i>154</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

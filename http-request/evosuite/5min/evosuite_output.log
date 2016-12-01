@@ -1,0 +1,15 @@
+Going to execute command:
+/Library/Java/Home/bin/java  -jar  /Users/mario/Downloads/evosuite-1.0.3.jar  -continuous  execute  -Dspawn_process_manager_port=50103  -Dctg_memory=8000  -Dctg_cores=4  -Dctg_time_per_class=5  -Dctg_export_folder=src/test/evo  -Dctg_selected_cuts=com.github.kevinsawicki.http.HttpRequest  -DCP_file_path=/var/folders/fw/p1v413pn3d37fq0grpb41s8w0000gn/T/EvoSuite_ctg_classpath_file2641905950607262076.txt
+in folder: /Users/mario/Documents/experiments/http-request/lib
+Going to execute command:
+/Library/Java/Home/bin/java  -jar  /Users/mario/Downloads/evosuite-1.0.3.jar  -continuous  execute  -Dspawn_process_manager_port=50103  -Dctg_memory=8000  -Dctg_cores=4  -Dctg_time_per_class=5  -Dctg_export_folder=src/test/evo  -Dctg_selected_cuts=com.github.kevinsawicki.http.HttpRequest  -DCP_file_path=/var/folders/fw/p1v413pn3d37fq0grpb41s8w0000gn/T/EvoSuite_ctg_classpath_file2641905950607262076.txt
+in folder: /Users/mario/Documents/experiments/http-request/lib
+* EvoSuite 1.0.3
+Going to execute 1 jobs
+Estimated completion time: 2 minutes, by 2016-11-30T21:59:39.655
+Going to start job for: com.github.kevinsawicki.http.HttpRequest. Expected to end in 120 seconds, by 2016-11-30T21:59:39.673
+Completed job. Left: 0
+Removed test suites: 0
+
+=== CTG run results ===
+New test suites: 1

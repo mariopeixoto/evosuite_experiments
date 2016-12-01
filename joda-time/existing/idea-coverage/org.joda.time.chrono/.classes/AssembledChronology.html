@@ -1,0 +1,674 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: AssembledChronology</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time.chrono</a> ]
+</div>
+
+<h1>Coverage Summary for Class: AssembledChronology (org.joda.time.chrono)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">AssembledChronology</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (44/ 44)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    99.1%
+  </span>
+  <span class="absValue">
+    (110/ 111)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">AssembledChronology$Fields</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/ 4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.7%
+  </span>
+  <span class="absValue">
+    (74/ 75)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (48/ 48)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.9%
+  </span>
+  <span class="absValue">
+    (184/ 186)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2005 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time.chrono;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;import java.io.IOException;
+<i>19</i>&nbsp;import java.io.ObjectInputStream;
+<i>20</i>&nbsp;
+<i>21</i>&nbsp;import org.joda.time.Chronology;
+<i>22</i>&nbsp;import org.joda.time.DateTimeField;
+<i>23</i>&nbsp;import org.joda.time.DateTimeZone;
+<i>24</i>&nbsp;import org.joda.time.DurationField;
+<i>25</i>&nbsp;
+<i>26</i>&nbsp;/**
+<i>27</i>&nbsp; * Abstract Chronology that enables chronologies to be assembled from
+<i>28</i>&nbsp; * a container of fields.
+<i>29</i>&nbsp; * &lt;p&gt;
+<i>30</i>&nbsp; * AssembledChronology is thread-safe and immutable.
+<i>31</i>&nbsp; *
+<i>32</i>&nbsp; * @author Brian S O&#39;Neill
+<i>33</i>&nbsp; * @since 1.0
+<i>34</i>&nbsp; */
+<i>35</i>&nbsp;public abstract class AssembledChronology extends BaseChronology {
+<i>36</i>&nbsp;
+<i>37</i>&nbsp;    private static final long serialVersionUID = -6728465968995518215L;
+<i>38</i>&nbsp;
+<i>39</i>&nbsp;    private final Chronology iBase;
+<i>40</i>&nbsp;    private final Object iParam;
+<i>41</i>&nbsp;
+<i>42</i>&nbsp;    private transient DurationField iMillis;
+<i>43</i>&nbsp;    private transient DurationField iSeconds;
+<i>44</i>&nbsp;    private transient DurationField iMinutes;
+<i>45</i>&nbsp;    private transient DurationField iHours;
+<i>46</i>&nbsp;    private transient DurationField iHalfdays;
+<i>47</i>&nbsp;
+<i>48</i>&nbsp;    private transient DurationField iDays;
+<i>49</i>&nbsp;    private transient DurationField iWeeks;
+<i>50</i>&nbsp;    private transient DurationField iWeekyears;
+<i>51</i>&nbsp;    private transient DurationField iMonths;
+<i>52</i>&nbsp;    private transient DurationField iYears;
+<i>53</i>&nbsp;    private transient DurationField iCenturies;
+<i>54</i>&nbsp;    private transient DurationField iEras;
+<i>55</i>&nbsp;
+<i>56</i>&nbsp;    private transient DateTimeField iMillisOfSecond;
+<i>57</i>&nbsp;    private transient DateTimeField iMillisOfDay;
+<i>58</i>&nbsp;    private transient DateTimeField iSecondOfMinute;
+<i>59</i>&nbsp;    private transient DateTimeField iSecondOfDay;
+<i>60</i>&nbsp;    private transient DateTimeField iMinuteOfHour;
+<i>61</i>&nbsp;    private transient DateTimeField iMinuteOfDay;
+<i>62</i>&nbsp;    private transient DateTimeField iHourOfDay;
+<i>63</i>&nbsp;    private transient DateTimeField iClockhourOfDay;
+<i>64</i>&nbsp;    private transient DateTimeField iHourOfHalfday;
+<i>65</i>&nbsp;    private transient DateTimeField iClockhourOfHalfday;
+<i>66</i>&nbsp;    private transient DateTimeField iHalfdayOfDay;
+<i>67</i>&nbsp;
+<i>68</i>&nbsp;    private transient DateTimeField iDayOfWeek;
+<i>69</i>&nbsp;    private transient DateTimeField iDayOfMonth;
+<i>70</i>&nbsp;    private transient DateTimeField iDayOfYear;
+<i>71</i>&nbsp;    private transient DateTimeField iWeekOfWeekyear;
+<i>72</i>&nbsp;    private transient DateTimeField iWeekyear;
+<i>73</i>&nbsp;    private transient DateTimeField iWeekyearOfCentury;
+<i>74</i>&nbsp;    private transient DateTimeField iMonthOfYear;
+<i>75</i>&nbsp;    private transient DateTimeField iYear;
+<i>76</i>&nbsp;    private transient DateTimeField iYearOfEra;
+<i>77</i>&nbsp;    private transient DateTimeField iYearOfCentury;
+<i>78</i>&nbsp;    private transient DateTimeField iCenturyOfEra;
+<i>79</i>&nbsp;    private transient DateTimeField iEra;
+<i>80</i>&nbsp;
+<i>81</i>&nbsp;    // Bit set determines which base fields are used
+<i>82</i>&nbsp;    // bit 1 set: hourOfDay, minuteOfHour, secondOfMinute, and millisOfSecond fields
+<i>83</i>&nbsp;    // bit 2 set: millisOfDayField
+<i>84</i>&nbsp;    // bit 3 set: year, monthOfYear, and dayOfMonth fields
+<i>85</i>&nbsp;    private transient int iBaseFlags;
+<i>86</i>&nbsp;
+<i>87</i>&nbsp;    /**
+<i>88</i>&nbsp;     * Constructor calls the assemble method, enabling subclasses to define its
+<i>89</i>&nbsp;     * supported fields. If a base chronology is supplied, the field set
+<i>90</i>&nbsp;     * initially contains references to each base chronology field.
+<i>91</i>&nbsp;     * &lt;p&gt;
+<i>92</i>&nbsp;     * Other methods in this class will delegate to the base chronology, if it
+<i>93</i>&nbsp;     * can be determined that the base chronology will produce the same results
+<i>94</i>&nbsp;     * as AbstractChronology.
+<i>95</i>&nbsp;     *
+<i>96</i>&nbsp;     * @param base optional base chronology to copy initial fields from
+<i>97</i>&nbsp;     * @param param optional param object avalable for assemble method
+<i>98</i>&nbsp;     */
+<b class="fc"><i>99</i>&nbsp;    protected AssembledChronology(Chronology base, Object param) {</b>
+<b class="fc"><i>100</i>&nbsp;        iBase = base;</b>
+<b class="fc"><i>101</i>&nbsp;        iParam = param;</b>
+<b class="fc"><i>102</i>&nbsp;        setFields();</b>
+<b class="fc"><i>103</i>&nbsp;    }</b>
+<i>104</i>&nbsp;
+<i>105</i>&nbsp;    public DateTimeZone getZone() {
+<i>106</i>&nbsp;        Chronology base;
+<b class="fc"><i>107</i>&nbsp;        if ((base = iBase) != null) {</b>
+<b class="fc"><i>108</i>&nbsp;            return base.getZone();</b>
+<i>109</i>&nbsp;        }
+<b class="nc"><i>110</i>&nbsp;        return null;</b>
+<i>111</i>&nbsp;    }
+<i>112</i>&nbsp;
+<i>113</i>&nbsp;    public long getDateTimeMillis(int year, int monthOfYear, int dayOfMonth,
+<i>114</i>&nbsp;                                  int millisOfDay)
+<i>115</i>&nbsp;        throws IllegalArgumentException
+<i>116</i>&nbsp;    {
+<i>117</i>&nbsp;        Chronology base;
+<b class="fc"><i>118</i>&nbsp;        if ((base = iBase) != null &amp;&amp; (iBaseFlags &amp; 6) == 6) {</b>
+<i>119</i>&nbsp;            // Only call specialized implementation if applicable fields are the same.
+<b class="fc"><i>120</i>&nbsp;            return base.getDateTimeMillis(year, monthOfYear, dayOfMonth, millisOfDay);</b>
+<i>121</i>&nbsp;        }
+<b class="fc"><i>122</i>&nbsp;        return super.getDateTimeMillis(year, monthOfYear, dayOfMonth, millisOfDay);</b>
+<i>123</i>&nbsp;    }
+<i>124</i>&nbsp;
+<i>125</i>&nbsp;    public long getDateTimeMillis(int year, int monthOfYear, int dayOfMonth,
+<i>126</i>&nbsp;                                  int hourOfDay, int minuteOfHour,
+<i>127</i>&nbsp;                                  int secondOfMinute, int millisOfSecond)
+<i>128</i>&nbsp;        throws IllegalArgumentException
+<i>129</i>&nbsp;    {
+<i>130</i>&nbsp;        Chronology base;
+<b class="fc"><i>131</i>&nbsp;        if ((base = iBase) != null &amp;&amp; (iBaseFlags &amp; 5) == 5) {</b>
+<i>132</i>&nbsp;            // Only call specialized implementation if applicable fields are the same.
+<b class="fc"><i>133</i>&nbsp;            return base.getDateTimeMillis(year, monthOfYear, dayOfMonth,</b>
+<i>134</i>&nbsp;                                          hourOfDay, minuteOfHour, secondOfMinute, millisOfSecond);
+<i>135</i>&nbsp;        }
+<b class="fc"><i>136</i>&nbsp;        return super.getDateTimeMillis(year, monthOfYear, dayOfMonth,</b>
+<i>137</i>&nbsp;                                       hourOfDay, minuteOfHour, secondOfMinute, millisOfSecond);
+<i>138</i>&nbsp;    }
+<i>139</i>&nbsp;
+<i>140</i>&nbsp;    public long getDateTimeMillis(long instant,
+<i>141</i>&nbsp;                                  int hourOfDay, int minuteOfHour,
+<i>142</i>&nbsp;                                  int secondOfMinute, int millisOfSecond)
+<i>143</i>&nbsp;        throws IllegalArgumentException
+<i>144</i>&nbsp;    {
+<i>145</i>&nbsp;        Chronology base;
+<b class="fc"><i>146</i>&nbsp;        if ((base = iBase) != null &amp;&amp; (iBaseFlags &amp; 1) == 1) {</b>
+<i>147</i>&nbsp;            // Only call specialized implementation if applicable fields are the same.
+<b class="fc"><i>148</i>&nbsp;            return base.getDateTimeMillis</b>
+<b class="fc"><i>149</i>&nbsp;                (instant, hourOfDay, minuteOfHour, secondOfMinute, millisOfSecond);</b>
+<i>150</i>&nbsp;        }
+<b class="fc"><i>151</i>&nbsp;        return super.getDateTimeMillis</b>
+<b class="fc"><i>152</i>&nbsp;            (instant, hourOfDay, minuteOfHour, secondOfMinute, millisOfSecond);</b>
+<i>153</i>&nbsp;    }
+<i>154</i>&nbsp;
+<i>155</i>&nbsp;    public final DurationField millis() {
+<b class="fc"><i>156</i>&nbsp;        return iMillis;</b>
+<i>157</i>&nbsp;    }
+<i>158</i>&nbsp;
+<i>159</i>&nbsp;    public final DateTimeField millisOfSecond() {
+<b class="fc"><i>160</i>&nbsp;        return iMillisOfSecond;</b>
+<i>161</i>&nbsp;    }
+<i>162</i>&nbsp;
+<i>163</i>&nbsp;    public final DateTimeField millisOfDay() {
+<b class="fc"><i>164</i>&nbsp;        return iMillisOfDay;</b>
+<i>165</i>&nbsp;    }
+<i>166</i>&nbsp;
+<i>167</i>&nbsp;    public final DurationField seconds() {
+<b class="fc"><i>168</i>&nbsp;        return iSeconds;</b>
+<i>169</i>&nbsp;    }
+<i>170</i>&nbsp;
+<i>171</i>&nbsp;    public final DateTimeField secondOfMinute() {
+<b class="fc"><i>172</i>&nbsp;        return iSecondOfMinute;</b>
+<i>173</i>&nbsp;    }
+<i>174</i>&nbsp;
+<i>175</i>&nbsp;    public final DateTimeField secondOfDay() {
+<b class="fc"><i>176</i>&nbsp;        return iSecondOfDay;</b>
+<i>177</i>&nbsp;    }
+<i>178</i>&nbsp;
+<i>179</i>&nbsp;    public final DurationField minutes() {
+<b class="fc"><i>180</i>&nbsp;        return iMinutes;</b>
+<i>181</i>&nbsp;    }
+<i>182</i>&nbsp;
+<i>183</i>&nbsp;    public final DateTimeField minuteOfHour() {
+<b class="fc"><i>184</i>&nbsp;        return iMinuteOfHour;</b>
+<i>185</i>&nbsp;    }
+<i>186</i>&nbsp;
+<i>187</i>&nbsp;    public final DateTimeField minuteOfDay() {
+<b class="fc"><i>188</i>&nbsp;        return iMinuteOfDay;</b>
+<i>189</i>&nbsp;    }
+<i>190</i>&nbsp;
+<i>191</i>&nbsp;    public final DurationField hours() {
+<b class="fc"><i>192</i>&nbsp;        return iHours;</b>
+<i>193</i>&nbsp;    }
+<i>194</i>&nbsp;
+<i>195</i>&nbsp;    public final DateTimeField hourOfDay() {
+<b class="fc"><i>196</i>&nbsp;        return iHourOfDay;</b>
+<i>197</i>&nbsp;    }
+<i>198</i>&nbsp;
+<i>199</i>&nbsp;    public final DateTimeField clockhourOfDay() {
+<b class="fc"><i>200</i>&nbsp;        return iClockhourOfDay;</b>
+<i>201</i>&nbsp;    }
+<i>202</i>&nbsp;
+<i>203</i>&nbsp;    public final DurationField halfdays() {
+<b class="fc"><i>204</i>&nbsp;        return iHalfdays;</b>
+<i>205</i>&nbsp;    }
+<i>206</i>&nbsp;
+<i>207</i>&nbsp;    public final DateTimeField hourOfHalfday() {
+<b class="fc"><i>208</i>&nbsp;        return iHourOfHalfday;</b>
+<i>209</i>&nbsp;    }
+<i>210</i>&nbsp;
+<i>211</i>&nbsp;    public final DateTimeField clockhourOfHalfday() {
+<b class="fc"><i>212</i>&nbsp;        return iClockhourOfHalfday;</b>
+<i>213</i>&nbsp;    }
+<i>214</i>&nbsp;
+<i>215</i>&nbsp;    public final DateTimeField halfdayOfDay() {
+<b class="fc"><i>216</i>&nbsp;        return iHalfdayOfDay;</b>
+<i>217</i>&nbsp;    }
+<i>218</i>&nbsp;
+<i>219</i>&nbsp;    public final DurationField days() {
+<b class="fc"><i>220</i>&nbsp;        return iDays;</b>
+<i>221</i>&nbsp;    }
+<i>222</i>&nbsp;
+<i>223</i>&nbsp;    public final DateTimeField dayOfWeek() {
+<b class="fc"><i>224</i>&nbsp;        return iDayOfWeek;</b>
+<i>225</i>&nbsp;    }
+<i>226</i>&nbsp;
+<i>227</i>&nbsp;    public final DateTimeField dayOfMonth() {
+<b class="fc"><i>228</i>&nbsp;        return iDayOfMonth;</b>
+<i>229</i>&nbsp;    }
+<i>230</i>&nbsp;
+<i>231</i>&nbsp;    public final DateTimeField dayOfYear() {
+<b class="fc"><i>232</i>&nbsp;        return iDayOfYear;</b>
+<i>233</i>&nbsp;    }
+<i>234</i>&nbsp;
+<i>235</i>&nbsp;    public final DurationField weeks() {
+<b class="fc"><i>236</i>&nbsp;        return iWeeks;</b>
+<i>237</i>&nbsp;    }
+<i>238</i>&nbsp;
+<i>239</i>&nbsp;    public final DateTimeField weekOfWeekyear() {
+<b class="fc"><i>240</i>&nbsp;        return iWeekOfWeekyear;</b>
+<i>241</i>&nbsp;    }
+<i>242</i>&nbsp;
+<i>243</i>&nbsp;    public final DurationField weekyears() {
+<b class="fc"><i>244</i>&nbsp;        return iWeekyears;</b>
+<i>245</i>&nbsp;    }
+<i>246</i>&nbsp;
+<i>247</i>&nbsp;    public final DateTimeField weekyear() {
+<b class="fc"><i>248</i>&nbsp;        return iWeekyear;</b>
+<i>249</i>&nbsp;    }
+<i>250</i>&nbsp;
+<i>251</i>&nbsp;    public final DateTimeField weekyearOfCentury() {
+<b class="fc"><i>252</i>&nbsp;        return iWeekyearOfCentury;</b>
+<i>253</i>&nbsp;    }
+<i>254</i>&nbsp;
+<i>255</i>&nbsp;    public final DurationField months() {
+<b class="fc"><i>256</i>&nbsp;        return iMonths;</b>
+<i>257</i>&nbsp;    }
+<i>258</i>&nbsp;
+<i>259</i>&nbsp;    public final DateTimeField monthOfYear() {
+<b class="fc"><i>260</i>&nbsp;        return iMonthOfYear;</b>
+<i>261</i>&nbsp;    }
+<i>262</i>&nbsp;
+<i>263</i>&nbsp;    public final DurationField years() {
+<b class="fc"><i>264</i>&nbsp;        return iYears;</b>
+<i>265</i>&nbsp;    }
+<i>266</i>&nbsp;
+<i>267</i>&nbsp;    public final DateTimeField year() {
+<b class="fc"><i>268</i>&nbsp;        return iYear;</b>
+<i>269</i>&nbsp;    }
+<i>270</i>&nbsp;
+<i>271</i>&nbsp;    public final DateTimeField yearOfEra() {
+<b class="fc"><i>272</i>&nbsp;        return iYearOfEra;</b>
+<i>273</i>&nbsp;    }
+<i>274</i>&nbsp;
+<i>275</i>&nbsp;    public final DateTimeField yearOfCentury() {
+<b class="fc"><i>276</i>&nbsp;        return iYearOfCentury;</b>
+<i>277</i>&nbsp;    }
+<i>278</i>&nbsp;
+<i>279</i>&nbsp;    public final DurationField centuries() {
+<b class="fc"><i>280</i>&nbsp;        return iCenturies;</b>
+<i>281</i>&nbsp;    }
+<i>282</i>&nbsp;
+<i>283</i>&nbsp;    public final DateTimeField centuryOfEra() {
+<b class="fc"><i>284</i>&nbsp;        return iCenturyOfEra;</b>
+<i>285</i>&nbsp;    }
+<i>286</i>&nbsp;
+<i>287</i>&nbsp;    public final DurationField eras() {
+<b class="fc"><i>288</i>&nbsp;        return iEras;</b>
+<i>289</i>&nbsp;    }
+<i>290</i>&nbsp;
+<i>291</i>&nbsp;    public final DateTimeField era() {
+<b class="fc"><i>292</i>&nbsp;        return iEra;</b>
+<i>293</i>&nbsp;    }
+<i>294</i>&nbsp;
+<i>295</i>&nbsp;    /**
+<i>296</i>&nbsp;     * Invoked by the constructor and after deserialization to allow subclasses
+<i>297</i>&nbsp;     * to define all of its supported fields. All unset fields default to
+<i>298</i>&nbsp;     * unsupported instances.
+<i>299</i>&nbsp;     *
+<i>300</i>&nbsp;     * @param fields container of fields
+<i>301</i>&nbsp;     */
+<i>302</i>&nbsp;    protected abstract void assemble(Fields fields);
+<i>303</i>&nbsp;
+<i>304</i>&nbsp;    /**
+<i>305</i>&nbsp;     * Returns the same base chronology as passed into the constructor.
+<i>306</i>&nbsp;     */
+<i>307</i>&nbsp;    protected final Chronology getBase() {
+<b class="fc"><i>308</i>&nbsp;        return iBase;</b>
+<i>309</i>&nbsp;    }
+<i>310</i>&nbsp;
+<i>311</i>&nbsp;    /**
+<i>312</i>&nbsp;     * Returns the same param object as passed into the constructor.
+<i>313</i>&nbsp;     */
+<i>314</i>&nbsp;    protected final Object getParam() {
+<b class="fc"><i>315</i>&nbsp;        return iParam;</b>
+<i>316</i>&nbsp;    }
+<i>317</i>&nbsp;
+<i>318</i>&nbsp;    private void setFields() {
+<b class="fc"><i>319</i>&nbsp;        Fields fields = new Fields();</b>
+<b class="fc"><i>320</i>&nbsp;        if (iBase != null) {</b>
+<b class="fc"><i>321</i>&nbsp;            fields.copyFieldsFrom(iBase);</b>
+<i>322</i>&nbsp;        }
+<b class="fc"><i>323</i>&nbsp;        assemble(fields);</b>
+<i>324</i>&nbsp;
+<i>325</i>&nbsp;        {
+<i>326</i>&nbsp;            DurationField f;
+<b class="fc"><i>327</i>&nbsp;            iMillis    = (f = fields.millis)    != null ? f : super.millis();</b>
+<b class="fc"><i>328</i>&nbsp;            iSeconds   = (f = fields.seconds)   != null ? f : super.seconds();</b>
+<b class="fc"><i>329</i>&nbsp;            iMinutes   = (f = fields.minutes)   != null ? f : super.minutes();</b>
+<b class="fc"><i>330</i>&nbsp;            iHours     = (f = fields.hours)     != null ? f : super.hours();</b>
+<b class="fc"><i>331</i>&nbsp;            iHalfdays  = (f = fields.halfdays)  != null ? f : super.halfdays();</b>
+<b class="fc"><i>332</i>&nbsp;            iDays      = (f = fields.days)      != null ? f : super.days();</b>
+<b class="fc"><i>333</i>&nbsp;            iWeeks     = (f = fields.weeks)     != null ? f : super.weeks();</b>
+<b class="fc"><i>334</i>&nbsp;            iWeekyears = (f = fields.weekyears) != null ? f : super.weekyears();</b>
+<b class="fc"><i>335</i>&nbsp;            iMonths    = (f = fields.months)    != null ? f : super.months();</b>
+<b class="fc"><i>336</i>&nbsp;            iYears     = (f = fields.years)     != null ? f : super.years();</b>
+<b class="fc"><i>337</i>&nbsp;            iCenturies = (f = fields.centuries) != null ? f : super.centuries();</b>
+<b class="fc"><i>338</i>&nbsp;            iEras      = (f = fields.eras)      != null ? f : super.eras();</b>
+<i>339</i>&nbsp;        }
+<i>340</i>&nbsp;
+<i>341</i>&nbsp;        {
+<i>342</i>&nbsp;            DateTimeField f;
+<b class="fc"><i>343</i>&nbsp;            iMillisOfSecond     = (f = fields.millisOfSecond)     != null ? f : super.millisOfSecond();</b>
+<b class="fc"><i>344</i>&nbsp;            iMillisOfDay        = (f = fields.millisOfDay)        != null ? f : super.millisOfDay();</b>
+<b class="fc"><i>345</i>&nbsp;            iSecondOfMinute     = (f = fields.secondOfMinute)     != null ? f : super.secondOfMinute();</b>
+<b class="fc"><i>346</i>&nbsp;            iSecondOfDay        = (f = fields.secondOfDay)        != null ? f : super.secondOfDay();</b>
+<b class="fc"><i>347</i>&nbsp;            iMinuteOfHour       = (f = fields.minuteOfHour)       != null ? f : super.minuteOfHour();</b>
+<b class="fc"><i>348</i>&nbsp;            iMinuteOfDay        = (f = fields.minuteOfDay)        != null ? f : super.minuteOfDay();</b>
+<b class="fc"><i>349</i>&nbsp;            iHourOfDay          = (f = fields.hourOfDay)          != null ? f : super.hourOfDay();</b>
+<b class="fc"><i>350</i>&nbsp;            iClockhourOfDay     = (f = fields.clockhourOfDay)     != null ? f : super.clockhourOfDay();</b>
+<b class="fc"><i>351</i>&nbsp;            iHourOfHalfday      = (f = fields.hourOfHalfday)      != null ? f : super.hourOfHalfday();</b>
+<b class="fc"><i>352</i>&nbsp;            iClockhourOfHalfday = (f = fields.clockhourOfHalfday) != null ? f : super.clockhourOfHalfday();</b>
+<b class="fc"><i>353</i>&nbsp;            iHalfdayOfDay       = (f = fields.halfdayOfDay)       != null ? f : super.halfdayOfDay();</b>
+<b class="fc"><i>354</i>&nbsp;            iDayOfWeek          = (f = fields.dayOfWeek)          != null ? f : super.dayOfWeek();</b>
+<b class="fc"><i>355</i>&nbsp;            iDayOfMonth         = (f = fields.dayOfMonth)         != null ? f : super.dayOfMonth();</b>
+<b class="fc"><i>356</i>&nbsp;            iDayOfYear          = (f = fields.dayOfYear)          != null ? f : super.dayOfYear();</b>
+<b class="fc"><i>357</i>&nbsp;            iWeekOfWeekyear     = (f = fields.weekOfWeekyear)     != null ? f : super.weekOfWeekyear();</b>
+<b class="fc"><i>358</i>&nbsp;            iWeekyear           = (f = fields.weekyear)           != null ? f : super.weekyear();</b>
+<b class="fc"><i>359</i>&nbsp;            iWeekyearOfCentury  = (f = fields.weekyearOfCentury)  != null ? f : super.weekyearOfCentury();</b>
+<b class="fc"><i>360</i>&nbsp;            iMonthOfYear        = (f = fields.monthOfYear)        != null ? f : super.monthOfYear();</b>
+<b class="fc"><i>361</i>&nbsp;            iYear               = (f = fields.year)               != null ? f : super.year();</b>
+<b class="fc"><i>362</i>&nbsp;            iYearOfEra          = (f = fields.yearOfEra)          != null ? f : super.yearOfEra();</b>
+<b class="fc"><i>363</i>&nbsp;            iYearOfCentury      = (f = fields.yearOfCentury)      != null ? f : super.yearOfCentury();</b>
+<b class="fc"><i>364</i>&nbsp;            iCenturyOfEra       = (f = fields.centuryOfEra)       != null ? f : super.centuryOfEra();</b>
+<b class="fc"><i>365</i>&nbsp;            iEra                = (f = fields.era)                != null ? f : super.era();</b>
+<i>366</i>&nbsp;        }
+<i>367</i>&nbsp;
+<i>368</i>&nbsp;        int flags;
+<b class="fc"><i>369</i>&nbsp;        if (iBase == null) {</b>
+<b class="fc"><i>370</i>&nbsp;            flags = 0;</b>
+<i>371</i>&nbsp;        } else {
+<b class="fc"><i>372</i>&nbsp;            flags = </b>
+<b class="fc"><i>373</i>&nbsp;                ((iHourOfDay      == iBase.hourOfDay()      &amp;&amp;</b>
+<b class="fc"><i>374</i>&nbsp;                  iMinuteOfHour   == iBase.minuteOfHour()   &amp;&amp;</b>
+<b class="fc"><i>375</i>&nbsp;                  iSecondOfMinute == iBase.secondOfMinute() &amp;&amp;</b>
+<b class="fc"><i>376</i>&nbsp;                  iMillisOfSecond == iBase.millisOfSecond()   ) ? 1 : 0) |</b>
+<i>377</i>&nbsp;
+<b class="fc"><i>378</i>&nbsp;                ((iMillisOfDay == iBase.millisOfDay()) ? 2 : 0) |</b>
+<i>379</i>&nbsp;
+<b class="fc"><i>380</i>&nbsp;                ((iYear        == iBase.year()        &amp;&amp;</b>
+<b class="fc"><i>381</i>&nbsp;                  iMonthOfYear == iBase.monthOfYear() &amp;&amp;</b>
+<b class="fc"><i>382</i>&nbsp;                  iDayOfMonth  == iBase.dayOfMonth()    ) ? 4 : 0);</b>
+<i>383</i>&nbsp;        }
+<i>384</i>&nbsp;
+<b class="fc"><i>385</i>&nbsp;        iBaseFlags = flags;</b>
+<b class="fc"><i>386</i>&nbsp;    }</b>
+<i>387</i>&nbsp;
+<i>388</i>&nbsp;    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+<b class="fc"><i>389</i>&nbsp;        in.defaultReadObject();</b>
+<b class="fc"><i>390</i>&nbsp;        setFields();</b>
+<b class="fc"><i>391</i>&nbsp;    }</b>
+<i>392</i>&nbsp;
+<i>393</i>&nbsp;    /**
+<i>394</i>&nbsp;     * A container of fields used for assembling a chronology.
+<i>395</i>&nbsp;     */
+<i>396</i>&nbsp;    public static final class Fields {
+<i>397</i>&nbsp;        public DurationField millis;
+<i>398</i>&nbsp;        public DurationField seconds;
+<i>399</i>&nbsp;        public DurationField minutes;
+<i>400</i>&nbsp;        public DurationField hours;
+<i>401</i>&nbsp;        public DurationField halfdays;
+<i>402</i>&nbsp;    
+<i>403</i>&nbsp;        public DurationField days;
+<i>404</i>&nbsp;        public DurationField weeks;
+<i>405</i>&nbsp;        public DurationField weekyears;
+<i>406</i>&nbsp;        public DurationField months;
+<i>407</i>&nbsp;        public DurationField years;
+<i>408</i>&nbsp;        public DurationField centuries;
+<i>409</i>&nbsp;        public DurationField eras;
+<i>410</i>&nbsp;    
+<i>411</i>&nbsp;        public DateTimeField millisOfSecond;
+<i>412</i>&nbsp;        public DateTimeField millisOfDay;
+<i>413</i>&nbsp;        public DateTimeField secondOfMinute;
+<i>414</i>&nbsp;        public DateTimeField secondOfDay;
+<i>415</i>&nbsp;        public DateTimeField minuteOfHour;
+<i>416</i>&nbsp;        public DateTimeField minuteOfDay;
+<i>417</i>&nbsp;        public DateTimeField hourOfDay;
+<i>418</i>&nbsp;        public DateTimeField clockhourOfDay;
+<i>419</i>&nbsp;        public DateTimeField hourOfHalfday;
+<i>420</i>&nbsp;        public DateTimeField clockhourOfHalfday;
+<i>421</i>&nbsp;        public DateTimeField halfdayOfDay;
+<i>422</i>&nbsp;    
+<i>423</i>&nbsp;        public DateTimeField dayOfWeek;
+<i>424</i>&nbsp;        public DateTimeField dayOfMonth;
+<i>425</i>&nbsp;        public DateTimeField dayOfYear;
+<i>426</i>&nbsp;        public DateTimeField weekOfWeekyear;
+<i>427</i>&nbsp;        public DateTimeField weekyear;
+<i>428</i>&nbsp;        public DateTimeField weekyearOfCentury;
+<i>429</i>&nbsp;        public DateTimeField monthOfYear;
+<i>430</i>&nbsp;        public DateTimeField year;
+<i>431</i>&nbsp;        public DateTimeField yearOfEra;
+<i>432</i>&nbsp;        public DateTimeField yearOfCentury;
+<i>433</i>&nbsp;        public DateTimeField centuryOfEra;
+<i>434</i>&nbsp;        public DateTimeField era;
+<i>435</i>&nbsp;
+<b class="fc"><i>436</i>&nbsp;        Fields() {</b>
+<b class="fc"><i>437</i>&nbsp;        }</b>
+<i>438</i>&nbsp;
+<i>439</i>&nbsp;        /**
+<i>440</i>&nbsp;         * Copy the supported fields from a chronology into this container.
+<i>441</i>&nbsp;         */
+<i>442</i>&nbsp;        public void copyFieldsFrom(Chronology chrono) {
+<i>443</i>&nbsp;            {
+<i>444</i>&nbsp;                DurationField f;
+<b class="fc"><i>445</i>&nbsp;                if (isSupported(f = chrono.millis())) {</b>
+<b class="fc"><i>446</i>&nbsp;                    millis = f;</b>
+<i>447</i>&nbsp;                }
+<b class="fc"><i>448</i>&nbsp;                if (isSupported(f = chrono.seconds())) {</b>
+<b class="fc"><i>449</i>&nbsp;                    seconds = f;</b>
+<i>450</i>&nbsp;                }
+<b class="fc"><i>451</i>&nbsp;                if (isSupported(f = chrono.minutes())) {</b>
+<b class="fc"><i>452</i>&nbsp;                    minutes = f;</b>
+<i>453</i>&nbsp;                }
+<b class="fc"><i>454</i>&nbsp;                if (isSupported(f = chrono.hours())) {</b>
+<b class="fc"><i>455</i>&nbsp;                    hours = f;</b>
+<i>456</i>&nbsp;                }
+<b class="fc"><i>457</i>&nbsp;                if (isSupported(f = chrono.halfdays())) {</b>
+<b class="fc"><i>458</i>&nbsp;                    halfdays = f;</b>
+<i>459</i>&nbsp;                }
+<b class="fc"><i>460</i>&nbsp;                if (isSupported(f = chrono.days())) {</b>
+<b class="fc"><i>461</i>&nbsp;                    days = f;</b>
+<i>462</i>&nbsp;                }
+<b class="fc"><i>463</i>&nbsp;                if (isSupported(f = chrono.weeks())) {</b>
+<b class="fc"><i>464</i>&nbsp;                    weeks = f;</b>
+<i>465</i>&nbsp;                }
+<b class="fc"><i>466</i>&nbsp;                if (isSupported(f = chrono.weekyears())) {</b>
+<b class="fc"><i>467</i>&nbsp;                    weekyears = f;</b>
+<i>468</i>&nbsp;                }
+<b class="fc"><i>469</i>&nbsp;                if (isSupported(f = chrono.months())) {</b>
+<b class="fc"><i>470</i>&nbsp;                    months = f;</b>
+<i>471</i>&nbsp;                }
+<b class="fc"><i>472</i>&nbsp;                if (isSupported(f = chrono.years())) {</b>
+<b class="fc"><i>473</i>&nbsp;                    years = f;</b>
+<i>474</i>&nbsp;                }
+<b class="fc"><i>475</i>&nbsp;                if (isSupported(f = chrono.centuries())) {</b>
+<b class="fc"><i>476</i>&nbsp;                    centuries = f;</b>
+<i>477</i>&nbsp;                }
+<b class="fc"><i>478</i>&nbsp;                if (isSupported(f = chrono.eras())) {</b>
+<b class="nc"><i>479</i>&nbsp;                    eras = f;</b>
+<i>480</i>&nbsp;                }
+<i>481</i>&nbsp;            }
+<i>482</i>&nbsp;
+<i>483</i>&nbsp;            {
+<i>484</i>&nbsp;                DateTimeField f;
+<b class="fc"><i>485</i>&nbsp;                if (isSupported(f = chrono.millisOfSecond())) {</b>
+<b class="fc"><i>486</i>&nbsp;                    millisOfSecond = f;</b>
+<i>487</i>&nbsp;                }
+<b class="fc"><i>488</i>&nbsp;                if (isSupported(f = chrono.millisOfDay())) {</b>
+<b class="fc"><i>489</i>&nbsp;                    millisOfDay = f;</b>
+<i>490</i>&nbsp;                }
+<b class="fc"><i>491</i>&nbsp;                if (isSupported(f = chrono.secondOfMinute())) {</b>
+<b class="fc"><i>492</i>&nbsp;                    secondOfMinute = f;</b>
+<i>493</i>&nbsp;                }
+<b class="fc"><i>494</i>&nbsp;                if (isSupported(f = chrono.secondOfDay())) {</b>
+<b class="fc"><i>495</i>&nbsp;                    secondOfDay = f;</b>
+<i>496</i>&nbsp;                }
+<b class="fc"><i>497</i>&nbsp;                if (isSupported(f = chrono.minuteOfHour())) {</b>
+<b class="fc"><i>498</i>&nbsp;                    minuteOfHour = f;</b>
+<i>499</i>&nbsp;                }
+<b class="fc"><i>500</i>&nbsp;                if (isSupported(f = chrono.minuteOfDay())) {</b>
+<b class="fc"><i>501</i>&nbsp;                    minuteOfDay = f;</b>
+<i>502</i>&nbsp;                }
+<b class="fc"><i>503</i>&nbsp;                if (isSupported(f = chrono.hourOfDay())) {</b>
+<b class="fc"><i>504</i>&nbsp;                    hourOfDay = f;</b>
+<i>505</i>&nbsp;                }
+<b class="fc"><i>506</i>&nbsp;                if (isSupported(f = chrono.clockhourOfDay())) {</b>
+<b class="fc"><i>507</i>&nbsp;                    clockhourOfDay = f;</b>
+<i>508</i>&nbsp;                }
+<b class="fc"><i>509</i>&nbsp;                if (isSupported(f = chrono.hourOfHalfday())) {</b>
+<b class="fc"><i>510</i>&nbsp;                    hourOfHalfday = f;</b>
+<i>511</i>&nbsp;                }
+<b class="fc"><i>512</i>&nbsp;                if (isSupported(f = chrono.clockhourOfHalfday())) {</b>
+<b class="fc"><i>513</i>&nbsp;                    clockhourOfHalfday = f;</b>
+<i>514</i>&nbsp;                }
+<b class="fc"><i>515</i>&nbsp;                if (isSupported(f = chrono.halfdayOfDay())) {</b>
+<b class="fc"><i>516</i>&nbsp;                    halfdayOfDay = f;</b>
+<i>517</i>&nbsp;                }
+<b class="fc"><i>518</i>&nbsp;                if (isSupported(f = chrono.dayOfWeek())) {</b>
+<b class="fc"><i>519</i>&nbsp;                    dayOfWeek = f;</b>
+<i>520</i>&nbsp;                }
+<b class="fc"><i>521</i>&nbsp;                if (isSupported(f = chrono.dayOfMonth())) {</b>
+<b class="fc"><i>522</i>&nbsp;                    dayOfMonth = f;</b>
+<i>523</i>&nbsp;                }
+<b class="fc"><i>524</i>&nbsp;                if (isSupported(f = chrono.dayOfYear())) {</b>
+<b class="fc"><i>525</i>&nbsp;                    dayOfYear = f;</b>
+<i>526</i>&nbsp;                }
+<b class="fc"><i>527</i>&nbsp;                if (isSupported(f = chrono.weekOfWeekyear())) {</b>
+<b class="fc"><i>528</i>&nbsp;                    weekOfWeekyear = f;</b>
+<i>529</i>&nbsp;                }
+<b class="fc"><i>530</i>&nbsp;                if (isSupported(f = chrono.weekyear())) {</b>
+<b class="fc"><i>531</i>&nbsp;                    weekyear = f;</b>
+<i>532</i>&nbsp;                }
+<b class="fc"><i>533</i>&nbsp;                if (isSupported(f = chrono.weekyearOfCentury())) {</b>
+<b class="fc"><i>534</i>&nbsp;                    weekyearOfCentury = f;</b>
+<i>535</i>&nbsp;                }
+<b class="fc"><i>536</i>&nbsp;                if (isSupported(f = chrono.monthOfYear())) {</b>
+<b class="fc"><i>537</i>&nbsp;                    monthOfYear = f;</b>
+<i>538</i>&nbsp;                }
+<b class="fc"><i>539</i>&nbsp;                if (isSupported(f = chrono.year())) {</b>
+<b class="fc"><i>540</i>&nbsp;                    year = f;</b>
+<i>541</i>&nbsp;                }
+<b class="fc"><i>542</i>&nbsp;                if (isSupported(f = chrono.yearOfEra())) {</b>
+<b class="fc"><i>543</i>&nbsp;                    yearOfEra = f;</b>
+<i>544</i>&nbsp;                }
+<b class="fc"><i>545</i>&nbsp;                if (isSupported(f = chrono.yearOfCentury())) {</b>
+<b class="fc"><i>546</i>&nbsp;                    yearOfCentury = f;</b>
+<i>547</i>&nbsp;                }
+<b class="fc"><i>548</i>&nbsp;                if (isSupported(f = chrono.centuryOfEra())) {</b>
+<b class="fc"><i>549</i>&nbsp;                    centuryOfEra = f;</b>
+<i>550</i>&nbsp;                }
+<b class="fc"><i>551</i>&nbsp;                if (isSupported(f = chrono.era())) {</b>
+<b class="fc"><i>552</i>&nbsp;                    era = f;</b>
+<i>553</i>&nbsp;                }
+<i>554</i>&nbsp;            }
+<b class="fc"><i>555</i>&nbsp;        }</b>
+<i>556</i>&nbsp;
+<i>557</i>&nbsp;        private static boolean isSupported(DurationField field) {
+<b class="fc"><i>558</i>&nbsp;            return field == null ? false : field.isSupported();</b>
+<i>559</i>&nbsp;        }
+<i>560</i>&nbsp;
+<i>561</i>&nbsp;        private static boolean isSupported(DateTimeField field) {
+<b class="fc"><i>562</i>&nbsp;            return field == null ? false : field.isSupported();</b>
+<i>563</i>&nbsp;        }
+<i>564</i>&nbsp;    }
+<i>565</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

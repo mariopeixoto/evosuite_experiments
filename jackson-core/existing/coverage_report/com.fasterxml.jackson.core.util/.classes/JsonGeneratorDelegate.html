@@ -1,0 +1,535 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: JsonGeneratorDelegate</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.fasterxml.jackson.core.util</a> ]
+</div>
+
+<h1>Coverage Summary for Class: JsonGeneratorDelegate (com.fasterxml.jackson.core.util)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">JsonGeneratorDelegate</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    30.5%
+  </span>
+  <span class="absValue">
+    (25/ 82)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    35.4%
+  </span>
+  <span class="absValue">
+    (45/ 127)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package com.fasterxml.jackson.core.util;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import java.io.IOException;
+<i>4</i>&nbsp;import java.io.InputStream;
+<i>5</i>&nbsp;import java.math.BigDecimal;
+<i>6</i>&nbsp;import java.math.BigInteger;
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;import com.fasterxml.jackson.core.*;
+<i>9</i>&nbsp;import com.fasterxml.jackson.core.io.CharacterEscapes;
+<i>10</i>&nbsp;
+<i>11</i>&nbsp;public class JsonGeneratorDelegate extends JsonGenerator
+<i>12</i>&nbsp;{
+<i>13</i>&nbsp;    /**
+<i>14</i>&nbsp;     * Delegate object that method calls are delegated to.
+<i>15</i>&nbsp;     */
+<i>16</i>&nbsp;    protected JsonGenerator delegate;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;    /**
+<i>19</i>&nbsp;     * Whether copy methods
+<i>20</i>&nbsp;     * ({@link #copyCurrentEvent}, {@link #copyCurrentStructure}, {@link #writeTree} and {@link #writeObject})
+<i>21</i>&nbsp;     * are to be called (true), or handled by this object (false).
+<i>22</i>&nbsp;     */
+<i>23</i>&nbsp;    protected boolean delegateCopyMethods;
+<i>24</i>&nbsp;
+<i>25</i>&nbsp;    /*
+<i>26</i>&nbsp;    /**********************************************************
+<i>27</i>&nbsp;    /* Construction, initialization
+<i>28</i>&nbsp;    /**********************************************************
+<i>29</i>&nbsp;     */
+<i>30</i>&nbsp;
+<i>31</i>&nbsp;    public JsonGeneratorDelegate(JsonGenerator d) {
+<b class="fc"><i>32</i>&nbsp;        this(d, true);</b>
+<b class="fc"><i>33</i>&nbsp;    }</b>
+<i>34</i>&nbsp;
+<i>35</i>&nbsp;    /**
+<i>36</i>&nbsp;     * @param delegateCopyMethods Flag assigned to &lt;code&gt;delagateCopyMethod&lt;/code&gt;
+<i>37</i>&nbsp;     *   and which defines whether copy methods are handled locally (false), or
+<i>38</i>&nbsp;     *   delegated to configured 
+<i>39</i>&nbsp;     */
+<b class="fc"><i>40</i>&nbsp;    public JsonGeneratorDelegate(JsonGenerator d, boolean delegateCopyMethods) {</b>
+<b class="fc"><i>41</i>&nbsp;        delegate = d;</b>
+<b class="fc"><i>42</i>&nbsp;        this.delegateCopyMethods = delegateCopyMethods;</b>
+<b class="fc"><i>43</i>&nbsp;    }</b>
+<i>44</i>&nbsp;
+<i>45</i>&nbsp;    @Override
+<i>46</i>&nbsp;    public Object getCurrentValue() {
+<b class="fc"><i>47</i>&nbsp;        return delegate.getCurrentValue();</b>
+<i>48</i>&nbsp;    }
+<i>49</i>&nbsp;
+<i>50</i>&nbsp;    @Override
+<i>51</i>&nbsp;    public void setCurrentValue(Object v) {
+<b class="fc"><i>52</i>&nbsp;        delegate.setCurrentValue(v);</b>
+<b class="fc"><i>53</i>&nbsp;    }</b>
+<i>54</i>&nbsp;    
+<i>55</i>&nbsp;    /*
+<i>56</i>&nbsp;    /**********************************************************
+<i>57</i>&nbsp;    /* Extended API
+<i>58</i>&nbsp;    /**********************************************************
+<i>59</i>&nbsp;     */
+<i>60</i>&nbsp;
+<b class="nc"><i>61</i>&nbsp;    public JsonGenerator getDelegate() { return delegate; }</b>
+<i>62</i>&nbsp;    
+<i>63</i>&nbsp;    /*
+<i>64</i>&nbsp;    /**********************************************************
+<i>65</i>&nbsp;    /* Public API, metadata
+<i>66</i>&nbsp;    /**********************************************************
+<i>67</i>&nbsp;     */
+<i>68</i>&nbsp;    
+<b class="fc"><i>69</i>&nbsp;    @Override public ObjectCodec getCodec() { return delegate.getCodec(); }</b>
+<i>70</i>&nbsp;
+<i>71</i>&nbsp;    @Override public JsonGenerator setCodec(ObjectCodec oc) {
+<b class="nc"><i>72</i>&nbsp;        delegate.setCodec(oc);</b>
+<b class="nc"><i>73</i>&nbsp;        return this;</b>
+<i>74</i>&nbsp;    }
+<i>75</i>&nbsp;    
+<b class="nc"><i>76</i>&nbsp;    @Override public void setSchema(FormatSchema schema) { delegate.setSchema(schema); }</b>
+<b class="nc"><i>77</i>&nbsp;    @Override public FormatSchema getSchema() { return delegate.getSchema(); }</b>
+<b class="nc"><i>78</i>&nbsp;    @Override public Version version() { return delegate.version(); }</b>
+<b class="fc"><i>79</i>&nbsp;    @Override public Object getOutputTarget() { return delegate.getOutputTarget(); }</b>
+<b class="fc"><i>80</i>&nbsp;    @Override public int getOutputBuffered() { return delegate.getOutputBuffered(); }</b>
+<i>81</i>&nbsp;
+<i>82</i>&nbsp;    /*
+<i>83</i>&nbsp;    /**********************************************************
+<i>84</i>&nbsp;    /* Public API, capability introspection (since 2.3, mostly)
+<i>85</i>&nbsp;    /**********************************************************
+<i>86</i>&nbsp;     */
+<i>87</i>&nbsp;
+<i>88</i>&nbsp;    @Override
+<b class="nc"><i>89</i>&nbsp;    public boolean canUseSchema(FormatSchema schema) { return delegate.canUseSchema(schema); }</b>
+<i>90</i>&nbsp;
+<i>91</i>&nbsp;    @Override
+<b class="nc"><i>92</i>&nbsp;    public boolean canWriteTypeId() { return delegate.canWriteTypeId(); }</b>
+<i>93</i>&nbsp;
+<i>94</i>&nbsp;    @Override
+<b class="nc"><i>95</i>&nbsp;    public boolean canWriteObjectId() { return delegate.canWriteObjectId(); }</b>
+<i>96</i>&nbsp;
+<i>97</i>&nbsp;    @Override
+<b class="nc"><i>98</i>&nbsp;    public boolean canWriteBinaryNatively() { return delegate.canWriteBinaryNatively(); }</b>
+<i>99</i>&nbsp;    
+<i>100</i>&nbsp;    @Override
+<b class="nc"><i>101</i>&nbsp;    public boolean canOmitFields() { return delegate.canOmitFields(); }</b>
+<i>102</i>&nbsp;    
+<i>103</i>&nbsp;    /*
+<i>104</i>&nbsp;    /**********************************************************
+<i>105</i>&nbsp;    /* Public API, configuration
+<i>106</i>&nbsp;    /**********************************************************
+<i>107</i>&nbsp;     */
+<i>108</i>&nbsp;
+<i>109</i>&nbsp;    @Override
+<i>110</i>&nbsp;    public JsonGenerator enable(Feature f) {
+<b class="nc"><i>111</i>&nbsp;        delegate.enable(f);</b>
+<b class="nc"><i>112</i>&nbsp;        return this;</b>
+<i>113</i>&nbsp;    }
+<i>114</i>&nbsp;    
+<i>115</i>&nbsp;    @Override
+<i>116</i>&nbsp;    public JsonGenerator disable(Feature f) {
+<b class="nc"><i>117</i>&nbsp;        delegate.disable(f);</b>
+<b class="nc"><i>118</i>&nbsp;        return this;</b>
+<i>119</i>&nbsp;    }
+<i>120</i>&nbsp;
+<i>121</i>&nbsp;    @Override
+<b class="nc"><i>122</i>&nbsp;    public boolean isEnabled(Feature f) { return delegate.isEnabled(f); }</b>
+<i>123</i>&nbsp;
+<i>124</i>&nbsp;    // final, can&#39;t override (and no need to)
+<i>125</i>&nbsp;    //public final JsonGenerator configure(Feature f, boolean state)
+<i>126</i>&nbsp;
+<i>127</i>&nbsp;    @Override
+<b class="nc"><i>128</i>&nbsp;    public int getFeatureMask() { return delegate.getFeatureMask(); }</b>
+<i>129</i>&nbsp;
+<i>130</i>&nbsp;    @Override
+<i>131</i>&nbsp;    @Deprecated
+<i>132</i>&nbsp;    public JsonGenerator setFeatureMask(int mask) {
+<b class="nc"><i>133</i>&nbsp;        delegate.setFeatureMask(mask);</b>
+<b class="nc"><i>134</i>&nbsp;        return this;</b>
+<i>135</i>&nbsp;    }
+<i>136</i>&nbsp;
+<i>137</i>&nbsp;    @Override
+<i>138</i>&nbsp;    public JsonGenerator overrideStdFeatures(int values, int mask) {
+<b class="nc"><i>139</i>&nbsp;        delegate.overrideStdFeatures(values, mask);</b>
+<b class="nc"><i>140</i>&nbsp;        return this;</b>
+<i>141</i>&nbsp;    }
+<i>142</i>&nbsp;
+<i>143</i>&nbsp;    @Override
+<i>144</i>&nbsp;    public JsonGenerator overrideFormatFeatures(int values, int mask) {
+<b class="nc"><i>145</i>&nbsp;        delegate.overrideFormatFeatures(values, mask);</b>
+<b class="nc"><i>146</i>&nbsp;        return this;</b>
+<i>147</i>&nbsp;    }
+<i>148</i>&nbsp;
+<i>149</i>&nbsp;    /*
+<i>150</i>&nbsp;    /**********************************************************
+<i>151</i>&nbsp;    /* Configuring generator
+<i>152</i>&nbsp;    /**********************************************************
+<i>153</i>&nbsp;      */
+<i>154</i>&nbsp;
+<i>155</i>&nbsp;    @Override
+<i>156</i>&nbsp;    public JsonGenerator setPrettyPrinter(PrettyPrinter pp) {
+<b class="nc"><i>157</i>&nbsp;        delegate.setPrettyPrinter(pp);</b>
+<b class="nc"><i>158</i>&nbsp;        return this;</b>
+<i>159</i>&nbsp;    }
+<i>160</i>&nbsp;
+<i>161</i>&nbsp;    @Override
+<b class="nc"><i>162</i>&nbsp;    public PrettyPrinter getPrettyPrinter() { return delegate.getPrettyPrinter(); }</b>
+<i>163</i>&nbsp;    
+<i>164</i>&nbsp;    @Override
+<b class="nc"><i>165</i>&nbsp;    public JsonGenerator useDefaultPrettyPrinter() { delegate.useDefaultPrettyPrinter();</b>
+<b class="nc"><i>166</i>&nbsp;        return this; }</b>
+<i>167</i>&nbsp;
+<i>168</i>&nbsp;    @Override
+<b class="nc"><i>169</i>&nbsp;    public JsonGenerator setHighestNonEscapedChar(int charCode) { delegate.setHighestNonEscapedChar(charCode);</b>
+<b class="nc"><i>170</i>&nbsp;        return this; }</b>
+<i>171</i>&nbsp;
+<i>172</i>&nbsp;    @Override
+<b class="nc"><i>173</i>&nbsp;    public int getHighestEscapedChar() { return delegate.getHighestEscapedChar(); }</b>
+<i>174</i>&nbsp;
+<i>175</i>&nbsp;    @Override
+<b class="nc"><i>176</i>&nbsp;    public CharacterEscapes getCharacterEscapes() {  return delegate.getCharacterEscapes(); }</b>
+<i>177</i>&nbsp;
+<i>178</i>&nbsp;    @Override
+<b class="nc"><i>179</i>&nbsp;    public JsonGenerator setCharacterEscapes(CharacterEscapes esc) { delegate.setCharacterEscapes(esc);</b>
+<b class="nc"><i>180</i>&nbsp;        return this; }</b>
+<i>181</i>&nbsp;
+<i>182</i>&nbsp;    @Override
+<b class="nc"><i>183</i>&nbsp;    public JsonGenerator setRootValueSeparator(SerializableString sep) { delegate.setRootValueSeparator(sep);</b>
+<b class="nc"><i>184</i>&nbsp;        return this; }</b>
+<i>185</i>&nbsp;
+<i>186</i>&nbsp;    /*
+<i>187</i>&nbsp;    /**********************************************************
+<i>188</i>&nbsp;    /* Public API, write methods, structural
+<i>189</i>&nbsp;    /**********************************************************
+<i>190</i>&nbsp;     */
+<i>191</i>&nbsp;
+<i>192</i>&nbsp;    @Override
+<b class="fc"><i>193</i>&nbsp;    public void writeStartArray() throws IOException { delegate.writeStartArray(); }</b>
+<i>194</i>&nbsp;
+<i>195</i>&nbsp;    @Override
+<b class="fc"><i>196</i>&nbsp;    public void writeStartArray(int size) throws IOException { delegate.writeStartArray(size); }</b>
+<i>197</i>&nbsp;    
+<i>198</i>&nbsp;    @Override
+<b class="fc"><i>199</i>&nbsp;    public void writeEndArray() throws IOException { delegate.writeEndArray(); }</b>
+<i>200</i>&nbsp;
+<i>201</i>&nbsp;    @Override
+<b class="fc"><i>202</i>&nbsp;    public void writeStartObject() throws IOException { delegate.writeStartObject(); }</b>
+<i>203</i>&nbsp;
+<i>204</i>&nbsp;    @Override
+<b class="nc"><i>205</i>&nbsp;    public void writeStartObject(Object forValue) throws IOException { delegate.writeStartObject(forValue); }</b>
+<i>206</i>&nbsp;
+<i>207</i>&nbsp;    @Override
+<b class="fc"><i>208</i>&nbsp;    public void writeEndObject() throws IOException { delegate.writeEndObject(); }</b>
+<i>209</i>&nbsp;
+<i>210</i>&nbsp;    @Override
+<i>211</i>&nbsp;    public void writeFieldName(String name) throws IOException {
+<b class="fc"><i>212</i>&nbsp;        delegate.writeFieldName(name);</b>
+<b class="fc"><i>213</i>&nbsp;    }</b>
+<i>214</i>&nbsp;
+<i>215</i>&nbsp;    @Override
+<i>216</i>&nbsp;    public void writeFieldName(SerializableString name) throws IOException {
+<b class="nc"><i>217</i>&nbsp;        delegate.writeFieldName(name);</b>
+<b class="nc"><i>218</i>&nbsp;    }</b>
+<i>219</i>&nbsp;
+<i>220</i>&nbsp;    @Override
+<i>221</i>&nbsp;    public void writeFieldId(long id) throws IOException {
+<b class="nc"><i>222</i>&nbsp;        delegate.writeFieldId(id);</b>
+<b class="nc"><i>223</i>&nbsp;    }</b>
+<i>224</i>&nbsp;
+<i>225</i>&nbsp;    @Override
+<i>226</i>&nbsp;    public void writeArray(int[] array, int offset, int length) throws IOException {
+<b class="nc"><i>227</i>&nbsp;        delegate.writeArray(array, offset, length);</b>
+<b class="nc"><i>228</i>&nbsp;    }</b>
+<i>229</i>&nbsp;
+<i>230</i>&nbsp;    @Override
+<i>231</i>&nbsp;    public void writeArray(long[] array, int offset, int length) throws IOException {
+<b class="nc"><i>232</i>&nbsp;        delegate.writeArray(array, offset, length);</b>
+<b class="nc"><i>233</i>&nbsp;    }</b>
+<i>234</i>&nbsp;
+<i>235</i>&nbsp;    @Override
+<i>236</i>&nbsp;    public void writeArray(double[] array, int offset, int length) throws IOException {
+<b class="nc"><i>237</i>&nbsp;        delegate.writeArray(array, offset, length);</b>
+<b class="nc"><i>238</i>&nbsp;    }</b>
+<i>239</i>&nbsp;
+<i>240</i>&nbsp;    /*
+<i>241</i>&nbsp;    /**********************************************************
+<i>242</i>&nbsp;    /* Public API, write methods, text/String values
+<i>243</i>&nbsp;    /**********************************************************
+<i>244</i>&nbsp;     */
+<i>245</i>&nbsp;
+<i>246</i>&nbsp;    @Override
+<b class="fc"><i>247</i>&nbsp;    public void writeString(String text) throws IOException { delegate.writeString(text); }</b>
+<i>248</i>&nbsp;
+<i>249</i>&nbsp;    @Override
+<b class="fc"><i>250</i>&nbsp;    public void writeString(char[] text, int offset, int len) throws IOException { delegate.writeString(text, offset, len); }</b>
+<i>251</i>&nbsp;
+<i>252</i>&nbsp;    @Override
+<b class="nc"><i>253</i>&nbsp;    public void writeString(SerializableString text) throws IOException { delegate.writeString(text); }</b>
+<i>254</i>&nbsp;
+<i>255</i>&nbsp;    @Override
+<b class="nc"><i>256</i>&nbsp;    public void writeRawUTF8String(byte[] text, int offset, int length) throws IOException { delegate.writeRawUTF8String(text, offset, length); }</b>
+<i>257</i>&nbsp;
+<i>258</i>&nbsp;    @Override
+<b class="nc"><i>259</i>&nbsp;    public void writeUTF8String(byte[] text, int offset, int length) throws IOException { delegate.writeUTF8String(text, offset, length); }</b>
+<i>260</i>&nbsp;
+<i>261</i>&nbsp;    /*
+<i>262</i>&nbsp;    /**********************************************************
+<i>263</i>&nbsp;    /* Public API, write methods, binary/raw content
+<i>264</i>&nbsp;    /**********************************************************
+<i>265</i>&nbsp;     */
+<i>266</i>&nbsp;
+<i>267</i>&nbsp;    @Override
+<b class="nc"><i>268</i>&nbsp;    public void writeRaw(String text) throws IOException { delegate.writeRaw(text); }</b>
+<i>269</i>&nbsp;
+<i>270</i>&nbsp;    @Override
+<b class="nc"><i>271</i>&nbsp;    public void writeRaw(String text, int offset, int len) throws IOException { delegate.writeRaw(text, offset, len); }</b>
+<i>272</i>&nbsp;
+<i>273</i>&nbsp;    @Override
+<b class="nc"><i>274</i>&nbsp;    public void writeRaw(SerializableString raw) throws IOException { delegate.writeRaw(raw); }</b>
+<i>275</i>&nbsp;    
+<i>276</i>&nbsp;    @Override
+<b class="nc"><i>277</i>&nbsp;    public void writeRaw(char[] text, int offset, int len) throws IOException { delegate.writeRaw(text, offset, len); }</b>
+<i>278</i>&nbsp;
+<i>279</i>&nbsp;    @Override
+<b class="nc"><i>280</i>&nbsp;    public void writeRaw(char c) throws IOException { delegate.writeRaw(c); }</b>
+<i>281</i>&nbsp;
+<i>282</i>&nbsp;    @Override
+<b class="nc"><i>283</i>&nbsp;    public void writeRawValue(String text) throws IOException { delegate.writeRawValue(text); }</b>
+<i>284</i>&nbsp;
+<i>285</i>&nbsp;    @Override
+<b class="nc"><i>286</i>&nbsp;    public void writeRawValue(String text, int offset, int len) throws IOException { delegate.writeRawValue(text, offset, len); }</b>
+<i>287</i>&nbsp;
+<i>288</i>&nbsp;    @Override
+<b class="nc"><i>289</i>&nbsp;    public void writeRawValue(char[] text, int offset, int len) throws IOException { delegate.writeRawValue(text, offset, len); }</b>
+<i>290</i>&nbsp;
+<i>291</i>&nbsp;    @Override
+<b class="nc"><i>292</i>&nbsp;    public void writeBinary(Base64Variant b64variant, byte[] data, int offset, int len) throws IOException { delegate.writeBinary(b64variant, data, offset, len); }</b>
+<i>293</i>&nbsp;
+<i>294</i>&nbsp;    @Override
+<b class="nc"><i>295</i>&nbsp;    public int writeBinary(Base64Variant b64variant, InputStream data, int dataLength) throws IOException { return delegate.writeBinary(b64variant, data, dataLength); }</b>
+<i>296</i>&nbsp;    
+<i>297</i>&nbsp;    /*
+<i>298</i>&nbsp;    /**********************************************************
+<i>299</i>&nbsp;    /* Public API, write methods, other value types
+<i>300</i>&nbsp;    /**********************************************************
+<i>301</i>&nbsp;     */
+<i>302</i>&nbsp;
+<i>303</i>&nbsp;    @Override
+<b class="nc"><i>304</i>&nbsp;    public void writeNumber(short v) throws IOException { delegate.writeNumber(v); }</b>
+<i>305</i>&nbsp;
+<i>306</i>&nbsp;    @Override
+<b class="fc"><i>307</i>&nbsp;    public void writeNumber(int v) throws IOException { delegate.writeNumber(v); }</b>
+<i>308</i>&nbsp;
+<i>309</i>&nbsp;    @Override
+<b class="nc"><i>310</i>&nbsp;    public void writeNumber(long v) throws IOException { delegate.writeNumber(v); }</b>
+<i>311</i>&nbsp;
+<i>312</i>&nbsp;    @Override
+<b class="nc"><i>313</i>&nbsp;    public void writeNumber(BigInteger v) throws IOException { delegate.writeNumber(v); }</b>
+<i>314</i>&nbsp;
+<i>315</i>&nbsp;    @Override
+<b class="nc"><i>316</i>&nbsp;    public void writeNumber(double v) throws IOException { delegate.writeNumber(v); }</b>
+<i>317</i>&nbsp;
+<i>318</i>&nbsp;    @Override
+<b class="nc"><i>319</i>&nbsp;    public void writeNumber(float v) throws IOException { delegate.writeNumber(v); }</b>
+<i>320</i>&nbsp;
+<i>321</i>&nbsp;    @Override
+<b class="nc"><i>322</i>&nbsp;    public void writeNumber(BigDecimal v) throws IOException { delegate.writeNumber(v); }</b>
+<i>323</i>&nbsp;
+<i>324</i>&nbsp;    @Override
+<b class="nc"><i>325</i>&nbsp;    public void writeNumber(String encodedValue) throws IOException, UnsupportedOperationException { delegate.writeNumber(encodedValue); }</b>
+<i>326</i>&nbsp;
+<i>327</i>&nbsp;    @Override
+<b class="fc"><i>328</i>&nbsp;    public void writeBoolean(boolean state) throws IOException { delegate.writeBoolean(state); }</b>
+<i>329</i>&nbsp;    
+<i>330</i>&nbsp;    @Override
+<b class="fc"><i>331</i>&nbsp;    public void writeNull() throws IOException { delegate.writeNull(); }</b>
+<i>332</i>&nbsp;
+<i>333</i>&nbsp;    /*
+<i>334</i>&nbsp;    /**********************************************************
+<i>335</i>&nbsp;    /* Overridden field methods
+<i>336</i>&nbsp;    /**********************************************************
+<i>337</i>&nbsp;     */
+<i>338</i>&nbsp;
+<i>339</i>&nbsp;    @Override
+<b class="nc"><i>340</i>&nbsp;    public void writeOmittedField(String fieldName) throws IOException { delegate.writeOmittedField(fieldName); }</b>
+<i>341</i>&nbsp;    
+<i>342</i>&nbsp;    /*
+<i>343</i>&nbsp;    /**********************************************************
+<i>344</i>&nbsp;    /* Public API, write methods, Native Ids
+<i>345</i>&nbsp;    /**********************************************************
+<i>346</i>&nbsp;     */
+<i>347</i>&nbsp;    
+<i>348</i>&nbsp;    @Override
+<b class="nc"><i>349</i>&nbsp;    public void writeObjectId(Object id) throws IOException { delegate.writeObjectId(id); }</b>
+<i>350</i>&nbsp;
+<i>351</i>&nbsp;    @Override
+<b class="nc"><i>352</i>&nbsp;    public void writeObjectRef(Object id) throws IOException { delegate.writeObjectRef(id); }</b>
+<i>353</i>&nbsp;    
+<i>354</i>&nbsp;    @Override
+<b class="nc"><i>355</i>&nbsp;    public void writeTypeId(Object id) throws IOException { delegate.writeTypeId(id); }</b>
+<i>356</i>&nbsp;
+<i>357</i>&nbsp;    @Override
+<b class="nc"><i>358</i>&nbsp;    public void writeEmbeddedObject(Object object) throws IOException { delegate.writeEmbeddedObject(object); }</b>
+<i>359</i>&nbsp;    
+<i>360</i>&nbsp;    /*
+<i>361</i>&nbsp;    /**********************************************************
+<i>362</i>&nbsp;    /* Public API, write methods, serializing Java objects
+<i>363</i>&nbsp;    /**********************************************************
+<i>364</i>&nbsp;     */
+<i>365</i>&nbsp;    
+<i>366</i>&nbsp;    @Override
+<i>367</i>&nbsp;    public void writeObject(Object pojo) throws IOException {
+<b class="fc"><i>368</i>&nbsp;        if (delegateCopyMethods) {</b>
+<b class="nc"><i>369</i>&nbsp;            delegate.writeObject(pojo);</b>
+<b class="nc"><i>370</i>&nbsp;            return;</b>
+<i>371</i>&nbsp;        }
+<b class="fc"><i>372</i>&nbsp;        if (pojo == null) {</b>
+<b class="nc"><i>373</i>&nbsp;            writeNull();</b>
+<i>374</i>&nbsp;        } else {
+<b class="fc"><i>375</i>&nbsp;            ObjectCodec c = getCodec();</b>
+<b class="fc"><i>376</i>&nbsp;            if (c != null) {</b>
+<b class="fc"><i>377</i>&nbsp;                c.writeValue(this, pojo);</b>
+<b class="fc"><i>378</i>&nbsp;                return;</b>
+<i>379</i>&nbsp;            }
+<b class="nc"><i>380</i>&nbsp;            _writeSimpleObject(pojo);</b>
+<i>381</i>&nbsp;        }
+<b class="nc"><i>382</i>&nbsp;    }</b>
+<i>383</i>&nbsp;    
+<i>384</i>&nbsp;    @Override
+<i>385</i>&nbsp;    public void writeTree(TreeNode tree) throws IOException {
+<b class="fc"><i>386</i>&nbsp;        if (delegateCopyMethods) {</b>
+<b class="nc"><i>387</i>&nbsp;            delegate.writeTree(tree);</b>
+<b class="nc"><i>388</i>&nbsp;            return;</b>
+<i>389</i>&nbsp;        }
+<i>390</i>&nbsp;        // As with &#39;writeObject()&#39;, we are not check if write would work
+<b class="fc"><i>391</i>&nbsp;        if (tree == null) {</b>
+<b class="nc"><i>392</i>&nbsp;            writeNull();</b>
+<i>393</i>&nbsp;        } else {
+<b class="fc"><i>394</i>&nbsp;            ObjectCodec c = getCodec();</b>
+<b class="fc"><i>395</i>&nbsp;            if (c == null) {</b>
+<b class="nc"><i>396</i>&nbsp;                throw new IllegalStateException(&quot;No ObjectCodec defined&quot;);</b>
+<i>397</i>&nbsp;            }
+<b class="fc"><i>398</i>&nbsp;            c.writeTree(this, tree);</b>
+<i>399</i>&nbsp;        }
+<b class="fc"><i>400</i>&nbsp;    }</b>
+<i>401</i>&nbsp;
+<i>402</i>&nbsp;    /*
+<i>403</i>&nbsp;    /**********************************************************
+<i>404</i>&nbsp;    /* Public API, convenience field write methods
+<i>405</i>&nbsp;    /**********************************************************
+<i>406</i>&nbsp;     */
+<i>407</i>&nbsp;
+<i>408</i>&nbsp;    // // These are fine, just delegate to other methods...
+<i>409</i>&nbsp;
+<i>410</i>&nbsp;    /*
+<i>411</i>&nbsp;    /**********************************************************
+<i>412</i>&nbsp;    /* Public API, copy-through methods
+<i>413</i>&nbsp;    /**********************************************************
+<i>414</i>&nbsp;     */
+<i>415</i>&nbsp;
+<i>416</i>&nbsp;    @Override
+<i>417</i>&nbsp;    public void copyCurrentEvent(JsonParser p) throws IOException {
+<b class="fc"><i>418</i>&nbsp;        if (delegateCopyMethods) delegate.copyCurrentEvent(p);</b>
+<b class="fc"><i>419</i>&nbsp;        else super.copyCurrentEvent(p);</b>
+<b class="fc"><i>420</i>&nbsp;    }</b>
+<i>421</i>&nbsp;
+<i>422</i>&nbsp;    @Override
+<i>423</i>&nbsp;    public void copyCurrentStructure(JsonParser p) throws IOException {
+<b class="fc"><i>424</i>&nbsp;        if (delegateCopyMethods) delegate.copyCurrentStructure(p);</b>
+<b class="fc"><i>425</i>&nbsp;        else super.copyCurrentStructure(p);</b>
+<b class="fc"><i>426</i>&nbsp;    }</b>
+<i>427</i>&nbsp;
+<i>428</i>&nbsp;    /*
+<i>429</i>&nbsp;    /**********************************************************
+<i>430</i>&nbsp;    /* Public API, context access
+<i>431</i>&nbsp;    /**********************************************************
+<i>432</i>&nbsp;     */
+<i>433</i>&nbsp;
+<b class="nc"><i>434</i>&nbsp;    @Override public JsonStreamContext getOutputContext() { return delegate.getOutputContext(); }</b>
+<i>435</i>&nbsp;
+<i>436</i>&nbsp;    /*
+<i>437</i>&nbsp;    /**********************************************************
+<i>438</i>&nbsp;    /* Public API, buffer handling
+<i>439</i>&nbsp;    /**********************************************************
+<i>440</i>&nbsp;     */
+<i>441</i>&nbsp;    
+<b class="fc"><i>442</i>&nbsp;    @Override public void flush() throws IOException { delegate.flush(); }</b>
+<b class="fc"><i>443</i>&nbsp;    @Override public void close() throws IOException { delegate.close(); }</b>
+<i>444</i>&nbsp;
+<i>445</i>&nbsp;    /*
+<i>446</i>&nbsp;    /**********************************************************
+<i>447</i>&nbsp;    /* Closeable implementation
+<i>448</i>&nbsp;    /**********************************************************
+<i>449</i>&nbsp;     */
+<i>450</i>&nbsp;    
+<b class="fc"><i>451</i>&nbsp;    @Override public boolean isClosed() { return delegate.isClosed(); }</b>
+<i>452</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 04:22</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,79 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: FormatSchema</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.fasterxml.jackson.core</a> ]
+</div>
+
+<h1>Coverage Summary for Class: FormatSchema (com.fasterxml.jackson.core)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+</tr>
+<tr>
+  <td class="name">FormatSchema</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/* Jackson JSON-processor.
+<i>2</i>&nbsp; *
+<i>3</i>&nbsp; * Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
+<i>4</i>&nbsp; */
+<i>5</i>&nbsp;
+<i>6</i>&nbsp;package com.fasterxml.jackson.core;
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;/**
+<i>9</i>&nbsp; * Simple tag interface used to mark schema objects that are used by some
+<i>10</i>&nbsp; * {@link JsonParser} and {@link JsonGenerator} implementations to further
+<i>11</i>&nbsp; * specify structure of expected format.
+<i>12</i>&nbsp; * Basic JSON-based parsers and generators do not use schemas, but some data
+<i>13</i>&nbsp; * formats (like many binary data formats like Thrift, protobuf) mandate
+<i>14</i>&nbsp; * use of schemas.
+<i>15</i>&nbsp; *&lt;p&gt;
+<i>16</i>&nbsp; * Since there is little commonality between schemas for different data formats,
+<i>17</i>&nbsp; * this interface does not define much meaningful functionality for accessing
+<i>18</i>&nbsp; * schema details; rather, specific parser and generator implementations need
+<i>19</i>&nbsp; * to cast to schema implementations they use. This marker interface is mostly
+<i>20</i>&nbsp; * used for tagging &quot;some kind of schema&quot; -- instead of passing opaque
+<i>21</i>&nbsp; * {@link java.lang.Object} -- for documentation purposes.
+<i>22</i>&nbsp; */
+<i>23</i>&nbsp;public interface FormatSchema
+<i>24</i>&nbsp;{
+<i>25</i>&nbsp;    /**
+<i>26</i>&nbsp;     * Method that can be used to get an identifier that can be used for diagnostics
+<i>27</i>&nbsp;     * purposes, to indicate what kind of data format this schema is used for: typically
+<i>28</i>&nbsp;     * it is a short name of format itself, but it can also contain additional information
+<i>29</i>&nbsp;     * in cases where data format supports multiple types of schemas.
+<i>30</i>&nbsp;     */
+<i>31</i>&nbsp;    String getSchemaType();
+<i>32</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 04:22</div>
+</div>
+</body>
+</html>

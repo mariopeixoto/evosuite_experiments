@@ -1,0 +1,986 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: FilteringParserDelegate</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.fasterxml.jackson.core.filter</a> ]
+</div>
+
+<h1>Coverage Summary for Class: FilteringParserDelegate (com.fasterxml.jackson.core.filter)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">FilteringParserDelegate</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    18.2%
+  </span>
+  <span class="absValue">
+    (10/ 55)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    59.3%
+  </span>
+  <span class="absValue">
+    (227/ 383)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package com.fasterxml.jackson.core.filter;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import java.io.IOException;
+<i>4</i>&nbsp;import java.io.OutputStream;
+<i>5</i>&nbsp;import java.math.BigDecimal;
+<i>6</i>&nbsp;import java.math.BigInteger;
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;import com.fasterxml.jackson.core.*;
+<i>9</i>&nbsp;import com.fasterxml.jackson.core.util.JsonParserDelegate;
+<i>10</i>&nbsp;
+<i>11</i>&nbsp;import static com.fasterxml.jackson.core.JsonTokenId.*;
+<i>12</i>&nbsp;
+<i>13</i>&nbsp;/**
+<i>14</i>&nbsp; * Specialized {@link JsonParserDelegate} that allows use of
+<i>15</i>&nbsp; * {@link TokenFilter} for outputting a subset of content that
+<i>16</i>&nbsp; * is visible to caller
+<i>17</i>&nbsp; * 
+<i>18</i>&nbsp; * @since 2.6
+<i>19</i>&nbsp; */
+<i>20</i>&nbsp;public class FilteringParserDelegate extends JsonParserDelegate
+<i>21</i>&nbsp;{
+<i>22</i>&nbsp;    /*
+<i>23</i>&nbsp;    /**********************************************************
+<i>24</i>&nbsp;    /* Configuration
+<i>25</i>&nbsp;    /**********************************************************
+<i>26</i>&nbsp;     */
+<i>27</i>&nbsp;    
+<i>28</i>&nbsp;    /**
+<i>29</i>&nbsp;     * Object consulted to determine whether to write parts of content generator
+<i>30</i>&nbsp;     * is asked to write or not.
+<i>31</i>&nbsp;     */
+<i>32</i>&nbsp;    protected TokenFilter rootFilter;
+<i>33</i>&nbsp;
+<i>34</i>&nbsp;    /**
+<i>35</i>&nbsp;     * Flag that determines whether filtering will continue after the first
+<i>36</i>&nbsp;     * match is indicated or not: if `false`, output is based on just the first
+<i>37</i>&nbsp;     * full match (returning {@link TokenFilter#INCLUDE_ALL}) and no more
+<i>38</i>&nbsp;     * checks are made; if `true` then filtering will be applied as necessary
+<i>39</i>&nbsp;     * until end of content.
+<i>40</i>&nbsp;     */
+<i>41</i>&nbsp;    protected boolean _allowMultipleMatches;
+<i>42</i>&nbsp;
+<i>43</i>&nbsp;    /**
+<i>44</i>&nbsp;     * Flag that determines whether path leading up to included content should
+<i>45</i>&nbsp;     * also be automatically included or not. If `false`, no path inclusion is
+<i>46</i>&nbsp;     * done and only explicitly included entries are output; if `true` then
+<i>47</i>&nbsp;     * path from main level down to match is also included as necessary.
+<i>48</i>&nbsp;     */
+<i>49</i>&nbsp;    protected boolean _includePath;
+<i>50</i>&nbsp;
+<i>51</i>&nbsp;    /* NOTE: this feature is included in the first version (2.6), but
+<i>52</i>&nbsp;     * there is no public API to enable it, yet, since there isn&#39;t an
+<i>53</i>&nbsp;     * actual use case. But it seemed possible need could arise, which
+<i>54</i>&nbsp;     * is feature has not yet been removed. If no use is found within
+<i>55</i>&nbsp;     * first version or two, just remove.
+<i>56</i>&nbsp;     * 
+<i>57</i>&nbsp;     * Marked as deprecated since its status is uncertain.
+<i>58</i>&nbsp;     */
+<i>59</i>&nbsp;    @Deprecated
+<i>60</i>&nbsp;    protected boolean _includeImmediateParent;
+<i>61</i>&nbsp;    
+<i>62</i>&nbsp;    /*
+<i>63</i>&nbsp;    /**********************************************************
+<i>64</i>&nbsp;    /* State
+<i>65</i>&nbsp;    /**********************************************************
+<i>66</i>&nbsp;     */
+<i>67</i>&nbsp;
+<i>68</i>&nbsp;    /**
+<i>69</i>&nbsp;     * Last token retrieved via {@link #nextToken}, if any.
+<i>70</i>&nbsp;     * Null before the first call to &lt;code&gt;nextToken()&lt;/code&gt;,
+<i>71</i>&nbsp;     * as well as if token has been explicitly cleared
+<i>72</i>&nbsp;     */
+<i>73</i>&nbsp;    protected JsonToken _currToken;
+<i>74</i>&nbsp;
+<i>75</i>&nbsp;    /**
+<i>76</i>&nbsp;     * Last cleared token, if any: that is, value that was in
+<i>77</i>&nbsp;     * effect when {@link #clearCurrentToken} was called.
+<i>78</i>&nbsp;     */
+<i>79</i>&nbsp;    protected JsonToken _lastClearedToken;
+<i>80</i>&nbsp;    
+<i>81</i>&nbsp;    /**
+<i>82</i>&nbsp;     * During traversal this is the actual &quot;open&quot; parse tree, which sometimes
+<i>83</i>&nbsp;     * is the same as {@link #_exposedContext}, and at other times is ahead
+<i>84</i>&nbsp;     * of it. Note that this context is never null.
+<i>85</i>&nbsp;     */
+<i>86</i>&nbsp;    protected TokenFilterContext _headContext;
+<i>87</i>&nbsp;
+<i>88</i>&nbsp;    /**
+<i>89</i>&nbsp;     * In cases where {@link #_headContext} is &quot;ahead&quot; of context exposed to
+<i>90</i>&nbsp;     * caller, this context points to what is currently exposed to caller.
+<i>91</i>&nbsp;     * When the two are in sync, this context reference will be &lt;code&gt;null&lt;/code&gt;.
+<i>92</i>&nbsp;     */
+<i>93</i>&nbsp;    protected TokenFilterContext _exposedContext;
+<i>94</i>&nbsp;
+<i>95</i>&nbsp;    /**
+<i>96</i>&nbsp;     * State that applies to the item within container, used where applicable.
+<i>97</i>&nbsp;     * Specifically used to pass inclusion state between property name and
+<i>98</i>&nbsp;     * property, and also used for array elements.
+<i>99</i>&nbsp;     */
+<i>100</i>&nbsp;    protected TokenFilter _itemFilter;
+<i>101</i>&nbsp;    
+<i>102</i>&nbsp;    /**
+<i>103</i>&nbsp;     * Number of tokens for which {@link TokenFilter#INCLUDE_ALL}
+<i>104</i>&nbsp;     * has been returned.
+<i>105</i>&nbsp;     */
+<i>106</i>&nbsp;    protected int _matchCount;
+<i>107</i>&nbsp;
+<i>108</i>&nbsp;    /*
+<i>109</i>&nbsp;    /**********************************************************
+<i>110</i>&nbsp;    /* Construction, initialization
+<i>111</i>&nbsp;    /**********************************************************
+<i>112</i>&nbsp;     */
+<i>113</i>&nbsp;
+<i>114</i>&nbsp;    public FilteringParserDelegate(JsonParser p, TokenFilter f,
+<i>115</i>&nbsp;            boolean includePath, boolean allowMultipleMatches)
+<i>116</i>&nbsp;    {
+<b class="fc"><i>117</i>&nbsp;        super(p);</b>
+<b class="fc"><i>118</i>&nbsp;        rootFilter = f;</b>
+<i>119</i>&nbsp;        // and this is the currently active filter for root values
+<b class="fc"><i>120</i>&nbsp;        _itemFilter = f;</b>
+<b class="fc"><i>121</i>&nbsp;        _headContext = TokenFilterContext.createRootContext(f);</b>
+<b class="fc"><i>122</i>&nbsp;        _includePath = includePath;</b>
+<b class="fc"><i>123</i>&nbsp;        _allowMultipleMatches = allowMultipleMatches;</b>
+<b class="fc"><i>124</i>&nbsp;    }</b>
+<i>125</i>&nbsp;
+<i>126</i>&nbsp;    /*
+<i>127</i>&nbsp;    /**********************************************************
+<i>128</i>&nbsp;    /* Extended API
+<i>129</i>&nbsp;    /**********************************************************
+<i>130</i>&nbsp;     */
+<i>131</i>&nbsp;
+<b class="nc"><i>132</i>&nbsp;    public TokenFilter getFilter() { return rootFilter; }</b>
+<i>133</i>&nbsp;
+<i>134</i>&nbsp;    /**
+<i>135</i>&nbsp;     * Accessor for finding number of matches, where specific token and sub-tree
+<i>136</i>&nbsp;     * starting (if structured type) are passed.
+<i>137</i>&nbsp;     */
+<i>138</i>&nbsp;    public int getMatchCount() {
+<b class="nc"><i>139</i>&nbsp;        return _matchCount;</b>
+<i>140</i>&nbsp;    }
+<i>141</i>&nbsp;
+<i>142</i>&nbsp;    /*
+<i>143</i>&nbsp;    /**********************************************************
+<i>144</i>&nbsp;    /* Public API, token accessors
+<i>145</i>&nbsp;    /**********************************************************
+<i>146</i>&nbsp;     */
+<i>147</i>&nbsp;
+<b class="nc"><i>148</i>&nbsp;    @Override public JsonToken getCurrentToken() { return _currToken; }</b>
+<b class="fc"><i>149</i>&nbsp;    @Override public JsonToken currentToken() { return _currToken; }</b>
+<i>150</i>&nbsp;
+<i>151</i>&nbsp;    @Override public final int getCurrentTokenId() {
+<b class="nc"><i>152</i>&nbsp;        final JsonToken t = _currToken;</b>
+<b class="nc"><i>153</i>&nbsp;        return (t == null) ? JsonTokenId.ID_NO_TOKEN : t.id();</b>
+<i>154</i>&nbsp;    }
+<i>155</i>&nbsp;    @Override public final int currentTokenId() {
+<b class="nc"><i>156</i>&nbsp;        final JsonToken t = _currToken;</b>
+<b class="nc"><i>157</i>&nbsp;        return (t == null) ? JsonTokenId.ID_NO_TOKEN : t.id();</b>
+<i>158</i>&nbsp;    }
+<i>159</i>&nbsp;
+<b class="nc"><i>160</i>&nbsp;    @Override public boolean hasCurrentToken() { return _currToken != null; }</b>
+<i>161</i>&nbsp;    @Override public boolean hasTokenId(int id) {
+<b class="nc"><i>162</i>&nbsp;        final JsonToken t = _currToken;</b>
+<b class="nc"><i>163</i>&nbsp;        if (t == null) {</b>
+<b class="nc"><i>164</i>&nbsp;            return (JsonTokenId.ID_NO_TOKEN == id);</b>
+<i>165</i>&nbsp;        }
+<b class="nc"><i>166</i>&nbsp;        return t.id() == id;</b>
+<i>167</i>&nbsp;    }
+<i>168</i>&nbsp;
+<i>169</i>&nbsp;    @Override public final boolean hasToken(JsonToken t) {
+<b class="nc"><i>170</i>&nbsp;        return (_currToken == t);</b>
+<i>171</i>&nbsp;    }
+<i>172</i>&nbsp;    
+<b class="nc"><i>173</i>&nbsp;    @Override public boolean isExpectedStartArrayToken() { return _currToken == JsonToken.START_ARRAY; }</b>
+<b class="nc"><i>174</i>&nbsp;    @Override public boolean isExpectedStartObjectToken() { return _currToken == JsonToken.START_OBJECT; }</b>
+<i>175</i>&nbsp;
+<b class="nc"><i>176</i>&nbsp;    @Override public JsonLocation getCurrentLocation() { return delegate.getCurrentLocation(); }</b>
+<i>177</i>&nbsp;
+<i>178</i>&nbsp;    @Override
+<i>179</i>&nbsp;    public JsonStreamContext getParsingContext() {
+<b class="nc"><i>180</i>&nbsp;        return _filterContext();</b>
+<i>181</i>&nbsp;    }
+<i>182</i>&nbsp;    
+<i>183</i>&nbsp;    // !!! TODO: Verify it works as expected: copied from standard JSON parser impl
+<i>184</i>&nbsp;    @Override
+<i>185</i>&nbsp;    public String getCurrentName() throws IOException {
+<b class="fc"><i>186</i>&nbsp;        JsonStreamContext ctxt = _filterContext();</b>
+<b class="fc"><i>187</i>&nbsp;        if (_currToken == JsonToken.START_OBJECT || _currToken == JsonToken.START_ARRAY) {</b>
+<b class="nc"><i>188</i>&nbsp;            JsonStreamContext parent = ctxt.getParent();</b>
+<b class="nc"><i>189</i>&nbsp;            return (parent == null) ? null : parent.getCurrentName();</b>
+<i>190</i>&nbsp;        }
+<b class="fc"><i>191</i>&nbsp;        return ctxt.getCurrentName();</b>
+<i>192</i>&nbsp;    }
+<i>193</i>&nbsp;
+<i>194</i>&nbsp;    /*
+<i>195</i>&nbsp;    /**********************************************************
+<i>196</i>&nbsp;    /* Public API, token state overrides
+<i>197</i>&nbsp;    /**********************************************************
+<i>198</i>&nbsp;     */
+<i>199</i>&nbsp;
+<i>200</i>&nbsp;    @Override
+<i>201</i>&nbsp;    public void clearCurrentToken() {
+<b class="nc"><i>202</i>&nbsp;        if (_currToken != null) {</b>
+<b class="nc"><i>203</i>&nbsp;            _lastClearedToken = _currToken;</b>
+<b class="nc"><i>204</i>&nbsp;            _currToken = null;</b>
+<i>205</i>&nbsp;        }
+<b class="nc"><i>206</i>&nbsp;    }</b>
+<i>207</i>&nbsp;
+<i>208</i>&nbsp;    @Override
+<b class="nc"><i>209</i>&nbsp;    public JsonToken getLastClearedToken() { return _lastClearedToken; }</b>
+<i>210</i>&nbsp;
+<i>211</i>&nbsp;    @Override
+<i>212</i>&nbsp;    public void overrideCurrentName(String name) {
+<i>213</i>&nbsp;        /* 14-Apr-2015, tatu: Not sure whether this can be supported, and if so,
+<i>214</i>&nbsp;         *    what to do with it... Delegation won&#39;t work for sure, so let&#39;s for
+<i>215</i>&nbsp;         *    now throw an exception
+<i>216</i>&nbsp;         */
+<b class="nc"><i>217</i>&nbsp;        throw new UnsupportedOperationException(&quot;Can not currently override name during filtering read&quot;);</b>
+<i>218</i>&nbsp;    }
+<i>219</i>&nbsp;
+<i>220</i>&nbsp;    /*
+<i>221</i>&nbsp;    /**********************************************************
+<i>222</i>&nbsp;    /* Public API, traversal
+<i>223</i>&nbsp;    /**********************************************************
+<i>224</i>&nbsp;     */
+<i>225</i>&nbsp;
+<i>226</i>&nbsp;    @Override
+<i>227</i>&nbsp;    public JsonToken nextToken() throws IOException
+<i>228</i>&nbsp;    {
+<i>229</i>&nbsp;    	//Check for _allowMultipleMatches - false and atleast there is one token - which is _currToken
+<i>230</i>&nbsp;    	// check for no buffered context _exposedContext - null
+<i>231</i>&nbsp;    	//If all the conditions matches then check for scalar / non-scalar property
+<b class="fc"><i>232</i>&nbsp;    	if(!_allowMultipleMatches &amp;&amp; _currToken != null &amp;&amp; _exposedContext == null){</b>
+<i>233</i>&nbsp;    		//if not scalar and ended successfully, then return null
+<b class="fc"><i>234</i>&nbsp;    		if((_currToken.isStructEnd()  &amp;&amp; _headContext.isStartHandled()) ){</b>
+<b class="fc"><i>235</i>&nbsp;    			return (_currToken = null);</b>
+<i>236</i>&nbsp;    		}
+<i>237</i>&nbsp;    		//else if scalar, and scalar not present in obj/array and !includePath and INCLUDE_ALL matched once
+<i>238</i>&nbsp;    		// then return null 
+<b class="fc"><i>239</i>&nbsp;    		else if(_currToken.isScalarValue() &amp;&amp; !_headContext.isStartHandled() &amp;&amp; !_includePath </b>
+<i>240</i>&nbsp;    				&amp;&amp; _itemFilter == TokenFilter.INCLUDE_ALL) {
+<b class="fc"><i>241</i>&nbsp;    			return (_currToken = null);</b>
+<i>242</i>&nbsp;    		}
+<i>243</i>&nbsp;    	}
+<i>244</i>&nbsp;        // Anything buffered?
+<b class="fc"><i>245</i>&nbsp;        TokenFilterContext ctxt = _exposedContext;</b>
+<i>246</i>&nbsp;
+<b class="fc"><i>247</i>&nbsp;        if (ctxt != null) {</b>
+<i>248</i>&nbsp;            while (true) {
+<b class="fc"><i>249</i>&nbsp;                JsonToken t = ctxt.nextTokenToRead();</b>
+<b class="fc"><i>250</i>&nbsp;                if (t != null) {</b>
+<b class="fc"><i>251</i>&nbsp;                    _currToken = t;</b>
+<b class="fc"><i>252</i>&nbsp;                    return t;</b>
+<i>253</i>&nbsp;                }
+<i>254</i>&nbsp;                // all done with buffered stuff?
+<b class="fc"><i>255</i>&nbsp;                if (ctxt == _headContext) {</b>
+<b class="fc"><i>256</i>&nbsp;                    _exposedContext = null;</b>
+<b class="fc"><i>257</i>&nbsp;                    if (ctxt.inArray()) {</b>
+<b class="fc"><i>258</i>&nbsp;                        t = delegate.getCurrentToken();</b>
+<i>259</i>&nbsp;// Is this guaranteed to work without further checks?
+<i>260</i>&nbsp;//                        if (t != JsonToken.START_ARRAY) {
+<b class="fc"><i>261</i>&nbsp;                        _currToken = t;</b>
+<b class="fc"><i>262</i>&nbsp;                        return t;</b>
+<i>263</i>&nbsp;                    }
+<i>264</i>&nbsp;
+<i>265</i>&nbsp;                    // Almost! Most likely still have the current token;
+<i>266</i>&nbsp;                    // with the sole exception of 
+<i>267</i>&nbsp;                    /*
+<i>268</i>&nbsp;                    t = delegate.getCurrentToken();
+<i>269</i>&nbsp;                    if (t != JsonToken.FIELD_NAME) {
+<i>270</i>&nbsp;                        _currToken = t;
+<i>271</i>&nbsp;                        return t;
+<i>272</i>&nbsp;                    }
+<i>273</i>&nbsp;                    */
+<i>274</i>&nbsp;                    break;
+<i>275</i>&nbsp;                }
+<i>276</i>&nbsp;                // If not, traverse down the context chain
+<b class="fc"><i>277</i>&nbsp;                ctxt = _headContext.findChildOf(ctxt);</b>
+<b class="fc"><i>278</i>&nbsp;                _exposedContext = ctxt;</b>
+<b class="fc"><i>279</i>&nbsp;                if (ctxt == null) { // should never occur</b>
+<b class="nc"><i>280</i>&nbsp;                    throw _constructError(&quot;Unexpected problem: chain of filtered context broken&quot;);</b>
+<i>281</i>&nbsp;                }
+<b class="fc"><i>282</i>&nbsp;            }</b>
+<i>283</i>&nbsp;        }
+<i>284</i>&nbsp;
+<i>285</i>&nbsp;        // If not, need to read more. If we got any:
+<b class="fc"><i>286</i>&nbsp;        JsonToken t = delegate.nextToken();</b>
+<b class="fc"><i>287</i>&nbsp;        if (t == null) {</b>
+<i>288</i>&nbsp;            // no strict need to close, since we have no state here
+<b class="fc"><i>289</i>&nbsp;            _currToken = t;</b>
+<b class="fc"><i>290</i>&nbsp;            return t;</b>
+<i>291</i>&nbsp;        }
+<i>292</i>&nbsp;
+<i>293</i>&nbsp;        // otherwise... to include or not?
+<i>294</i>&nbsp;        TokenFilter f;
+<i>295</i>&nbsp;        
+<b class="fc"><i>296</i>&nbsp;        switch (t.id()) {</b>
+<i>297</i>&nbsp;        case ID_START_ARRAY:
+<b class="fc"><i>298</i>&nbsp;            f = _itemFilter;</b>
+<b class="fc"><i>299</i>&nbsp;            if (f == TokenFilter.INCLUDE_ALL) {</b>
+<b class="fc"><i>300</i>&nbsp;                _headContext = _headContext.createChildArrayContext(f, true);</b>
+<b class="fc"><i>301</i>&nbsp;                return (_currToken = t);</b>
+<i>302</i>&nbsp;            }
+<b class="nc"><i>303</i>&nbsp;            if (f == null) { // does this occur?</b>
+<b class="nc"><i>304</i>&nbsp;                delegate.skipChildren();</b>
+<b class="nc"><i>305</i>&nbsp;                break;</b>
+<i>306</i>&nbsp;            }
+<i>307</i>&nbsp;            // Otherwise still iffy, need to check
+<b class="nc"><i>308</i>&nbsp;            f = _headContext.checkValue(f);</b>
+<b class="nc"><i>309</i>&nbsp;            if (f == null) {</b>
+<b class="nc"><i>310</i>&nbsp;                delegate.skipChildren();</b>
+<b class="nc"><i>311</i>&nbsp;                break;</b>
+<i>312</i>&nbsp;            }
+<b class="nc"><i>313</i>&nbsp;            if (f != TokenFilter.INCLUDE_ALL) {</b>
+<b class="nc"><i>314</i>&nbsp;                f = f.filterStartArray();</b>
+<i>315</i>&nbsp;            }
+<b class="nc"><i>316</i>&nbsp;            _itemFilter = f;</b>
+<b class="nc"><i>317</i>&nbsp;            if (f == TokenFilter.INCLUDE_ALL) {</b>
+<b class="nc"><i>318</i>&nbsp;                _headContext = _headContext.createChildArrayContext(f, true);</b>
+<b class="nc"><i>319</i>&nbsp;                return (_currToken = t);</b>
+<i>320</i>&nbsp;            }
+<b class="nc"><i>321</i>&nbsp;            _headContext = _headContext.createChildArrayContext(f, false);</b>
+<i>322</i>&nbsp;            
+<i>323</i>&nbsp;            // Also: only need buffering if parent path to be included
+<b class="nc"><i>324</i>&nbsp;            if (_includePath) {</b>
+<b class="nc"><i>325</i>&nbsp;                t = _nextTokenWithBuffering(_headContext);</b>
+<b class="nc"><i>326</i>&nbsp;                if (t != null) {</b>
+<b class="nc"><i>327</i>&nbsp;                    _currToken = t;</b>
+<b class="nc"><i>328</i>&nbsp;                    return t;</b>
+<i>329</i>&nbsp;                }
+<i>330</i>&nbsp;            }
+<i>331</i>&nbsp;            break;
+<i>332</i>&nbsp;
+<i>333</i>&nbsp;        case ID_START_OBJECT:
+<b class="fc"><i>334</i>&nbsp;            f = _itemFilter;</b>
+<b class="fc"><i>335</i>&nbsp;            if (f == TokenFilter.INCLUDE_ALL) {</b>
+<b class="fc"><i>336</i>&nbsp;                _headContext = _headContext.createChildObjectContext(f, true);</b>
+<b class="fc"><i>337</i>&nbsp;                return (_currToken = t);</b>
+<i>338</i>&nbsp;            }
+<b class="fc"><i>339</i>&nbsp;            if (f == null) { // does this occur?</b>
+<b class="nc"><i>340</i>&nbsp;                delegate.skipChildren();</b>
+<b class="nc"><i>341</i>&nbsp;                break;</b>
+<i>342</i>&nbsp;            }
+<i>343</i>&nbsp;            // Otherwise still iffy, need to check
+<b class="fc"><i>344</i>&nbsp;            f = _headContext.checkValue(f);</b>
+<b class="fc"><i>345</i>&nbsp;            if (f == null) {</b>
+<b class="nc"><i>346</i>&nbsp;                delegate.skipChildren();</b>
+<b class="nc"><i>347</i>&nbsp;                break;</b>
+<i>348</i>&nbsp;            }
+<b class="fc"><i>349</i>&nbsp;            if (f != TokenFilter.INCLUDE_ALL) {</b>
+<b class="fc"><i>350</i>&nbsp;                f = f.filterStartObject();</b>
+<i>351</i>&nbsp;            }
+<b class="fc"><i>352</i>&nbsp;            _itemFilter = f;</b>
+<b class="fc"><i>353</i>&nbsp;            if (f == TokenFilter.INCLUDE_ALL) {</b>
+<b class="nc"><i>354</i>&nbsp;                _headContext = _headContext.createChildObjectContext(f, true);</b>
+<b class="nc"><i>355</i>&nbsp;                return (_currToken = t);</b>
+<i>356</i>&nbsp;            }
+<b class="fc"><i>357</i>&nbsp;            _headContext = _headContext.createChildObjectContext(f, false);</b>
+<i>358</i>&nbsp;            // Also: only need buffering if parent path to be included
+<b class="fc"><i>359</i>&nbsp;            if (_includePath) {</b>
+<b class="fc"><i>360</i>&nbsp;                t = _nextTokenWithBuffering(_headContext);</b>
+<b class="fc"><i>361</i>&nbsp;                if (t != null) {</b>
+<b class="fc"><i>362</i>&nbsp;                    _currToken = t;</b>
+<b class="fc"><i>363</i>&nbsp;                    return t;</b>
+<i>364</i>&nbsp;                }
+<i>365</i>&nbsp;            }
+<i>366</i>&nbsp;            // note: inclusion of surrounding Object handled separately via
+<i>367</i>&nbsp;            // FIELD_NAME
+<i>368</i>&nbsp;            break;
+<i>369</i>&nbsp;
+<i>370</i>&nbsp;        case ID_END_ARRAY:
+<i>371</i>&nbsp;        case ID_END_OBJECT:
+<i>372</i>&nbsp;            {
+<b class="fc"><i>373</i>&nbsp;                boolean returnEnd = _headContext.isStartHandled();</b>
+<b class="fc"><i>374</i>&nbsp;                f = _headContext.getFilter();</b>
+<b class="fc"><i>375</i>&nbsp;                if ((f != null) &amp;&amp; (f != TokenFilter.INCLUDE_ALL)) {</b>
+<b class="fc"><i>376</i>&nbsp;                    f.filterFinishArray();</b>
+<i>377</i>&nbsp;                }
+<b class="fc"><i>378</i>&nbsp;                _headContext = _headContext.getParent();</b>
+<b class="fc"><i>379</i>&nbsp;                _itemFilter = _headContext.getFilter();</b>
+<b class="fc"><i>380</i>&nbsp;                if (returnEnd) {</b>
+<b class="fc"><i>381</i>&nbsp;                    return (_currToken = t);</b>
+<i>382</i>&nbsp;                }
+<i>383</i>&nbsp;            }
+<b class="fc"><i>384</i>&nbsp;            break;</b>
+<i>385</i>&nbsp;
+<i>386</i>&nbsp;        case ID_FIELD_NAME:
+<i>387</i>&nbsp;            {
+<b class="fc"><i>388</i>&nbsp;                final String name = delegate.getCurrentName();</b>
+<i>389</i>&nbsp;                // note: this will also set &#39;needToHandleName&#39;
+<b class="fc"><i>390</i>&nbsp;                f = _headContext.setFieldName(name);</b>
+<b class="fc"><i>391</i>&nbsp;                if (f == TokenFilter.INCLUDE_ALL) {</b>
+<b class="fc"><i>392</i>&nbsp;                    _itemFilter = f;</b>
+<b class="fc"><i>393</i>&nbsp;                    if (!_includePath) {</b>
+<i>394</i>&nbsp;                        // Minor twist here: if parent NOT included, may need to induce output of
+<i>395</i>&nbsp;                        // surrounding START_OBJECT/END_OBJECT
+<b class="fc"><i>396</i>&nbsp;                        if (_includeImmediateParent &amp;&amp; !_headContext.isStartHandled()) {</b>
+<b class="nc"><i>397</i>&nbsp;                            t = _headContext.nextTokenToRead(); // returns START_OBJECT but also marks it handled</b>
+<b class="nc"><i>398</i>&nbsp;                            _exposedContext = _headContext;</b>
+<i>399</i>&nbsp;                        }
+<i>400</i>&nbsp;                    }
+<b class="fc"><i>401</i>&nbsp;                    return (_currToken = t);</b>
+<i>402</i>&nbsp;                }
+<b class="fc"><i>403</i>&nbsp;                if (f == null) {</b>
+<b class="nc"><i>404</i>&nbsp;                    delegate.nextToken();</b>
+<b class="nc"><i>405</i>&nbsp;                    delegate.skipChildren();</b>
+<b class="nc"><i>406</i>&nbsp;                    break;</b>
+<i>407</i>&nbsp;                }
+<b class="fc"><i>408</i>&nbsp;                f = f.includeProperty(name);</b>
+<b class="fc"><i>409</i>&nbsp;                if (f == null) {</b>
+<b class="fc"><i>410</i>&nbsp;                    delegate.nextToken();</b>
+<b class="fc"><i>411</i>&nbsp;                    delegate.skipChildren();</b>
+<b class="fc"><i>412</i>&nbsp;                    break;</b>
+<i>413</i>&nbsp;                }
+<b class="fc"><i>414</i>&nbsp;                _itemFilter = f;</b>
+<b class="fc"><i>415</i>&nbsp;                if (f == TokenFilter.INCLUDE_ALL) {</b>
+<b class="fc"><i>416</i>&nbsp;                    if (_includePath) {</b>
+<b class="fc"><i>417</i>&nbsp;                        return (_currToken = t);</b>
+<i>418</i>&nbsp;                    }
+<i>419</i>&nbsp;                }
+<b class="fc"><i>420</i>&nbsp;                if (_includePath) {</b>
+<b class="fc"><i>421</i>&nbsp;                    t = _nextTokenWithBuffering(_headContext);</b>
+<b class="fc"><i>422</i>&nbsp;                    if (t != null) {</b>
+<b class="fc"><i>423</i>&nbsp;                        _currToken = t;</b>
+<b class="fc"><i>424</i>&nbsp;                        return t;</b>
+<i>425</i>&nbsp;                    }
+<i>426</i>&nbsp;                }
+<i>427</i>&nbsp;                break;
+<i>428</i>&nbsp;            }
+<i>429</i>&nbsp;
+<i>430</i>&nbsp;        default: // scalar value
+<b class="fc"><i>431</i>&nbsp;            f = _itemFilter;</b>
+<b class="fc"><i>432</i>&nbsp;            if (f == TokenFilter.INCLUDE_ALL) {</b>
+<b class="fc"><i>433</i>&nbsp;                return (_currToken = t);</b>
+<i>434</i>&nbsp;            }
+<b class="fc"><i>435</i>&nbsp;            if (f != null) {</b>
+<b class="fc"><i>436</i>&nbsp;                f = _headContext.checkValue(f);</b>
+<b class="fc"><i>437</i>&nbsp;                if ((f == TokenFilter.INCLUDE_ALL)</b>
+<b class="nc"><i>438</i>&nbsp;                        || ((f != null) &amp;&amp; f.includeValue(delegate))) {</b>
+<b class="fc"><i>439</i>&nbsp;                    return (_currToken = t);</b>
+<i>440</i>&nbsp;                }
+<i>441</i>&nbsp;            }
+<i>442</i>&nbsp;            // Otherwise not included (leaves must be explicitly included)
+<i>443</i>&nbsp;            break;
+<i>444</i>&nbsp;        }
+<i>445</i>&nbsp;
+<i>446</i>&nbsp;        // We get here if token was not yet found; offlined handling
+<b class="fc"><i>447</i>&nbsp;        return _nextToken2();</b>
+<i>448</i>&nbsp;    }
+<i>449</i>&nbsp;
+<i>450</i>&nbsp;    /**
+<i>451</i>&nbsp;     * Offlined handling for cases where there was no buffered token to
+<i>452</i>&nbsp;     * return, and the token read next could not be returned as-is,
+<i>453</i>&nbsp;     * at least not yet, but where we have not yet established that
+<i>454</i>&nbsp;     * buffering is needed.
+<i>455</i>&nbsp;     */
+<i>456</i>&nbsp;    protected final JsonToken _nextToken2() throws IOException
+<i>457</i>&nbsp;    {
+<i>458</i>&nbsp;        main_loop:
+<i>459</i>&nbsp;        while (true) {
+<b class="fc"><i>460</i>&nbsp;            JsonToken t = delegate.nextToken();</b>
+<b class="fc"><i>461</i>&nbsp;            if (t == null) { // is this even legal?</b>
+<b class="fc"><i>462</i>&nbsp;                _currToken = t;</b>
+<b class="fc"><i>463</i>&nbsp;                return t;</b>
+<i>464</i>&nbsp;            }
+<i>465</i>&nbsp;            TokenFilter f;
+<i>466</i>&nbsp;
+<b class="fc"><i>467</i>&nbsp;            switch (t.id()) {</b>
+<i>468</i>&nbsp;            case ID_START_ARRAY:
+<b class="fc"><i>469</i>&nbsp;                f = _itemFilter;</b>
+<b class="fc"><i>470</i>&nbsp;                if (f == TokenFilter.INCLUDE_ALL) {</b>
+<b class="fc"><i>471</i>&nbsp;                    _headContext = _headContext.createChildArrayContext(f, true);</b>
+<b class="fc"><i>472</i>&nbsp;                    return (_currToken = t);</b>
+<i>473</i>&nbsp;                }
+<b class="fc"><i>474</i>&nbsp;                if (f == null) { // does this occur?</b>
+<b class="nc"><i>475</i>&nbsp;                    delegate.skipChildren();</b>
+<b class="nc"><i>476</i>&nbsp;                    continue main_loop;</b>
+<i>477</i>&nbsp;                }
+<i>478</i>&nbsp;                // Otherwise still iffy, need to check
+<b class="fc"><i>479</i>&nbsp;                f = _headContext.checkValue(f);</b>
+<b class="fc"><i>480</i>&nbsp;                if (f == null) {</b>
+<b class="nc"><i>481</i>&nbsp;                    delegate.skipChildren();</b>
+<b class="nc"><i>482</i>&nbsp;                    continue main_loop;</b>
+<i>483</i>&nbsp;                }
+<b class="fc"><i>484</i>&nbsp;                if (f != TokenFilter.INCLUDE_ALL) {</b>
+<b class="fc"><i>485</i>&nbsp;                    f = f.filterStartArray();</b>
+<i>486</i>&nbsp;                }
+<b class="fc"><i>487</i>&nbsp;                _itemFilter = f;</b>
+<b class="fc"><i>488</i>&nbsp;                if (f == TokenFilter.INCLUDE_ALL) {</b>
+<b class="nc"><i>489</i>&nbsp;                    _headContext = _headContext.createChildArrayContext(f, true);</b>
+<b class="nc"><i>490</i>&nbsp;                    return (_currToken = t);</b>
+<i>491</i>&nbsp;                }
+<b class="fc"><i>492</i>&nbsp;                _headContext = _headContext.createChildArrayContext(f, false);</b>
+<i>493</i>&nbsp;                // but if we didn&#39;t figure it out yet, need to buffer possible events
+<b class="fc"><i>494</i>&nbsp;                if (_includePath) {</b>
+<b class="nc"><i>495</i>&nbsp;                    t = _nextTokenWithBuffering(_headContext);</b>
+<b class="nc"><i>496</i>&nbsp;                    if (t != null) {</b>
+<b class="nc"><i>497</i>&nbsp;                        _currToken = t;</b>
+<b class="nc"><i>498</i>&nbsp;                        return t;</b>
+<i>499</i>&nbsp;                    }
+<i>500</i>&nbsp;                }
+<i>501</i>&nbsp;                continue main_loop;
+<i>502</i>&nbsp;
+<i>503</i>&nbsp;            case ID_START_OBJECT:
+<b class="fc"><i>504</i>&nbsp;                f = _itemFilter;</b>
+<b class="fc"><i>505</i>&nbsp;                if (f == TokenFilter.INCLUDE_ALL) {</b>
+<b class="fc"><i>506</i>&nbsp;                    _headContext = _headContext.createChildObjectContext(f, true);</b>
+<b class="fc"><i>507</i>&nbsp;                    return (_currToken = t);</b>
+<i>508</i>&nbsp;                }
+<b class="fc"><i>509</i>&nbsp;                if (f == null) { // does this occur?</b>
+<b class="nc"><i>510</i>&nbsp;                    delegate.skipChildren();</b>
+<b class="nc"><i>511</i>&nbsp;                    continue main_loop;</b>
+<i>512</i>&nbsp;                }
+<i>513</i>&nbsp;                // Otherwise still iffy, need to check
+<b class="fc"><i>514</i>&nbsp;                f = _headContext.checkValue(f);</b>
+<b class="fc"><i>515</i>&nbsp;                if (f == null) {</b>
+<b class="nc"><i>516</i>&nbsp;                    delegate.skipChildren();</b>
+<b class="nc"><i>517</i>&nbsp;                    continue main_loop;</b>
+<i>518</i>&nbsp;                }
+<b class="fc"><i>519</i>&nbsp;                if (f != TokenFilter.INCLUDE_ALL) {</b>
+<b class="fc"><i>520</i>&nbsp;                    f = f.filterStartObject();</b>
+<i>521</i>&nbsp;                }
+<b class="fc"><i>522</i>&nbsp;                _itemFilter = f;</b>
+<b class="fc"><i>523</i>&nbsp;                if (f == TokenFilter.INCLUDE_ALL) {</b>
+<b class="nc"><i>524</i>&nbsp;                    _headContext = _headContext.createChildObjectContext(f, true);</b>
+<b class="nc"><i>525</i>&nbsp;                    return (_currToken = t);</b>
+<i>526</i>&nbsp;                }
+<b class="fc"><i>527</i>&nbsp;                _headContext = _headContext.createChildObjectContext(f, false);</b>
+<b class="fc"><i>528</i>&nbsp;                if (_includePath) {</b>
+<b class="nc"><i>529</i>&nbsp;                    t = _nextTokenWithBuffering(_headContext);</b>
+<b class="nc"><i>530</i>&nbsp;                    if (t != null) {</b>
+<b class="nc"><i>531</i>&nbsp;                        _currToken = t;</b>
+<b class="nc"><i>532</i>&nbsp;                        return t;</b>
+<i>533</i>&nbsp;                    }
+<i>534</i>&nbsp;                }
+<i>535</i>&nbsp;                continue main_loop;
+<i>536</i>&nbsp;
+<i>537</i>&nbsp;            case ID_END_ARRAY:
+<i>538</i>&nbsp;            case ID_END_OBJECT:
+<i>539</i>&nbsp;                {
+<b class="fc"><i>540</i>&nbsp;                    boolean returnEnd = _headContext.isStartHandled();</b>
+<b class="fc"><i>541</i>&nbsp;                    f = _headContext.getFilter();</b>
+<b class="fc"><i>542</i>&nbsp;                    if ((f != null) &amp;&amp; (f != TokenFilter.INCLUDE_ALL)) {</b>
+<b class="fc"><i>543</i>&nbsp;                        f.filterFinishArray();</b>
+<i>544</i>&nbsp;                    }
+<b class="fc"><i>545</i>&nbsp;                    _headContext = _headContext.getParent();</b>
+<b class="fc"><i>546</i>&nbsp;                    _itemFilter = _headContext.getFilter();</b>
+<b class="fc"><i>547</i>&nbsp;                    if (returnEnd) {</b>
+<b class="fc"><i>548</i>&nbsp;                        return (_currToken = t);</b>
+<i>549</i>&nbsp;                    }
+<i>550</i>&nbsp;                }
+<b class="fc"><i>551</i>&nbsp;                continue main_loop;</b>
+<i>552</i>&nbsp;
+<i>553</i>&nbsp;            case ID_FIELD_NAME:
+<i>554</i>&nbsp;                {
+<b class="fc"><i>555</i>&nbsp;                    final String name = delegate.getCurrentName();</b>
+<b class="fc"><i>556</i>&nbsp;                    f = _headContext.setFieldName(name);</b>
+<b class="fc"><i>557</i>&nbsp;                    if (f == TokenFilter.INCLUDE_ALL) {</b>
+<b class="nc"><i>558</i>&nbsp;                        _itemFilter = f;</b>
+<b class="nc"><i>559</i>&nbsp;                        return (_currToken = t);</b>
+<i>560</i>&nbsp;                    }
+<b class="fc"><i>561</i>&nbsp;                    if (f == null) { // filter out the value</b>
+<b class="nc"><i>562</i>&nbsp;                        delegate.nextToken();</b>
+<b class="nc"><i>563</i>&nbsp;                        delegate.skipChildren();</b>
+<b class="nc"><i>564</i>&nbsp;                        continue main_loop;</b>
+<i>565</i>&nbsp;                    }
+<b class="fc"><i>566</i>&nbsp;                    f = f.includeProperty(name);</b>
+<b class="fc"><i>567</i>&nbsp;                    if (f == null) { // filter out the value</b>
+<b class="fc"><i>568</i>&nbsp;                        delegate.nextToken();</b>
+<b class="fc"><i>569</i>&nbsp;                        delegate.skipChildren();</b>
+<b class="fc"><i>570</i>&nbsp;                        continue main_loop;</b>
+<i>571</i>&nbsp;                    }
+<b class="fc"><i>572</i>&nbsp;                    _itemFilter = f;</b>
+<b class="fc"><i>573</i>&nbsp;                    if (f == TokenFilter.INCLUDE_ALL) {</b>
+<b class="fc"><i>574</i>&nbsp;                        if (_includePath) {</b>
+<b class="nc"><i>575</i>&nbsp;                            return (_currToken = t);</b>
+<i>576</i>&nbsp;                        }
+<i>577</i>&nbsp;//                        if (_includeImmediateParent) { ...
+<i>578</i>&nbsp;                        continue main_loop;
+<i>579</i>&nbsp;                    }
+<b class="fc"><i>580</i>&nbsp;                    if (_includePath) {</b>
+<b class="fc"><i>581</i>&nbsp;                        t = _nextTokenWithBuffering(_headContext);</b>
+<b class="fc"><i>582</i>&nbsp;                        if (t != null) {</b>
+<b class="fc"><i>583</i>&nbsp;                            _currToken = t;</b>
+<b class="fc"><i>584</i>&nbsp;                            return t;</b>
+<i>585</i>&nbsp;                        }
+<i>586</i>&nbsp;                    }
+<i>587</i>&nbsp;                }
+<b class="fc"><i>588</i>&nbsp;                continue main_loop;</b>
+<i>589</i>&nbsp;
+<i>590</i>&nbsp;            default: // scalar value
+<b class="fc"><i>591</i>&nbsp;                f = _itemFilter;</b>
+<b class="fc"><i>592</i>&nbsp;                if (f == TokenFilter.INCLUDE_ALL) {</b>
+<b class="fc"><i>593</i>&nbsp;                    return (_currToken = t);</b>
+<i>594</i>&nbsp;                }
+<b class="fc"><i>595</i>&nbsp;                if (f != null) {</b>
+<b class="fc"><i>596</i>&nbsp;                    f = _headContext.checkValue(f);</b>
+<b class="fc"><i>597</i>&nbsp;                    if ((f == TokenFilter.INCLUDE_ALL)</b>
+<b class="fc"><i>598</i>&nbsp;                            || ((f != null) &amp;&amp; f.includeValue(delegate))) {</b>
+<b class="fc"><i>599</i>&nbsp;                        return (_currToken = t);</b>
+<i>600</i>&nbsp;                    }
+<i>601</i>&nbsp;                }
+<i>602</i>&nbsp;                // Otherwise not included (leaves must be explicitly included)
+<i>603</i>&nbsp;                break;
+<i>604</i>&nbsp;            }
+<b class="fc"><i>605</i>&nbsp;        }</b>
+<i>606</i>&nbsp;    }
+<i>607</i>&nbsp;
+<i>608</i>&nbsp;    /**
+<i>609</i>&nbsp;     * Method called when a new potentially included context is found.
+<i>610</i>&nbsp;     */
+<i>611</i>&nbsp;    protected final JsonToken _nextTokenWithBuffering(final TokenFilterContext buffRoot)
+<i>612</i>&nbsp;        throws IOException
+<i>613</i>&nbsp;    {
+<i>614</i>&nbsp;        main_loop:
+<i>615</i>&nbsp;        while (true) {
+<b class="fc"><i>616</i>&nbsp;            JsonToken t = delegate.nextToken();</b>
+<b class="fc"><i>617</i>&nbsp;            if (t == null) { // is this even legal?</b>
+<b class="nc"><i>618</i>&nbsp;                return t;</b>
+<i>619</i>&nbsp;            }
+<i>620</i>&nbsp;            TokenFilter f;
+<i>621</i>&nbsp;
+<i>622</i>&nbsp;            // One simplification here: we know for a fact that the item filter is
+<i>623</i>&nbsp;            // neither null nor &#39;include all&#39;, for most cases; the only exception
+<i>624</i>&nbsp;            // being FIELD_NAME handling
+<i>625</i>&nbsp;
+<b class="fc"><i>626</i>&nbsp;            switch (t.id()) {</b>
+<i>627</i>&nbsp;            case ID_START_ARRAY:
+<b class="fc"><i>628</i>&nbsp;                f = _headContext.checkValue(_itemFilter);</b>
+<b class="fc"><i>629</i>&nbsp;                if (f == null) {</b>
+<b class="nc"><i>630</i>&nbsp;                    delegate.skipChildren();</b>
+<b class="nc"><i>631</i>&nbsp;                    continue main_loop;</b>
+<i>632</i>&nbsp;                }
+<b class="fc"><i>633</i>&nbsp;                if (f != TokenFilter.INCLUDE_ALL) {</b>
+<b class="fc"><i>634</i>&nbsp;                    f = f.filterStartArray();</b>
+<i>635</i>&nbsp;                }
+<b class="fc"><i>636</i>&nbsp;                _itemFilter = f;</b>
+<b class="fc"><i>637</i>&nbsp;                if (f == TokenFilter.INCLUDE_ALL) {</b>
+<b class="nc"><i>638</i>&nbsp;                    _headContext = _headContext.createChildArrayContext(f, true);</b>
+<b class="nc"><i>639</i>&nbsp;                    return _nextBuffered(buffRoot);</b>
+<i>640</i>&nbsp;                }
+<b class="fc"><i>641</i>&nbsp;                _headContext = _headContext.createChildArrayContext(f, false);</b>
+<b class="fc"><i>642</i>&nbsp;                continue main_loop;</b>
+<i>643</i>&nbsp;
+<i>644</i>&nbsp;            case ID_START_OBJECT:
+<b class="fc"><i>645</i>&nbsp;                f = _itemFilter;</b>
+<b class="fc"><i>646</i>&nbsp;                if (f == TokenFilter.INCLUDE_ALL) {</b>
+<b class="nc"><i>647</i>&nbsp;                    _headContext = _headContext.createChildObjectContext(f, true);</b>
+<b class="nc"><i>648</i>&nbsp;                    return t;</b>
+<i>649</i>&nbsp;                }
+<b class="fc"><i>650</i>&nbsp;                if (f == null) { // does this occur?</b>
+<b class="nc"><i>651</i>&nbsp;                    delegate.skipChildren();</b>
+<b class="nc"><i>652</i>&nbsp;                    continue main_loop;</b>
+<i>653</i>&nbsp;                }
+<i>654</i>&nbsp;                // Otherwise still iffy, need to check
+<b class="fc"><i>655</i>&nbsp;                f = _headContext.checkValue(f);</b>
+<b class="fc"><i>656</i>&nbsp;                if (f == null) {</b>
+<b class="nc"><i>657</i>&nbsp;                    delegate.skipChildren();</b>
+<b class="nc"><i>658</i>&nbsp;                    continue main_loop;</b>
+<i>659</i>&nbsp;                }
+<b class="fc"><i>660</i>&nbsp;                if (f != TokenFilter.INCLUDE_ALL) {</b>
+<b class="fc"><i>661</i>&nbsp;                    f = f.filterStartObject();</b>
+<i>662</i>&nbsp;                }
+<b class="fc"><i>663</i>&nbsp;                _itemFilter = f;</b>
+<b class="fc"><i>664</i>&nbsp;                if (f == TokenFilter.INCLUDE_ALL) {</b>
+<b class="nc"><i>665</i>&nbsp;                    _headContext = _headContext.createChildObjectContext(f, true);</b>
+<b class="nc"><i>666</i>&nbsp;                    return _nextBuffered(buffRoot);</b>
+<i>667</i>&nbsp;                }
+<b class="fc"><i>668</i>&nbsp;                _headContext = _headContext.createChildObjectContext(f, false);</b>
+<b class="fc"><i>669</i>&nbsp;                continue main_loop;</b>
+<i>670</i>&nbsp;
+<i>671</i>&nbsp;            case ID_END_ARRAY:
+<i>672</i>&nbsp;            case ID_END_OBJECT:
+<i>673</i>&nbsp;                {
+<i>674</i>&nbsp;                    // Unlike with other loops, here we know that content was NOT
+<i>675</i>&nbsp;                    // included (won&#39;t get this far otherwise)
+<b class="fc"><i>676</i>&nbsp;                    f = _headContext.getFilter();</b>
+<b class="fc"><i>677</i>&nbsp;                    if ((f != null) &amp;&amp; (f != TokenFilter.INCLUDE_ALL)) {</b>
+<b class="fc"><i>678</i>&nbsp;                        f.filterFinishArray();</b>
+<i>679</i>&nbsp;                    }
+<b class="fc"><i>680</i>&nbsp;                    boolean gotEnd = (_headContext == buffRoot);</b>
+<b class="fc"><i>681</i>&nbsp;                    boolean returnEnd = gotEnd &amp;&amp; _headContext.isStartHandled();</b>
+<i>682</i>&nbsp;
+<b class="fc"><i>683</i>&nbsp;                    _headContext = _headContext.getParent();</b>
+<b class="fc"><i>684</i>&nbsp;                    _itemFilter = _headContext.getFilter();</b>
+<i>685</i>&nbsp;
+<b class="fc"><i>686</i>&nbsp;                    if (returnEnd) {</b>
+<b class="fc"><i>687</i>&nbsp;                        return t;</b>
+<i>688</i>&nbsp;                    }
+<i>689</i>&nbsp;                    // Hmmh. Do we need both checks, or should above suffice?
+<b class="fc"><i>690</i>&nbsp;                    if (gotEnd || (_headContext == buffRoot)) {</b>
+<b class="fc"><i>691</i>&nbsp;                        return null;</b>
+<i>692</i>&nbsp;                    }
+<i>693</i>&nbsp;                }
+<b class="nc"><i>694</i>&nbsp;                continue main_loop;</b>
+<i>695</i>&nbsp;
+<i>696</i>&nbsp;            case ID_FIELD_NAME:
+<i>697</i>&nbsp;                {
+<b class="fc"><i>698</i>&nbsp;                    final String name = delegate.getCurrentName();</b>
+<b class="fc"><i>699</i>&nbsp;                    f = _headContext.setFieldName(name);</b>
+<b class="fc"><i>700</i>&nbsp;                    if (f == TokenFilter.INCLUDE_ALL) {</b>
+<b class="nc"><i>701</i>&nbsp;                        _itemFilter = f;</b>
+<b class="nc"><i>702</i>&nbsp;                        return _nextBuffered(buffRoot);</b>
+<i>703</i>&nbsp;                    }
+<b class="fc"><i>704</i>&nbsp;                    if (f == null) { // filter out the value</b>
+<b class="nc"><i>705</i>&nbsp;                        delegate.nextToken();</b>
+<b class="nc"><i>706</i>&nbsp;                        delegate.skipChildren();</b>
+<b class="nc"><i>707</i>&nbsp;                        continue main_loop;</b>
+<i>708</i>&nbsp;                    }
+<b class="fc"><i>709</i>&nbsp;                    f = f.includeProperty(name);</b>
+<b class="fc"><i>710</i>&nbsp;                    if (f == null) { // filter out the value</b>
+<b class="fc"><i>711</i>&nbsp;                        delegate.nextToken();</b>
+<b class="fc"><i>712</i>&nbsp;                        delegate.skipChildren();</b>
+<b class="fc"><i>713</i>&nbsp;                        continue main_loop;</b>
+<i>714</i>&nbsp;                    }
+<b class="fc"><i>715</i>&nbsp;                    _itemFilter = f;</b>
+<b class="fc"><i>716</i>&nbsp;                    if (f == TokenFilter.INCLUDE_ALL) {</b>
+<b class="fc"><i>717</i>&nbsp;                        return _nextBuffered(buffRoot);</b>
+<i>718</i>&nbsp;                    }
+<i>719</i>&nbsp;                }
+<b class="fc"><i>720</i>&nbsp;                continue main_loop;</b>
+<i>721</i>&nbsp;
+<i>722</i>&nbsp;            default: // scalar value
+<b class="fc"><i>723</i>&nbsp;                f = _itemFilter;</b>
+<b class="fc"><i>724</i>&nbsp;                if (f == TokenFilter.INCLUDE_ALL) {</b>
+<b class="nc"><i>725</i>&nbsp;                    return _nextBuffered(buffRoot);</b>
+<i>726</i>&nbsp;                }
+<b class="fc"><i>727</i>&nbsp;                if (f != null) {</b>
+<b class="fc"><i>728</i>&nbsp;                    f = _headContext.checkValue(f);</b>
+<b class="fc"><i>729</i>&nbsp;                    if ((f == TokenFilter.INCLUDE_ALL)</b>
+<b class="fc"><i>730</i>&nbsp;                            || ((f != null) &amp;&amp; f.includeValue(delegate))) {</b>
+<b class="fc"><i>731</i>&nbsp;                        return _nextBuffered(buffRoot);</b>
+<i>732</i>&nbsp;                    }
+<i>733</i>&nbsp;                }
+<i>734</i>&nbsp;                // Otherwise not included (leaves must be explicitly included)
+<i>735</i>&nbsp;                continue main_loop;
+<i>736</i>&nbsp;            }
+<i>737</i>&nbsp;        }
+<i>738</i>&nbsp;    }
+<i>739</i>&nbsp;
+<i>740</i>&nbsp;    private JsonToken _nextBuffered(TokenFilterContext buffRoot) throws IOException
+<i>741</i>&nbsp;    {
+<b class="fc"><i>742</i>&nbsp;        _exposedContext = buffRoot;</b>
+<b class="fc"><i>743</i>&nbsp;        TokenFilterContext ctxt = buffRoot;</b>
+<b class="fc"><i>744</i>&nbsp;        JsonToken t = ctxt.nextTokenToRead();</b>
+<b class="fc"><i>745</i>&nbsp;        if (t != null) {</b>
+<b class="fc"><i>746</i>&nbsp;            return t;</b>
+<i>747</i>&nbsp;        }
+<i>748</i>&nbsp;        while (true) {
+<i>749</i>&nbsp;            // all done with buffered stuff?
+<b class="nc"><i>750</i>&nbsp;            if (ctxt == _headContext) {</b>
+<b class="nc"><i>751</i>&nbsp;                throw _constructError(&quot;Internal error: failed to locate expected buffered tokens&quot;);</b>
+<i>752</i>&nbsp;                /*
+<i>753</i>&nbsp;                _exposedContext = null;
+<i>754</i>&nbsp;                break;
+<i>755</i>&nbsp;                */
+<i>756</i>&nbsp;            }
+<i>757</i>&nbsp;            // If not, traverse down the context chain
+<b class="nc"><i>758</i>&nbsp;            ctxt = _exposedContext.findChildOf(ctxt);</b>
+<b class="nc"><i>759</i>&nbsp;            _exposedContext = ctxt;</b>
+<b class="nc"><i>760</i>&nbsp;            if (ctxt == null) { // should never occur</b>
+<b class="nc"><i>761</i>&nbsp;                throw _constructError(&quot;Unexpected problem: chain of filtered context broken&quot;);</b>
+<i>762</i>&nbsp;            }
+<b class="nc"><i>763</i>&nbsp;            t = _exposedContext.nextTokenToRead();</b>
+<b class="nc"><i>764</i>&nbsp;            if (t != null) {</b>
+<b class="nc"><i>765</i>&nbsp;                return t;</b>
+<i>766</i>&nbsp;            }
+<i>767</i>&nbsp;        }
+<i>768</i>&nbsp;    }
+<i>769</i>&nbsp;    
+<i>770</i>&nbsp;    @Override
+<i>771</i>&nbsp;    public JsonToken nextValue() throws IOException {
+<i>772</i>&nbsp;        // Re-implemented same as ParserMinimalBase:
+<b class="nc"><i>773</i>&nbsp;        JsonToken t = nextToken();</b>
+<b class="nc"><i>774</i>&nbsp;        if (t == JsonToken.FIELD_NAME) {</b>
+<b class="nc"><i>775</i>&nbsp;            t = nextToken();</b>
+<i>776</i>&nbsp;        }
+<b class="nc"><i>777</i>&nbsp;        return t;</b>
+<i>778</i>&nbsp;    }
+<i>779</i>&nbsp;
+<i>780</i>&nbsp;    /**
+<i>781</i>&nbsp;     * Need to override, re-implement similar to how method defined in
+<i>782</i>&nbsp;     * {@link com.fasterxml.jackson.core.base.ParserMinimalBase}, to keep
+<i>783</i>&nbsp;     * state correct here.
+<i>784</i>&nbsp;     */
+<i>785</i>&nbsp;    @Override
+<i>786</i>&nbsp;    public JsonParser skipChildren() throws IOException
+<i>787</i>&nbsp;    {
+<b class="nc"><i>788</i>&nbsp;        if ((_currToken != JsonToken.START_OBJECT)</b>
+<i>789</i>&nbsp;            &amp;&amp; (_currToken != JsonToken.START_ARRAY)) {
+<b class="nc"><i>790</i>&nbsp;            return this;</b>
+<i>791</i>&nbsp;        }
+<b class="nc"><i>792</i>&nbsp;        int open = 1;</b>
+<i>793</i>&nbsp;
+<i>794</i>&nbsp;        // Since proper matching of start/end markers is handled
+<i>795</i>&nbsp;        // by nextToken(), we&#39;ll just count nesting levels here
+<i>796</i>&nbsp;        while (true) {
+<b class="nc"><i>797</i>&nbsp;            JsonToken t = nextToken();</b>
+<b class="nc"><i>798</i>&nbsp;            if (t == null) { // not ideal but for now, just return</b>
+<b class="nc"><i>799</i>&nbsp;                return this;</b>
+<i>800</i>&nbsp;            }
+<b class="nc"><i>801</i>&nbsp;            if (t.isStructStart()) {</b>
+<b class="nc"><i>802</i>&nbsp;                ++open;</b>
+<b class="nc"><i>803</i>&nbsp;            } else if (t.isStructEnd()) {</b>
+<b class="nc"><i>804</i>&nbsp;                if (--open == 0) {</b>
+<b class="nc"><i>805</i>&nbsp;                    return this;</b>
+<i>806</i>&nbsp;                }
+<i>807</i>&nbsp;            }
+<b class="nc"><i>808</i>&nbsp;        }</b>
+<i>809</i>&nbsp;    }
+<i>810</i>&nbsp;    
+<i>811</i>&nbsp;    /*
+<i>812</i>&nbsp;    /**********************************************************
+<i>813</i>&nbsp;    /* Public API, access to token information, text
+<i>814</i>&nbsp;    /**********************************************************
+<i>815</i>&nbsp;     */
+<i>816</i>&nbsp;
+<b class="nc"><i>817</i>&nbsp;    @Override public String getText() throws IOException { return delegate.getText();  }</b>
+<b class="nc"><i>818</i>&nbsp;    @Override public boolean hasTextCharacters() { return delegate.hasTextCharacters(); }</b>
+<b class="nc"><i>819</i>&nbsp;    @Override public char[] getTextCharacters() throws IOException { return delegate.getTextCharacters(); }</b>
+<b class="nc"><i>820</i>&nbsp;    @Override public int getTextLength() throws IOException { return delegate.getTextLength(); }</b>
+<b class="nc"><i>821</i>&nbsp;    @Override public int getTextOffset() throws IOException { return delegate.getTextOffset(); }</b>
+<i>822</i>&nbsp;
+<i>823</i>&nbsp;    /*
+<i>824</i>&nbsp;    /**********************************************************
+<i>825</i>&nbsp;    /* Public API, access to token information, numeric
+<i>826</i>&nbsp;    /**********************************************************
+<i>827</i>&nbsp;     */
+<i>828</i>&nbsp;    
+<i>829</i>&nbsp;    @Override
+<b class="nc"><i>830</i>&nbsp;    public BigInteger getBigIntegerValue() throws IOException { return delegate.getBigIntegerValue(); }</b>
+<i>831</i>&nbsp;
+<i>832</i>&nbsp;    @Override
+<b class="nc"><i>833</i>&nbsp;    public boolean getBooleanValue() throws IOException { return delegate.getBooleanValue(); }</b>
+<i>834</i>&nbsp;    
+<i>835</i>&nbsp;    @Override
+<b class="nc"><i>836</i>&nbsp;    public byte getByteValue() throws IOException { return delegate.getByteValue(); }</b>
+<i>837</i>&nbsp;
+<i>838</i>&nbsp;    @Override
+<b class="nc"><i>839</i>&nbsp;    public short getShortValue() throws IOException { return delegate.getShortValue(); }</b>
+<i>840</i>&nbsp;
+<i>841</i>&nbsp;    @Override
+<b class="nc"><i>842</i>&nbsp;    public BigDecimal getDecimalValue() throws IOException { return delegate.getDecimalValue(); }</b>
+<i>843</i>&nbsp;
+<i>844</i>&nbsp;    @Override
+<b class="nc"><i>845</i>&nbsp;    public double getDoubleValue() throws IOException { return delegate.getDoubleValue(); }</b>
+<i>846</i>&nbsp;
+<i>847</i>&nbsp;    @Override
+<b class="nc"><i>848</i>&nbsp;    public float getFloatValue() throws IOException { return delegate.getFloatValue(); }</b>
+<i>849</i>&nbsp;
+<i>850</i>&nbsp;    @Override
+<b class="fc"><i>851</i>&nbsp;    public int getIntValue() throws IOException { return delegate.getIntValue(); }</b>
+<i>852</i>&nbsp;
+<i>853</i>&nbsp;    @Override
+<b class="nc"><i>854</i>&nbsp;    public long getLongValue() throws IOException { return delegate.getLongValue(); }</b>
+<i>855</i>&nbsp;
+<i>856</i>&nbsp;    @Override
+<b class="fc"><i>857</i>&nbsp;    public NumberType getNumberType() throws IOException { return delegate.getNumberType(); }</b>
+<i>858</i>&nbsp;
+<i>859</i>&nbsp;    @Override
+<b class="nc"><i>860</i>&nbsp;    public Number getNumberValue() throws IOException { return delegate.getNumberValue(); }</b>
+<i>861</i>&nbsp;
+<i>862</i>&nbsp;    /*
+<i>863</i>&nbsp;    /**********************************************************
+<i>864</i>&nbsp;    /* Public API, access to token information, coercion/conversion
+<i>865</i>&nbsp;    /**********************************************************
+<i>866</i>&nbsp;     */
+<i>867</i>&nbsp;    
+<b class="nc"><i>868</i>&nbsp;    @Override public int getValueAsInt() throws IOException { return delegate.getValueAsInt(); }</b>
+<b class="nc"><i>869</i>&nbsp;    @Override public int getValueAsInt(int defaultValue) throws IOException { return delegate.getValueAsInt(defaultValue); }</b>
+<b class="nc"><i>870</i>&nbsp;    @Override public long getValueAsLong() throws IOException { return delegate.getValueAsLong(); }</b>
+<b class="nc"><i>871</i>&nbsp;    @Override public long getValueAsLong(long defaultValue) throws IOException { return delegate.getValueAsLong(defaultValue); }</b>
+<b class="nc"><i>872</i>&nbsp;    @Override public double getValueAsDouble() throws IOException { return delegate.getValueAsDouble(); }</b>
+<b class="nc"><i>873</i>&nbsp;    @Override public double getValueAsDouble(double defaultValue) throws IOException { return delegate.getValueAsDouble(defaultValue); }</b>
+<b class="nc"><i>874</i>&nbsp;    @Override public boolean getValueAsBoolean() throws IOException { return delegate.getValueAsBoolean(); }</b>
+<b class="nc"><i>875</i>&nbsp;    @Override public boolean getValueAsBoolean(boolean defaultValue) throws IOException { return delegate.getValueAsBoolean(defaultValue); }</b>
+<b class="nc"><i>876</i>&nbsp;    @Override public String getValueAsString() throws IOException { return delegate.getValueAsString(); }</b>
+<b class="nc"><i>877</i>&nbsp;    @Override public String getValueAsString(String defaultValue) throws IOException { return delegate.getValueAsString(defaultValue); }</b>
+<i>878</i>&nbsp;    
+<i>879</i>&nbsp;    /*
+<i>880</i>&nbsp;    /**********************************************************
+<i>881</i>&nbsp;    /* Public API, access to token values, other
+<i>882</i>&nbsp;    /**********************************************************
+<i>883</i>&nbsp;     */
+<i>884</i>&nbsp;
+<b class="nc"><i>885</i>&nbsp;    @Override public Object getEmbeddedObject() throws IOException { return delegate.getEmbeddedObject(); }</b>
+<b class="nc"><i>886</i>&nbsp;    @Override public byte[] getBinaryValue(Base64Variant b64variant) throws IOException { return delegate.getBinaryValue(b64variant); }</b>
+<b class="nc"><i>887</i>&nbsp;    @Override public int readBinaryValue(Base64Variant b64variant, OutputStream out) throws IOException { return delegate.readBinaryValue(b64variant, out); }</b>
+<b class="nc"><i>888</i>&nbsp;    @Override public JsonLocation getTokenLocation() { return delegate.getTokenLocation(); }</b>
+<i>889</i>&nbsp;
+<i>890</i>&nbsp;    /*
+<i>891</i>&nbsp;    /**********************************************************
+<i>892</i>&nbsp;    /* Internal helper methods
+<i>893</i>&nbsp;    /**********************************************************
+<i>894</i>&nbsp;     */
+<i>895</i>&nbsp;
+<i>896</i>&nbsp;    protected JsonStreamContext _filterContext() {
+<b class="fc"><i>897</i>&nbsp;        if (_exposedContext != null) {</b>
+<b class="fc"><i>898</i>&nbsp;            return _exposedContext;</b>
+<i>899</i>&nbsp;        }
+<b class="fc"><i>900</i>&nbsp;        return _headContext;</b>
+<i>901</i>&nbsp;    }
+<i>902</i>&nbsp;  
+<i>903</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 04:22</div>
+</div>
+</body>
+</html>

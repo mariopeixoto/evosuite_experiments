@@ -1,0 +1,897 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: CharsToNameCanonicalizer</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.fasterxml.jackson.core.sym</a> ]
+</div>
+
+<h1>Coverage Summary for Class: CharsToNameCanonicalizer (com.fasterxml.jackson.core.sym)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">CharsToNameCanonicalizer</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (27/ 27)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    95.1%
+  </span>
+  <span class="absValue">
+    (195/ 205)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">CharsToNameCanonicalizer$Bucket</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/ 2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (12/ 12)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (29/ 29)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    95.4%
+  </span>
+  <span class="absValue">
+    (207/ 217)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package com.fasterxml.jackson.core.sym;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import java.util.Arrays;
+<i>4</i>&nbsp;import java.util.BitSet;
+<i>5</i>&nbsp;
+<i>6</i>&nbsp;import com.fasterxml.jackson.core.JsonFactory;
+<i>7</i>&nbsp;import com.fasterxml.jackson.core.util.InternCache;
+<i>8</i>&nbsp;
+<i>9</i>&nbsp;/**
+<i>10</i>&nbsp; * This class is a kind of specialized type-safe Map, from char array to
+<i>11</i>&nbsp; * String value. Specialization means that in addition to type-safety
+<i>12</i>&nbsp; * and specific access patterns (key char array, Value optionally interned
+<i>13</i>&nbsp; * String; values added on access if necessary), and that instances are
+<i>14</i>&nbsp; * meant to be used concurrently, but by using well-defined mechanisms
+<i>15</i>&nbsp; * to obtain such concurrently usable instances. Main use for the class
+<i>16</i>&nbsp; * is to store symbol table information for things like compilers and
+<i>17</i>&nbsp; * parsers; especially when number of symbols (keywords) is limited.
+<i>18</i>&nbsp; *&lt;p&gt;
+<i>19</i>&nbsp; * For optimal performance, usage pattern should be one where matches
+<i>20</i>&nbsp; * should be very common (especially after &quot;warm-up&quot;), and as with most hash-based
+<i>21</i>&nbsp; * maps/sets, that hash codes are uniformly distributed. Also, collisions
+<i>22</i>&nbsp; * are slightly more expensive than with HashMap or HashSet, since hash codes
+<i>23</i>&nbsp; * are not used in resolving collisions; that is, equals() comparison is
+<i>24</i>&nbsp; * done with all symbols in same bucket index.&lt;br&gt;
+<i>25</i>&nbsp; * Finally, rehashing is also more expensive, as hash codes are not
+<i>26</i>&nbsp; * stored; rehashing requires all entries&#39; hash codes to be recalculated.
+<i>27</i>&nbsp; * Reason for not storing hash codes is reduced memory usage, hoping
+<i>28</i>&nbsp; * for better memory locality.
+<i>29</i>&nbsp; *&lt;p&gt;
+<i>30</i>&nbsp; * Usual usage pattern is to create a single &quot;master&quot; instance, and either
+<i>31</i>&nbsp; * use that instance in sequential fashion, or to create derived &quot;child&quot;
+<i>32</i>&nbsp; * instances, which after use, are asked to return possible symbol additions
+<i>33</i>&nbsp; * to master instance. In either case benefit is that symbol table gets
+<i>34</i>&nbsp; * initialized so that further uses are more efficient, as eventually all
+<i>35</i>&nbsp; * symbols needed will already be in symbol table. At that point no more
+<i>36</i>&nbsp; * Symbol String allocations are needed, nor changes to symbol table itself.
+<i>37</i>&nbsp; *&lt;p&gt;
+<i>38</i>&nbsp; * Note that while individual SymbolTable instances are NOT thread-safe
+<i>39</i>&nbsp; * (much like generic collection classes), concurrently used &quot;child&quot;
+<i>40</i>&nbsp; * instances can be freely used without synchronization. However, using
+<i>41</i>&nbsp; * master table concurrently with child instances can only be done if
+<i>42</i>&nbsp; * access to master instance is read-only (i.e. no modifications done).
+<i>43</i>&nbsp; */
+<i>44</i>&nbsp;public final class CharsToNameCanonicalizer
+<i>45</i>&nbsp;{
+<i>46</i>&nbsp;    /* If we use &quot;multiply-add&quot; based hash algorithm, this is the multiplier
+<i>47</i>&nbsp;     * we use.
+<i>48</i>&nbsp;     *&lt;p&gt;
+<i>49</i>&nbsp;     * Note that JDK uses 31; but it seems that 33 produces fewer collisions,
+<i>50</i>&nbsp;     * at least with tests we have.
+<i>51</i>&nbsp;     */
+<i>52</i>&nbsp;    public final static int HASH_MULT = 33;
+<i>53</i>&nbsp;    
+<i>54</i>&nbsp;    /**
+<i>55</i>&nbsp;     * Default initial table size. Shouldn&#39;t be miniscule (as there&#39;s
+<i>56</i>&nbsp;     * cost to both array realloc and rehashing), but let&#39;s keep
+<i>57</i>&nbsp;     * it reasonably small. For systems that properly 
+<i>58</i>&nbsp;     * reuse factories it doesn&#39;t matter either way; but when
+<i>59</i>&nbsp;     * recreating factories often, initial overhead may dominate.
+<i>60</i>&nbsp;     */
+<i>61</i>&nbsp;    private static final int DEFAULT_T_SIZE = 64;
+<i>62</i>&nbsp;
+<i>63</i>&nbsp;    /**
+<i>64</i>&nbsp;     * Let&#39;s not expand symbol tables past some maximum size;
+<i>65</i>&nbsp;     * this should protected against OOMEs caused by large documents
+<i>66</i>&nbsp;     * with unique (~= random) names.
+<i>67</i>&nbsp;     */
+<i>68</i>&nbsp;    private static final int MAX_T_SIZE = 0x10000; // 64k entries == 256k mem
+<i>69</i>&nbsp;
+<i>70</i>&nbsp;    /**
+<i>71</i>&nbsp;     * Let&#39;s only share reasonably sized symbol tables. Max size set to 3/4 of 16k;
+<i>72</i>&nbsp;     * this corresponds to 64k main hash index. This should allow for enough distinct
+<i>73</i>&nbsp;     * names for almost any case.
+<i>74</i>&nbsp;     */
+<i>75</i>&nbsp;    static final int MAX_ENTRIES_FOR_REUSE = 12000;
+<i>76</i>&nbsp;
+<i>77</i>&nbsp;    /**
+<i>78</i>&nbsp;     * Also: to thwart attacks based on hash collisions (which may or may not
+<i>79</i>&nbsp;     * be cheap to calculate), we will need to detect &quot;too long&quot;
+<i>80</i>&nbsp;     * collision chains. Let&#39;s start with static value of 255 entries
+<i>81</i>&nbsp;     * for the longest legal chain.
+<i>82</i>&nbsp;     *&lt;p&gt;
+<i>83</i>&nbsp;     * Note: longest chain we have been able to produce without malicious
+<i>84</i>&nbsp;     * intent has been 38 (with &quot;com.fasterxml.jackson.core.main.TestWithTonsaSymbols&quot;);
+<i>85</i>&nbsp;     * our setting should be reasonable here.
+<i>86</i>&nbsp;     *&lt;p&gt;
+<i>87</i>&nbsp;     * Also note that value was lowered from 255 (2.3 and earlier) to 100 for 2.4
+<i>88</i>&nbsp;     * 
+<i>89</i>&nbsp;     * @since 2.1
+<i>90</i>&nbsp;     */
+<i>91</i>&nbsp;    static final int MAX_COLL_CHAIN_LENGTH = 100;
+<i>92</i>&nbsp;
+<b class="fc"><i>93</i>&nbsp;    final static CharsToNameCanonicalizer sBootstrapSymbolTable = new CharsToNameCanonicalizer();</b>
+<i>94</i>&nbsp;
+<i>95</i>&nbsp;    /*
+<i>96</i>&nbsp;    /**********************************************************
+<i>97</i>&nbsp;    /* Configuration
+<i>98</i>&nbsp;    /**********************************************************
+<i>99</i>&nbsp;     */
+<i>100</i>&nbsp;
+<i>101</i>&nbsp;    /**
+<i>102</i>&nbsp;     * Sharing of learnt symbols is done by optional linking of symbol
+<i>103</i>&nbsp;     * table instances with their parents. When parent linkage is
+<i>104</i>&nbsp;     * defined, and child instance is released (call to &lt;code&gt;release&lt;/code&gt;),
+<i>105</i>&nbsp;     * parent&#39;s shared tables may be updated from the child instance.
+<i>106</i>&nbsp;     */
+<i>107</i>&nbsp;    private CharsToNameCanonicalizer _parent;
+<i>108</i>&nbsp;
+<i>109</i>&nbsp;    /**
+<i>110</i>&nbsp;     * Seed value we use as the base to make hash codes non-static between
+<i>111</i>&nbsp;     * different runs, but still stable for lifetime of a single symbol table
+<i>112</i>&nbsp;     * instance.
+<i>113</i>&nbsp;     * This is done for security reasons, to avoid potential DoS attack via
+<i>114</i>&nbsp;     * hash collisions.
+<i>115</i>&nbsp;     * 
+<i>116</i>&nbsp;     * @since 2.1
+<i>117</i>&nbsp;     */
+<i>118</i>&nbsp;    final private int _hashSeed;
+<i>119</i>&nbsp;
+<i>120</i>&nbsp;    final private int _flags;
+<i>121</i>&nbsp;    
+<i>122</i>&nbsp;    /**
+<i>123</i>&nbsp;     * Whether any canonicalization should be attempted (whether using
+<i>124</i>&nbsp;     * intern or not)
+<i>125</i>&nbsp;     */
+<i>126</i>&nbsp;    private boolean _canonicalize;
+<i>127</i>&nbsp;    
+<i>128</i>&nbsp;    /*
+<i>129</i>&nbsp;    /**********************************************************
+<i>130</i>&nbsp;    /* Actual symbol table data
+<i>131</i>&nbsp;    /**********************************************************
+<i>132</i>&nbsp;     */
+<i>133</i>&nbsp;
+<i>134</i>&nbsp;    /**
+<i>135</i>&nbsp;     * Primary matching symbols; it&#39;s expected most match occur from
+<i>136</i>&nbsp;     * here.
+<i>137</i>&nbsp;     */
+<i>138</i>&nbsp;    private String[] _symbols;
+<i>139</i>&nbsp;
+<i>140</i>&nbsp;    /**
+<i>141</i>&nbsp;     * Overflow buckets; if primary doesn&#39;t match, lookup is done
+<i>142</i>&nbsp;     * from here.
+<i>143</i>&nbsp;     *&lt;p&gt;
+<i>144</i>&nbsp;     * Note: Number of buckets is half of number of symbol entries, on
+<i>145</i>&nbsp;     * assumption there&#39;s less need for buckets.
+<i>146</i>&nbsp;     */
+<i>147</i>&nbsp;    private Bucket[] _buckets;
+<i>148</i>&nbsp;
+<i>149</i>&nbsp;    /**
+<i>150</i>&nbsp;     * Current size (number of entries); needed to know if and when
+<i>151</i>&nbsp;     * rehash.
+<i>152</i>&nbsp;     */
+<i>153</i>&nbsp;    private int _size;
+<i>154</i>&nbsp;
+<i>155</i>&nbsp;    /**
+<i>156</i>&nbsp;     * Limit that indicates maximum size this instance can hold before
+<i>157</i>&nbsp;     * it needs to be expanded and rehashed. Calculated using fill
+<i>158</i>&nbsp;     * factor passed in to constructor.
+<i>159</i>&nbsp;     */
+<i>160</i>&nbsp;    private int _sizeThreshold;
+<i>161</i>&nbsp;
+<i>162</i>&nbsp;    /**
+<i>163</i>&nbsp;     * Mask used to get index from hash values; equal to
+<i>164</i>&nbsp;     * &lt;code&gt;_buckets.length - 1&lt;/code&gt;, when _buckets.length is
+<i>165</i>&nbsp;     * a power of two.
+<i>166</i>&nbsp;     */
+<i>167</i>&nbsp;    private int _indexMask;
+<i>168</i>&nbsp;
+<i>169</i>&nbsp;    /**
+<i>170</i>&nbsp;     * We need to keep track of the longest collision list; this is needed
+<i>171</i>&nbsp;     * both to indicate problems with attacks and to allow flushing for
+<i>172</i>&nbsp;     * other cases.
+<i>173</i>&nbsp;     * 
+<i>174</i>&nbsp;     * @since 2.1
+<i>175</i>&nbsp;     */
+<i>176</i>&nbsp;    private int _longestCollisionList;
+<i>177</i>&nbsp;
+<i>178</i>&nbsp;    /*
+<i>179</i>&nbsp;    /**********************************************************
+<i>180</i>&nbsp;    /* State regarding shared arrays
+<i>181</i>&nbsp;    /**********************************************************
+<i>182</i>&nbsp;     */
+<i>183</i>&nbsp;
+<i>184</i>&nbsp;    /**
+<i>185</i>&nbsp;     * Flag that indicates if any changes have been made to the data;
+<i>186</i>&nbsp;     * used to both determine if bucket array needs to be copied when
+<i>187</i>&nbsp;     * (first) change is made, and potentially if updated bucket list
+<i>188</i>&nbsp;     * is to be resync&#39;ed back to master instance.
+<i>189</i>&nbsp;     */
+<i>190</i>&nbsp;    private boolean _dirty;
+<i>191</i>&nbsp;
+<i>192</i>&nbsp;    /*
+<i>193</i>&nbsp;    /**********************************************************
+<i>194</i>&nbsp;    /* Bit of DoS detection goodness
+<i>195</i>&nbsp;    /**********************************************************
+<i>196</i>&nbsp;     */
+<i>197</i>&nbsp;
+<i>198</i>&nbsp;    /**
+<i>199</i>&nbsp;     * Lazily constructed structure that is used to keep track of
+<i>200</i>&nbsp;     * collision buckets that have overflowed once: this is used
+<i>201</i>&nbsp;     * to detect likely attempts at denial-of-service attacks that
+<i>202</i>&nbsp;     * uses hash collisions.
+<i>203</i>&nbsp;     * 
+<i>204</i>&nbsp;     * @since 2.4
+<i>205</i>&nbsp;     */
+<i>206</i>&nbsp;    private BitSet _overflows;
+<i>207</i>&nbsp;
+<i>208</i>&nbsp;    /*
+<i>209</i>&nbsp;    /**********************************************************
+<i>210</i>&nbsp;    /* Life-cycle
+<i>211</i>&nbsp;    /**********************************************************
+<i>212</i>&nbsp;     */
+<i>213</i>&nbsp;
+<i>214</i>&nbsp;    /**
+<i>215</i>&nbsp;     * Method called to create root canonicalizer for a {@link com.fasterxml.jackson.core.JsonFactory}
+<i>216</i>&nbsp;     * instance. Root instance is never used directly; its main use is for
+<i>217</i>&nbsp;     * storing and sharing underlying symbol arrays as needed.
+<i>218</i>&nbsp;     */
+<i>219</i>&nbsp;    public static CharsToNameCanonicalizer createRoot() {
+<i>220</i>&nbsp;        /* [Issue-21]: Need to use a variable seed, to thwart hash-collision
+<i>221</i>&nbsp;         * based attacks.
+<i>222</i>&nbsp;         */
+<b class="fc"><i>223</i>&nbsp;        long now = System.currentTimeMillis();</b>
+<i>224</i>&nbsp;        // ensure it&#39;s not 0; and might as well require to be odd so:
+<b class="fc"><i>225</i>&nbsp;        int seed = (((int) now) + ((int) (now &gt;&gt;&gt; 32))) | 1;</b>
+<b class="fc"><i>226</i>&nbsp;        return createRoot(seed);</b>
+<i>227</i>&nbsp;    }
+<i>228</i>&nbsp;    
+<i>229</i>&nbsp;    protected static CharsToNameCanonicalizer createRoot(int hashSeed) {
+<b class="fc"><i>230</i>&nbsp;        return sBootstrapSymbolTable.makeOrphan(hashSeed);</b>
+<i>231</i>&nbsp;    }
+<i>232</i>&nbsp;
+<i>233</i>&nbsp;    /**
+<i>234</i>&nbsp;     * Main method for constructing a master symbol table instance.
+<i>235</i>&nbsp;     */
+<b class="fc"><i>236</i>&nbsp;    private CharsToNameCanonicalizer() {</b>
+<i>237</i>&nbsp;        // these settings don&#39;t really matter for the bootstrap instance
+<b class="fc"><i>238</i>&nbsp;        _canonicalize = true;</b>
+<b class="fc"><i>239</i>&nbsp;        _flags = -1;</b>
+<i>240</i>&nbsp;        // And we&#39;ll also set flags so no copying of buckets is needed:
+<b class="fc"><i>241</i>&nbsp;        _dirty = true;</b>
+<b class="fc"><i>242</i>&nbsp;        _hashSeed = 0;</b>
+<b class="fc"><i>243</i>&nbsp;        _longestCollisionList = 0;</b>
+<b class="fc"><i>244</i>&nbsp;        initTables(DEFAULT_T_SIZE);</b>
+<b class="fc"><i>245</i>&nbsp;    }</b>
+<i>246</i>&nbsp;
+<i>247</i>&nbsp;    private void initTables(int initialSize)
+<i>248</i>&nbsp;    {
+<b class="fc"><i>249</i>&nbsp;        _symbols = new String[initialSize];</b>
+<b class="fc"><i>250</i>&nbsp;        _buckets = new Bucket[initialSize &gt;&gt; 1];</b>
+<i>251</i>&nbsp;        // Mask is easy to calc for powers of two.
+<b class="fc"><i>252</i>&nbsp;        _indexMask = initialSize - 1;</b>
+<b class="fc"><i>253</i>&nbsp;        _size = 0;</b>
+<b class="fc"><i>254</i>&nbsp;        _longestCollisionList = 0;</b>
+<i>255</i>&nbsp;        // Hard-coded fill factor is 75%
+<b class="fc"><i>256</i>&nbsp;        _sizeThreshold = _thresholdSize(initialSize);</b>
+<b class="fc"><i>257</i>&nbsp;    }</b>
+<i>258</i>&nbsp;
+<b class="fc"><i>259</i>&nbsp;    private static int _thresholdSize(int hashAreaSize) { return hashAreaSize - (hashAreaSize &gt;&gt; 2); }</b>
+<i>260</i>&nbsp;    
+<i>261</i>&nbsp;    /**
+<i>262</i>&nbsp;     * Internal constructor used when creating child instances.
+<i>263</i>&nbsp;     */
+<i>264</i>&nbsp;    private CharsToNameCanonicalizer(CharsToNameCanonicalizer parent, int flags,
+<b class="fc"><i>265</i>&nbsp;            String[] symbols, Bucket[] buckets, int size, int hashSeed, int longestColl) {</b>
+<b class="fc"><i>266</i>&nbsp;        _parent = parent;</b>
+<i>267</i>&nbsp;
+<b class="fc"><i>268</i>&nbsp;        _flags = flags;</b>
+<b class="fc"><i>269</i>&nbsp;        _canonicalize = JsonFactory.Feature.CANONICALIZE_FIELD_NAMES.enabledIn(flags);</b>
+<i>270</i>&nbsp;
+<b class="fc"><i>271</i>&nbsp;        _symbols = symbols;</b>
+<b class="fc"><i>272</i>&nbsp;        _buckets = buckets;</b>
+<b class="fc"><i>273</i>&nbsp;        _size = size;</b>
+<b class="fc"><i>274</i>&nbsp;        _hashSeed = hashSeed;</b>
+<i>275</i>&nbsp;        // Hard-coded fill factor, 75%
+<b class="fc"><i>276</i>&nbsp;        int arrayLen = (symbols.length);</b>
+<b class="fc"><i>277</i>&nbsp;        _sizeThreshold = _thresholdSize(arrayLen);</b>
+<b class="fc"><i>278</i>&nbsp;        _indexMask =  (arrayLen - 1);</b>
+<b class="fc"><i>279</i>&nbsp;        _longestCollisionList = longestColl;</b>
+<i>280</i>&nbsp;
+<i>281</i>&nbsp;        // Need to make copies of arrays, if/when adding new entries
+<b class="fc"><i>282</i>&nbsp;        _dirty = false;</b>
+<b class="fc"><i>283</i>&nbsp;    }</b>
+<i>284</i>&nbsp;
+<i>285</i>&nbsp;    /**
+<i>286</i>&nbsp;     * &quot;Factory&quot; method; will create a new child instance of this symbol
+<i>287</i>&nbsp;     * table. It will be a copy-on-write instance, ie. it will only use
+<i>288</i>&nbsp;     * read-only copy of parent&#39;s data, but when changes are needed, a
+<i>289</i>&nbsp;     * copy will be created.
+<i>290</i>&nbsp;     *&lt;p&gt;
+<i>291</i>&nbsp;     * Note: while this method is synchronized, it is generally not
+<i>292</i>&nbsp;     * safe to both use makeChild/mergeChild, AND to use instance
+<i>293</i>&nbsp;     * actively. Instead, a separate &#39;root&#39; instance should be used
+<i>294</i>&nbsp;     * on which only makeChild/mergeChild are called, but instance itself
+<i>295</i>&nbsp;     * is not used as a symbol table.
+<i>296</i>&nbsp;     */
+<i>297</i>&nbsp;    public CharsToNameCanonicalizer makeChild(int flags) {
+<i>298</i>&nbsp;        /* 24-Jul-2012, tatu: Trying to reduce scope of synchronization, assuming
+<i>299</i>&nbsp;         *   that synchronizing construction is the (potentially) expensive part,
+<i>300</i>&nbsp;         *   and not so much short copy-the-variables thing.
+<i>301</i>&nbsp;         */
+<i>302</i>&nbsp;        final String[] symbols;
+<i>303</i>&nbsp;        final Bucket[] buckets;
+<i>304</i>&nbsp;        final int size;
+<i>305</i>&nbsp;        final int hashSeed;
+<i>306</i>&nbsp;        final int longestCollisionList;
+<i>307</i>&nbsp;        
+<b class="fc"><i>308</i>&nbsp;        synchronized (this) {</b>
+<b class="fc"><i>309</i>&nbsp;            symbols = _symbols;</b>
+<b class="fc"><i>310</i>&nbsp;            buckets = _buckets;</b>
+<b class="fc"><i>311</i>&nbsp;            size = _size;</b>
+<b class="fc"><i>312</i>&nbsp;            hashSeed = _hashSeed;</b>
+<b class="fc"><i>313</i>&nbsp;            longestCollisionList = _longestCollisionList;</b>
+<b class="fc"><i>314</i>&nbsp;        }</b>
+<b class="fc"><i>315</i>&nbsp;        return new CharsToNameCanonicalizer(this, flags,</b>
+<i>316</i>&nbsp;                symbols, buckets, size, hashSeed, longestCollisionList);
+<i>317</i>&nbsp;    }
+<i>318</i>&nbsp;
+<i>319</i>&nbsp;    private CharsToNameCanonicalizer makeOrphan(int seed) {
+<b class="fc"><i>320</i>&nbsp;        return new CharsToNameCanonicalizer(null, -1, _symbols, _buckets, _size, seed, _longestCollisionList);</b>
+<i>321</i>&nbsp;    }
+<i>322</i>&nbsp;
+<i>323</i>&nbsp;    /**
+<i>324</i>&nbsp;     * Method that allows contents of child table to potentially be
+<i>325</i>&nbsp;     * &quot;merged in&quot; with contents of this symbol table.
+<i>326</i>&nbsp;     *&lt;p&gt;
+<i>327</i>&nbsp;     * Note that caller has to make sure symbol table passed in is
+<i>328</i>&nbsp;     * really a child or sibling of this symbol table.
+<i>329</i>&nbsp;     */
+<i>330</i>&nbsp;    private void mergeChild(CharsToNameCanonicalizer child) {
+<i>331</i>&nbsp;        /* One caveat: let&#39;s try to avoid problems with
+<i>332</i>&nbsp;         * degenerate cases of documents with generated &quot;random&quot;
+<i>333</i>&nbsp;         * names: for these, symbol tables would bloat indefinitely.
+<i>334</i>&nbsp;         * One way to do this is to just purge tables if they grow
+<i>335</i>&nbsp;         * too large, and that&#39;s what we&#39;ll do here.
+<i>336</i>&nbsp;         */
+<b class="fc"><i>337</i>&nbsp;        if (child.size() &gt; MAX_ENTRIES_FOR_REUSE) {</b>
+<i>338</i>&nbsp;            // Should there be a way to get notified about this event, to log it or such?
+<i>339</i>&nbsp;            // (as it&#39;s somewhat abnormal thing to happen)
+<i>340</i>&nbsp;            // At any rate, need to clean up the tables, then:
+<b class="fc"><i>341</i>&nbsp;            synchronized (this) {</b>
+<b class="fc"><i>342</i>&nbsp;                initTables(DEFAULT_T_SIZE * 4); // no point in starting from tiny tho</b>
+<i>343</i>&nbsp;                // Dirty flag... well, let&#39;s just clear it. Shouldn&#39;t really matter for master tables
+<i>344</i>&nbsp;                // (which this is, given something is merged to it)
+<b class="fc"><i>345</i>&nbsp;                _dirty = false;</b>
+<b class="fc"><i>346</i>&nbsp;            }</b>
+<i>347</i>&nbsp;        } else {
+<i>348</i>&nbsp;            // Otherwise, we&#39;ll merge changed stuff in, if there are  more entries (which
+<i>349</i>&nbsp;            // may not be the case if one of siblings has added symbols first or such)
+<b class="fc"><i>350</i>&nbsp;            if (child.size() &lt;= size()) { // nothing to add</b>
+<b class="nc"><i>351</i>&nbsp;                return;</b>
+<i>352</i>&nbsp;            }
+<i>353</i>&nbsp;            // Okie dokie, let&#39;s get the data in!
+<b class="fc"><i>354</i>&nbsp;            synchronized (this) {</b>
+<b class="fc"><i>355</i>&nbsp;                _symbols = child._symbols;</b>
+<b class="fc"><i>356</i>&nbsp;                _buckets = child._buckets;</b>
+<b class="fc"><i>357</i>&nbsp;                _size = child._size;</b>
+<b class="fc"><i>358</i>&nbsp;                _sizeThreshold = child._sizeThreshold;</b>
+<b class="fc"><i>359</i>&nbsp;                _indexMask = child._indexMask;</b>
+<b class="fc"><i>360</i>&nbsp;                _longestCollisionList = child._longestCollisionList;</b>
+<i>361</i>&nbsp;                // Dirty flag... well, let&#39;s just clear it. Shouldn&#39;t really matter for master tables
+<i>362</i>&nbsp;                // (which this is, given something is merged to it)
+<b class="fc"><i>363</i>&nbsp;                _dirty = false;</b>
+<b class="fc"><i>364</i>&nbsp;            }</b>
+<i>365</i>&nbsp;        }
+<b class="fc"><i>366</i>&nbsp;    }</b>
+<i>367</i>&nbsp;
+<i>368</i>&nbsp;    public void release(){
+<i>369</i>&nbsp;        // If nothing has been added, nothing to do
+<b class="fc"><i>370</i>&nbsp;        if (!maybeDirty()) { return; }</b>
+<b class="fc"><i>371</i>&nbsp;        if (_parent != null &amp;&amp; _canonicalize) { // canonicalize set to false if max size was reached</b>
+<b class="fc"><i>372</i>&nbsp;            _parent.mergeChild(this);</b>
+<i>373</i>&nbsp;            /* Let&#39;s also mark this instance as dirty, so that just in
+<i>374</i>&nbsp;             * case release was too early, there&#39;s no corruption
+<i>375</i>&nbsp;             * of possibly shared data.
+<i>376</i>&nbsp;             */
+<b class="fc"><i>377</i>&nbsp;            _dirty = false;</b>
+<i>378</i>&nbsp;        }
+<b class="fc"><i>379</i>&nbsp;    }</b>
+<i>380</i>&nbsp;
+<i>381</i>&nbsp;    /*
+<i>382</i>&nbsp;    /**********************************************************
+<i>383</i>&nbsp;    /* Public API, generic accessors:
+<i>384</i>&nbsp;    /**********************************************************
+<i>385</i>&nbsp;     */
+<i>386</i>&nbsp;
+<b class="fc"><i>387</i>&nbsp;    public int size() { return _size; }</b>
+<i>388</i>&nbsp;
+<i>389</i>&nbsp;    /**
+<i>390</i>&nbsp;     * Method for checking number of primary hash buckets this symbol
+<i>391</i>&nbsp;     * table uses.
+<i>392</i>&nbsp;     * 
+<i>393</i>&nbsp;     * @since 2.1
+<i>394</i>&nbsp;     */
+<b class="fc"><i>395</i>&nbsp;    public int bucketCount() {  return _symbols.length; }</b>
+<b class="fc"><i>396</i>&nbsp;    public boolean maybeDirty() { return _dirty; }</b>
+<b class="fc"><i>397</i>&nbsp;    public int hashSeed() { return _hashSeed; }</b>
+<i>398</i>&nbsp;    
+<i>399</i>&nbsp;    /**
+<i>400</i>&nbsp;     * Method mostly needed by unit tests; calculates number of
+<i>401</i>&nbsp;     * entries that are in collision list. Value can be at most
+<i>402</i>&nbsp;     * ({@link #size} - 1), but should usually be much lower, ideally 0.
+<i>403</i>&nbsp;     * 
+<i>404</i>&nbsp;     * @since 2.1
+<i>405</i>&nbsp;     */
+<i>406</i>&nbsp;    public int collisionCount() {
+<b class="fc"><i>407</i>&nbsp;        int count = 0;</b>
+<i>408</i>&nbsp;        
+<b class="fc"><i>409</i>&nbsp;        for (Bucket bucket : _buckets) {</b>
+<b class="fc"><i>410</i>&nbsp;            if (bucket != null) {</b>
+<b class="fc"><i>411</i>&nbsp;                count += bucket.length;</b>
+<i>412</i>&nbsp;            }
+<i>413</i>&nbsp;        }
+<b class="fc"><i>414</i>&nbsp;        return count;</b>
+<i>415</i>&nbsp;    }
+<i>416</i>&nbsp;
+<i>417</i>&nbsp;    /**
+<i>418</i>&nbsp;     * Method mostly needed by unit tests; calculates length of the
+<i>419</i>&nbsp;     * longest collision chain. This should typically be a low number,
+<i>420</i>&nbsp;     * but may be up to {@link #size} - 1 in the pathological case
+<i>421</i>&nbsp;     * 
+<i>422</i>&nbsp;     * @since 2.1
+<i>423</i>&nbsp;     */
+<b class="fc"><i>424</i>&nbsp;    public int maxCollisionLength() { return _longestCollisionList; }</b>
+<i>425</i>&nbsp;
+<i>426</i>&nbsp;    /*
+<i>427</i>&nbsp;    /**********************************************************
+<i>428</i>&nbsp;    /* Public API, accessing symbols:
+<i>429</i>&nbsp;    /**********************************************************
+<i>430</i>&nbsp;     */
+<i>431</i>&nbsp;
+<i>432</i>&nbsp;    public String findSymbol(char[] buffer, int start, int len, int h)
+<i>433</i>&nbsp;    {
+<b class="fc"><i>434</i>&nbsp;        if (len &lt; 1) { // empty Strings are simplest to handle up front</b>
+<b class="fc"><i>435</i>&nbsp;            return &quot;&quot;;</b>
+<i>436</i>&nbsp;        }
+<b class="fc"><i>437</i>&nbsp;        if (!_canonicalize) { // [JACKSON-259]</b>
+<b class="fc"><i>438</i>&nbsp;            return new String(buffer, start, len);</b>
+<i>439</i>&nbsp;        }
+<i>440</i>&nbsp;
+<i>441</i>&nbsp;        /* Related to problems with sub-standard hashing (somewhat
+<i>442</i>&nbsp;         * relevant for collision attacks too), let&#39;s try little
+<i>443</i>&nbsp;         * bit of shuffling to improve hash codes.
+<i>444</i>&nbsp;         * (note, however, that this can&#39;t help with full collisions)
+<i>445</i>&nbsp;         */
+<b class="fc"><i>446</i>&nbsp;        int index = _hashToIndex(h);</b>
+<b class="fc"><i>447</i>&nbsp;        String sym = _symbols[index];</b>
+<i>448</i>&nbsp;
+<i>449</i>&nbsp;        // Optimal case; checking existing primary symbol for hash index:
+<b class="fc"><i>450</i>&nbsp;        if (sym != null) {</b>
+<i>451</i>&nbsp;            // Let&#39;s inline primary String equality checking:
+<b class="fc"><i>452</i>&nbsp;            if (sym.length() == len) {</b>
+<b class="fc"><i>453</i>&nbsp;                int i = 0;</b>
+<b class="fc"><i>454</i>&nbsp;                while (sym.charAt(i) == buffer[start+i]) {</b>
+<i>455</i>&nbsp;                    // Optimal case; primary match found
+<b class="fc"><i>456</i>&nbsp;                    if (++i == len) {</b>
+<b class="fc"><i>457</i>&nbsp;                        return sym;</b>
+<i>458</i>&nbsp;                    }
+<i>459</i>&nbsp;                }
+<i>460</i>&nbsp;            }
+<b class="fc"><i>461</i>&nbsp;            Bucket b = _buckets[index&gt;&gt;1];</b>
+<b class="fc"><i>462</i>&nbsp;            if (b != null) {</b>
+<b class="fc"><i>463</i>&nbsp;                sym = b.has(buffer, start, len);</b>
+<b class="fc"><i>464</i>&nbsp;                if (sym != null) {</b>
+<b class="fc"><i>465</i>&nbsp;                    return sym;</b>
+<i>466</i>&nbsp;                }
+<b class="fc"><i>467</i>&nbsp;                sym = _findSymbol2(buffer, start, len, b.next);</b>
+<b class="fc"><i>468</i>&nbsp;                if (sym != null) {</b>
+<b class="fc"><i>469</i>&nbsp;                    return sym;</b>
+<i>470</i>&nbsp;                }
+<i>471</i>&nbsp;            }
+<i>472</i>&nbsp;        }
+<b class="fc"><i>473</i>&nbsp;        return _addSymbol(buffer, start, len, h, index);</b>
+<i>474</i>&nbsp;    }
+<i>475</i>&nbsp;
+<i>476</i>&nbsp;    private String _findSymbol2(char[] buffer, int start, int len, Bucket b) {
+<b class="fc"><i>477</i>&nbsp;        while (b != null) {</b>
+<b class="fc"><i>478</i>&nbsp;            String sym = b.has(buffer, start, len);</b>
+<b class="fc"><i>479</i>&nbsp;            if (sym != null) {</b>
+<b class="fc"><i>480</i>&nbsp;                return sym;</b>
+<i>481</i>&nbsp;            }
+<b class="fc"><i>482</i>&nbsp;            b = b.next;</b>
+<b class="fc"><i>483</i>&nbsp;        }</b>
+<b class="fc"><i>484</i>&nbsp;        return null;</b>
+<i>485</i>&nbsp;    }
+<i>486</i>&nbsp;    
+<i>487</i>&nbsp;    private String _addSymbol(char[] buffer, int start, int len, int h, int index)
+<i>488</i>&nbsp;    {
+<b class="fc"><i>489</i>&nbsp;        if (!_dirty) { //need to do copy-on-write?</b>
+<b class="fc"><i>490</i>&nbsp;            copyArrays();</b>
+<b class="fc"><i>491</i>&nbsp;            _dirty = true;</b>
+<b class="fc"><i>492</i>&nbsp;        } else if (_size &gt;= _sizeThreshold) { // Need to expand?</b>
+<b class="fc"><i>493</i>&nbsp;            rehash();</b>
+<i>494</i>&nbsp;            /* Need to recalc hash; rare occurence (index mask has been
+<i>495</i>&nbsp;             * recalculated as part of rehash)
+<i>496</i>&nbsp;             */
+<b class="fc"><i>497</i>&nbsp;            index = _hashToIndex(calcHash(buffer, start, len));</b>
+<i>498</i>&nbsp;        }
+<i>499</i>&nbsp;
+<b class="fc"><i>500</i>&nbsp;        String newSymbol = new String(buffer, start, len);</b>
+<b class="fc"><i>501</i>&nbsp;        if (JsonFactory.Feature.INTERN_FIELD_NAMES.enabledIn(_flags)) {</b>
+<b class="fc"><i>502</i>&nbsp;            newSymbol = InternCache.instance.intern(newSymbol);</b>
+<i>503</i>&nbsp;        }
+<b class="fc"><i>504</i>&nbsp;        ++_size;</b>
+<i>505</i>&nbsp;        // Ok; do we need to add primary entry, or a bucket?
+<b class="fc"><i>506</i>&nbsp;        if (_symbols[index] == null) {</b>
+<b class="fc"><i>507</i>&nbsp;            _symbols[index] = newSymbol;</b>
+<i>508</i>&nbsp;        } else {
+<b class="fc"><i>509</i>&nbsp;            final int bix = (index &gt;&gt; 1);</b>
+<b class="fc"><i>510</i>&nbsp;            Bucket newB = new Bucket(newSymbol, _buckets[bix]);</b>
+<b class="fc"><i>511</i>&nbsp;            int collLen = newB.length;</b>
+<b class="fc"><i>512</i>&nbsp;            if (collLen &gt; MAX_COLL_CHAIN_LENGTH) {</b>
+<i>513</i>&nbsp;                /* 23-May-2014, tatu: Instead of throwing an exception right away, let&#39;s handle
+<i>514</i>&nbsp;                 *   in bit smarter way.
+<i>515</i>&nbsp;                 */
+<b class="fc"><i>516</i>&nbsp;                _handleSpillOverflow(bix, newB);</b>
+<i>517</i>&nbsp;            } else {
+<b class="fc"><i>518</i>&nbsp;                _buckets[bix] = newB;</b>
+<b class="fc"><i>519</i>&nbsp;                _longestCollisionList = Math.max(collLen, _longestCollisionList);</b>
+<i>520</i>&nbsp;            }
+<i>521</i>&nbsp;        }
+<i>522</i>&nbsp;
+<b class="fc"><i>523</i>&nbsp;        return newSymbol;</b>
+<i>524</i>&nbsp;    }
+<i>525</i>&nbsp;
+<i>526</i>&nbsp;    private void _handleSpillOverflow(int bindex, Bucket newBucket)
+<i>527</i>&nbsp;    {
+<b class="fc"><i>528</i>&nbsp;        if (_overflows == null) {</b>
+<b class="fc"><i>529</i>&nbsp;            _overflows = new BitSet();</b>
+<b class="fc"><i>530</i>&nbsp;            _overflows.set(bindex);</b>
+<i>531</i>&nbsp;        } else {
+<b class="fc"><i>532</i>&nbsp;            if (_overflows.get(bindex)) {</b>
+<i>533</i>&nbsp;                // Has happened once already, so not a coincident...
+<b class="fc"><i>534</i>&nbsp;                if (JsonFactory.Feature.FAIL_ON_SYMBOL_HASH_OVERFLOW.enabledIn(_flags)) {</b>
+<b class="fc"><i>535</i>&nbsp;                    reportTooManyCollisions(MAX_COLL_CHAIN_LENGTH);</b>
+<i>536</i>&nbsp;                }
+<i>537</i>&nbsp;                // but even if we don&#39;t fail, we will stop canonicalizing:
+<b class="fc"><i>538</i>&nbsp;                _canonicalize = false;</b>
+<i>539</i>&nbsp;            } else {
+<b class="nc"><i>540</i>&nbsp;                _overflows.set(bindex);</b>
+<i>541</i>&nbsp;            }
+<i>542</i>&nbsp;        }
+<i>543</i>&nbsp;        // regardless, if we get this far, clear up the bucket, adjust size appropriately.
+<b class="fc"><i>544</i>&nbsp;        _symbols[bindex + bindex] = newBucket.symbol;</b>
+<b class="fc"><i>545</i>&nbsp;        _buckets[bindex] = null;</b>
+<i>546</i>&nbsp;        // newBucket contains new symbol; but we wil 
+<b class="fc"><i>547</i>&nbsp;        _size -= (newBucket.length);</b>
+<i>548</i>&nbsp;        // we could calculate longest; but for now just mark as invalid
+<b class="fc"><i>549</i>&nbsp;        _longestCollisionList = -1;</b>
+<b class="fc"><i>550</i>&nbsp;    }</b>
+<i>551</i>&nbsp;
+<i>552</i>&nbsp;    /**
+<i>553</i>&nbsp;     * Helper method that takes in a &quot;raw&quot; hash value, shuffles it as necessary,
+<i>554</i>&nbsp;     * and truncates to be used as the index.
+<i>555</i>&nbsp;     */
+<i>556</i>&nbsp;    public int _hashToIndex(int rawHash) {
+<i>557</i>&nbsp;        // doing these seems to help a bit
+<b class="fc"><i>558</i>&nbsp;        rawHash += (rawHash &gt;&gt;&gt; 15);</b>
+<b class="fc"><i>559</i>&nbsp;        rawHash ^= (rawHash &lt;&lt; 7);</b>
+<b class="fc"><i>560</i>&nbsp;        rawHash += (rawHash &gt;&gt;&gt; 3);</b>
+<b class="fc"><i>561</i>&nbsp;        return (rawHash &amp; _indexMask);</b>
+<i>562</i>&nbsp;    }
+<i>563</i>&nbsp;    
+<i>564</i>&nbsp;    /**
+<i>565</i>&nbsp;     * Implementation of a hashing method for variable length
+<i>566</i>&nbsp;     * Strings. Most of the time intention is that this calculation
+<i>567</i>&nbsp;     * is done by caller during parsing, not here; however, sometimes
+<i>568</i>&nbsp;     * it needs to be done for parsed &quot;String&quot; too.
+<i>569</i>&nbsp;     *
+<i>570</i>&nbsp;     * @param len Length of String; has to be at least 1 (caller guarantees
+<i>571</i>&nbsp;     *   this pre-condition)
+<i>572</i>&nbsp;     */
+<i>573</i>&nbsp;    public int calcHash(char[] buffer, int start, int len) {
+<b class="fc"><i>574</i>&nbsp;        int hash = _hashSeed;</b>
+<b class="fc"><i>575</i>&nbsp;        for (int i = start, end = start+len; i &lt; end; ++i) {</b>
+<b class="fc"><i>576</i>&nbsp;            hash = (hash * HASH_MULT) + (int) buffer[i];</b>
+<i>577</i>&nbsp;        }
+<i>578</i>&nbsp;        // NOTE: shuffling, if any, is done in &#39;findSymbol()&#39;, not here:
+<b class="fc"><i>579</i>&nbsp;        return (hash == 0) ? 1 : hash;</b>
+<i>580</i>&nbsp;    }
+<i>581</i>&nbsp;
+<i>582</i>&nbsp;    public int calcHash(String key)
+<i>583</i>&nbsp;    {
+<b class="fc"><i>584</i>&nbsp;        final int len = key.length();</b>
+<i>585</i>&nbsp;        
+<b class="fc"><i>586</i>&nbsp;        int hash = _hashSeed;</b>
+<b class="fc"><i>587</i>&nbsp;        for (int i = 0; i &lt; len; ++i) {</b>
+<b class="fc"><i>588</i>&nbsp;            hash = (hash * HASH_MULT) + (int) key.charAt(i);</b>
+<i>589</i>&nbsp;        }
+<i>590</i>&nbsp;        // NOTE: shuffling, if any, is done in &#39;findSymbol()&#39;, not here:
+<b class="fc"><i>591</i>&nbsp;        return (hash == 0) ? 1 : hash;</b>
+<i>592</i>&nbsp;    }
+<i>593</i>&nbsp;
+<i>594</i>&nbsp;    /*
+<i>595</i>&nbsp;    /**********************************************************
+<i>596</i>&nbsp;    /* Internal methods
+<i>597</i>&nbsp;    /**********************************************************
+<i>598</i>&nbsp;     */
+<i>599</i>&nbsp;
+<i>600</i>&nbsp;    /**
+<i>601</i>&nbsp;     * Method called when copy-on-write is needed; generally when first
+<i>602</i>&nbsp;     * change is made to a derived symbol table.
+<i>603</i>&nbsp;     */
+<i>604</i>&nbsp;    private void copyArrays() {
+<b class="fc"><i>605</i>&nbsp;        final String[] oldSyms = _symbols;</b>
+<b class="fc"><i>606</i>&nbsp;        _symbols = Arrays.copyOf(oldSyms, oldSyms.length);</b>
+<b class="fc"><i>607</i>&nbsp;        final Bucket[] oldBuckets = _buckets;</b>
+<b class="fc"><i>608</i>&nbsp;        _buckets = Arrays.copyOf(oldBuckets, oldBuckets.length);</b>
+<b class="fc"><i>609</i>&nbsp;    }</b>
+<i>610</i>&nbsp;
+<i>611</i>&nbsp;    /**
+<i>612</i>&nbsp;     * Method called when size (number of entries) of symbol table grows
+<i>613</i>&nbsp;     * so big that load factor is exceeded. Since size has to remain
+<i>614</i>&nbsp;     * power of two, arrays will then always be doubled. Main work
+<i>615</i>&nbsp;     * is really redistributing old entries into new String/Bucket
+<i>616</i>&nbsp;     * entries.
+<i>617</i>&nbsp;     */
+<i>618</i>&nbsp;    private void rehash() {
+<b class="fc"><i>619</i>&nbsp;        int size = _symbols.length;</b>
+<b class="fc"><i>620</i>&nbsp;        int newSize = size + size;</b>
+<i>621</i>&nbsp;
+<i>622</i>&nbsp;        /* 12-Mar-2010, tatu: Let&#39;s actually limit maximum size we are
+<i>623</i>&nbsp;         *    prepared to use, to guard against OOME in case of unbounded
+<i>624</i>&nbsp;         *    name sets (unique [non-repeating] names)
+<i>625</i>&nbsp;         */
+<b class="fc"><i>626</i>&nbsp;        if (newSize &gt; MAX_T_SIZE) {</b>
+<i>627</i>&nbsp;            /* If this happens, there&#39;s no point in either growing or shrinking hash areas.
+<i>628</i>&nbsp;             * Rather, let&#39;s just cut our losses and stop canonicalizing.
+<i>629</i>&nbsp;             */
+<b class="nc"><i>630</i>&nbsp;            _size = 0;</b>
+<b class="nc"><i>631</i>&nbsp;            _canonicalize = false;</b>
+<i>632</i>&nbsp;            // in theory, could just leave these as null, but...
+<b class="nc"><i>633</i>&nbsp;            _symbols = new String[DEFAULT_T_SIZE];</b>
+<b class="nc"><i>634</i>&nbsp;            _buckets = new Bucket[DEFAULT_T_SIZE&gt;&gt;1];</b>
+<b class="nc"><i>635</i>&nbsp;            _indexMask = DEFAULT_T_SIZE-1;</b>
+<b class="nc"><i>636</i>&nbsp;            _dirty = true;</b>
+<b class="nc"><i>637</i>&nbsp;            return;</b>
+<i>638</i>&nbsp;        }
+<i>639</i>&nbsp;        
+<b class="fc"><i>640</i>&nbsp;        String[] oldSyms = _symbols;</b>
+<b class="fc"><i>641</i>&nbsp;        Bucket[] oldBuckets = _buckets;</b>
+<b class="fc"><i>642</i>&nbsp;        _symbols = new String[newSize];</b>
+<b class="fc"><i>643</i>&nbsp;        _buckets = new Bucket[newSize &gt;&gt; 1];</b>
+<i>644</i>&nbsp;        // Let&#39;s update index mask, threshold, now (needed for rehashing)
+<b class="fc"><i>645</i>&nbsp;        _indexMask = newSize - 1;</b>
+<b class="fc"><i>646</i>&nbsp;        _sizeThreshold = _thresholdSize(newSize);</b>
+<i>647</i>&nbsp;        
+<b class="fc"><i>648</i>&nbsp;        int count = 0; // let&#39;s do sanity check</b>
+<i>649</i>&nbsp;
+<i>650</i>&nbsp;        /* Need to do two loops, unfortunately, since spill-over area is
+<i>651</i>&nbsp;         * only half the size:
+<i>652</i>&nbsp;         */
+<b class="fc"><i>653</i>&nbsp;        int maxColl = 0;</b>
+<b class="fc"><i>654</i>&nbsp;        for (int i = 0; i &lt; size; ++i) {</b>
+<b class="fc"><i>655</i>&nbsp;            String symbol = oldSyms[i];</b>
+<b class="fc"><i>656</i>&nbsp;            if (symbol != null) {</b>
+<b class="fc"><i>657</i>&nbsp;                ++count;</b>
+<b class="fc"><i>658</i>&nbsp;                int index = _hashToIndex(calcHash(symbol));</b>
+<b class="fc"><i>659</i>&nbsp;                if (_symbols[index] == null) {</b>
+<b class="fc"><i>660</i>&nbsp;                    _symbols[index] = symbol;</b>
+<i>661</i>&nbsp;                } else {
+<b class="fc"><i>662</i>&nbsp;                    int bix = (index &gt;&gt; 1);</b>
+<b class="fc"><i>663</i>&nbsp;                    Bucket newB = new Bucket(symbol, _buckets[bix]);</b>
+<b class="fc"><i>664</i>&nbsp;                    _buckets[bix] = newB;</b>
+<b class="fc"><i>665</i>&nbsp;                    maxColl = Math.max(maxColl, newB.length);</b>
+<i>666</i>&nbsp;                }
+<i>667</i>&nbsp;            }
+<i>668</i>&nbsp;        }
+<i>669</i>&nbsp;
+<b class="fc"><i>670</i>&nbsp;        size &gt;&gt;= 1;</b>
+<b class="fc"><i>671</i>&nbsp;        for (int i = 0; i &lt; size; ++i) {</b>
+<b class="fc"><i>672</i>&nbsp;            Bucket b = oldBuckets[i];</b>
+<b class="fc"><i>673</i>&nbsp;            while (b != null) {</b>
+<b class="fc"><i>674</i>&nbsp;                ++count;</b>
+<b class="fc"><i>675</i>&nbsp;                String symbol = b.symbol;</b>
+<b class="fc"><i>676</i>&nbsp;                int index = _hashToIndex(calcHash(symbol));</b>
+<b class="fc"><i>677</i>&nbsp;                if (_symbols[index] == null) {</b>
+<b class="fc"><i>678</i>&nbsp;                    _symbols[index] = symbol;</b>
+<i>679</i>&nbsp;                } else {
+<b class="fc"><i>680</i>&nbsp;                    int bix = (index &gt;&gt; 1);</b>
+<b class="fc"><i>681</i>&nbsp;                    Bucket newB = new Bucket(symbol, _buckets[bix]);</b>
+<b class="fc"><i>682</i>&nbsp;                    _buckets[bix] = newB;</b>
+<b class="fc"><i>683</i>&nbsp;                    maxColl = Math.max(maxColl, newB.length);</b>
+<i>684</i>&nbsp;                }
+<b class="fc"><i>685</i>&nbsp;                b = b.next;</b>
+<b class="fc"><i>686</i>&nbsp;            }</b>
+<i>687</i>&nbsp;        }
+<b class="fc"><i>688</i>&nbsp;        _longestCollisionList = maxColl;</b>
+<b class="fc"><i>689</i>&nbsp;        _overflows = null;</b>
+<i>690</i>&nbsp;
+<b class="fc"><i>691</i>&nbsp;        if (count != _size) {</b>
+<b class="nc"><i>692</i>&nbsp;            throw new Error(&quot;Internal error on SymbolTable.rehash(): had &quot;+_size+&quot; entries; now have &quot;+count+&quot;.&quot;);</b>
+<i>693</i>&nbsp;        }
+<b class="fc"><i>694</i>&nbsp;    }</b>
+<i>695</i>&nbsp;
+<i>696</i>&nbsp;    /**
+<i>697</i>&nbsp;     * @since 2.1
+<i>698</i>&nbsp;     */
+<i>699</i>&nbsp;    protected void reportTooManyCollisions(int maxLen) {
+<b class="fc"><i>700</i>&nbsp;        throw new IllegalStateException(&quot;Longest collision chain in symbol table (of size &quot;+_size</b>
+<i>701</i>&nbsp;                +&quot;) now exceeds maximum, &quot;+maxLen+&quot; -- suspect a DoS attack based on hash collisions&quot;);
+<i>702</i>&nbsp;    }
+<i>703</i>&nbsp;
+<i>704</i>&nbsp;    // For debugging, comment out
+<i>705</i>&nbsp;    /*
+<i>706</i>&nbsp;    @Override
+<i>707</i>&nbsp;    public String toString()
+<i>708</i>&nbsp;    {
+<i>709</i>&nbsp;        StringBuilder sb = new StringBuilder();
+<i>710</i>&nbsp;        int primaryCount = 0;
+<i>711</i>&nbsp;        for (String s : _symbols) {
+<i>712</i>&nbsp;            if (s != null) ++primaryCount;
+<i>713</i>&nbsp;        }
+<i>714</i>&nbsp;        
+<i>715</i>&nbsp;        sb.append(&quot;[BytesToNameCanonicalizer, size: &quot;);
+<i>716</i>&nbsp;        sb.append(_size);
+<i>717</i>&nbsp;        sb.append(&#39;/&#39;);
+<i>718</i>&nbsp;        sb.append(_symbols.length);
+<i>719</i>&nbsp;        sb.append(&quot;, &quot;);
+<i>720</i>&nbsp;        sb.append(primaryCount);
+<i>721</i>&nbsp;        sb.append(&#39;/&#39;);
+<i>722</i>&nbsp;        sb.append(_size - primaryCount);
+<i>723</i>&nbsp;        sb.append(&quot; coll; avg length: &quot;);
+<i>724</i>&nbsp;
+<i>725</i>&nbsp;        // Average length: minimum of 1 for all (1 == primary hit);
+<i>726</i>&nbsp;        // and then 1 per each traversal for collisions/buckets
+<i>727</i>&nbsp;        //int maxDist = 1;
+<i>728</i>&nbsp;        int pathCount = _size;
+<i>729</i>&nbsp;        for (Bucket b : _buckets) {
+<i>730</i>&nbsp;            if (b != null) {
+<i>731</i>&nbsp;                int spillLen = b.length;
+<i>732</i>&nbsp;                for (int j = 1; j &lt;= spillLen; ++j) {
+<i>733</i>&nbsp;                    pathCount += j;
+<i>734</i>&nbsp;                }
+<i>735</i>&nbsp;            }
+<i>736</i>&nbsp;        }
+<i>737</i>&nbsp;        double avgLength;
+<i>738</i>&nbsp;
+<i>739</i>&nbsp;        if (_size == 0) {
+<i>740</i>&nbsp;            avgLength = 0.0;
+<i>741</i>&nbsp;        } else {
+<i>742</i>&nbsp;            avgLength = (double) pathCount / (double) _size;
+<i>743</i>&nbsp;        }
+<i>744</i>&nbsp;        // let&#39;s round up a bit (two 2 decimal places)
+<i>745</i>&nbsp;        //avgLength -= (avgLength % 0.01);
+<i>746</i>&nbsp;
+<i>747</i>&nbsp;        sb.append(avgLength);
+<i>748</i>&nbsp;        sb.append(&#39;]&#39;);
+<i>749</i>&nbsp;        return sb.toString();
+<i>750</i>&nbsp;    }
+<i>751</i>&nbsp;*/
+<i>752</i>&nbsp;
+<i>753</i>&nbsp;    /*
+<i>754</i>&nbsp;    /**********************************************************
+<i>755</i>&nbsp;    /* Bucket class
+<i>756</i>&nbsp;    /**********************************************************
+<i>757</i>&nbsp;     */
+<i>758</i>&nbsp;
+<i>759</i>&nbsp;    /**
+<i>760</i>&nbsp;     * This class is a symbol table entry. Each entry acts as a node
+<i>761</i>&nbsp;     * in a linked list.
+<i>762</i>&nbsp;     */
+<i>763</i>&nbsp;    static final class Bucket
+<i>764</i>&nbsp;    {
+<i>765</i>&nbsp;        public final String symbol;
+<i>766</i>&nbsp;        public final Bucket next;
+<i>767</i>&nbsp;        public final int length;
+<i>768</i>&nbsp;
+<b class="fc"><i>769</i>&nbsp;        public Bucket(String s, Bucket n) {</b>
+<b class="fc"><i>770</i>&nbsp;            symbol = s;</b>
+<b class="fc"><i>771</i>&nbsp;            next = n;</b>
+<b class="fc"><i>772</i>&nbsp;            length = (n == null) ? 1 : n.length+1;</b>
+<b class="fc"><i>773</i>&nbsp;        }</b>
+<i>774</i>&nbsp;
+<i>775</i>&nbsp;        public String has(char[] buf, int start, int len) {
+<b class="fc"><i>776</i>&nbsp;            if (symbol.length() != len) {</b>
+<b class="fc"><i>777</i>&nbsp;                return null;</b>
+<i>778</i>&nbsp;            }
+<b class="fc"><i>779</i>&nbsp;            int i = 0;</b>
+<i>780</i>&nbsp;            do {
+<b class="fc"><i>781</i>&nbsp;                if (symbol.charAt(i) != buf[start+i]) {</b>
+<b class="fc"><i>782</i>&nbsp;                    return null;</b>
+<i>783</i>&nbsp;                }
+<b class="fc"><i>784</i>&nbsp;            } while (++i &lt; len);</b>
+<b class="fc"><i>785</i>&nbsp;            return symbol;</b>
+<i>786</i>&nbsp;        }
+<i>787</i>&nbsp;    }
+<i>788</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 04:22</div>
+</div>
+</body>
+</html>

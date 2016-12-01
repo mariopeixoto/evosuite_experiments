@@ -1,0 +1,71 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: Instantiatable</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.fasterxml.jackson.core.util</a> ]
+</div>
+
+<h1>Coverage Summary for Class: Instantiatable (com.fasterxml.jackson.core.util)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+</tr>
+<tr>
+  <td class="name">Instantiatable</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package com.fasterxml.jackson.core.util;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;/**
+<i>4</i>&nbsp; * Add-on interface used to indicate things that may be &quot;blueprint&quot; objects
+<i>5</i>&nbsp; * which can not be used as is, but are used for creating usable per-process
+<i>6</i>&nbsp; * (serialization, deserialization) instances, using
+<i>7</i>&nbsp; * {@link #createInstance} method.
+<i>8</i>&nbsp; *&lt;p&gt;
+<i>9</i>&nbsp; * Note that some implementations may choose to implement {@link #createInstance}
+<i>10</i>&nbsp; * by simply returning &#39;this&#39;: this is acceptable if instances are stateless.
+<i>11</i>&nbsp; * 
+<i>12</i>&nbsp; * @see DefaultPrettyPrinter
+<i>13</i>&nbsp; * 
+<i>14</i>&nbsp; * @since 2.1
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;public interface Instantiatable&lt;T&gt;
+<i>17</i>&nbsp;{
+<i>18</i>&nbsp;    /**
+<i>19</i>&nbsp;     * Method called to ensure that we have a non-blueprint object to use;
+<i>20</i>&nbsp;     * it is either this object (if stateless), or a newly created object
+<i>21</i>&nbsp;     * with separate state.
+<i>22</i>&nbsp;     */
+<i>23</i>&nbsp;    T createInstance();
+<i>24</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 04:22</div>
+</div>
+</body>
+</html>

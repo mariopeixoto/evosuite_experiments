@@ -1,0 +1,2939 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: UTF8DataInputJsonParser</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.fasterxml.jackson.core.json</a> ]
+</div>
+
+<h1>Coverage Summary for Class: UTF8DataInputJsonParser (com.fasterxml.jackson.core.json)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">UTF8DataInputJsonParser</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    86.2%
+  </span>
+  <span class="absValue">
+    (75/ 87)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    73.4%
+  </span>
+  <span class="absValue">
+    (986/ 1343)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package com.fasterxml.jackson.core.json;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import java.io.*;
+<i>4</i>&nbsp;import java.util.Arrays;
+<i>5</i>&nbsp;
+<i>6</i>&nbsp;import com.fasterxml.jackson.core.*;
+<i>7</i>&nbsp;import com.fasterxml.jackson.core.base.ParserBase;
+<i>8</i>&nbsp;import com.fasterxml.jackson.core.io.CharTypes;
+<i>9</i>&nbsp;import com.fasterxml.jackson.core.io.IOContext;
+<i>10</i>&nbsp;import com.fasterxml.jackson.core.sym.ByteQuadsCanonicalizer;
+<i>11</i>&nbsp;import com.fasterxml.jackson.core.util.*;
+<i>12</i>&nbsp;
+<i>13</i>&nbsp;import static com.fasterxml.jackson.core.JsonTokenId.*;
+<i>14</i>&nbsp;
+<i>15</i>&nbsp;/**
+<i>16</i>&nbsp; * This is a concrete implementation of {@link JsonParser}, which is
+<i>17</i>&nbsp; * based on a {@link java.io.DataInput} as the input source.
+<i>18</i>&nbsp; *&lt;p&gt;
+<i>19</i>&nbsp; * Due to limitations in look-ahead (basically there&#39;s none), as well
+<i>20</i>&nbsp; * as overhead of reading content mostly byte-by-byte,
+<i>21</i>&nbsp; * there are some
+<i>22</i>&nbsp; * minor differences from regular streaming parsing. Specifically:
+<i>23</i>&nbsp; *&lt;ul&gt;
+<i>24</i>&nbsp; * &lt;li&gt;Input location is not being tracked, as offsets would need to
+<i>25</i>&nbsp; *   be updated for each read from all over the place; if caller wants
+<i>26</i>&nbsp; *   this information, it has to track this with {@link DataInput}.
+<i>27</i>&nbsp; *  &lt;/li&gt;
+<i>28</i>&nbsp; * &lt;li&gt;As a consequence linefeed handling is removed so all white-space is
+<i>29</i>&nbsp; *    equal; and checks are simplified NOT to check for control characters
+<i>30</i>&nbsp; *  &lt;/li&gt;
+<i>31</i>&nbsp; * &lt;/ul&gt;
+<i>32</i>&nbsp; *
+<i>33</i>&nbsp; * @since 2.8
+<i>34</i>&nbsp; */
+<i>35</i>&nbsp;public class UTF8DataInputJsonParser
+<i>36</i>&nbsp;    extends ParserBase
+<i>37</i>&nbsp;{
+<i>38</i>&nbsp;    final static byte BYTE_LF = (byte) &#39;\n&#39;;
+<i>39</i>&nbsp;
+<i>40</i>&nbsp;    // This is the main input-code lookup table, fetched eagerly
+<b class="fc"><i>41</i>&nbsp;    private final static int[] _icUTF8 = CharTypes.getInputCodeUtf8();</b>
+<i>42</i>&nbsp;
+<i>43</i>&nbsp;    // Latin1 encoding is not supported, but we do use 8-bit subset for
+<i>44</i>&nbsp;    // pre-processing task, to simplify first pass, keep it fast.
+<b class="fc"><i>45</i>&nbsp;    protected final static int[] _icLatin1 = CharTypes.getInputCodeLatin1();</b>
+<i>46</i>&nbsp;
+<i>47</i>&nbsp;    /*
+<i>48</i>&nbsp;    /**********************************************************
+<i>49</i>&nbsp;    /* Configuration
+<i>50</i>&nbsp;    /**********************************************************
+<i>51</i>&nbsp;     */
+<i>52</i>&nbsp;
+<i>53</i>&nbsp;    /**
+<i>54</i>&nbsp;     * Codec used for data binding when (if) requested; typically full
+<i>55</i>&nbsp;     * &lt;code&gt;ObjectMapper&lt;/code&gt;, but that abstract is not part of core
+<i>56</i>&nbsp;     * package.
+<i>57</i>&nbsp;     */
+<i>58</i>&nbsp;    protected ObjectCodec _objectCodec;
+<i>59</i>&nbsp;
+<i>60</i>&nbsp;    /**
+<i>61</i>&nbsp;     * Symbol table that contains field names encountered so far
+<i>62</i>&nbsp;     */
+<i>63</i>&nbsp;    final protected ByteQuadsCanonicalizer _symbols;
+<i>64</i>&nbsp;
+<i>65</i>&nbsp;    /*
+<i>66</i>&nbsp;    /**********************************************************
+<i>67</i>&nbsp;    /* Parsing state
+<i>68</i>&nbsp;    /**********************************************************
+<i>69</i>&nbsp;     */
+<i>70</i>&nbsp;
+<i>71</i>&nbsp;    /**
+<i>72</i>&nbsp;     * Temporary buffer used for name parsing.
+<i>73</i>&nbsp;     */
+<b class="fc"><i>74</i>&nbsp;    protected int[] _quadBuffer = new int[16];</b>
+<i>75</i>&nbsp;
+<i>76</i>&nbsp;    /**
+<i>77</i>&nbsp;     * Flag that indicates that the current token has not yet
+<i>78</i>&nbsp;     * been fully processed, and needs to be finished for
+<i>79</i>&nbsp;     * some access (or skipped to obtain the next token)
+<i>80</i>&nbsp;     */
+<i>81</i>&nbsp;    protected boolean _tokenIncomplete;
+<i>82</i>&nbsp;
+<i>83</i>&nbsp;    /**
+<i>84</i>&nbsp;     * Temporary storage for partially parsed name bytes.
+<i>85</i>&nbsp;     */
+<i>86</i>&nbsp;    private int _quad1;
+<i>87</i>&nbsp;
+<i>88</i>&nbsp;    /*
+<i>89</i>&nbsp;    /**********************************************************
+<i>90</i>&nbsp;    /* Current input data
+<i>91</i>&nbsp;    /**********************************************************
+<i>92</i>&nbsp;     */
+<i>93</i>&nbsp;
+<i>94</i>&nbsp;    protected DataInput _inputData;
+<i>95</i>&nbsp;
+<i>96</i>&nbsp;    /**
+<i>97</i>&nbsp;     * Sometimes we need buffering for just a single byte we read but
+<i>98</i>&nbsp;     * have to &quot;push back&quot;
+<i>99</i>&nbsp;     */
+<b class="fc"><i>100</i>&nbsp;    protected int _nextByte = -1;</b>
+<i>101</i>&nbsp;
+<i>102</i>&nbsp;    /*
+<i>103</i>&nbsp;    /**********************************************************
+<i>104</i>&nbsp;    /* Life-cycle
+<i>105</i>&nbsp;    /**********************************************************
+<i>106</i>&nbsp;     */
+<i>107</i>&nbsp;
+<i>108</i>&nbsp;    public UTF8DataInputJsonParser(IOContext ctxt, int features, DataInput inputData,
+<i>109</i>&nbsp;            ObjectCodec codec, ByteQuadsCanonicalizer sym,
+<i>110</i>&nbsp;            int firstByte)
+<i>111</i>&nbsp;    {
+<b class="fc"><i>112</i>&nbsp;        super(ctxt, features);</b>
+<b class="fc"><i>113</i>&nbsp;        _objectCodec = codec;</b>
+<b class="fc"><i>114</i>&nbsp;        _symbols = sym;</b>
+<b class="fc"><i>115</i>&nbsp;        _inputData = inputData;</b>
+<b class="fc"><i>116</i>&nbsp;        _nextByte = firstByte;</b>
+<b class="fc"><i>117</i>&nbsp;    }</b>
+<i>118</i>&nbsp;
+<i>119</i>&nbsp;    @Override
+<i>120</i>&nbsp;    public ObjectCodec getCodec() {
+<b class="nc"><i>121</i>&nbsp;        return _objectCodec;</b>
+<i>122</i>&nbsp;    }
+<i>123</i>&nbsp;
+<i>124</i>&nbsp;    @Override
+<i>125</i>&nbsp;    public void setCodec(ObjectCodec c) {
+<b class="nc"><i>126</i>&nbsp;        _objectCodec = c;</b>
+<b class="nc"><i>127</i>&nbsp;    }</b>
+<i>128</i>&nbsp;
+<i>129</i>&nbsp;    /*
+<i>130</i>&nbsp;    /**********************************************************
+<i>131</i>&nbsp;    /* Overrides for life-cycle
+<i>132</i>&nbsp;    /**********************************************************
+<i>133</i>&nbsp;     */
+<i>134</i>&nbsp;
+<i>135</i>&nbsp;    @Override
+<i>136</i>&nbsp;    public int releaseBuffered(OutputStream out) throws IOException {
+<b class="nc"><i>137</i>&nbsp;        return 0;</b>
+<i>138</i>&nbsp;    }
+<i>139</i>&nbsp;
+<i>140</i>&nbsp;    @Override
+<i>141</i>&nbsp;    public Object getInputSource() {
+<b class="nc"><i>142</i>&nbsp;        return _inputData;</b>
+<i>143</i>&nbsp;    }
+<i>144</i>&nbsp;
+<i>145</i>&nbsp;    /*
+<i>146</i>&nbsp;    /**********************************************************
+<i>147</i>&nbsp;    /* Overrides, low-level reading
+<i>148</i>&nbsp;    /**********************************************************
+<i>149</i>&nbsp;     */
+<i>150</i>&nbsp;
+<i>151</i>&nbsp;    @Override
+<b class="fc"><i>152</i>&nbsp;    protected void _closeInput() throws IOException { }</b>
+<i>153</i>&nbsp;
+<i>154</i>&nbsp;    /**
+<i>155</i>&nbsp;     * Method called to release internal buffers owned by the base
+<i>156</i>&nbsp;     * reader. This may be called along with {@link #_closeInput} (for
+<i>157</i>&nbsp;     * example, when explicitly closing this reader instance), or
+<i>158</i>&nbsp;     * separately (if need be).
+<i>159</i>&nbsp;     */
+<i>160</i>&nbsp;    @Override
+<i>161</i>&nbsp;    protected void _releaseBuffers() throws IOException
+<i>162</i>&nbsp;    {
+<b class="fc"><i>163</i>&nbsp;        super._releaseBuffers();</b>
+<i>164</i>&nbsp;        // Merge found symbols, if any:
+<b class="fc"><i>165</i>&nbsp;        _symbols.release();</b>
+<b class="fc"><i>166</i>&nbsp;    }</b>
+<i>167</i>&nbsp;
+<i>168</i>&nbsp;    /*
+<i>169</i>&nbsp;    /**********************************************************
+<i>170</i>&nbsp;    /* Public API, data access
+<i>171</i>&nbsp;    /**********************************************************
+<i>172</i>&nbsp;     */
+<i>173</i>&nbsp;
+<i>174</i>&nbsp;    @Override
+<i>175</i>&nbsp;    public String getText() throws IOException
+<i>176</i>&nbsp;    {
+<b class="fc"><i>177</i>&nbsp;        if (_currToken == JsonToken.VALUE_STRING) {</b>
+<b class="fc"><i>178</i>&nbsp;            if (_tokenIncomplete) {</b>
+<b class="fc"><i>179</i>&nbsp;                _tokenIncomplete = false;</b>
+<b class="fc"><i>180</i>&nbsp;                return _finishAndReturnString(); // only strings can be incomplete</b>
+<i>181</i>&nbsp;            }
+<b class="fc"><i>182</i>&nbsp;            return _textBuffer.contentsAsString();</b>
+<i>183</i>&nbsp;        }
+<b class="fc"><i>184</i>&nbsp;        return _getText2(_currToken);</b>
+<i>185</i>&nbsp;    }
+<i>186</i>&nbsp;
+<i>187</i>&nbsp;    @Override
+<i>188</i>&nbsp;    public int getText(Writer writer) throws IOException
+<i>189</i>&nbsp;    {
+<b class="fc"><i>190</i>&nbsp;        JsonToken t = _currToken;</b>
+<b class="fc"><i>191</i>&nbsp;        if (t == JsonToken.VALUE_STRING) {</b>
+<b class="fc"><i>192</i>&nbsp;            if (_tokenIncomplete) {</b>
+<b class="fc"><i>193</i>&nbsp;                _tokenIncomplete = false;</b>
+<b class="fc"><i>194</i>&nbsp;                _finishString(); // only strings can be incomplete</b>
+<i>195</i>&nbsp;            }
+<b class="fc"><i>196</i>&nbsp;            return _textBuffer.contentsToWriter(writer);</b>
+<i>197</i>&nbsp;        }
+<b class="nc"><i>198</i>&nbsp;        if (t == JsonToken.FIELD_NAME) {</b>
+<b class="nc"><i>199</i>&nbsp;            String n = _parsingContext.getCurrentName();</b>
+<b class="nc"><i>200</i>&nbsp;            writer.write(n);</b>
+<b class="nc"><i>201</i>&nbsp;            return n.length();</b>
+<i>202</i>&nbsp;        }
+<b class="nc"><i>203</i>&nbsp;        if (t != null) {</b>
+<b class="nc"><i>204</i>&nbsp;            if (t.isNumeric()) {</b>
+<b class="nc"><i>205</i>&nbsp;                return _textBuffer.contentsToWriter(writer);</b>
+<i>206</i>&nbsp;            }
+<b class="nc"><i>207</i>&nbsp;            char[] ch = t.asCharArray();</b>
+<b class="nc"><i>208</i>&nbsp;            writer.write(ch);</b>
+<b class="nc"><i>209</i>&nbsp;            return ch.length;</b>
+<i>210</i>&nbsp;        }
+<b class="nc"><i>211</i>&nbsp;        return 0;</b>
+<i>212</i>&nbsp;    }
+<i>213</i>&nbsp;
+<i>214</i>&nbsp;    // // // Let&#39;s override default impls for improved performance
+<i>215</i>&nbsp;    @Override
+<i>216</i>&nbsp;    public String getValueAsString() throws IOException
+<i>217</i>&nbsp;    {
+<b class="fc"><i>218</i>&nbsp;        if (_currToken == JsonToken.VALUE_STRING) {</b>
+<b class="fc"><i>219</i>&nbsp;            if (_tokenIncomplete) {</b>
+<b class="nc"><i>220</i>&nbsp;                _tokenIncomplete = false;</b>
+<b class="nc"><i>221</i>&nbsp;                return _finishAndReturnString(); // only strings can be incomplete</b>
+<i>222</i>&nbsp;            }
+<b class="fc"><i>223</i>&nbsp;            return _textBuffer.contentsAsString();</b>
+<i>224</i>&nbsp;        }
+<b class="fc"><i>225</i>&nbsp;        if (_currToken == JsonToken.FIELD_NAME) {</b>
+<b class="fc"><i>226</i>&nbsp;            return getCurrentName();</b>
+<i>227</i>&nbsp;        }
+<b class="fc"><i>228</i>&nbsp;        return super.getValueAsString(null);</b>
+<i>229</i>&nbsp;    }
+<i>230</i>&nbsp;
+<i>231</i>&nbsp;    @Override
+<i>232</i>&nbsp;    public String getValueAsString(String defValue) throws IOException
+<i>233</i>&nbsp;    {
+<b class="fc"><i>234</i>&nbsp;        if (_currToken == JsonToken.VALUE_STRING) {</b>
+<b class="fc"><i>235</i>&nbsp;            if (_tokenIncomplete) {</b>
+<b class="fc"><i>236</i>&nbsp;                _tokenIncomplete = false;</b>
+<b class="fc"><i>237</i>&nbsp;                return _finishAndReturnString(); // only strings can be incomplete</b>
+<i>238</i>&nbsp;            }
+<b class="nc"><i>239</i>&nbsp;            return _textBuffer.contentsAsString();</b>
+<i>240</i>&nbsp;        }
+<b class="fc"><i>241</i>&nbsp;        if (_currToken == JsonToken.FIELD_NAME) {</b>
+<b class="fc"><i>242</i>&nbsp;            return getCurrentName();</b>
+<i>243</i>&nbsp;        }
+<b class="fc"><i>244</i>&nbsp;        return super.getValueAsString(defValue);</b>
+<i>245</i>&nbsp;    }
+<i>246</i>&nbsp;
+<i>247</i>&nbsp;    @Override
+<i>248</i>&nbsp;    public int getValueAsInt() throws IOException
+<i>249</i>&nbsp;    {
+<b class="fc"><i>250</i>&nbsp;        JsonToken t = _currToken;</b>
+<b class="fc"><i>251</i>&nbsp;        if ((t == JsonToken.VALUE_NUMBER_INT) || (t == JsonToken.VALUE_NUMBER_FLOAT)) {</b>
+<i>252</i>&nbsp;            // inlined &#39;getIntValue()&#39;
+<b class="fc"><i>253</i>&nbsp;            if ((_numTypesValid &amp; NR_INT) == 0) {</b>
+<b class="nc"><i>254</i>&nbsp;                if (_numTypesValid == NR_UNKNOWN) {</b>
+<b class="nc"><i>255</i>&nbsp;                    return _parseIntValue();</b>
+<i>256</i>&nbsp;                }
+<b class="nc"><i>257</i>&nbsp;                if ((_numTypesValid &amp; NR_INT) == 0) {</b>
+<b class="nc"><i>258</i>&nbsp;                    convertNumberToInt();</b>
+<i>259</i>&nbsp;                }
+<i>260</i>&nbsp;            }
+<b class="fc"><i>261</i>&nbsp;            return _numberInt;</b>
+<i>262</i>&nbsp;        }
+<b class="nc"><i>263</i>&nbsp;        return super.getValueAsInt(0);</b>
+<i>264</i>&nbsp;    }
+<i>265</i>&nbsp;
+<i>266</i>&nbsp;    @Override
+<i>267</i>&nbsp;    public int getValueAsInt(int defValue) throws IOException
+<i>268</i>&nbsp;    {
+<b class="fc"><i>269</i>&nbsp;        JsonToken t = _currToken;</b>
+<b class="fc"><i>270</i>&nbsp;        if ((t == JsonToken.VALUE_NUMBER_INT) || (t == JsonToken.VALUE_NUMBER_FLOAT)) {</b>
+<i>271</i>&nbsp;            // inlined &#39;getIntValue()&#39;
+<b class="fc"><i>272</i>&nbsp;            if ((_numTypesValid &amp; NR_INT) == 0) {</b>
+<b class="nc"><i>273</i>&nbsp;                if (_numTypesValid == NR_UNKNOWN) {</b>
+<b class="nc"><i>274</i>&nbsp;                    return _parseIntValue();</b>
+<i>275</i>&nbsp;                }
+<b class="nc"><i>276</i>&nbsp;                if ((_numTypesValid &amp; NR_INT) == 0) {</b>
+<b class="nc"><i>277</i>&nbsp;                    convertNumberToInt();</b>
+<i>278</i>&nbsp;                }
+<i>279</i>&nbsp;            }
+<b class="fc"><i>280</i>&nbsp;            return _numberInt;</b>
+<i>281</i>&nbsp;        }
+<b class="nc"><i>282</i>&nbsp;        return super.getValueAsInt(defValue);</b>
+<i>283</i>&nbsp;    }
+<i>284</i>&nbsp;    
+<i>285</i>&nbsp;    protected final String _getText2(JsonToken t)
+<i>286</i>&nbsp;    {
+<b class="fc"><i>287</i>&nbsp;        if (t == null) {</b>
+<b class="fc"><i>288</i>&nbsp;            return null;</b>
+<i>289</i>&nbsp;        }
+<b class="fc"><i>290</i>&nbsp;        switch (t.id()) {</b>
+<i>291</i>&nbsp;        case ID_FIELD_NAME:
+<b class="fc"><i>292</i>&nbsp;            return _parsingContext.getCurrentName();</b>
+<i>293</i>&nbsp;
+<i>294</i>&nbsp;        case ID_STRING:
+<i>295</i>&nbsp;            // fall through
+<i>296</i>&nbsp;        case ID_NUMBER_INT:
+<i>297</i>&nbsp;        case ID_NUMBER_FLOAT:
+<b class="fc"><i>298</i>&nbsp;            return _textBuffer.contentsAsString();</b>
+<i>299</i>&nbsp;        default:
+<b class="fc"><i>300</i>&nbsp;        	return t.asString();</b>
+<i>301</i>&nbsp;        }
+<i>302</i>&nbsp;    }
+<i>303</i>&nbsp;
+<i>304</i>&nbsp;    @Override
+<i>305</i>&nbsp;    public char[] getTextCharacters() throws IOException
+<i>306</i>&nbsp;    {
+<b class="fc"><i>307</i>&nbsp;        if (_currToken != null) { // null only before/after document</b>
+<b class="fc"><i>308</i>&nbsp;            switch (_currToken.id()) {</b>
+<i>309</i>&nbsp;                
+<i>310</i>&nbsp;            case ID_FIELD_NAME:
+<b class="fc"><i>311</i>&nbsp;                if (!_nameCopied) {</b>
+<b class="fc"><i>312</i>&nbsp;                    String name = _parsingContext.getCurrentName();</b>
+<b class="fc"><i>313</i>&nbsp;                    int nameLen = name.length();</b>
+<b class="fc"><i>314</i>&nbsp;                    if (_nameCopyBuffer == null) {</b>
+<b class="fc"><i>315</i>&nbsp;                        _nameCopyBuffer = _ioContext.allocNameCopyBuffer(nameLen);</b>
+<b class="nc"><i>316</i>&nbsp;                    } else if (_nameCopyBuffer.length &lt; nameLen) {</b>
+<b class="nc"><i>317</i>&nbsp;                        _nameCopyBuffer = new char[nameLen];</b>
+<i>318</i>&nbsp;                    }
+<b class="fc"><i>319</i>&nbsp;                    name.getChars(0, nameLen, _nameCopyBuffer, 0);</b>
+<b class="fc"><i>320</i>&nbsp;                    _nameCopied = true;</b>
+<i>321</i>&nbsp;                }
+<b class="fc"><i>322</i>&nbsp;                return _nameCopyBuffer;</b>
+<i>323</i>&nbsp;    
+<i>324</i>&nbsp;            case ID_STRING:
+<b class="fc"><i>325</i>&nbsp;                if (_tokenIncomplete) {</b>
+<b class="nc"><i>326</i>&nbsp;                    _tokenIncomplete = false;</b>
+<b class="nc"><i>327</i>&nbsp;                    _finishString(); // only strings can be incomplete</b>
+<i>328</i>&nbsp;                }
+<i>329</i>&nbsp;                // fall through
+<i>330</i>&nbsp;            case ID_NUMBER_INT:
+<i>331</i>&nbsp;            case ID_NUMBER_FLOAT:
+<b class="fc"><i>332</i>&nbsp;                return _textBuffer.getTextBuffer();</b>
+<i>333</i>&nbsp;                
+<i>334</i>&nbsp;            default:
+<b class="nc"><i>335</i>&nbsp;                return _currToken.asCharArray();</b>
+<i>336</i>&nbsp;            }
+<i>337</i>&nbsp;        }
+<b class="fc"><i>338</i>&nbsp;        return null;</b>
+<i>339</i>&nbsp;    }
+<i>340</i>&nbsp;
+<i>341</i>&nbsp;    @Override
+<i>342</i>&nbsp;    public int getTextLength() throws IOException
+<i>343</i>&nbsp;    {
+<b class="fc"><i>344</i>&nbsp;        if (_currToken == JsonToken.VALUE_STRING) {</b>
+<b class="fc"><i>345</i>&nbsp;            if (_tokenIncomplete) {</b>
+<b class="fc"><i>346</i>&nbsp;                _tokenIncomplete = false;</b>
+<b class="fc"><i>347</i>&nbsp;                _finishString(); // only strings can be incomplete</b>
+<i>348</i>&nbsp;            }
+<b class="fc"><i>349</i>&nbsp;            return _textBuffer.size();</b>
+<i>350</i>&nbsp;        }
+<b class="fc"><i>351</i>&nbsp;        if (_currToken == JsonToken.FIELD_NAME) {</b>
+<b class="fc"><i>352</i>&nbsp;            return _parsingContext.getCurrentName().length();</b>
+<i>353</i>&nbsp;        }
+<b class="fc"><i>354</i>&nbsp;        if (_currToken != null) { // null only before/after document</b>
+<b class="nc"><i>355</i>&nbsp;            if (_currToken.isNumeric()) {</b>
+<b class="nc"><i>356</i>&nbsp;                return _textBuffer.size();</b>
+<i>357</i>&nbsp;            }
+<b class="nc"><i>358</i>&nbsp;            return _currToken.asCharArray().length;</b>
+<i>359</i>&nbsp;        }
+<b class="fc"><i>360</i>&nbsp;        return 0;</b>
+<i>361</i>&nbsp;    }
+<i>362</i>&nbsp;
+<i>363</i>&nbsp;    @Override
+<i>364</i>&nbsp;    public int getTextOffset() throws IOException
+<i>365</i>&nbsp;    {
+<i>366</i>&nbsp;        // Most have offset of 0, only some may have other values:
+<b class="fc"><i>367</i>&nbsp;        if (_currToken != null) {</b>
+<b class="fc"><i>368</i>&nbsp;            switch (_currToken.id()) {</b>
+<i>369</i>&nbsp;            case ID_FIELD_NAME:
+<b class="fc"><i>370</i>&nbsp;                return 0;</b>
+<i>371</i>&nbsp;            case ID_STRING:
+<b class="fc"><i>372</i>&nbsp;                if (_tokenIncomplete) {</b>
+<b class="nc"><i>373</i>&nbsp;                    _tokenIncomplete = false;</b>
+<b class="nc"><i>374</i>&nbsp;                    _finishString(); // only strings can be incomplete</b>
+<i>375</i>&nbsp;                }
+<i>376</i>&nbsp;                // fall through
+<i>377</i>&nbsp;            case ID_NUMBER_INT:
+<i>378</i>&nbsp;            case ID_NUMBER_FLOAT:
+<b class="fc"><i>379</i>&nbsp;                return _textBuffer.getTextOffset();</b>
+<i>380</i>&nbsp;            default:
+<i>381</i>&nbsp;            }
+<i>382</i>&nbsp;        }
+<b class="fc"><i>383</i>&nbsp;        return 0;</b>
+<i>384</i>&nbsp;    }
+<i>385</i>&nbsp;    
+<i>386</i>&nbsp;    @Override
+<i>387</i>&nbsp;    public byte[] getBinaryValue(Base64Variant b64variant) throws IOException
+<i>388</i>&nbsp;    {
+<b class="fc"><i>389</i>&nbsp;        if (_currToken != JsonToken.VALUE_STRING &amp;&amp;</b>
+<i>390</i>&nbsp;                (_currToken != JsonToken.VALUE_EMBEDDED_OBJECT || _binaryValue == null)) {
+<b class="fc"><i>391</i>&nbsp;            _reportError(&quot;Current token (&quot;+_currToken+&quot;) not VALUE_STRING or VALUE_EMBEDDED_OBJECT, can not access as binary&quot;);</b>
+<i>392</i>&nbsp;        }
+<i>393</i>&nbsp;        /* To ensure that we won&#39;t see inconsistent data, better clear up
+<i>394</i>&nbsp;         * state...
+<i>395</i>&nbsp;         */
+<b class="fc"><i>396</i>&nbsp;        if (_tokenIncomplete) {</b>
+<i>397</i>&nbsp;            try {
+<b class="fc"><i>398</i>&nbsp;                _binaryValue = _decodeBase64(b64variant);</b>
+<b class="fc"><i>399</i>&nbsp;            } catch (IllegalArgumentException iae) {</b>
+<b class="fc"><i>400</i>&nbsp;                throw _constructError(&quot;Failed to decode VALUE_STRING as base64 (&quot;+b64variant+&quot;): &quot;+iae.getMessage());</b>
+<b class="fc"><i>401</i>&nbsp;            }</b>
+<i>402</i>&nbsp;            /* let&#39;s clear incomplete only now; allows for accessing other
+<i>403</i>&nbsp;             * textual content in error cases
+<i>404</i>&nbsp;             */
+<b class="fc"><i>405</i>&nbsp;            _tokenIncomplete = false;</b>
+<i>406</i>&nbsp;        } else { // may actually require conversion...
+<b class="nc"><i>407</i>&nbsp;            if (_binaryValue == null) {</b>
+<i>408</i>&nbsp;                @SuppressWarnings(&quot;resource&quot;)
+<b class="nc"><i>409</i>&nbsp;                ByteArrayBuilder builder = _getByteArrayBuilder();</b>
+<b class="nc"><i>410</i>&nbsp;                _decodeBase64(getText(), builder, b64variant);</b>
+<b class="nc"><i>411</i>&nbsp;                _binaryValue = builder.toByteArray();</b>
+<i>412</i>&nbsp;            }
+<i>413</i>&nbsp;        }
+<b class="fc"><i>414</i>&nbsp;        return _binaryValue;</b>
+<i>415</i>&nbsp;    }
+<i>416</i>&nbsp;
+<i>417</i>&nbsp;    @Override
+<i>418</i>&nbsp;    public int readBinaryValue(Base64Variant b64variant, OutputStream out) throws IOException
+<i>419</i>&nbsp;    {
+<i>420</i>&nbsp;        // if we have already read the token, just use whatever we may have
+<b class="fc"><i>421</i>&nbsp;        if (!_tokenIncomplete || _currToken != JsonToken.VALUE_STRING) {</b>
+<b class="nc"><i>422</i>&nbsp;            byte[] b = getBinaryValue(b64variant);</b>
+<b class="nc"><i>423</i>&nbsp;            out.write(b);</b>
+<b class="nc"><i>424</i>&nbsp;            return b.length;</b>
+<i>425</i>&nbsp;        }
+<i>426</i>&nbsp;        // otherwise do &quot;real&quot; incremental parsing...
+<b class="fc"><i>427</i>&nbsp;        byte[] buf = _ioContext.allocBase64Buffer();</b>
+<i>428</i>&nbsp;        try {
+<b class="fc"><i>429</i>&nbsp;            return _readBinary(b64variant, out, buf);</b>
+<i>430</i>&nbsp;        } finally {
+<b class="fc"><i>431</i>&nbsp;            _ioContext.releaseBase64Buffer(buf);</b>
+<i>432</i>&nbsp;        }
+<i>433</i>&nbsp;    }
+<i>434</i>&nbsp;
+<i>435</i>&nbsp;    protected int _readBinary(Base64Variant b64variant, OutputStream out,
+<i>436</i>&nbsp;                              byte[] buffer) throws IOException
+<i>437</i>&nbsp;    {
+<b class="fc"><i>438</i>&nbsp;        int outputPtr = 0;</b>
+<b class="fc"><i>439</i>&nbsp;        final int outputEnd = buffer.length - 3;</b>
+<b class="fc"><i>440</i>&nbsp;        int outputCount = 0;</b>
+<i>441</i>&nbsp;
+<i>442</i>&nbsp;        while (true) {
+<i>443</i>&nbsp;            // first, we&#39;ll skip preceding white space, if any
+<i>444</i>&nbsp;            int ch;
+<i>445</i>&nbsp;            do {
+<b class="fc"><i>446</i>&nbsp;                ch = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>447</i>&nbsp;            } while (ch &lt;= INT_SPACE);</b>
+<b class="fc"><i>448</i>&nbsp;            int bits = b64variant.decodeBase64Char(ch);</b>
+<b class="fc"><i>449</i>&nbsp;            if (bits &lt; 0) { // reached the end, fair and square?</b>
+<b class="fc"><i>450</i>&nbsp;                if (ch == INT_QUOTE) {</b>
+<b class="fc"><i>451</i>&nbsp;                    break;</b>
+<i>452</i>&nbsp;                }
+<b class="nc"><i>453</i>&nbsp;                bits = _decodeBase64Escape(b64variant, ch, 0);</b>
+<b class="nc"><i>454</i>&nbsp;                if (bits &lt; 0) { // white space to skip</b>
+<b class="nc"><i>455</i>&nbsp;                    continue;</b>
+<i>456</i>&nbsp;                }
+<i>457</i>&nbsp;            }
+<i>458</i>&nbsp;
+<i>459</i>&nbsp;            // enough room? If not, flush
+<b class="fc"><i>460</i>&nbsp;            if (outputPtr &gt; outputEnd) {</b>
+<b class="fc"><i>461</i>&nbsp;                outputCount += outputPtr;</b>
+<b class="fc"><i>462</i>&nbsp;                out.write(buffer, 0, outputPtr);</b>
+<b class="fc"><i>463</i>&nbsp;                outputPtr = 0;</b>
+<i>464</i>&nbsp;            }
+<i>465</i>&nbsp;
+<b class="fc"><i>466</i>&nbsp;            int decodedData = bits;</b>
+<i>467</i>&nbsp;
+<i>468</i>&nbsp;            // then second base64 char; can&#39;t get padding yet, nor ws
+<b class="fc"><i>469</i>&nbsp;            ch = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>470</i>&nbsp;            bits = b64variant.decodeBase64Char(ch);</b>
+<b class="fc"><i>471</i>&nbsp;            if (bits &lt; 0) {</b>
+<b class="nc"><i>472</i>&nbsp;                bits = _decodeBase64Escape(b64variant, ch, 1);</b>
+<i>473</i>&nbsp;            }
+<b class="fc"><i>474</i>&nbsp;            decodedData = (decodedData &lt;&lt; 6) | bits;</b>
+<i>475</i>&nbsp;
+<i>476</i>&nbsp;            // third base64 char; can be padding, but not ws
+<b class="fc"><i>477</i>&nbsp;            ch = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>478</i>&nbsp;            bits = b64variant.decodeBase64Char(ch);</b>
+<i>479</i>&nbsp;
+<i>480</i>&nbsp;            // First branch: can get padding (-&gt; 1 byte)
+<b class="fc"><i>481</i>&nbsp;            if (bits &lt; 0) {</b>
+<b class="fc"><i>482</i>&nbsp;                if (bits != Base64Variant.BASE64_VALUE_PADDING) {</b>
+<i>483</i>&nbsp;                    // could also just be &#39;missing&#39;  padding
+<b class="nc"><i>484</i>&nbsp;                    if (ch == &#39;&quot;&#39; &amp;&amp; !b64variant.usesPadding()) {</b>
+<b class="nc"><i>485</i>&nbsp;                        decodedData &gt;&gt;= 4;</b>
+<b class="nc"><i>486</i>&nbsp;                        buffer[outputPtr++] = (byte) decodedData;</b>
+<b class="nc"><i>487</i>&nbsp;                        break;</b>
+<i>488</i>&nbsp;                    }
+<b class="nc"><i>489</i>&nbsp;                    bits = _decodeBase64Escape(b64variant, ch, 2);</b>
+<i>490</i>&nbsp;                }
+<b class="fc"><i>491</i>&nbsp;                if (bits == Base64Variant.BASE64_VALUE_PADDING) {</b>
+<i>492</i>&nbsp;                    // Ok, must get padding
+<b class="fc"><i>493</i>&nbsp;                    ch = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>494</i>&nbsp;                    if (!b64variant.usesPaddingChar(ch)) {</b>
+<b class="nc"><i>495</i>&nbsp;                        throw reportInvalidBase64Char(b64variant, ch, 3, &quot;expected padding character &#39;&quot;+b64variant.getPaddingChar()+&quot;&#39;&quot;);</b>
+<i>496</i>&nbsp;                    }
+<i>497</i>&nbsp;                    // Got 12 bits, only need 8, need to shift
+<b class="fc"><i>498</i>&nbsp;                    decodedData &gt;&gt;= 4;</b>
+<b class="fc"><i>499</i>&nbsp;                    buffer[outputPtr++] = (byte) decodedData;</b>
+<b class="fc"><i>500</i>&nbsp;                    continue;</b>
+<i>501</i>&nbsp;                }
+<i>502</i>&nbsp;            }
+<i>503</i>&nbsp;            // Nope, 2 or 3 bytes
+<b class="fc"><i>504</i>&nbsp;            decodedData = (decodedData &lt;&lt; 6) | bits;</b>
+<i>505</i>&nbsp;            // fourth and last base64 char; can be padding, but not ws
+<b class="fc"><i>506</i>&nbsp;            ch = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>507</i>&nbsp;            bits = b64variant.decodeBase64Char(ch);</b>
+<b class="fc"><i>508</i>&nbsp;            if (bits &lt; 0) {</b>
+<b class="fc"><i>509</i>&nbsp;                if (bits != Base64Variant.BASE64_VALUE_PADDING) {</b>
+<i>510</i>&nbsp;                    // could also just be &#39;missing&#39;  padding
+<b class="nc"><i>511</i>&nbsp;                    if (ch == &#39;&quot;&#39; &amp;&amp; !b64variant.usesPadding()) {</b>
+<b class="nc"><i>512</i>&nbsp;                        decodedData &gt;&gt;= 2;</b>
+<b class="nc"><i>513</i>&nbsp;                        buffer[outputPtr++] = (byte) (decodedData &gt;&gt; 8);</b>
+<b class="nc"><i>514</i>&nbsp;                        buffer[outputPtr++] = (byte) decodedData;</b>
+<b class="nc"><i>515</i>&nbsp;                        break;</b>
+<i>516</i>&nbsp;                    }
+<b class="nc"><i>517</i>&nbsp;                    bits = _decodeBase64Escape(b64variant, ch, 3);</b>
+<i>518</i>&nbsp;                }
+<b class="fc"><i>519</i>&nbsp;                if (bits == Base64Variant.BASE64_VALUE_PADDING) {</b>
+<i>520</i>&nbsp;                    /* With padding we only get 2 bytes; but we have
+<i>521</i>&nbsp;                     * to shift it a bit so it is identical to triplet
+<i>522</i>&nbsp;                     * case with partial output.
+<i>523</i>&nbsp;                     * 3 chars gives 3x6 == 18 bits, of which 2 are
+<i>524</i>&nbsp;                     * dummies, need to discard:
+<i>525</i>&nbsp;                     */
+<b class="fc"><i>526</i>&nbsp;                    decodedData &gt;&gt;= 2;</b>
+<b class="fc"><i>527</i>&nbsp;                    buffer[outputPtr++] = (byte) (decodedData &gt;&gt; 8);</b>
+<b class="fc"><i>528</i>&nbsp;                    buffer[outputPtr++] = (byte) decodedData;</b>
+<b class="fc"><i>529</i>&nbsp;                    continue;</b>
+<i>530</i>&nbsp;                }
+<i>531</i>&nbsp;            }
+<i>532</i>&nbsp;            // otherwise, our triplet is now complete
+<b class="fc"><i>533</i>&nbsp;            decodedData = (decodedData &lt;&lt; 6) | bits;</b>
+<b class="fc"><i>534</i>&nbsp;            buffer[outputPtr++] = (byte) (decodedData &gt;&gt; 16);</b>
+<b class="fc"><i>535</i>&nbsp;            buffer[outputPtr++] = (byte) (decodedData &gt;&gt; 8);</b>
+<b class="fc"><i>536</i>&nbsp;            buffer[outputPtr++] = (byte) decodedData;</b>
+<b class="fc"><i>537</i>&nbsp;        }</b>
+<b class="fc"><i>538</i>&nbsp;        _tokenIncomplete = false;</b>
+<b class="fc"><i>539</i>&nbsp;        if (outputPtr &gt; 0) {</b>
+<b class="fc"><i>540</i>&nbsp;            outputCount += outputPtr;</b>
+<b class="fc"><i>541</i>&nbsp;            out.write(buffer, 0, outputPtr);</b>
+<i>542</i>&nbsp;        }
+<b class="fc"><i>543</i>&nbsp;        return outputCount;</b>
+<i>544</i>&nbsp;    }
+<i>545</i>&nbsp;
+<i>546</i>&nbsp;    /*
+<i>547</i>&nbsp;    /**********************************************************
+<i>548</i>&nbsp;    /* Public API, traversal, basic
+<i>549</i>&nbsp;    /**********************************************************
+<i>550</i>&nbsp;     */
+<i>551</i>&nbsp;
+<i>552</i>&nbsp;    /**
+<i>553</i>&nbsp;     * @return Next token from the stream, if any found, or null
+<i>554</i>&nbsp;     *   to indicate end-of-input
+<i>555</i>&nbsp;     */
+<i>556</i>&nbsp;    @Override
+<i>557</i>&nbsp;    public JsonToken nextToken() throws IOException
+<i>558</i>&nbsp;    {
+<i>559</i>&nbsp;        /* First: field names are special -- we will always tokenize
+<i>560</i>&nbsp;         * (part of) value along with field name to simplify
+<i>561</i>&nbsp;         * state handling. If so, can and need to use secondary token:
+<i>562</i>&nbsp;         */
+<b class="fc"><i>563</i>&nbsp;        if (_currToken == JsonToken.FIELD_NAME) {</b>
+<b class="fc"><i>564</i>&nbsp;            return _nextAfterName();</b>
+<i>565</i>&nbsp;        }
+<i>566</i>&nbsp;        // But if we didn&#39;t already have a name, and (partially?) decode number,
+<i>567</i>&nbsp;        // need to ensure no numeric information is leaked
+<b class="fc"><i>568</i>&nbsp;        _numTypesValid = NR_UNKNOWN;</b>
+<b class="fc"><i>569</i>&nbsp;        if (_tokenIncomplete) {</b>
+<b class="fc"><i>570</i>&nbsp;            _skipString(); // only strings can be partial</b>
+<i>571</i>&nbsp;        }
+<b class="fc"><i>572</i>&nbsp;        int i = _skipWSOrEnd();</b>
+<b class="fc"><i>573</i>&nbsp;        if (i &lt; 0) { // end-of-input</b>
+<i>574</i>&nbsp;            // Close/release things like input source, symbol table and recyclable buffers
+<b class="fc"><i>575</i>&nbsp;            close();</b>
+<b class="fc"><i>576</i>&nbsp;            return (_currToken = null);</b>
+<i>577</i>&nbsp;        }
+<i>578</i>&nbsp;        // clear any data retained so far
+<b class="fc"><i>579</i>&nbsp;        _binaryValue = null;</b>
+<b class="fc"><i>580</i>&nbsp;        _tokenInputRow = _currInputRow;</b>
+<i>581</i>&nbsp;
+<i>582</i>&nbsp;        // Closing scope?
+<b class="fc"><i>583</i>&nbsp;        if (i == INT_RBRACKET || i == INT_RCURLY) {</b>
+<b class="fc"><i>584</i>&nbsp;            _closeScope(i);</b>
+<b class="fc"><i>585</i>&nbsp;            return _currToken;</b>
+<i>586</i>&nbsp;        }
+<i>587</i>&nbsp;
+<i>588</i>&nbsp;        // Nope: do we then expect a comma?
+<b class="fc"><i>589</i>&nbsp;        if (_parsingContext.expectComma()) {</b>
+<b class="fc"><i>590</i>&nbsp;            if (i != INT_COMMA) {</b>
+<b class="nc"><i>591</i>&nbsp;                _reportUnexpectedChar(i, &quot;was expecting comma to separate &quot;+_parsingContext.typeDesc()+&quot; entries&quot;);</b>
+<i>592</i>&nbsp;            }
+<b class="fc"><i>593</i>&nbsp;            i = _skipWS();</b>
+<i>594</i>&nbsp;
+<i>595</i>&nbsp;            // Was that a trailing comma?
+<b class="fc"><i>596</i>&nbsp;            if (Feature.ALLOW_TRAILING_COMMA.enabledIn(_features)) {</b>
+<b class="fc"><i>597</i>&nbsp;                if (i == INT_RBRACKET || i == INT_RCURLY) {</b>
+<b class="fc"><i>598</i>&nbsp;                    _closeScope(i);</b>
+<b class="fc"><i>599</i>&nbsp;                    return _currToken;</b>
+<i>600</i>&nbsp;                }
+<i>601</i>&nbsp;            }
+<i>602</i>&nbsp;        }
+<i>603</i>&nbsp;
+<i>604</i>&nbsp;        /* And should we now have a name? Always true for
+<i>605</i>&nbsp;         * Object contexts, since the intermediate &#39;expect-value&#39;
+<i>606</i>&nbsp;         * state is never retained.
+<i>607</i>&nbsp;         */
+<b class="fc"><i>608</i>&nbsp;        if (!_parsingContext.inObject()) {</b>
+<b class="fc"><i>609</i>&nbsp;            return _nextTokenNotInObject(i);</b>
+<i>610</i>&nbsp;        }
+<i>611</i>&nbsp;        // So first parse the field name itself:
+<b class="fc"><i>612</i>&nbsp;        String n = _parseName(i);</b>
+<b class="fc"><i>613</i>&nbsp;        _parsingContext.setCurrentName(n);</b>
+<b class="fc"><i>614</i>&nbsp;        _currToken = JsonToken.FIELD_NAME;</b>
+<i>615</i>&nbsp;
+<b class="fc"><i>616</i>&nbsp;        i = _skipColon();</b>
+<i>617</i>&nbsp;
+<i>618</i>&nbsp;        // Ok: we must have a value... what is it? Strings are very common, check first:
+<b class="fc"><i>619</i>&nbsp;        if (i == INT_QUOTE) {</b>
+<b class="fc"><i>620</i>&nbsp;            _tokenIncomplete = true;</b>
+<b class="fc"><i>621</i>&nbsp;            _nextToken = JsonToken.VALUE_STRING;</b>
+<b class="fc"><i>622</i>&nbsp;            return _currToken;</b>
+<i>623</i>&nbsp;        }        
+<i>624</i>&nbsp;        JsonToken t;
+<i>625</i>&nbsp;
+<b class="fc"><i>626</i>&nbsp;        switch (i) {</b>
+<i>627</i>&nbsp;        case &#39;-&#39;:
+<b class="fc"><i>628</i>&nbsp;            t = _parseNegNumber();</b>
+<b class="fc"><i>629</i>&nbsp;            break;</b>
+<i>630</i>&nbsp;
+<i>631</i>&nbsp;            /* Should we have separate handling for plus? Although
+<i>632</i>&nbsp;             * it is not allowed per se, it may be erroneously used,
+<i>633</i>&nbsp;             * and could be indicate by a more specific error message.
+<i>634</i>&nbsp;             */
+<i>635</i>&nbsp;        case &#39;0&#39;:
+<i>636</i>&nbsp;        case &#39;1&#39;:
+<i>637</i>&nbsp;        case &#39;2&#39;:
+<i>638</i>&nbsp;        case &#39;3&#39;:
+<i>639</i>&nbsp;        case &#39;4&#39;:
+<i>640</i>&nbsp;        case &#39;5&#39;:
+<i>641</i>&nbsp;        case &#39;6&#39;:
+<i>642</i>&nbsp;        case &#39;7&#39;:
+<i>643</i>&nbsp;        case &#39;8&#39;:
+<i>644</i>&nbsp;        case &#39;9&#39;:
+<b class="fc"><i>645</i>&nbsp;            t = _parsePosNumber(i);</b>
+<b class="fc"><i>646</i>&nbsp;            break;</b>
+<i>647</i>&nbsp;        case &#39;f&#39;:
+<b class="fc"><i>648</i>&nbsp;            _matchToken(&quot;false&quot;, 1);</b>
+<b class="fc"><i>649</i>&nbsp;             t = JsonToken.VALUE_FALSE;</b>
+<b class="fc"><i>650</i>&nbsp;            break;</b>
+<i>651</i>&nbsp;        case &#39;n&#39;:
+<b class="fc"><i>652</i>&nbsp;            _matchToken(&quot;null&quot;, 1);</b>
+<b class="fc"><i>653</i>&nbsp;            t = JsonToken.VALUE_NULL;</b>
+<b class="fc"><i>654</i>&nbsp;            break;</b>
+<i>655</i>&nbsp;        case &#39;t&#39;:
+<b class="fc"><i>656</i>&nbsp;            _matchToken(&quot;true&quot;, 1);</b>
+<b class="fc"><i>657</i>&nbsp;            t = JsonToken.VALUE_TRUE;</b>
+<b class="fc"><i>658</i>&nbsp;            break;</b>
+<i>659</i>&nbsp;        case &#39;[&#39;:
+<b class="fc"><i>660</i>&nbsp;            t = JsonToken.START_ARRAY;</b>
+<b class="fc"><i>661</i>&nbsp;            break;</b>
+<i>662</i>&nbsp;        case &#39;{&#39;:
+<b class="fc"><i>663</i>&nbsp;            t = JsonToken.START_OBJECT;</b>
+<b class="fc"><i>664</i>&nbsp;            break;</b>
+<i>665</i>&nbsp;
+<i>666</i>&nbsp;        default:
+<b class="fc"><i>667</i>&nbsp;            t = _handleUnexpectedValue(i);</b>
+<i>668</i>&nbsp;        }
+<b class="fc"><i>669</i>&nbsp;        _nextToken = t;</b>
+<b class="fc"><i>670</i>&nbsp;        return _currToken;</b>
+<i>671</i>&nbsp;    }
+<i>672</i>&nbsp;
+<i>673</i>&nbsp;    private final JsonToken _nextTokenNotInObject(int i) throws IOException
+<i>674</i>&nbsp;    {
+<b class="fc"><i>675</i>&nbsp;        if (i == INT_QUOTE) {</b>
+<b class="fc"><i>676</i>&nbsp;            _tokenIncomplete = true;</b>
+<b class="fc"><i>677</i>&nbsp;            return (_currToken = JsonToken.VALUE_STRING);</b>
+<i>678</i>&nbsp;        }
+<b class="fc"><i>679</i>&nbsp;        switch (i) {</b>
+<i>680</i>&nbsp;        case &#39;[&#39;:
+<b class="fc"><i>681</i>&nbsp;            _parsingContext = _parsingContext.createChildArrayContext(_tokenInputRow, _tokenInputCol);</b>
+<b class="fc"><i>682</i>&nbsp;            return (_currToken = JsonToken.START_ARRAY);</b>
+<i>683</i>&nbsp;        case &#39;{&#39;:
+<b class="fc"><i>684</i>&nbsp;            _parsingContext = _parsingContext.createChildObjectContext(_tokenInputRow, _tokenInputCol);</b>
+<b class="fc"><i>685</i>&nbsp;            return (_currToken = JsonToken.START_OBJECT);</b>
+<i>686</i>&nbsp;        case &#39;t&#39;:
+<b class="fc"><i>687</i>&nbsp;            _matchToken(&quot;true&quot;, 1);</b>
+<b class="fc"><i>688</i>&nbsp;            return (_currToken = JsonToken.VALUE_TRUE);</b>
+<i>689</i>&nbsp;        case &#39;f&#39;:
+<b class="fc"><i>690</i>&nbsp;            _matchToken(&quot;false&quot;, 1);</b>
+<b class="fc"><i>691</i>&nbsp;            return (_currToken = JsonToken.VALUE_FALSE);</b>
+<i>692</i>&nbsp;        case &#39;n&#39;:
+<b class="fc"><i>693</i>&nbsp;            _matchToken(&quot;null&quot;, 1);</b>
+<b class="fc"><i>694</i>&nbsp;            return (_currToken = JsonToken.VALUE_NULL);</b>
+<i>695</i>&nbsp;        case &#39;-&#39;:
+<b class="fc"><i>696</i>&nbsp;            return (_currToken = _parseNegNumber());</b>
+<i>697</i>&nbsp;            /* Should we have separate handling for plus? Although
+<i>698</i>&nbsp;             * it is not allowed per se, it may be erroneously used,
+<i>699</i>&nbsp;             * and could be indicated by a more specific error message.
+<i>700</i>&nbsp;             */
+<i>701</i>&nbsp;        case &#39;0&#39;:
+<i>702</i>&nbsp;        case &#39;1&#39;:
+<i>703</i>&nbsp;        case &#39;2&#39;:
+<i>704</i>&nbsp;        case &#39;3&#39;:
+<i>705</i>&nbsp;        case &#39;4&#39;:
+<i>706</i>&nbsp;        case &#39;5&#39;:
+<i>707</i>&nbsp;        case &#39;6&#39;:
+<i>708</i>&nbsp;        case &#39;7&#39;:
+<i>709</i>&nbsp;        case &#39;8&#39;:
+<i>710</i>&nbsp;        case &#39;9&#39;:
+<b class="fc"><i>711</i>&nbsp;            return (_currToken = _parsePosNumber(i));</b>
+<i>712</i>&nbsp;        }
+<b class="fc"><i>713</i>&nbsp;        return (_currToken = _handleUnexpectedValue(i));</b>
+<i>714</i>&nbsp;    }
+<i>715</i>&nbsp;    
+<i>716</i>&nbsp;    private final JsonToken _nextAfterName()
+<i>717</i>&nbsp;    {
+<b class="fc"><i>718</i>&nbsp;        _nameCopied = false; // need to invalidate if it was copied</b>
+<b class="fc"><i>719</i>&nbsp;        JsonToken t = _nextToken;</b>
+<b class="fc"><i>720</i>&nbsp;        _nextToken = null;</b>
+<i>721</i>&nbsp;        
+<i>722</i>&nbsp;        // Also: may need to start new context?
+<b class="fc"><i>723</i>&nbsp;        if (t == JsonToken.START_ARRAY) {</b>
+<b class="fc"><i>724</i>&nbsp;            _parsingContext = _parsingContext.createChildArrayContext(_tokenInputRow, _tokenInputCol);</b>
+<b class="fc"><i>725</i>&nbsp;        } else if (t == JsonToken.START_OBJECT) {</b>
+<b class="fc"><i>726</i>&nbsp;            _parsingContext = _parsingContext.createChildObjectContext(_tokenInputRow, _tokenInputCol);</b>
+<i>727</i>&nbsp;        }
+<b class="fc"><i>728</i>&nbsp;        return (_currToken = t);</b>
+<i>729</i>&nbsp;    }
+<i>730</i>&nbsp;
+<i>731</i>&nbsp;    @Override
+<i>732</i>&nbsp;    public void finishToken() throws IOException {
+<b class="nc"><i>733</i>&nbsp;        if (_tokenIncomplete) {</b>
+<b class="nc"><i>734</i>&nbsp;            _tokenIncomplete = false;</b>
+<b class="nc"><i>735</i>&nbsp;            _finishString(); // only strings can be incomplete</b>
+<i>736</i>&nbsp;        }
+<b class="nc"><i>737</i>&nbsp;    }</b>
+<i>738</i>&nbsp;
+<i>739</i>&nbsp;    /*
+<i>740</i>&nbsp;    /**********************************************************
+<i>741</i>&nbsp;    /* Public API, traversal, nextXxxValue/nextFieldName
+<i>742</i>&nbsp;    /**********************************************************
+<i>743</i>&nbsp;     */
+<i>744</i>&nbsp;
+<i>745</i>&nbsp;    // Can not implement without look-ahead...
+<i>746</i>&nbsp;//    public boolean nextFieldName(SerializableString str) throws IOException
+<i>747</i>&nbsp;
+<i>748</i>&nbsp;    @Override
+<i>749</i>&nbsp;    public String nextFieldName() throws IOException
+<i>750</i>&nbsp;    {
+<i>751</i>&nbsp;        // // // Note: this is almost a verbatim copy of nextToken()
+<i>752</i>&nbsp;
+<b class="fc"><i>753</i>&nbsp;        _numTypesValid = NR_UNKNOWN;</b>
+<b class="fc"><i>754</i>&nbsp;        if (_currToken == JsonToken.FIELD_NAME) {</b>
+<b class="fc"><i>755</i>&nbsp;            _nextAfterName();</b>
+<b class="fc"><i>756</i>&nbsp;            return null;</b>
+<i>757</i>&nbsp;        }
+<b class="fc"><i>758</i>&nbsp;        if (_tokenIncomplete) {</b>
+<b class="fc"><i>759</i>&nbsp;            _skipString();</b>
+<i>760</i>&nbsp;        }
+<b class="fc"><i>761</i>&nbsp;        int i = _skipWS();</b>
+<b class="fc"><i>762</i>&nbsp;        _binaryValue = null;</b>
+<b class="fc"><i>763</i>&nbsp;        _tokenInputRow = _currInputRow;</b>
+<i>764</i>&nbsp;
+<b class="fc"><i>765</i>&nbsp;        if (i == INT_RBRACKET) {</b>
+<b class="nc"><i>766</i>&nbsp;            if (!_parsingContext.inArray()) {</b>
+<b class="nc"><i>767</i>&nbsp;                _reportMismatchedEndMarker(i, &#39;}&#39;);</b>
+<i>768</i>&nbsp;            }
+<b class="nc"><i>769</i>&nbsp;            _parsingContext = _parsingContext.clearAndGetParent();</b>
+<b class="nc"><i>770</i>&nbsp;            _currToken = JsonToken.END_ARRAY;</b>
+<b class="nc"><i>771</i>&nbsp;            return null;</b>
+<i>772</i>&nbsp;        }
+<b class="fc"><i>773</i>&nbsp;        if (i == INT_RCURLY) {</b>
+<b class="fc"><i>774</i>&nbsp;            if (!_parsingContext.inObject()) {</b>
+<b class="nc"><i>775</i>&nbsp;                _reportMismatchedEndMarker(i, &#39;]&#39;);</b>
+<i>776</i>&nbsp;            }
+<b class="fc"><i>777</i>&nbsp;            _parsingContext = _parsingContext.clearAndGetParent();</b>
+<b class="fc"><i>778</i>&nbsp;            _currToken = JsonToken.END_OBJECT;</b>
+<b class="fc"><i>779</i>&nbsp;            return null;</b>
+<i>780</i>&nbsp;        }
+<i>781</i>&nbsp;
+<i>782</i>&nbsp;        // Nope: do we then expect a comma?
+<b class="fc"><i>783</i>&nbsp;        if (_parsingContext.expectComma()) {</b>
+<b class="fc"><i>784</i>&nbsp;            if (i != INT_COMMA) {</b>
+<b class="nc"><i>785</i>&nbsp;                _reportUnexpectedChar(i, &quot;was expecting comma to separate &quot;+_parsingContext.typeDesc()+&quot; entries&quot;);</b>
+<i>786</i>&nbsp;            }
+<b class="fc"><i>787</i>&nbsp;            i = _skipWS();</b>
+<i>788</i>&nbsp;        }
+<b class="fc"><i>789</i>&nbsp;        if (!_parsingContext.inObject()) {</b>
+<b class="fc"><i>790</i>&nbsp;            _nextTokenNotInObject(i);</b>
+<b class="fc"><i>791</i>&nbsp;            return null;</b>
+<i>792</i>&nbsp;        }
+<i>793</i>&nbsp;
+<b class="fc"><i>794</i>&nbsp;        final String nameStr = _parseName(i);</b>
+<b class="fc"><i>795</i>&nbsp;        _parsingContext.setCurrentName(nameStr);</b>
+<b class="fc"><i>796</i>&nbsp;        _currToken = JsonToken.FIELD_NAME;</b>
+<i>797</i>&nbsp;
+<b class="fc"><i>798</i>&nbsp;        i = _skipColon();</b>
+<b class="fc"><i>799</i>&nbsp;        if (i == INT_QUOTE) {</b>
+<b class="fc"><i>800</i>&nbsp;            _tokenIncomplete = true;</b>
+<b class="fc"><i>801</i>&nbsp;            _nextToken = JsonToken.VALUE_STRING;</b>
+<b class="fc"><i>802</i>&nbsp;            return nameStr;</b>
+<i>803</i>&nbsp;        }
+<i>804</i>&nbsp;        JsonToken t;
+<b class="fc"><i>805</i>&nbsp;        switch (i) {</b>
+<i>806</i>&nbsp;        case &#39;-&#39;:
+<b class="nc"><i>807</i>&nbsp;            t = _parseNegNumber();</b>
+<b class="nc"><i>808</i>&nbsp;            break;</b>
+<i>809</i>&nbsp;        case &#39;0&#39;:
+<i>810</i>&nbsp;        case &#39;1&#39;:
+<i>811</i>&nbsp;        case &#39;2&#39;:
+<i>812</i>&nbsp;        case &#39;3&#39;:
+<i>813</i>&nbsp;        case &#39;4&#39;:
+<i>814</i>&nbsp;        case &#39;5&#39;:
+<i>815</i>&nbsp;        case &#39;6&#39;:
+<i>816</i>&nbsp;        case &#39;7&#39;:
+<i>817</i>&nbsp;        case &#39;8&#39;:
+<i>818</i>&nbsp;        case &#39;9&#39;:
+<b class="fc"><i>819</i>&nbsp;            t = _parsePosNumber(i);</b>
+<b class="fc"><i>820</i>&nbsp;            break;</b>
+<i>821</i>&nbsp;        case &#39;f&#39;:
+<b class="nc"><i>822</i>&nbsp;            _matchToken(&quot;false&quot;, 1);</b>
+<b class="nc"><i>823</i>&nbsp;             t = JsonToken.VALUE_FALSE;</b>
+<b class="nc"><i>824</i>&nbsp;            break;</b>
+<i>825</i>&nbsp;        case &#39;n&#39;:
+<b class="nc"><i>826</i>&nbsp;            _matchToken(&quot;null&quot;, 1);</b>
+<b class="nc"><i>827</i>&nbsp;            t = JsonToken.VALUE_NULL;</b>
+<b class="nc"><i>828</i>&nbsp;            break;</b>
+<i>829</i>&nbsp;        case &#39;t&#39;:
+<b class="nc"><i>830</i>&nbsp;            _matchToken(&quot;true&quot;, 1);</b>
+<b class="nc"><i>831</i>&nbsp;            t = JsonToken.VALUE_TRUE;</b>
+<b class="nc"><i>832</i>&nbsp;            break;</b>
+<i>833</i>&nbsp;        case &#39;[&#39;:
+<b class="fc"><i>834</i>&nbsp;            t = JsonToken.START_ARRAY;</b>
+<b class="fc"><i>835</i>&nbsp;            break;</b>
+<i>836</i>&nbsp;        case &#39;{&#39;:
+<b class="nc"><i>837</i>&nbsp;            t = JsonToken.START_OBJECT;</b>
+<b class="nc"><i>838</i>&nbsp;            break;</b>
+<i>839</i>&nbsp;
+<i>840</i>&nbsp;        default:
+<b class="nc"><i>841</i>&nbsp;            t = _handleUnexpectedValue(i);</b>
+<i>842</i>&nbsp;        }
+<b class="fc"><i>843</i>&nbsp;        _nextToken = t;</b>
+<b class="fc"><i>844</i>&nbsp;        return nameStr;</b>
+<i>845</i>&nbsp;    }
+<i>846</i>&nbsp;
+<i>847</i>&nbsp;    @Override
+<i>848</i>&nbsp;    public String nextTextValue() throws IOException
+<i>849</i>&nbsp;    {
+<i>850</i>&nbsp;        // two distinct cases; either got name and we know next type, or &#39;other&#39;
+<b class="fc"><i>851</i>&nbsp;        if (_currToken == JsonToken.FIELD_NAME) { // mostly copied from &#39;_nextAfterName&#39;</b>
+<b class="fc"><i>852</i>&nbsp;            _nameCopied = false;</b>
+<b class="fc"><i>853</i>&nbsp;            JsonToken t = _nextToken;</b>
+<b class="fc"><i>854</i>&nbsp;            _nextToken = null;</b>
+<b class="fc"><i>855</i>&nbsp;            _currToken = t;</b>
+<b class="fc"><i>856</i>&nbsp;            if (t == JsonToken.VALUE_STRING) {</b>
+<b class="fc"><i>857</i>&nbsp;                if (_tokenIncomplete) {</b>
+<b class="fc"><i>858</i>&nbsp;                    _tokenIncomplete = false;</b>
+<b class="fc"><i>859</i>&nbsp;                    return _finishAndReturnString();</b>
+<i>860</i>&nbsp;                }
+<b class="nc"><i>861</i>&nbsp;                return _textBuffer.contentsAsString();</b>
+<i>862</i>&nbsp;            }
+<b class="fc"><i>863</i>&nbsp;            if (t == JsonToken.START_ARRAY) {</b>
+<b class="fc"><i>864</i>&nbsp;                _parsingContext = _parsingContext.createChildArrayContext(_tokenInputRow, _tokenInputCol);</b>
+<b class="nc"><i>865</i>&nbsp;            } else if (t == JsonToken.START_OBJECT) {</b>
+<b class="nc"><i>866</i>&nbsp;                _parsingContext = _parsingContext.createChildObjectContext(_tokenInputRow, _tokenInputCol);</b>
+<i>867</i>&nbsp;            }
+<b class="fc"><i>868</i>&nbsp;            return null;</b>
+<i>869</i>&nbsp;        }
+<b class="fc"><i>870</i>&nbsp;        return (nextToken() == JsonToken.VALUE_STRING) ? getText() : null;</b>
+<i>871</i>&nbsp;    }
+<i>872</i>&nbsp;
+<i>873</i>&nbsp;    @Override
+<i>874</i>&nbsp;    public int nextIntValue(int defaultValue) throws IOException
+<i>875</i>&nbsp;    {
+<i>876</i>&nbsp;        // two distinct cases; either got name and we know next type, or &#39;other&#39;
+<b class="fc"><i>877</i>&nbsp;        if (_currToken == JsonToken.FIELD_NAME) { // mostly copied from &#39;_nextAfterName&#39;</b>
+<b class="fc"><i>878</i>&nbsp;            _nameCopied = false;</b>
+<b class="fc"><i>879</i>&nbsp;            JsonToken t = _nextToken;</b>
+<b class="fc"><i>880</i>&nbsp;            _nextToken = null;</b>
+<b class="fc"><i>881</i>&nbsp;            _currToken = t;</b>
+<b class="fc"><i>882</i>&nbsp;            if (t == JsonToken.VALUE_NUMBER_INT) {</b>
+<b class="fc"><i>883</i>&nbsp;                return getIntValue();</b>
+<i>884</i>&nbsp;            }
+<b class="fc"><i>885</i>&nbsp;            if (t == JsonToken.START_ARRAY) {</b>
+<b class="fc"><i>886</i>&nbsp;                _parsingContext = _parsingContext.createChildArrayContext(_tokenInputRow, _tokenInputCol);</b>
+<b class="fc"><i>887</i>&nbsp;            } else if (t == JsonToken.START_OBJECT) {</b>
+<b class="nc"><i>888</i>&nbsp;                _parsingContext = _parsingContext.createChildObjectContext(_tokenInputRow, _tokenInputCol);</b>
+<i>889</i>&nbsp;            }
+<b class="fc"><i>890</i>&nbsp;            return defaultValue;</b>
+<i>891</i>&nbsp;        }
+<b class="fc"><i>892</i>&nbsp;        return (nextToken() == JsonToken.VALUE_NUMBER_INT) ? getIntValue() : defaultValue;</b>
+<i>893</i>&nbsp;    }
+<i>894</i>&nbsp;
+<i>895</i>&nbsp;    @Override
+<i>896</i>&nbsp;    public long nextLongValue(long defaultValue) throws IOException
+<i>897</i>&nbsp;    {
+<i>898</i>&nbsp;        // two distinct cases; either got name and we know next type, or &#39;other&#39;
+<b class="fc"><i>899</i>&nbsp;        if (_currToken == JsonToken.FIELD_NAME) { // mostly copied from &#39;_nextAfterName&#39;</b>
+<b class="fc"><i>900</i>&nbsp;            _nameCopied = false;</b>
+<b class="fc"><i>901</i>&nbsp;            JsonToken t = _nextToken;</b>
+<b class="fc"><i>902</i>&nbsp;            _nextToken = null;</b>
+<b class="fc"><i>903</i>&nbsp;            _currToken = t;</b>
+<b class="fc"><i>904</i>&nbsp;            if (t == JsonToken.VALUE_NUMBER_INT) {</b>
+<b class="fc"><i>905</i>&nbsp;                return getLongValue();</b>
+<i>906</i>&nbsp;            }
+<b class="fc"><i>907</i>&nbsp;            if (t == JsonToken.START_ARRAY) {</b>
+<b class="fc"><i>908</i>&nbsp;                _parsingContext = _parsingContext.createChildArrayContext(_tokenInputRow, _tokenInputCol);</b>
+<b class="fc"><i>909</i>&nbsp;            } else if (t == JsonToken.START_OBJECT) {</b>
+<b class="nc"><i>910</i>&nbsp;                _parsingContext = _parsingContext.createChildObjectContext(_tokenInputRow, _tokenInputCol);</b>
+<i>911</i>&nbsp;            }
+<b class="fc"><i>912</i>&nbsp;            return defaultValue;</b>
+<i>913</i>&nbsp;        }
+<b class="fc"><i>914</i>&nbsp;        return (nextToken() == JsonToken.VALUE_NUMBER_INT) ? getLongValue() : defaultValue;</b>
+<i>915</i>&nbsp;    }
+<i>916</i>&nbsp;
+<i>917</i>&nbsp;    @Override
+<i>918</i>&nbsp;    public Boolean nextBooleanValue() throws IOException
+<i>919</i>&nbsp;    {
+<i>920</i>&nbsp;        // two distinct cases; either got name and we know next type, or &#39;other&#39;
+<b class="fc"><i>921</i>&nbsp;        if (_currToken == JsonToken.FIELD_NAME) { // mostly copied from &#39;_nextAfterName&#39;</b>
+<b class="fc"><i>922</i>&nbsp;            _nameCopied = false;</b>
+<b class="fc"><i>923</i>&nbsp;            JsonToken t = _nextToken;</b>
+<b class="fc"><i>924</i>&nbsp;            _nextToken = null;</b>
+<b class="fc"><i>925</i>&nbsp;            _currToken = t;</b>
+<b class="fc"><i>926</i>&nbsp;            if (t == JsonToken.VALUE_TRUE) {</b>
+<b class="fc"><i>927</i>&nbsp;                return Boolean.TRUE;</b>
+<i>928</i>&nbsp;            }
+<b class="fc"><i>929</i>&nbsp;            if (t == JsonToken.VALUE_FALSE) {</b>
+<b class="nc"><i>930</i>&nbsp;                return Boolean.FALSE;</b>
+<i>931</i>&nbsp;            }
+<b class="fc"><i>932</i>&nbsp;            if (t == JsonToken.START_ARRAY) {</b>
+<b class="fc"><i>933</i>&nbsp;                _parsingContext = _parsingContext.createChildArrayContext(_tokenInputRow, _tokenInputCol);</b>
+<b class="fc"><i>934</i>&nbsp;            } else if (t == JsonToken.START_OBJECT) {</b>
+<b class="nc"><i>935</i>&nbsp;                _parsingContext = _parsingContext.createChildObjectContext(_tokenInputRow, _tokenInputCol);</b>
+<i>936</i>&nbsp;            }
+<b class="fc"><i>937</i>&nbsp;            return null;</b>
+<i>938</i>&nbsp;        }
+<i>939</i>&nbsp;
+<b class="fc"><i>940</i>&nbsp;        JsonToken t = nextToken();</b>
+<b class="fc"><i>941</i>&nbsp;        if (t == JsonToken.VALUE_TRUE) {</b>
+<b class="nc"><i>942</i>&nbsp;            return Boolean.TRUE;</b>
+<i>943</i>&nbsp;        }
+<b class="fc"><i>944</i>&nbsp;        if (t == JsonToken.VALUE_FALSE) {</b>
+<b class="fc"><i>945</i>&nbsp;            return Boolean.FALSE;</b>
+<i>946</i>&nbsp;        }
+<b class="fc"><i>947</i>&nbsp;        return null;</b>
+<i>948</i>&nbsp;    }
+<i>949</i>&nbsp;
+<i>950</i>&nbsp;    /*
+<i>951</i>&nbsp;    /**********************************************************
+<i>952</i>&nbsp;    /* Internal methods, number parsing
+<i>953</i>&nbsp;    /**********************************************************
+<i>954</i>&nbsp;     */
+<i>955</i>&nbsp;
+<i>956</i>&nbsp;    /**
+<i>957</i>&nbsp;     * Initial parsing method for number values. It needs to be able
+<i>958</i>&nbsp;     * to parse enough input to be able to determine whether the
+<i>959</i>&nbsp;     * value is to be considered a simple integer value, or a more
+<i>960</i>&nbsp;     * generic decimal value: latter of which needs to be expressed
+<i>961</i>&nbsp;     * as a floating point number. The basic rule is that if the number
+<i>962</i>&nbsp;     * has no fractional or exponential part, it is an integer; otherwise
+<i>963</i>&nbsp;     * a floating point number.
+<i>964</i>&nbsp;     *&lt;p&gt;
+<i>965</i>&nbsp;     * Because much of input has to be processed in any case, no partial
+<i>966</i>&nbsp;     * parsing is done: all input text will be stored for further
+<i>967</i>&nbsp;     * processing. However, actual numeric value conversion will be
+<i>968</i>&nbsp;     * deferred, since it is usually the most complicated and costliest
+<i>969</i>&nbsp;     * part of processing.
+<i>970</i>&nbsp;     */
+<i>971</i>&nbsp;    protected JsonToken _parsePosNumber(int c) throws IOException
+<i>972</i>&nbsp;    {
+<b class="fc"><i>973</i>&nbsp;        char[] outBuf = _textBuffer.emptyAndGetCurrentSegment();</b>
+<i>974</i>&nbsp;        int outPtr;
+<i>975</i>&nbsp;
+<i>976</i>&nbsp;        // One special case: if first char is 0, must not be followed by a digit.
+<i>977</i>&nbsp;        // Gets bit tricky as we only want to retain 0 if it&#39;s the full value
+<b class="fc"><i>978</i>&nbsp;        if (c == INT_0) {</b>
+<b class="fc"><i>979</i>&nbsp;            c = _handleLeadingZeroes();</b>
+<b class="fc"><i>980</i>&nbsp;            if (c &lt;= INT_9 &amp;&amp; c &gt;= INT_0) { // skip if followed by digit</b>
+<b class="fc"><i>981</i>&nbsp;                outPtr = 0;</b>
+<i>982</i>&nbsp;            } else {
+<b class="fc"><i>983</i>&nbsp;                outBuf[0] = &#39;0&#39;;</b>
+<b class="fc"><i>984</i>&nbsp;                outPtr = 1;</b>
+<i>985</i>&nbsp;            }
+<i>986</i>&nbsp;        } else {
+<b class="fc"><i>987</i>&nbsp;            outBuf[0] = (char) c;</b>
+<b class="fc"><i>988</i>&nbsp;            c = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>989</i>&nbsp;            outPtr = 1;</b>
+<i>990</i>&nbsp;        }
+<b class="fc"><i>991</i>&nbsp;        int intLen = outPtr;</b>
+<i>992</i>&nbsp;
+<i>993</i>&nbsp;        // With this, we have a nice and tight loop:
+<b class="fc"><i>994</i>&nbsp;        while (c &lt;= INT_9 &amp;&amp; c &gt;= INT_0) {</b>
+<b class="fc"><i>995</i>&nbsp;            ++intLen;</b>
+<b class="fc"><i>996</i>&nbsp;            outBuf[outPtr++] = (char) c;</b>
+<b class="fc"><i>997</i>&nbsp;            c = _inputData.readUnsignedByte();</b>
+<i>998</i>&nbsp;        }
+<b class="fc"><i>999</i>&nbsp;        if (c == &#39;.&#39; || c == &#39;e&#39; || c == &#39;E&#39;) {</b>
+<b class="fc"><i>1000</i>&nbsp;            return _parseFloat(outBuf, outPtr, c, false, intLen);</b>
+<i>1001</i>&nbsp;        }
+<b class="fc"><i>1002</i>&nbsp;        _textBuffer.setCurrentLength(outPtr);</b>
+<i>1003</i>&nbsp;        // As per [core#105], need separating space between root values; check here
+<b class="fc"><i>1004</i>&nbsp;        if (_parsingContext.inRoot()) {</b>
+<b class="fc"><i>1005</i>&nbsp;            _verifyRootSpace();</b>
+<i>1006</i>&nbsp;        } else {
+<b class="fc"><i>1007</i>&nbsp;            _nextByte = c;</b>
+<i>1008</i>&nbsp;        }
+<i>1009</i>&nbsp;        // And there we have it!
+<b class="fc"><i>1010</i>&nbsp;        return resetInt(false, intLen);</b>
+<i>1011</i>&nbsp;    }
+<i>1012</i>&nbsp;    
+<i>1013</i>&nbsp;    protected JsonToken _parseNegNumber() throws IOException
+<i>1014</i>&nbsp;    {
+<b class="fc"><i>1015</i>&nbsp;        char[] outBuf = _textBuffer.emptyAndGetCurrentSegment();</b>
+<b class="fc"><i>1016</i>&nbsp;        int outPtr = 0;</b>
+<i>1017</i>&nbsp;
+<i>1018</i>&nbsp;        // Need to prepend sign?
+<b class="fc"><i>1019</i>&nbsp;        outBuf[outPtr++] = &#39;-&#39;;</b>
+<b class="fc"><i>1020</i>&nbsp;        int c = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>1021</i>&nbsp;        outBuf[outPtr++] = (char) c;</b>
+<i>1022</i>&nbsp;        // Note: must be followed by a digit
+<b class="fc"><i>1023</i>&nbsp;        if (c &lt;= INT_0) {</b>
+<i>1024</i>&nbsp;            // One special case: if first char is 0 need to check no leading zeroes
+<b class="fc"><i>1025</i>&nbsp;            if (c == INT_0) {</b>
+<b class="fc"><i>1026</i>&nbsp;                c = _handleLeadingZeroes();</b>
+<i>1027</i>&nbsp;            } else {
+<b class="nc"><i>1028</i>&nbsp;                return _handleInvalidNumberStart(c, true);</b>
+<i>1029</i>&nbsp;            }
+<i>1030</i>&nbsp;        } else {
+<b class="fc"><i>1031</i>&nbsp;            if (c &gt; INT_9) {</b>
+<b class="fc"><i>1032</i>&nbsp;                return _handleInvalidNumberStart(c, true);</b>
+<i>1033</i>&nbsp;            }
+<b class="fc"><i>1034</i>&nbsp;            c = _inputData.readUnsignedByte();</b>
+<i>1035</i>&nbsp;        }
+<i>1036</i>&nbsp;        // Ok: we can first just add digit we saw first:
+<b class="fc"><i>1037</i>&nbsp;        int intLen = 1;</b>
+<i>1038</i>&nbsp;
+<i>1039</i>&nbsp;        // With this, we have a nice and tight loop:
+<b class="fc"><i>1040</i>&nbsp;        while (c &lt;= INT_9 &amp;&amp; c &gt;= INT_0) {</b>
+<b class="fc"><i>1041</i>&nbsp;            ++intLen;</b>
+<b class="fc"><i>1042</i>&nbsp;            outBuf[outPtr++] = (char) c;</b>
+<b class="fc"><i>1043</i>&nbsp;            c = _inputData.readUnsignedByte();</b>
+<i>1044</i>&nbsp;        }
+<b class="fc"><i>1045</i>&nbsp;        if (c == &#39;.&#39; || c == &#39;e&#39; || c == &#39;E&#39;) {</b>
+<b class="fc"><i>1046</i>&nbsp;            return _parseFloat(outBuf, outPtr, c, true, intLen);</b>
+<i>1047</i>&nbsp;        }
+<b class="fc"><i>1048</i>&nbsp;        _textBuffer.setCurrentLength(outPtr);</b>
+<i>1049</i>&nbsp;        // As per [core#105], need separating space between root values; check here
+<b class="fc"><i>1050</i>&nbsp;        _nextByte = c;</b>
+<b class="fc"><i>1051</i>&nbsp;        if (_parsingContext.inRoot()) {</b>
+<b class="fc"><i>1052</i>&nbsp;            _verifyRootSpace();</b>
+<i>1053</i>&nbsp;        }
+<i>1054</i>&nbsp;        // And there we have it!
+<b class="fc"><i>1055</i>&nbsp;        return resetInt(true, intLen);</b>
+<i>1056</i>&nbsp;    }
+<i>1057</i>&nbsp;
+<i>1058</i>&nbsp;    /**
+<i>1059</i>&nbsp;     * Method called when we have seen one zero, and want to ensure
+<i>1060</i>&nbsp;     * it is not followed by another, or, if leading zeroes allowed,
+<i>1061</i>&nbsp;     * skipped redundant ones.
+<i>1062</i>&nbsp;     *
+<i>1063</i>&nbsp;     * @return Character immediately following zeroes
+<i>1064</i>&nbsp;     */
+<i>1065</i>&nbsp;    private final int _handleLeadingZeroes() throws IOException
+<i>1066</i>&nbsp;    {
+<b class="fc"><i>1067</i>&nbsp;        int ch = _inputData.readUnsignedByte();</b>
+<i>1068</i>&nbsp;        // if not followed by a number (probably &#39;.&#39;); return zero as is, to be included
+<b class="fc"><i>1069</i>&nbsp;        if (ch &lt; INT_0 || ch &gt; INT_9) {</b>
+<b class="fc"><i>1070</i>&nbsp;            return ch;</b>
+<i>1071</i>&nbsp;        }
+<i>1072</i>&nbsp;        // we may want to allow leading zeroes them, after all...
+<b class="fc"><i>1073</i>&nbsp;        if (!isEnabled(Feature.ALLOW_NUMERIC_LEADING_ZEROS)) {</b>
+<b class="fc"><i>1074</i>&nbsp;            reportInvalidNumber(&quot;Leading zeroes not allowed&quot;);</b>
+<i>1075</i>&nbsp;        }
+<i>1076</i>&nbsp;        // if so, just need to skip either all zeroes (if followed by number); or all but one (if non-number)
+<b class="fc"><i>1077</i>&nbsp;        while (ch == INT_0) {</b>
+<b class="fc"><i>1078</i>&nbsp;            ch = _inputData.readUnsignedByte();</b>
+<i>1079</i>&nbsp;        }
+<b class="fc"><i>1080</i>&nbsp;        return ch;</b>
+<i>1081</i>&nbsp;    }
+<i>1082</i>&nbsp;
+<i>1083</i>&nbsp;    private final JsonToken _parseFloat(char[] outBuf, int outPtr, int c,
+<i>1084</i>&nbsp;            boolean negative, int integerPartLength) throws IOException
+<i>1085</i>&nbsp;    {
+<b class="fc"><i>1086</i>&nbsp;        int fractLen = 0;</b>
+<i>1087</i>&nbsp;
+<i>1088</i>&nbsp;        // And then see if we get other parts
+<b class="fc"><i>1089</i>&nbsp;        if (c == INT_PERIOD) { // yes, fraction</b>
+<b class="fc"><i>1090</i>&nbsp;            outBuf[outPtr++] = (char) c;</b>
+<i>1091</i>&nbsp;
+<i>1092</i>&nbsp;            fract_loop:
+<i>1093</i>&nbsp;            while (true) {
+<b class="fc"><i>1094</i>&nbsp;                c = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>1095</i>&nbsp;                if (c &lt; INT_0 || c &gt; INT_9) {</b>
+<b class="fc"><i>1096</i>&nbsp;                    break fract_loop;</b>
+<i>1097</i>&nbsp;                }
+<b class="fc"><i>1098</i>&nbsp;                ++fractLen;</b>
+<b class="fc"><i>1099</i>&nbsp;                if (outPtr &gt;= outBuf.length) {</b>
+<b class="nc"><i>1100</i>&nbsp;                    outBuf = _textBuffer.finishCurrentSegment();</b>
+<b class="nc"><i>1101</i>&nbsp;                    outPtr = 0;</b>
+<i>1102</i>&nbsp;                }
+<b class="fc"><i>1103</i>&nbsp;                outBuf[outPtr++] = (char) c;</b>
+<i>1104</i>&nbsp;            }
+<i>1105</i>&nbsp;            // must be followed by sequence of ints, one minimum
+<b class="fc"><i>1106</i>&nbsp;            if (fractLen == 0) {</b>
+<b class="nc"><i>1107</i>&nbsp;                reportUnexpectedNumberChar(c, &quot;Decimal point not followed by a digit&quot;);</b>
+<i>1108</i>&nbsp;            }
+<i>1109</i>&nbsp;        }
+<i>1110</i>&nbsp;
+<b class="fc"><i>1111</i>&nbsp;        int expLen = 0;</b>
+<b class="fc"><i>1112</i>&nbsp;        if (c == INT_e || c == INT_E) { // exponent?</b>
+<b class="fc"><i>1113</i>&nbsp;            if (outPtr &gt;= outBuf.length) {</b>
+<b class="nc"><i>1114</i>&nbsp;                outBuf = _textBuffer.finishCurrentSegment();</b>
+<b class="nc"><i>1115</i>&nbsp;                outPtr = 0;</b>
+<i>1116</i>&nbsp;            }
+<b class="fc"><i>1117</i>&nbsp;            outBuf[outPtr++] = (char) c;</b>
+<b class="fc"><i>1118</i>&nbsp;            c = _inputData.readUnsignedByte();</b>
+<i>1119</i>&nbsp;            // Sign indicator?
+<b class="fc"><i>1120</i>&nbsp;            if (c == &#39;-&#39; || c == &#39;+&#39;) {</b>
+<b class="fc"><i>1121</i>&nbsp;                if (outPtr &gt;= outBuf.length) {</b>
+<b class="nc"><i>1122</i>&nbsp;                    outBuf = _textBuffer.finishCurrentSegment();</b>
+<b class="nc"><i>1123</i>&nbsp;                    outPtr = 0;</b>
+<i>1124</i>&nbsp;                }
+<b class="fc"><i>1125</i>&nbsp;                outBuf[outPtr++] = (char) c;</b>
+<b class="fc"><i>1126</i>&nbsp;                c = _inputData.readUnsignedByte();</b>
+<i>1127</i>&nbsp;            }
+<b class="fc"><i>1128</i>&nbsp;            while (c &lt;= INT_9 &amp;&amp; c &gt;= INT_0) {</b>
+<b class="fc"><i>1129</i>&nbsp;                ++expLen;</b>
+<b class="fc"><i>1130</i>&nbsp;                if (outPtr &gt;= outBuf.length) {</b>
+<b class="nc"><i>1131</i>&nbsp;                    outBuf = _textBuffer.finishCurrentSegment();</b>
+<b class="nc"><i>1132</i>&nbsp;                    outPtr = 0;</b>
+<i>1133</i>&nbsp;                }
+<b class="fc"><i>1134</i>&nbsp;                outBuf[outPtr++] = (char) c;</b>
+<b class="fc"><i>1135</i>&nbsp;                c = _inputData.readUnsignedByte();</b>
+<i>1136</i>&nbsp;            }
+<i>1137</i>&nbsp;            // must be followed by sequence of ints, one minimum
+<b class="fc"><i>1138</i>&nbsp;            if (expLen == 0) {</b>
+<b class="nc"><i>1139</i>&nbsp;                reportUnexpectedNumberChar(c, &quot;Exponent indicator not followed by a digit&quot;);</b>
+<i>1140</i>&nbsp;            }
+<i>1141</i>&nbsp;        }
+<i>1142</i>&nbsp;
+<i>1143</i>&nbsp;        // Ok; unless we hit end-of-input, need to push last char read back
+<i>1144</i>&nbsp;        // As per #105, need separating space between root values; check here
+<b class="fc"><i>1145</i>&nbsp;        _nextByte = c;</b>
+<b class="fc"><i>1146</i>&nbsp;        if (_parsingContext.inRoot()) {</b>
+<b class="fc"><i>1147</i>&nbsp;            _verifyRootSpace();</b>
+<i>1148</i>&nbsp;        }
+<b class="fc"><i>1149</i>&nbsp;        _textBuffer.setCurrentLength(outPtr);</b>
+<i>1150</i>&nbsp;
+<i>1151</i>&nbsp;        // And there we have it!
+<b class="fc"><i>1152</i>&nbsp;        return resetFloat(negative, integerPartLength, fractLen, expLen);</b>
+<i>1153</i>&nbsp;    }
+<i>1154</i>&nbsp;
+<i>1155</i>&nbsp;    /**
+<i>1156</i>&nbsp;     * Method called to ensure that a root-value is followed by a space token,
+<i>1157</i>&nbsp;     * if possible.
+<i>1158</i>&nbsp;     *&lt;p&gt;
+<i>1159</i>&nbsp;     * NOTE: with {@link DataInput} source, not really feasible, up-front.
+<i>1160</i>&nbsp;     * If we did want, we could rearrange things to require space before
+<i>1161</i>&nbsp;     * next read, but initially let&#39;s just do nothing.
+<i>1162</i>&nbsp;     */
+<i>1163</i>&nbsp;    private final void _verifyRootSpace() throws IOException
+<i>1164</i>&nbsp;    {
+<b class="fc"><i>1165</i>&nbsp;        int ch = _nextByte;</b>
+<b class="fc"><i>1166</i>&nbsp;        if (ch &lt;= INT_SPACE) {</b>
+<b class="fc"><i>1167</i>&nbsp;            _nextByte = -1;</b>
+<b class="fc"><i>1168</i>&nbsp;            if (ch == INT_CR || ch == INT_LF) {</b>
+<b class="nc"><i>1169</i>&nbsp;                ++_currInputRow;</b>
+<i>1170</i>&nbsp;            }
+<b class="fc"><i>1171</i>&nbsp;            return;</b>
+<i>1172</i>&nbsp;        }
+<b class="nc"><i>1173</i>&nbsp;        _reportMissingRootWS(ch);</b>
+<b class="nc"><i>1174</i>&nbsp;    }</b>
+<i>1175</i>&nbsp;
+<i>1176</i>&nbsp;    /*
+<i>1177</i>&nbsp;    /**********************************************************
+<i>1178</i>&nbsp;    /* Internal methods, secondary parsing
+<i>1179</i>&nbsp;    /**********************************************************
+<i>1180</i>&nbsp;     */
+<i>1181</i>&nbsp;    
+<i>1182</i>&nbsp;    protected final String _parseName(int i) throws IOException
+<i>1183</i>&nbsp;    {
+<b class="fc"><i>1184</i>&nbsp;        if (i != INT_QUOTE) {</b>
+<b class="fc"><i>1185</i>&nbsp;            return _handleOddName(i);</b>
+<i>1186</i>&nbsp;        }
+<i>1187</i>&nbsp;        // If so, can also unroll loops nicely
+<i>1188</i>&nbsp;        /* 25-Nov-2008, tatu: This may seem weird, but here we do
+<i>1189</i>&nbsp;         *   NOT want to worry about UTF-8 decoding. Rather, we&#39;ll
+<i>1190</i>&nbsp;         *   assume that part is ok (if not it will get caught
+<i>1191</i>&nbsp;         *   later on), and just handle quotes and backslashes here.
+<i>1192</i>&nbsp;         */
+<b class="fc"><i>1193</i>&nbsp;        final int[] codes = _icLatin1;</b>
+<i>1194</i>&nbsp;
+<b class="fc"><i>1195</i>&nbsp;        int q = _inputData.readUnsignedByte();</b>
+<i>1196</i>&nbsp;
+<b class="fc"><i>1197</i>&nbsp;        if (codes[q] == 0) {</b>
+<b class="fc"><i>1198</i>&nbsp;            i = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>1199</i>&nbsp;            if (codes[i] == 0) {</b>
+<b class="fc"><i>1200</i>&nbsp;                q = (q &lt;&lt; 8) | i;</b>
+<b class="fc"><i>1201</i>&nbsp;                i = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>1202</i>&nbsp;                if (codes[i] == 0) {</b>
+<b class="fc"><i>1203</i>&nbsp;                    q = (q &lt;&lt; 8) | i;</b>
+<b class="fc"><i>1204</i>&nbsp;                    i = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>1205</i>&nbsp;                    if (codes[i] == 0) {</b>
+<b class="fc"><i>1206</i>&nbsp;                        q = (q &lt;&lt; 8) | i;</b>
+<b class="fc"><i>1207</i>&nbsp;                        i = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>1208</i>&nbsp;                        if (codes[i] == 0) {</b>
+<b class="fc"><i>1209</i>&nbsp;                            _quad1 = q;</b>
+<b class="fc"><i>1210</i>&nbsp;                            return _parseMediumName(i);</b>
+<i>1211</i>&nbsp;                        }
+<b class="fc"><i>1212</i>&nbsp;                        if (i == INT_QUOTE) { // 4 byte/char case or broken</b>
+<b class="fc"><i>1213</i>&nbsp;                            return findName(q, 4);</b>
+<i>1214</i>&nbsp;                        }
+<b class="fc"><i>1215</i>&nbsp;                        return parseName(q, i, 4);</b>
+<i>1216</i>&nbsp;                    }
+<b class="fc"><i>1217</i>&nbsp;                    if (i == INT_QUOTE) { // 3 byte/char case or broken</b>
+<b class="fc"><i>1218</i>&nbsp;                        return findName(q, 3);</b>
+<i>1219</i>&nbsp;                    }
+<b class="nc"><i>1220</i>&nbsp;                    return parseName(q, i, 3);</b>
+<i>1221</i>&nbsp;                }                
+<b class="fc"><i>1222</i>&nbsp;                if (i == INT_QUOTE) { // 2 byte/char case or broken</b>
+<b class="fc"><i>1223</i>&nbsp;                    return findName(q, 2);</b>
+<i>1224</i>&nbsp;                }
+<b class="nc"><i>1225</i>&nbsp;                return parseName(q, i, 2);</b>
+<i>1226</i>&nbsp;            }
+<b class="fc"><i>1227</i>&nbsp;            if (i == INT_QUOTE) { // one byte/char case or broken</b>
+<b class="fc"><i>1228</i>&nbsp;                return findName(q, 1);</b>
+<i>1229</i>&nbsp;            }
+<b class="nc"><i>1230</i>&nbsp;            return parseName(q, i, 1);</b>
+<i>1231</i>&nbsp;        }     
+<b class="fc"><i>1232</i>&nbsp;        if (q == INT_QUOTE) { // special case, &quot;&quot;</b>
+<b class="fc"><i>1233</i>&nbsp;            return &quot;&quot;;</b>
+<i>1234</i>&nbsp;        }
+<b class="fc"><i>1235</i>&nbsp;        return parseName(0, q, 0); // quoting or invalid char</b>
+<i>1236</i>&nbsp;    }
+<i>1237</i>&nbsp;
+<i>1238</i>&nbsp;    private final String _parseMediumName(int q2) throws IOException
+<i>1239</i>&nbsp;    {
+<b class="fc"><i>1240</i>&nbsp;        final int[] codes = _icLatin1;</b>
+<i>1241</i>&nbsp;
+<i>1242</i>&nbsp;        // Ok, got 5 name bytes so far
+<b class="fc"><i>1243</i>&nbsp;        int i = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>1244</i>&nbsp;        if (codes[i] != 0) {</b>
+<b class="fc"><i>1245</i>&nbsp;            if (i == INT_QUOTE) { // 5 bytes</b>
+<b class="fc"><i>1246</i>&nbsp;                return findName(_quad1, q2, 1);</b>
+<i>1247</i>&nbsp;            }
+<b class="nc"><i>1248</i>&nbsp;            return parseName(_quad1, q2, i, 1); // quoting or invalid char</b>
+<i>1249</i>&nbsp;        }
+<b class="fc"><i>1250</i>&nbsp;        q2 = (q2 &lt;&lt; 8) | i;</b>
+<b class="fc"><i>1251</i>&nbsp;        i = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>1252</i>&nbsp;        if (codes[i] != 0) {</b>
+<b class="fc"><i>1253</i>&nbsp;            if (i == INT_QUOTE) { // 6 bytes</b>
+<b class="fc"><i>1254</i>&nbsp;                return findName(_quad1, q2, 2);</b>
+<i>1255</i>&nbsp;            }
+<b class="nc"><i>1256</i>&nbsp;            return parseName(_quad1, q2, i, 2);</b>
+<i>1257</i>&nbsp;        }
+<b class="fc"><i>1258</i>&nbsp;        q2 = (q2 &lt;&lt; 8) | i;</b>
+<b class="fc"><i>1259</i>&nbsp;        i = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>1260</i>&nbsp;        if (codes[i] != 0) {</b>
+<b class="fc"><i>1261</i>&nbsp;            if (i == INT_QUOTE) { // 7 bytes</b>
+<b class="fc"><i>1262</i>&nbsp;                return findName(_quad1, q2, 3);</b>
+<i>1263</i>&nbsp;            }
+<b class="nc"><i>1264</i>&nbsp;            return parseName(_quad1, q2, i, 3);</b>
+<i>1265</i>&nbsp;        }
+<b class="fc"><i>1266</i>&nbsp;        q2 = (q2 &lt;&lt; 8) | i;</b>
+<b class="fc"><i>1267</i>&nbsp;        i = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>1268</i>&nbsp;        if (codes[i] != 0) {</b>
+<b class="fc"><i>1269</i>&nbsp;            if (i == INT_QUOTE) { // 8 bytes</b>
+<b class="fc"><i>1270</i>&nbsp;                return findName(_quad1, q2, 4);</b>
+<i>1271</i>&nbsp;            }
+<b class="nc"><i>1272</i>&nbsp;            return parseName(_quad1, q2, i, 4);</b>
+<i>1273</i>&nbsp;        }
+<b class="fc"><i>1274</i>&nbsp;        return _parseMediumName2(i, q2);</b>
+<i>1275</i>&nbsp;    }
+<i>1276</i>&nbsp;
+<i>1277</i>&nbsp;    private final String _parseMediumName2(int q3, final int q2) throws IOException
+<i>1278</i>&nbsp;    {
+<b class="fc"><i>1279</i>&nbsp;        final int[] codes = _icLatin1;</b>
+<i>1280</i>&nbsp;
+<i>1281</i>&nbsp;        // Got 9 name bytes so far
+<b class="fc"><i>1282</i>&nbsp;        int i = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>1283</i>&nbsp;        if (codes[i] != 0) {</b>
+<b class="fc"><i>1284</i>&nbsp;            if (i == INT_QUOTE) { // 9 bytes</b>
+<b class="fc"><i>1285</i>&nbsp;                return findName(_quad1, q2, q3, 1);</b>
+<i>1286</i>&nbsp;            }
+<b class="nc"><i>1287</i>&nbsp;            return parseName(_quad1, q2, q3, i, 1);</b>
+<i>1288</i>&nbsp;        }
+<b class="fc"><i>1289</i>&nbsp;        q3 = (q3 &lt;&lt; 8) | i;</b>
+<b class="fc"><i>1290</i>&nbsp;        i = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>1291</i>&nbsp;        if (codes[i] != 0) {</b>
+<b class="fc"><i>1292</i>&nbsp;            if (i == INT_QUOTE) { // 10 bytes</b>
+<b class="fc"><i>1293</i>&nbsp;                return findName(_quad1, q2, q3, 2);</b>
+<i>1294</i>&nbsp;            }
+<b class="nc"><i>1295</i>&nbsp;            return parseName(_quad1, q2, q3, i, 2);</b>
+<i>1296</i>&nbsp;        }
+<b class="fc"><i>1297</i>&nbsp;        q3 = (q3 &lt;&lt; 8) | i;</b>
+<b class="fc"><i>1298</i>&nbsp;        i = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>1299</i>&nbsp;        if (codes[i] != 0) {</b>
+<b class="fc"><i>1300</i>&nbsp;            if (i == INT_QUOTE) { // 11 bytes</b>
+<b class="fc"><i>1301</i>&nbsp;                return findName(_quad1, q2, q3, 3);</b>
+<i>1302</i>&nbsp;            }
+<b class="nc"><i>1303</i>&nbsp;            return parseName(_quad1, q2, q3, i, 3);</b>
+<i>1304</i>&nbsp;        }
+<b class="fc"><i>1305</i>&nbsp;        q3 = (q3 &lt;&lt; 8) | i;</b>
+<b class="fc"><i>1306</i>&nbsp;        i = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>1307</i>&nbsp;        if (codes[i] != 0) {</b>
+<b class="fc"><i>1308</i>&nbsp;            if (i == INT_QUOTE) { // 12 bytes</b>
+<b class="fc"><i>1309</i>&nbsp;                return findName(_quad1, q2, q3, 4);</b>
+<i>1310</i>&nbsp;            }
+<b class="nc"><i>1311</i>&nbsp;            return parseName(_quad1, q2, q3, i, 4);</b>
+<i>1312</i>&nbsp;        }
+<b class="fc"><i>1313</i>&nbsp;        return _parseLongName(i, q2, q3);</b>
+<i>1314</i>&nbsp;    }
+<i>1315</i>&nbsp;    
+<i>1316</i>&nbsp;    private final String _parseLongName(int q, final int q2, int q3) throws IOException
+<i>1317</i>&nbsp;    {
+<b class="fc"><i>1318</i>&nbsp;        _quadBuffer[0] = _quad1;</b>
+<b class="fc"><i>1319</i>&nbsp;        _quadBuffer[1] = q2;</b>
+<b class="fc"><i>1320</i>&nbsp;        _quadBuffer[2] = q3;</b>
+<i>1321</i>&nbsp;
+<i>1322</i>&nbsp;        // As explained above, will ignore UTF-8 encoding at this point
+<b class="fc"><i>1323</i>&nbsp;        final int[] codes = _icLatin1;</b>
+<b class="fc"><i>1324</i>&nbsp;        int qlen = 3;</b>
+<i>1325</i>&nbsp;
+<i>1326</i>&nbsp;        while (true) {
+<b class="fc"><i>1327</i>&nbsp;            int i = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>1328</i>&nbsp;            if (codes[i] != 0) {</b>
+<b class="nc"><i>1329</i>&nbsp;                if (i == INT_QUOTE) {</b>
+<b class="nc"><i>1330</i>&nbsp;                    return findName(_quadBuffer, qlen, q, 1);</b>
+<i>1331</i>&nbsp;                }
+<b class="nc"><i>1332</i>&nbsp;                return parseEscapedName(_quadBuffer, qlen, q, i, 1);</b>
+<i>1333</i>&nbsp;            }
+<i>1334</i>&nbsp;
+<b class="fc"><i>1335</i>&nbsp;            q = (q &lt;&lt; 8) | i;</b>
+<b class="fc"><i>1336</i>&nbsp;            i = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>1337</i>&nbsp;            if (codes[i] != 0) {</b>
+<b class="fc"><i>1338</i>&nbsp;                if (i == INT_QUOTE) {</b>
+<b class="fc"><i>1339</i>&nbsp;                    return findName(_quadBuffer, qlen, q, 2);</b>
+<i>1340</i>&nbsp;                }
+<b class="nc"><i>1341</i>&nbsp;                return parseEscapedName(_quadBuffer, qlen, q, i, 2);</b>
+<i>1342</i>&nbsp;            }
+<i>1343</i>&nbsp;
+<b class="fc"><i>1344</i>&nbsp;            q = (q &lt;&lt; 8) | i;</b>
+<b class="fc"><i>1345</i>&nbsp;            i = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>1346</i>&nbsp;            if (codes[i] != 0) {</b>
+<b class="fc"><i>1347</i>&nbsp;                if (i == INT_QUOTE) {</b>
+<b class="fc"><i>1348</i>&nbsp;                    return findName(_quadBuffer, qlen, q, 3);</b>
+<i>1349</i>&nbsp;                }
+<b class="nc"><i>1350</i>&nbsp;                return parseEscapedName(_quadBuffer, qlen, q, i, 3);</b>
+<i>1351</i>&nbsp;            }
+<i>1352</i>&nbsp;
+<b class="fc"><i>1353</i>&nbsp;            q = (q &lt;&lt; 8) | i;</b>
+<b class="fc"><i>1354</i>&nbsp;            i = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>1355</i>&nbsp;            if (codes[i] != 0) {</b>
+<b class="fc"><i>1356</i>&nbsp;                if (i == INT_QUOTE) {</b>
+<b class="nc"><i>1357</i>&nbsp;                    return findName(_quadBuffer, qlen, q, 4);</b>
+<i>1358</i>&nbsp;                }
+<b class="fc"><i>1359</i>&nbsp;                return parseEscapedName(_quadBuffer, qlen, q, i, 4);</b>
+<i>1360</i>&nbsp;            }
+<i>1361</i>&nbsp;
+<i>1362</i>&nbsp;            // Nope, no end in sight. Need to grow quad array etc
+<b class="fc"><i>1363</i>&nbsp;            if (qlen &gt;= _quadBuffer.length) {</b>
+<b class="fc"><i>1364</i>&nbsp;                _quadBuffer = _growArrayBy(_quadBuffer, qlen);</b>
+<i>1365</i>&nbsp;            }
+<b class="fc"><i>1366</i>&nbsp;            _quadBuffer[qlen++] = q;</b>
+<b class="fc"><i>1367</i>&nbsp;            q = i;</b>
+<b class="fc"><i>1368</i>&nbsp;        }</b>
+<i>1369</i>&nbsp;    }
+<i>1370</i>&nbsp;
+<i>1371</i>&nbsp;    private final String parseName(int q1, int ch, int lastQuadBytes) throws IOException {
+<b class="fc"><i>1372</i>&nbsp;        return parseEscapedName(_quadBuffer, 0, q1, ch, lastQuadBytes);</b>
+<i>1373</i>&nbsp;    }
+<i>1374</i>&nbsp;
+<i>1375</i>&nbsp;    private final String parseName(int q1, int q2, int ch, int lastQuadBytes) throws IOException {
+<b class="nc"><i>1376</i>&nbsp;        _quadBuffer[0] = q1;</b>
+<b class="nc"><i>1377</i>&nbsp;        return parseEscapedName(_quadBuffer, 1, q2, ch, lastQuadBytes);</b>
+<i>1378</i>&nbsp;    }
+<i>1379</i>&nbsp;
+<i>1380</i>&nbsp;    private final String parseName(int q1, int q2, int q3, int ch, int lastQuadBytes) throws IOException {
+<b class="nc"><i>1381</i>&nbsp;        _quadBuffer[0] = q1;</b>
+<b class="nc"><i>1382</i>&nbsp;        _quadBuffer[1] = q2;</b>
+<b class="nc"><i>1383</i>&nbsp;        return parseEscapedName(_quadBuffer, 2, q3, ch, lastQuadBytes);</b>
+<i>1384</i>&nbsp;    }
+<i>1385</i>&nbsp;    
+<i>1386</i>&nbsp;    /**
+<i>1387</i>&nbsp;     * Slower parsing method which is generally branched to when
+<i>1388</i>&nbsp;     * an escape sequence is detected (or alternatively for long
+<i>1389</i>&nbsp;     * names, one crossing input buffer boundary).
+<i>1390</i>&nbsp;     * Needs to be able to handle more exceptional cases, gets slower,
+<i>1391</i>&nbsp;     * and hance is offlined to a separate method.
+<i>1392</i>&nbsp;     */
+<i>1393</i>&nbsp;    protected final String parseEscapedName(int[] quads, int qlen, int currQuad, int ch,
+<i>1394</i>&nbsp;            int currQuadBytes) throws IOException
+<i>1395</i>&nbsp;    {
+<i>1396</i>&nbsp;        /* 25-Nov-2008, tatu: This may seem weird, but here we do not want to worry about
+<i>1397</i>&nbsp;         *   UTF-8 decoding yet. Rather, we&#39;ll assume that part is ok (if not it will get
+<i>1398</i>&nbsp;         *   caught later on), and just handle quotes and backslashes here.
+<i>1399</i>&nbsp;         */
+<b class="fc"><i>1400</i>&nbsp;        final int[] codes = _icLatin1;</b>
+<i>1401</i>&nbsp;
+<i>1402</i>&nbsp;        while (true) {
+<b class="fc"><i>1403</i>&nbsp;            if (codes[ch] != 0) {</b>
+<b class="fc"><i>1404</i>&nbsp;                if (ch == INT_QUOTE) { // we are done</b>
+<b class="fc"><i>1405</i>&nbsp;                    break;</b>
+<i>1406</i>&nbsp;                }
+<i>1407</i>&nbsp;                // Unquoted white space?
+<b class="fc"><i>1408</i>&nbsp;                if (ch != INT_BACKSLASH) {</b>
+<i>1409</i>&nbsp;                    // As per [JACKSON-208], call can now return:
+<b class="nc"><i>1410</i>&nbsp;                    _throwUnquotedSpace(ch, &quot;name&quot;);</b>
+<i>1411</i>&nbsp;                } else {
+<i>1412</i>&nbsp;                    // Nope, escape sequence
+<b class="fc"><i>1413</i>&nbsp;                    ch = _decodeEscaped();</b>
+<i>1414</i>&nbsp;                }
+<i>1415</i>&nbsp;                /* Oh crap. May need to UTF-8 (re-)encode it, if it&#39;s
+<i>1416</i>&nbsp;                 * beyond 7-bit ascii. Gets pretty messy.
+<i>1417</i>&nbsp;                 * If this happens often, may want to use different name
+<i>1418</i>&nbsp;                 * canonicalization to avoid these hits.
+<i>1419</i>&nbsp;                 */
+<b class="fc"><i>1420</i>&nbsp;                if (ch &gt; 127) {</b>
+<i>1421</i>&nbsp;                    // Ok, we&#39;ll need room for first byte right away
+<b class="nc"><i>1422</i>&nbsp;                    if (currQuadBytes &gt;= 4) {</b>
+<b class="nc"><i>1423</i>&nbsp;                        if (qlen &gt;= quads.length) {</b>
+<b class="nc"><i>1424</i>&nbsp;                            _quadBuffer = quads = _growArrayBy(quads, quads.length);</b>
+<i>1425</i>&nbsp;                        }
+<b class="nc"><i>1426</i>&nbsp;                        quads[qlen++] = currQuad;</b>
+<b class="nc"><i>1427</i>&nbsp;                        currQuad = 0;</b>
+<b class="nc"><i>1428</i>&nbsp;                        currQuadBytes = 0;</b>
+<i>1429</i>&nbsp;                    }
+<b class="nc"><i>1430</i>&nbsp;                    if (ch &lt; 0x800) { // 2-byte</b>
+<b class="nc"><i>1431</i>&nbsp;                        currQuad = (currQuad &lt;&lt; 8) | (0xc0 | (ch &gt;&gt; 6));</b>
+<b class="nc"><i>1432</i>&nbsp;                        ++currQuadBytes;</b>
+<i>1433</i>&nbsp;                        // Second byte gets output below:
+<i>1434</i>&nbsp;                    } else { // 3 bytes; no need to worry about surrogates here
+<b class="nc"><i>1435</i>&nbsp;                        currQuad = (currQuad &lt;&lt; 8) | (0xe0 | (ch &gt;&gt; 12));</b>
+<b class="nc"><i>1436</i>&nbsp;                        ++currQuadBytes;</b>
+<i>1437</i>&nbsp;                        // need room for middle byte?
+<b class="nc"><i>1438</i>&nbsp;                        if (currQuadBytes &gt;= 4) {</b>
+<b class="nc"><i>1439</i>&nbsp;                            if (qlen &gt;= quads.length) {</b>
+<b class="nc"><i>1440</i>&nbsp;                                _quadBuffer = quads = _growArrayBy(quads, quads.length);</b>
+<i>1441</i>&nbsp;                            }
+<b class="nc"><i>1442</i>&nbsp;                            quads[qlen++] = currQuad;</b>
+<b class="nc"><i>1443</i>&nbsp;                            currQuad = 0;</b>
+<b class="nc"><i>1444</i>&nbsp;                            currQuadBytes = 0;</b>
+<i>1445</i>&nbsp;                        }
+<b class="nc"><i>1446</i>&nbsp;                        currQuad = (currQuad &lt;&lt; 8) | (0x80 | ((ch &gt;&gt; 6) &amp; 0x3f));</b>
+<b class="nc"><i>1447</i>&nbsp;                        ++currQuadBytes;</b>
+<i>1448</i>&nbsp;                    }
+<i>1449</i>&nbsp;                    // And same last byte in both cases, gets output below:
+<b class="nc"><i>1450</i>&nbsp;                    ch = 0x80 | (ch &amp; 0x3f);</b>
+<i>1451</i>&nbsp;                }
+<i>1452</i>&nbsp;            }
+<i>1453</i>&nbsp;            // Ok, we have one more byte to add at any rate:
+<b class="fc"><i>1454</i>&nbsp;            if (currQuadBytes &lt; 4) {</b>
+<b class="fc"><i>1455</i>&nbsp;                ++currQuadBytes;</b>
+<b class="fc"><i>1456</i>&nbsp;                currQuad = (currQuad &lt;&lt; 8) | ch;</b>
+<i>1457</i>&nbsp;            } else {
+<b class="fc"><i>1458</i>&nbsp;                if (qlen &gt;= quads.length) {</b>
+<b class="nc"><i>1459</i>&nbsp;                    _quadBuffer = quads = _growArrayBy(quads, quads.length);</b>
+<i>1460</i>&nbsp;                }
+<b class="fc"><i>1461</i>&nbsp;                quads[qlen++] = currQuad;</b>
+<b class="fc"><i>1462</i>&nbsp;                currQuad = ch;</b>
+<b class="fc"><i>1463</i>&nbsp;                currQuadBytes = 1;</b>
+<i>1464</i>&nbsp;            }
+<b class="fc"><i>1465</i>&nbsp;            ch = _inputData.readUnsignedByte();</b>
+<i>1466</i>&nbsp;        }
+<i>1467</i>&nbsp;
+<b class="fc"><i>1468</i>&nbsp;        if (currQuadBytes &gt; 0) {</b>
+<b class="fc"><i>1469</i>&nbsp;            if (qlen &gt;= quads.length) {</b>
+<b class="nc"><i>1470</i>&nbsp;                _quadBuffer = quads = _growArrayBy(quads, quads.length);</b>
+<i>1471</i>&nbsp;            }
+<b class="fc"><i>1472</i>&nbsp;            quads[qlen++] = pad(currQuad, currQuadBytes);</b>
+<i>1473</i>&nbsp;        }
+<b class="fc"><i>1474</i>&nbsp;        String name = _symbols.findName(quads, qlen);</b>
+<b class="fc"><i>1475</i>&nbsp;        if (name == null) {</b>
+<b class="nc"><i>1476</i>&nbsp;            name = addName(quads, qlen, currQuadBytes);</b>
+<i>1477</i>&nbsp;        }
+<b class="fc"><i>1478</i>&nbsp;        return name;</b>
+<i>1479</i>&nbsp;    }
+<i>1480</i>&nbsp;
+<i>1481</i>&nbsp;    /**
+<i>1482</i>&nbsp;     * Method called when we see non-white space character other
+<i>1483</i>&nbsp;     * than double quote, when expecting a field name.
+<i>1484</i>&nbsp;     * In standard mode will just throw an exception; but
+<i>1485</i>&nbsp;     * in non-standard modes may be able to parse name.
+<i>1486</i>&nbsp;     */
+<i>1487</i>&nbsp;    protected String _handleOddName(int ch) throws IOException
+<i>1488</i>&nbsp;    {
+<b class="fc"><i>1489</i>&nbsp;        if (ch == &#39;\&#39;&#39; &amp;&amp; isEnabled(Feature.ALLOW_SINGLE_QUOTES)) {</b>
+<b class="fc"><i>1490</i>&nbsp;            return _parseAposName();</b>
+<i>1491</i>&nbsp;        }
+<b class="fc"><i>1492</i>&nbsp;        if (!isEnabled(Feature.ALLOW_UNQUOTED_FIELD_NAMES)) {</b>
+<b class="fc"><i>1493</i>&nbsp;            char c = (char) _decodeCharForError(ch);</b>
+<b class="fc"><i>1494</i>&nbsp;            _reportUnexpectedChar(c, &quot;was expecting double-quote to start field name&quot;);</b>
+<i>1495</i>&nbsp;        }
+<i>1496</i>&nbsp;        /* Also: note that although we use a different table here,
+<i>1497</i>&nbsp;         * it does NOT handle UTF-8 decoding. It&#39;ll just pass those
+<i>1498</i>&nbsp;         * high-bit codes as acceptable for later decoding.
+<i>1499</i>&nbsp;         */
+<b class="fc"><i>1500</i>&nbsp;        final int[] codes = CharTypes.getInputCodeUtf8JsNames();</b>
+<i>1501</i>&nbsp;        // Also: must start with a valid character...
+<b class="fc"><i>1502</i>&nbsp;        if (codes[ch] != 0) {</b>
+<b class="nc"><i>1503</i>&nbsp;            _reportUnexpectedChar(ch, &quot;was expecting either valid name character (for unquoted name) or double-quote (for quoted) to start field name&quot;);</b>
+<i>1504</i>&nbsp;        }
+<i>1505</i>&nbsp;
+<i>1506</i>&nbsp;        /* Ok, now; instead of ultra-optimizing parsing here (as with
+<i>1507</i>&nbsp;         * regular JSON names), let&#39;s just use the generic &quot;slow&quot;
+<i>1508</i>&nbsp;         * variant. Can measure its impact later on if need be
+<i>1509</i>&nbsp;         */
+<b class="fc"><i>1510</i>&nbsp;        int[] quads = _quadBuffer;</b>
+<b class="fc"><i>1511</i>&nbsp;        int qlen = 0;</b>
+<b class="fc"><i>1512</i>&nbsp;        int currQuad = 0;</b>
+<b class="fc"><i>1513</i>&nbsp;        int currQuadBytes = 0;</b>
+<i>1514</i>&nbsp;
+<i>1515</i>&nbsp;        while (true) {
+<i>1516</i>&nbsp;            // Ok, we have one more byte to add at any rate:
+<b class="fc"><i>1517</i>&nbsp;            if (currQuadBytes &lt; 4) {</b>
+<b class="fc"><i>1518</i>&nbsp;                ++currQuadBytes;</b>
+<b class="fc"><i>1519</i>&nbsp;                currQuad = (currQuad &lt;&lt; 8) | ch;</b>
+<i>1520</i>&nbsp;            } else {
+<b class="fc"><i>1521</i>&nbsp;                if (qlen &gt;= quads.length) {</b>
+<b class="nc"><i>1522</i>&nbsp;                    _quadBuffer = quads = _growArrayBy(quads, quads.length);</b>
+<i>1523</i>&nbsp;                }
+<b class="fc"><i>1524</i>&nbsp;                quads[qlen++] = currQuad;</b>
+<b class="fc"><i>1525</i>&nbsp;                currQuad = ch;</b>
+<b class="fc"><i>1526</i>&nbsp;                currQuadBytes = 1;</b>
+<i>1527</i>&nbsp;            }
+<b class="fc"><i>1528</i>&nbsp;            ch = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>1529</i>&nbsp;            if (codes[ch] != 0) {</b>
+<b class="fc"><i>1530</i>&nbsp;                break;</b>
+<i>1531</i>&nbsp;            }
+<i>1532</i>&nbsp;        }
+<i>1533</i>&nbsp;        // Note: we must &quot;push back&quot; character read here for future consumption
+<b class="fc"><i>1534</i>&nbsp;        _nextByte = ch;</b>
+<b class="fc"><i>1535</i>&nbsp;        if (currQuadBytes &gt; 0) {</b>
+<b class="fc"><i>1536</i>&nbsp;            if (qlen &gt;= quads.length) {</b>
+<b class="nc"><i>1537</i>&nbsp;                _quadBuffer = quads = _growArrayBy(quads, quads.length);</b>
+<i>1538</i>&nbsp;            }
+<b class="fc"><i>1539</i>&nbsp;            quads[qlen++] = currQuad;</b>
+<i>1540</i>&nbsp;        }
+<b class="fc"><i>1541</i>&nbsp;        String name = _symbols.findName(quads, qlen);</b>
+<b class="fc"><i>1542</i>&nbsp;        if (name == null) {</b>
+<b class="fc"><i>1543</i>&nbsp;            name = addName(quads, qlen, currQuadBytes);</b>
+<i>1544</i>&nbsp;        }
+<b class="fc"><i>1545</i>&nbsp;        return name;</b>
+<i>1546</i>&nbsp;    }
+<i>1547</i>&nbsp;
+<i>1548</i>&nbsp;    /* Parsing to allow optional use of non-standard single quotes.
+<i>1549</i>&nbsp;     * Plenty of duplicated code;
+<i>1550</i>&nbsp;     * main reason being to try to avoid slowing down fast path
+<i>1551</i>&nbsp;     * for valid JSON -- more alternatives, more code, generally
+<i>1552</i>&nbsp;     * bit slower execution.
+<i>1553</i>&nbsp;     */
+<i>1554</i>&nbsp;    protected String _parseAposName() throws IOException
+<i>1555</i>&nbsp;    {
+<b class="fc"><i>1556</i>&nbsp;        int ch = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>1557</i>&nbsp;        if (ch == &#39;\&#39;&#39;) { // special case, &#39;&#39;</b>
+<b class="fc"><i>1558</i>&nbsp;            return &quot;&quot;;</b>
+<i>1559</i>&nbsp;        }
+<b class="fc"><i>1560</i>&nbsp;        int[] quads = _quadBuffer;</b>
+<b class="fc"><i>1561</i>&nbsp;        int qlen = 0;</b>
+<b class="fc"><i>1562</i>&nbsp;        int currQuad = 0;</b>
+<b class="fc"><i>1563</i>&nbsp;        int currQuadBytes = 0;</b>
+<i>1564</i>&nbsp;
+<i>1565</i>&nbsp;        // Copied from parseEscapedFieldName, with minor mods:
+<i>1566</i>&nbsp;
+<b class="fc"><i>1567</i>&nbsp;        final int[] codes = _icLatin1;</b>
+<i>1568</i>&nbsp;
+<i>1569</i>&nbsp;        while (true) {
+<b class="fc"><i>1570</i>&nbsp;            if (ch == &#39;\&#39;&#39;) {</b>
+<b class="fc"><i>1571</i>&nbsp;                break;</b>
+<i>1572</i>&nbsp;            }
+<i>1573</i>&nbsp;            // additional check to skip handling of double-quotes
+<b class="fc"><i>1574</i>&nbsp;            if (ch != &#39;&quot;&#39; &amp;&amp; codes[ch] != 0) {</b>
+<b class="nc"><i>1575</i>&nbsp;                if (ch != &#39;\\&#39;) {</b>
+<i>1576</i>&nbsp;                    // Unquoted white space?
+<i>1577</i>&nbsp;                    // As per [JACKSON-208], call can now return:
+<b class="nc"><i>1578</i>&nbsp;                    _throwUnquotedSpace(ch, &quot;name&quot;);</b>
+<i>1579</i>&nbsp;                } else {
+<i>1580</i>&nbsp;                    // Nope, escape sequence
+<b class="nc"><i>1581</i>&nbsp;                    ch = _decodeEscaped();</b>
+<i>1582</i>&nbsp;                }
+<i>1583</i>&nbsp;                /* Oh crap. May need to UTF-8 (re-)encode it, if it&#39;s  beyond
+<i>1584</i>&nbsp;                 * 7-bit ASCII. Gets pretty messy. If this happens often, may want
+<i>1585</i>&nbsp;                 * to use different name canonicalization to avoid these hits.
+<i>1586</i>&nbsp;                 */
+<b class="nc"><i>1587</i>&nbsp;                if (ch &gt; 127) {</b>
+<i>1588</i>&nbsp;                    // Ok, we&#39;ll need room for first byte right away
+<b class="nc"><i>1589</i>&nbsp;                    if (currQuadBytes &gt;= 4) {</b>
+<b class="nc"><i>1590</i>&nbsp;                        if (qlen &gt;= quads.length) {</b>
+<b class="nc"><i>1591</i>&nbsp;                            _quadBuffer = quads = _growArrayBy(quads, quads.length);</b>
+<i>1592</i>&nbsp;                        }
+<b class="nc"><i>1593</i>&nbsp;                        quads[qlen++] = currQuad;</b>
+<b class="nc"><i>1594</i>&nbsp;                        currQuad = 0;</b>
+<b class="nc"><i>1595</i>&nbsp;                        currQuadBytes = 0;</b>
+<i>1596</i>&nbsp;                    }
+<b class="nc"><i>1597</i>&nbsp;                    if (ch &lt; 0x800) { // 2-byte</b>
+<b class="nc"><i>1598</i>&nbsp;                        currQuad = (currQuad &lt;&lt; 8) | (0xc0 | (ch &gt;&gt; 6));</b>
+<b class="nc"><i>1599</i>&nbsp;                        ++currQuadBytes;</b>
+<i>1600</i>&nbsp;                        // Second byte gets output below:
+<i>1601</i>&nbsp;                    } else { // 3 bytes; no need to worry about surrogates here
+<b class="nc"><i>1602</i>&nbsp;                        currQuad = (currQuad &lt;&lt; 8) | (0xe0 | (ch &gt;&gt; 12));</b>
+<b class="nc"><i>1603</i>&nbsp;                        ++currQuadBytes;</b>
+<i>1604</i>&nbsp;                        // need room for middle byte?
+<b class="nc"><i>1605</i>&nbsp;                        if (currQuadBytes &gt;= 4) {</b>
+<b class="nc"><i>1606</i>&nbsp;                            if (qlen &gt;= quads.length) {</b>
+<b class="nc"><i>1607</i>&nbsp;                                _quadBuffer = quads = _growArrayBy(quads, quads.length);</b>
+<i>1608</i>&nbsp;                            }
+<b class="nc"><i>1609</i>&nbsp;                            quads[qlen++] = currQuad;</b>
+<b class="nc"><i>1610</i>&nbsp;                            currQuad = 0;</b>
+<b class="nc"><i>1611</i>&nbsp;                            currQuadBytes = 0;</b>
+<i>1612</i>&nbsp;                        }
+<b class="nc"><i>1613</i>&nbsp;                        currQuad = (currQuad &lt;&lt; 8) | (0x80 | ((ch &gt;&gt; 6) &amp; 0x3f));</b>
+<b class="nc"><i>1614</i>&nbsp;                        ++currQuadBytes;</b>
+<i>1615</i>&nbsp;                    }
+<i>1616</i>&nbsp;                    // And same last byte in both cases, gets output below:
+<b class="nc"><i>1617</i>&nbsp;                    ch = 0x80 | (ch &amp; 0x3f);</b>
+<i>1618</i>&nbsp;                }
+<i>1619</i>&nbsp;            }
+<i>1620</i>&nbsp;            // Ok, we have one more byte to add at any rate:
+<b class="fc"><i>1621</i>&nbsp;            if (currQuadBytes &lt; 4) {</b>
+<b class="fc"><i>1622</i>&nbsp;                ++currQuadBytes;</b>
+<b class="fc"><i>1623</i>&nbsp;                currQuad = (currQuad &lt;&lt; 8) | ch;</b>
+<i>1624</i>&nbsp;            } else {
+<b class="fc"><i>1625</i>&nbsp;                if (qlen &gt;= quads.length) {</b>
+<b class="nc"><i>1626</i>&nbsp;                    _quadBuffer = quads = _growArrayBy(quads, quads.length);</b>
+<i>1627</i>&nbsp;                }
+<b class="fc"><i>1628</i>&nbsp;                quads[qlen++] = currQuad;</b>
+<b class="fc"><i>1629</i>&nbsp;                currQuad = ch;</b>
+<b class="fc"><i>1630</i>&nbsp;                currQuadBytes = 1;</b>
+<i>1631</i>&nbsp;            }
+<b class="fc"><i>1632</i>&nbsp;            ch = _inputData.readUnsignedByte();</b>
+<i>1633</i>&nbsp;        }
+<i>1634</i>&nbsp;
+<b class="fc"><i>1635</i>&nbsp;        if (currQuadBytes &gt; 0) {</b>
+<b class="fc"><i>1636</i>&nbsp;            if (qlen &gt;= quads.length) {</b>
+<b class="nc"><i>1637</i>&nbsp;                _quadBuffer = quads = _growArrayBy(quads, quads.length);</b>
+<i>1638</i>&nbsp;            }
+<b class="fc"><i>1639</i>&nbsp;            quads[qlen++] = pad(currQuad, currQuadBytes);</b>
+<i>1640</i>&nbsp;        }
+<b class="fc"><i>1641</i>&nbsp;        String name = _symbols.findName(quads, qlen);</b>
+<b class="fc"><i>1642</i>&nbsp;        if (name == null) {</b>
+<b class="fc"><i>1643</i>&nbsp;            name = addName(quads, qlen, currQuadBytes);</b>
+<i>1644</i>&nbsp;        }
+<b class="fc"><i>1645</i>&nbsp;        return name;</b>
+<i>1646</i>&nbsp;    }
+<i>1647</i>&nbsp;
+<i>1648</i>&nbsp;    /*
+<i>1649</i>&nbsp;    /**********************************************************
+<i>1650</i>&nbsp;    /* Internal methods, symbol (name) handling
+<i>1651</i>&nbsp;    /**********************************************************
+<i>1652</i>&nbsp;     */
+<i>1653</i>&nbsp;
+<i>1654</i>&nbsp;    private final String findName(int q1, int lastQuadBytes) throws JsonParseException
+<i>1655</i>&nbsp;    {
+<b class="fc"><i>1656</i>&nbsp;        q1 = pad(q1, lastQuadBytes);</b>
+<i>1657</i>&nbsp;        // Usually we&#39;ll find it from the canonical symbol table already
+<b class="fc"><i>1658</i>&nbsp;        String name = _symbols.findName(q1);</b>
+<b class="fc"><i>1659</i>&nbsp;        if (name != null) {</b>
+<b class="fc"><i>1660</i>&nbsp;            return name;</b>
+<i>1661</i>&nbsp;        }
+<i>1662</i>&nbsp;        // If not, more work. We&#39;ll need add stuff to buffer
+<b class="fc"><i>1663</i>&nbsp;        _quadBuffer[0] = q1;</b>
+<b class="fc"><i>1664</i>&nbsp;        return addName(_quadBuffer, 1, lastQuadBytes);</b>
+<i>1665</i>&nbsp;    }
+<i>1666</i>&nbsp;
+<i>1667</i>&nbsp;    private final String findName(int q1, int q2, int lastQuadBytes) throws JsonParseException
+<i>1668</i>&nbsp;    {
+<b class="fc"><i>1669</i>&nbsp;        q2 = pad(q2, lastQuadBytes);</b>
+<i>1670</i>&nbsp;        // Usually we&#39;ll find it from the canonical symbol table already
+<b class="fc"><i>1671</i>&nbsp;        String name = _symbols.findName(q1, q2);</b>
+<b class="fc"><i>1672</i>&nbsp;        if (name != null) {</b>
+<b class="fc"><i>1673</i>&nbsp;            return name;</b>
+<i>1674</i>&nbsp;        }
+<i>1675</i>&nbsp;        // If not, more work. We&#39;ll need add stuff to buffer
+<b class="fc"><i>1676</i>&nbsp;        _quadBuffer[0] = q1;</b>
+<b class="fc"><i>1677</i>&nbsp;        _quadBuffer[1] = q2;</b>
+<b class="fc"><i>1678</i>&nbsp;        return addName(_quadBuffer, 2, lastQuadBytes);</b>
+<i>1679</i>&nbsp;    }
+<i>1680</i>&nbsp;
+<i>1681</i>&nbsp;    private final String findName(int q1, int q2, int q3, int lastQuadBytes) throws JsonParseException
+<i>1682</i>&nbsp;    {
+<b class="fc"><i>1683</i>&nbsp;        q3 = pad(q3, lastQuadBytes);</b>
+<b class="fc"><i>1684</i>&nbsp;        String name = _symbols.findName(q1, q2, q3);</b>
+<b class="fc"><i>1685</i>&nbsp;        if (name != null) {</b>
+<b class="fc"><i>1686</i>&nbsp;            return name;</b>
+<i>1687</i>&nbsp;        }
+<b class="fc"><i>1688</i>&nbsp;        int[] quads = _quadBuffer;</b>
+<b class="fc"><i>1689</i>&nbsp;        quads[0] = q1;</b>
+<b class="fc"><i>1690</i>&nbsp;        quads[1] = q2;</b>
+<b class="fc"><i>1691</i>&nbsp;        quads[2] = pad(q3, lastQuadBytes);</b>
+<b class="fc"><i>1692</i>&nbsp;        return addName(quads, 3, lastQuadBytes);</b>
+<i>1693</i>&nbsp;    }
+<i>1694</i>&nbsp;    
+<i>1695</i>&nbsp;    private final String findName(int[] quads, int qlen, int lastQuad, int lastQuadBytes) throws JsonParseException
+<i>1696</i>&nbsp;    {
+<b class="fc"><i>1697</i>&nbsp;        if (qlen &gt;= quads.length) {</b>
+<b class="nc"><i>1698</i>&nbsp;            _quadBuffer = quads = _growArrayBy(quads, quads.length);</b>
+<i>1699</i>&nbsp;        }
+<b class="fc"><i>1700</i>&nbsp;        quads[qlen++] = pad(lastQuad, lastQuadBytes);</b>
+<b class="fc"><i>1701</i>&nbsp;        String name = _symbols.findName(quads, qlen);</b>
+<b class="fc"><i>1702</i>&nbsp;        if (name == null) {</b>
+<b class="nc"><i>1703</i>&nbsp;            return addName(quads, qlen, lastQuadBytes);</b>
+<i>1704</i>&nbsp;        }
+<b class="fc"><i>1705</i>&nbsp;        return name;</b>
+<i>1706</i>&nbsp;    }
+<i>1707</i>&nbsp;
+<i>1708</i>&nbsp;    /**
+<i>1709</i>&nbsp;     * This is the main workhorse method used when we take a symbol
+<i>1710</i>&nbsp;     * table miss. It needs to demultiplex individual bytes, decode
+<i>1711</i>&nbsp;     * multi-byte chars (if any), and then construct Name instance
+<i>1712</i>&nbsp;     * and add it to the symbol table.
+<i>1713</i>&nbsp;     */
+<i>1714</i>&nbsp;    private final String addName(int[] quads, int qlen, int lastQuadBytes) throws JsonParseException
+<i>1715</i>&nbsp;    {
+<i>1716</i>&nbsp;        /* Ok: must decode UTF-8 chars. No other validation is
+<i>1717</i>&nbsp;         * needed, since unescaping has been done earlier as necessary
+<i>1718</i>&nbsp;         * (as well as error reporting for unescaped control chars)
+<i>1719</i>&nbsp;         */
+<i>1720</i>&nbsp;        // 4 bytes per quad, except last one maybe less
+<b class="fc"><i>1721</i>&nbsp;        int byteLen = (qlen &lt;&lt; 2) - 4 + lastQuadBytes;</b>
+<i>1722</i>&nbsp;
+<i>1723</i>&nbsp;        /* And last one is not correctly aligned (leading zero bytes instead
+<i>1724</i>&nbsp;         * need to shift a bit, instead of trailing). Only need to shift it
+<i>1725</i>&nbsp;         * for UTF-8 decoding; need revert for storage (since key will not
+<i>1726</i>&nbsp;         * be aligned, to optimize lookup speed)
+<i>1727</i>&nbsp;         */
+<i>1728</i>&nbsp;        int lastQuad;
+<i>1729</i>&nbsp;
+<b class="fc"><i>1730</i>&nbsp;        if (lastQuadBytes &lt; 4) {</b>
+<b class="fc"><i>1731</i>&nbsp;            lastQuad = quads[qlen-1];</b>
+<i>1732</i>&nbsp;            // 8/16/24 bit left shift
+<b class="fc"><i>1733</i>&nbsp;            quads[qlen-1] = (lastQuad &lt;&lt; ((4 - lastQuadBytes) &lt;&lt; 3));</b>
+<i>1734</i>&nbsp;        } else {
+<b class="fc"><i>1735</i>&nbsp;            lastQuad = 0;</b>
+<i>1736</i>&nbsp;        }
+<i>1737</i>&nbsp;
+<i>1738</i>&nbsp;        // Need some working space, TextBuffer works well:
+<b class="fc"><i>1739</i>&nbsp;        char[] cbuf = _textBuffer.emptyAndGetCurrentSegment();</b>
+<b class="fc"><i>1740</i>&nbsp;        int cix = 0;</b>
+<i>1741</i>&nbsp;
+<b class="fc"><i>1742</i>&nbsp;        for (int ix = 0; ix &lt; byteLen; ) {</b>
+<b class="fc"><i>1743</i>&nbsp;            int ch = quads[ix &gt;&gt; 2]; // current quad, need to shift+mask</b>
+<b class="fc"><i>1744</i>&nbsp;            int byteIx = (ix &amp; 3);</b>
+<b class="fc"><i>1745</i>&nbsp;            ch = (ch &gt;&gt; ((3 - byteIx) &lt;&lt; 3)) &amp; 0xFF;</b>
+<b class="fc"><i>1746</i>&nbsp;            ++ix;</b>
+<i>1747</i>&nbsp;
+<b class="fc"><i>1748</i>&nbsp;            if (ch &gt; 127) { // multi-byte</b>
+<i>1749</i>&nbsp;                int needed;
+<b class="nc"><i>1750</i>&nbsp;                if ((ch &amp; 0xE0) == 0xC0) { // 2 bytes (0x0080 - 0x07FF)</b>
+<b class="nc"><i>1751</i>&nbsp;                    ch &amp;= 0x1F;</b>
+<b class="nc"><i>1752</i>&nbsp;                    needed = 1;</b>
+<b class="nc"><i>1753</i>&nbsp;                } else if ((ch &amp; 0xF0) == 0xE0) { // 3 bytes (0x0800 - 0xFFFF)</b>
+<b class="nc"><i>1754</i>&nbsp;                    ch &amp;= 0x0F;</b>
+<b class="nc"><i>1755</i>&nbsp;                    needed = 2;</b>
+<b class="nc"><i>1756</i>&nbsp;                } else if ((ch &amp; 0xF8) == 0xF0) { // 4 bytes; double-char with surrogates and all...</b>
+<b class="nc"><i>1757</i>&nbsp;                    ch &amp;= 0x07;</b>
+<b class="nc"><i>1758</i>&nbsp;                    needed = 3;</b>
+<i>1759</i>&nbsp;                } else { // 5- and 6-byte chars not valid xml chars
+<b class="nc"><i>1760</i>&nbsp;                    _reportInvalidInitial(ch);</b>
+<b class="nc"><i>1761</i>&nbsp;                    needed = ch = 1; // never really gets this far</b>
+<i>1762</i>&nbsp;                }
+<b class="nc"><i>1763</i>&nbsp;                if ((ix + needed) &gt; byteLen) {</b>
+<b class="nc"><i>1764</i>&nbsp;                    _reportInvalidEOF(&quot; in field name&quot;, JsonToken.FIELD_NAME);</b>
+<i>1765</i>&nbsp;                }
+<i>1766</i>&nbsp;                
+<i>1767</i>&nbsp;                // Ok, always need at least one more:
+<b class="nc"><i>1768</i>&nbsp;                int ch2 = quads[ix &gt;&gt; 2]; // current quad, need to shift+mask</b>
+<b class="nc"><i>1769</i>&nbsp;                byteIx = (ix &amp; 3);</b>
+<b class="nc"><i>1770</i>&nbsp;                ch2 = (ch2 &gt;&gt; ((3 - byteIx) &lt;&lt; 3));</b>
+<b class="nc"><i>1771</i>&nbsp;                ++ix;</b>
+<i>1772</i>&nbsp;                
+<b class="nc"><i>1773</i>&nbsp;                if ((ch2 &amp; 0xC0) != 0x080) {</b>
+<b class="nc"><i>1774</i>&nbsp;                    _reportInvalidOther(ch2);</b>
+<i>1775</i>&nbsp;                }
+<b class="nc"><i>1776</i>&nbsp;                ch = (ch &lt;&lt; 6) | (ch2 &amp; 0x3F);</b>
+<b class="nc"><i>1777</i>&nbsp;                if (needed &gt; 1) {</b>
+<b class="nc"><i>1778</i>&nbsp;                    ch2 = quads[ix &gt;&gt; 2];</b>
+<b class="nc"><i>1779</i>&nbsp;                    byteIx = (ix &amp; 3);</b>
+<b class="nc"><i>1780</i>&nbsp;                    ch2 = (ch2 &gt;&gt; ((3 - byteIx) &lt;&lt; 3));</b>
+<b class="nc"><i>1781</i>&nbsp;                    ++ix;</b>
+<i>1782</i>&nbsp;                    
+<b class="nc"><i>1783</i>&nbsp;                    if ((ch2 &amp; 0xC0) != 0x080) {</b>
+<b class="nc"><i>1784</i>&nbsp;                        _reportInvalidOther(ch2);</b>
+<i>1785</i>&nbsp;                    }
+<b class="nc"><i>1786</i>&nbsp;                    ch = (ch &lt;&lt; 6) | (ch2 &amp; 0x3F);</b>
+<b class="nc"><i>1787</i>&nbsp;                    if (needed &gt; 2) { // 4 bytes? (need surrogates on output)</b>
+<b class="nc"><i>1788</i>&nbsp;                        ch2 = quads[ix &gt;&gt; 2];</b>
+<b class="nc"><i>1789</i>&nbsp;                        byteIx = (ix &amp; 3);</b>
+<b class="nc"><i>1790</i>&nbsp;                        ch2 = (ch2 &gt;&gt; ((3 - byteIx) &lt;&lt; 3));</b>
+<b class="nc"><i>1791</i>&nbsp;                        ++ix;</b>
+<b class="nc"><i>1792</i>&nbsp;                        if ((ch2 &amp; 0xC0) != 0x080) {</b>
+<b class="nc"><i>1793</i>&nbsp;                            _reportInvalidOther(ch2 &amp; 0xFF);</b>
+<i>1794</i>&nbsp;                        }
+<b class="nc"><i>1795</i>&nbsp;                        ch = (ch &lt;&lt; 6) | (ch2 &amp; 0x3F);</b>
+<i>1796</i>&nbsp;                    }
+<i>1797</i>&nbsp;                }
+<b class="nc"><i>1798</i>&nbsp;                if (needed &gt; 2) { // surrogate pair? once again, let&#39;s output one here, one later on</b>
+<b class="nc"><i>1799</i>&nbsp;                    ch -= 0x10000; // to normalize it starting with 0x0</b>
+<b class="nc"><i>1800</i>&nbsp;                    if (cix &gt;= cbuf.length) {</b>
+<b class="nc"><i>1801</i>&nbsp;                        cbuf = _textBuffer.expandCurrentSegment();</b>
+<i>1802</i>&nbsp;                    }
+<b class="nc"><i>1803</i>&nbsp;                    cbuf[cix++] = (char) (0xD800 + (ch &gt;&gt; 10));</b>
+<b class="nc"><i>1804</i>&nbsp;                    ch = 0xDC00 | (ch &amp; 0x03FF);</b>
+<i>1805</i>&nbsp;                }
+<i>1806</i>&nbsp;            }
+<b class="fc"><i>1807</i>&nbsp;            if (cix &gt;= cbuf.length) {</b>
+<b class="nc"><i>1808</i>&nbsp;                cbuf = _textBuffer.expandCurrentSegment();</b>
+<i>1809</i>&nbsp;            }
+<b class="fc"><i>1810</i>&nbsp;            cbuf[cix++] = (char) ch;</b>
+<b class="fc"><i>1811</i>&nbsp;        }</b>
+<i>1812</i>&nbsp;
+<i>1813</i>&nbsp;        // Ok. Now we have the character array, and can construct the String
+<b class="fc"><i>1814</i>&nbsp;        String baseName = new String(cbuf, 0, cix);</b>
+<i>1815</i>&nbsp;        // And finally, un-align if necessary
+<b class="fc"><i>1816</i>&nbsp;        if (lastQuadBytes &lt; 4) {</b>
+<b class="fc"><i>1817</i>&nbsp;            quads[qlen-1] = lastQuad;</b>
+<i>1818</i>&nbsp;        }
+<b class="fc"><i>1819</i>&nbsp;        return _symbols.addName(baseName, quads, qlen);</b>
+<i>1820</i>&nbsp;    }
+<i>1821</i>&nbsp;
+<i>1822</i>&nbsp;    /*
+<i>1823</i>&nbsp;    /**********************************************************
+<i>1824</i>&nbsp;    /* Internal methods, String value parsing
+<i>1825</i>&nbsp;    /**********************************************************
+<i>1826</i>&nbsp;     */
+<i>1827</i>&nbsp;
+<i>1828</i>&nbsp;    @Override
+<i>1829</i>&nbsp;    protected void _finishString() throws IOException
+<i>1830</i>&nbsp;    {
+<b class="fc"><i>1831</i>&nbsp;        int outPtr = 0;</b>
+<b class="fc"><i>1832</i>&nbsp;        char[] outBuf = _textBuffer.emptyAndGetCurrentSegment();</b>
+<b class="fc"><i>1833</i>&nbsp;        final int[] codes = _icUTF8;</b>
+<b class="fc"><i>1834</i>&nbsp;        final int outEnd = outBuf.length;</b>
+<i>1835</i>&nbsp;
+<i>1836</i>&nbsp;        do {
+<b class="fc"><i>1837</i>&nbsp;            int c = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>1838</i>&nbsp;            if (codes[c] != 0) {</b>
+<b class="fc"><i>1839</i>&nbsp;                if (c == INT_QUOTE) {</b>
+<b class="fc"><i>1840</i>&nbsp;                    _textBuffer.setCurrentLength(outPtr);</b>
+<b class="fc"><i>1841</i>&nbsp;                    return;</b>
+<i>1842</i>&nbsp;                }
+<b class="fc"><i>1843</i>&nbsp;                _finishString2(outBuf, outPtr, c);</b>
+<b class="fc"><i>1844</i>&nbsp;                return;</b>
+<i>1845</i>&nbsp;            }
+<b class="fc"><i>1846</i>&nbsp;            outBuf[outPtr++] = (char) c;</b>
+<b class="fc"><i>1847</i>&nbsp;        } while (outPtr &lt; outEnd);</b>
+<b class="nc"><i>1848</i>&nbsp;        _finishString2(outBuf, outPtr, _inputData.readUnsignedByte());</b>
+<b class="nc"><i>1849</i>&nbsp;    }</b>
+<i>1850</i>&nbsp;
+<i>1851</i>&nbsp;    private String _finishAndReturnString() throws IOException
+<i>1852</i>&nbsp;    {
+<b class="fc"><i>1853</i>&nbsp;        int outPtr = 0;</b>
+<b class="fc"><i>1854</i>&nbsp;        char[] outBuf = _textBuffer.emptyAndGetCurrentSegment();</b>
+<b class="fc"><i>1855</i>&nbsp;        final int[] codes = _icUTF8;</b>
+<b class="fc"><i>1856</i>&nbsp;        final int outEnd = outBuf.length;</b>
+<i>1857</i>&nbsp;
+<i>1858</i>&nbsp;        do {
+<b class="fc"><i>1859</i>&nbsp;            int c = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>1860</i>&nbsp;            if (codes[c] != 0) {</b>
+<b class="fc"><i>1861</i>&nbsp;                if (c == INT_QUOTE) {</b>
+<b class="fc"><i>1862</i>&nbsp;                    return _textBuffer.setCurrentAndReturn(outPtr);</b>
+<i>1863</i>&nbsp;                }
+<b class="fc"><i>1864</i>&nbsp;                _finishString2(outBuf, outPtr, c);</b>
+<b class="fc"><i>1865</i>&nbsp;                return _textBuffer.contentsAsString();</b>
+<i>1866</i>&nbsp;            }
+<b class="fc"><i>1867</i>&nbsp;            outBuf[outPtr++] = (char) c;</b>
+<b class="fc"><i>1868</i>&nbsp;        } while (outPtr &lt; outEnd);</b>
+<b class="nc"><i>1869</i>&nbsp;        _finishString2(outBuf, outPtr, _inputData.readUnsignedByte());</b>
+<b class="nc"><i>1870</i>&nbsp;        return _textBuffer.contentsAsString();</b>
+<i>1871</i>&nbsp;    }
+<i>1872</i>&nbsp;    
+<i>1873</i>&nbsp;    private final void _finishString2(char[] outBuf, int outPtr, int c)
+<i>1874</i>&nbsp;        throws IOException
+<i>1875</i>&nbsp;    {
+<i>1876</i>&nbsp;        // Here we do want to do full decoding, hence:
+<b class="fc"><i>1877</i>&nbsp;        final int[] codes = _icUTF8;</b>
+<b class="fc"><i>1878</i>&nbsp;        int outEnd = outBuf.length;</b>
+<i>1879</i>&nbsp;
+<i>1880</i>&nbsp;        main_loop:
+<b class="fc"><i>1881</i>&nbsp;        for (;; c = _inputData.readUnsignedByte()) {</b>
+<i>1882</i>&nbsp;            // Then the tight ASCII non-funny-char loop:
+<b class="fc"><i>1883</i>&nbsp;            while (codes[c] == 0) {</b>
+<b class="fc"><i>1884</i>&nbsp;                if (outPtr &gt;= outEnd) {</b>
+<b class="nc"><i>1885</i>&nbsp;                    outBuf = _textBuffer.finishCurrentSegment();</b>
+<b class="nc"><i>1886</i>&nbsp;                    outPtr = 0;</b>
+<b class="nc"><i>1887</i>&nbsp;                    outEnd = outBuf.length;</b>
+<i>1888</i>&nbsp;                }
+<b class="fc"><i>1889</i>&nbsp;                outBuf[outPtr++] = (char) c;</b>
+<b class="fc"><i>1890</i>&nbsp;                c = _inputData.readUnsignedByte();</b>
+<i>1891</i>&nbsp;            }
+<i>1892</i>&nbsp;            // Ok: end marker, escape or multi-byte?
+<b class="fc"><i>1893</i>&nbsp;            if (c == INT_QUOTE) {</b>
+<b class="fc"><i>1894</i>&nbsp;                break main_loop;</b>
+<i>1895</i>&nbsp;            }
+<b class="fc"><i>1896</i>&nbsp;            switch (codes[c]) {</b>
+<i>1897</i>&nbsp;            case 1: // backslash
+<b class="fc"><i>1898</i>&nbsp;                c = _decodeEscaped();</b>
+<b class="fc"><i>1899</i>&nbsp;                break;</b>
+<i>1900</i>&nbsp;            case 2: // 2-byte UTF
+<b class="fc"><i>1901</i>&nbsp;                c = _decodeUtf8_2(c);</b>
+<b class="fc"><i>1902</i>&nbsp;                break;</b>
+<i>1903</i>&nbsp;            case 3: // 3-byte UTF
+<b class="fc"><i>1904</i>&nbsp;                c = _decodeUtf8_3(c);</b>
+<b class="fc"><i>1905</i>&nbsp;                break;</b>
+<i>1906</i>&nbsp;            case 4: // 4-byte UTF
+<b class="fc"><i>1907</i>&nbsp;                c = _decodeUtf8_4(c);</b>
+<i>1908</i>&nbsp;                // Let&#39;s add first part right away:
+<b class="fc"><i>1909</i>&nbsp;                outBuf[outPtr++] = (char) (0xD800 | (c &gt;&gt; 10));</b>
+<b class="fc"><i>1910</i>&nbsp;                if (outPtr &gt;= outBuf.length) {</b>
+<b class="nc"><i>1911</i>&nbsp;                    outBuf = _textBuffer.finishCurrentSegment();</b>
+<b class="nc"><i>1912</i>&nbsp;                    outPtr = 0;</b>
+<b class="nc"><i>1913</i>&nbsp;                    outEnd = outBuf.length;</b>
+<i>1914</i>&nbsp;                }
+<b class="fc"><i>1915</i>&nbsp;                c = 0xDC00 | (c &amp; 0x3FF);</b>
+<i>1916</i>&nbsp;                // And let the other char output down below
+<b class="fc"><i>1917</i>&nbsp;                break;</b>
+<i>1918</i>&nbsp;            default:
+<b class="nc"><i>1919</i>&nbsp;                if (c &lt; INT_SPACE) {</b>
+<b class="nc"><i>1920</i>&nbsp;                    _throwUnquotedSpace(c, &quot;string value&quot;);</b>
+<i>1921</i>&nbsp;                } else {
+<i>1922</i>&nbsp;                    // Is this good enough error message?
+<b class="nc"><i>1923</i>&nbsp;                    _reportInvalidChar(c);</b>
+<i>1924</i>&nbsp;                }
+<i>1925</i>&nbsp;            }
+<i>1926</i>&nbsp;            // Need more room?
+<b class="fc"><i>1927</i>&nbsp;            if (outPtr &gt;= outBuf.length) {</b>
+<b class="nc"><i>1928</i>&nbsp;                outBuf = _textBuffer.finishCurrentSegment();</b>
+<b class="nc"><i>1929</i>&nbsp;                outPtr = 0;</b>
+<b class="nc"><i>1930</i>&nbsp;                outEnd = outBuf.length;</b>
+<i>1931</i>&nbsp;            }
+<i>1932</i>&nbsp;            // Ok, let&#39;s add char to output:
+<b class="fc"><i>1933</i>&nbsp;            outBuf[outPtr++] = (char) c;</b>
+<i>1934</i>&nbsp;        }
+<b class="fc"><i>1935</i>&nbsp;        _textBuffer.setCurrentLength(outPtr);</b>
+<b class="fc"><i>1936</i>&nbsp;    }</b>
+<i>1937</i>&nbsp;
+<i>1938</i>&nbsp;    /**
+<i>1939</i>&nbsp;     * Method called to skim through rest of unparsed String value,
+<i>1940</i>&nbsp;     * if it is not needed. This can be done bit faster if contents
+<i>1941</i>&nbsp;     * need not be stored for future access.
+<i>1942</i>&nbsp;     */
+<i>1943</i>&nbsp;    protected void _skipString() throws IOException
+<i>1944</i>&nbsp;    {
+<b class="fc"><i>1945</i>&nbsp;        _tokenIncomplete = false;</b>
+<i>1946</i>&nbsp;
+<i>1947</i>&nbsp;        // Need to be fully UTF-8 aware here:
+<b class="fc"><i>1948</i>&nbsp;        final int[] codes = _icUTF8;</b>
+<i>1949</i>&nbsp;
+<i>1950</i>&nbsp;        main_loop:
+<i>1951</i>&nbsp;        while (true) {
+<i>1952</i>&nbsp;            int c;
+<i>1953</i>&nbsp;
+<i>1954</i>&nbsp;            ascii_loop:
+<i>1955</i>&nbsp;            while (true) {
+<b class="fc"><i>1956</i>&nbsp;                c = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>1957</i>&nbsp;                if (codes[c] != 0) {</b>
+<b class="fc"><i>1958</i>&nbsp;                    break ascii_loop;</b>
+<i>1959</i>&nbsp;                }
+<i>1960</i>&nbsp;            }
+<i>1961</i>&nbsp;            // Ok: end marker, escape or multi-byte?
+<b class="fc"><i>1962</i>&nbsp;            if (c == INT_QUOTE) {</b>
+<b class="fc"><i>1963</i>&nbsp;                break main_loop;</b>
+<i>1964</i>&nbsp;            }
+<i>1965</i>&nbsp;            
+<b class="fc"><i>1966</i>&nbsp;            switch (codes[c]) {</b>
+<i>1967</i>&nbsp;            case 1: // backslash
+<b class="nc"><i>1968</i>&nbsp;                _decodeEscaped();</b>
+<b class="nc"><i>1969</i>&nbsp;                break;</b>
+<i>1970</i>&nbsp;            case 2: // 2-byte UTF
+<b class="fc"><i>1971</i>&nbsp;                _skipUtf8_2();</b>
+<b class="fc"><i>1972</i>&nbsp;                break;</b>
+<i>1973</i>&nbsp;            case 3: // 3-byte UTF
+<b class="nc"><i>1974</i>&nbsp;                _skipUtf8_3();</b>
+<b class="nc"><i>1975</i>&nbsp;                break;</b>
+<i>1976</i>&nbsp;            case 4: // 4-byte UTF
+<b class="nc"><i>1977</i>&nbsp;                _skipUtf8_4();</b>
+<b class="nc"><i>1978</i>&nbsp;                break;</b>
+<i>1979</i>&nbsp;            default:
+<b class="nc"><i>1980</i>&nbsp;                if (c &lt; INT_SPACE) {</b>
+<b class="nc"><i>1981</i>&nbsp;                    _throwUnquotedSpace(c, &quot;string value&quot;);</b>
+<i>1982</i>&nbsp;                } else {
+<i>1983</i>&nbsp;                    // Is this good enough error message?
+<b class="nc"><i>1984</i>&nbsp;                    _reportInvalidChar(c);</b>
+<i>1985</i>&nbsp;                }
+<i>1986</i>&nbsp;            }
+<b class="fc"><i>1987</i>&nbsp;        }</b>
+<b class="fc"><i>1988</i>&nbsp;    }</b>
+<i>1989</i>&nbsp;
+<i>1990</i>&nbsp;    /**
+<i>1991</i>&nbsp;     * Method for handling cases where first non-space character
+<i>1992</i>&nbsp;     * of an expected value token is not legal for standard JSON content.
+<i>1993</i>&nbsp;     */
+<i>1994</i>&nbsp;    protected JsonToken _handleUnexpectedValue(int c)
+<i>1995</i>&nbsp;        throws IOException
+<i>1996</i>&nbsp;    {
+<i>1997</i>&nbsp;        // Most likely an error, unless we are to allow single-quote-strings
+<b class="fc"><i>1998</i>&nbsp;        switch (c) {</b>
+<i>1999</i>&nbsp;        case &#39;]&#39;:
+<b class="fc"><i>2000</i>&nbsp;            if (!_parsingContext.inArray()) {</b>
+<b class="nc"><i>2001</i>&nbsp;                break;</b>
+<i>2002</i>&nbsp;            }
+<i>2003</i>&nbsp;            // fall through
+<i>2004</i>&nbsp;        case &#39;,&#39;:
+<i>2005</i>&nbsp;            /* !!! TODO: 08-May-2016, tatu: To support `Feature.ALLOW_MISSING_VALUES` would
+<i>2006</i>&nbsp;             *    need handling here...
+<i>2007</i>&nbsp;             */
+<b class="fc"><i>2008</i>&nbsp;            if (isEnabled(Feature.ALLOW_MISSING_VALUES)) {</b>
+<i>2009</i>&nbsp;//               _inputPtr--;
+<b class="fc"><i>2010</i>&nbsp;                _nextByte = c;</b>
+<b class="fc"><i>2011</i>&nbsp;               return JsonToken.VALUE_NULL;</b>
+<i>2012</i>&nbsp;            }
+<i>2013</i>&nbsp;            // fall through
+<i>2014</i>&nbsp;        case &#39;}&#39;:
+<i>2015</i>&nbsp;            // Error: neither is valid at this point; valid closers have
+<i>2016</i>&nbsp;            // been handled earlier
+<b class="fc"><i>2017</i>&nbsp;            _reportUnexpectedChar(c, &quot;expected a value&quot;);</b>
+<i>2018</i>&nbsp;        case &#39;\&#39;&#39;:
+<b class="fc"><i>2019</i>&nbsp;            if (isEnabled(Feature.ALLOW_SINGLE_QUOTES)) {</b>
+<b class="fc"><i>2020</i>&nbsp;                return _handleApos();</b>
+<i>2021</i>&nbsp;            }
+<i>2022</i>&nbsp;            break;
+<i>2023</i>&nbsp;        case &#39;N&#39;:
+<b class="fc"><i>2024</i>&nbsp;            _matchToken(&quot;NaN&quot;, 1);</b>
+<b class="fc"><i>2025</i>&nbsp;            if (isEnabled(Feature.ALLOW_NON_NUMERIC_NUMBERS)) {</b>
+<b class="fc"><i>2026</i>&nbsp;                return resetAsNaN(&quot;NaN&quot;, Double.NaN);</b>
+<i>2027</i>&nbsp;            }
+<b class="fc"><i>2028</i>&nbsp;            _reportError(&quot;Non-standard token &#39;NaN&#39;: enable JsonParser.Feature.ALLOW_NON_NUMERIC_NUMBERS to allow&quot;);</b>
+<b class="nc"><i>2029</i>&nbsp;            break;</b>
+<i>2030</i>&nbsp;        case &#39;I&#39;:
+<b class="fc"><i>2031</i>&nbsp;            _matchToken(&quot;Infinity&quot;, 1);</b>
+<b class="fc"><i>2032</i>&nbsp;            if (isEnabled(Feature.ALLOW_NON_NUMERIC_NUMBERS)) {</b>
+<b class="fc"><i>2033</i>&nbsp;                return resetAsNaN(&quot;Infinity&quot;, Double.POSITIVE_INFINITY);</b>
+<i>2034</i>&nbsp;            }
+<b class="nc"><i>2035</i>&nbsp;            _reportError(&quot;Non-standard token &#39;Infinity&#39;: enable JsonParser.Feature.ALLOW_NON_NUMERIC_NUMBERS to allow&quot;);</b>
+<b class="nc"><i>2036</i>&nbsp;            break;</b>
+<i>2037</i>&nbsp;        case &#39;+&#39;: // note: &#39;-&#39; is taken as number
+<b class="fc"><i>2038</i>&nbsp;            return _handleInvalidNumberStart(_inputData.readUnsignedByte(), false);</b>
+<i>2039</i>&nbsp;        }
+<i>2040</i>&nbsp;        // [core#77] Try to decode most likely token
+<b class="fc"><i>2041</i>&nbsp;        if (Character.isJavaIdentifierStart(c)) {</b>
+<b class="fc"><i>2042</i>&nbsp;            _reportInvalidToken(c, &quot;&quot;+((char) c), &quot;(&#39;true&#39;, &#39;false&#39; or &#39;null&#39;)&quot;);</b>
+<i>2043</i>&nbsp;        }
+<i>2044</i>&nbsp;        // but if it doesn&#39;t look like a token:
+<b class="fc"><i>2045</i>&nbsp;        _reportUnexpectedChar(c, &quot;expected a valid value (number, String, array, object, &#39;true&#39;, &#39;false&#39; or &#39;null&#39;)&quot;);</b>
+<b class="nc"><i>2046</i>&nbsp;        return null;</b>
+<i>2047</i>&nbsp;    }
+<i>2048</i>&nbsp;
+<i>2049</i>&nbsp;    protected JsonToken _handleApos() throws IOException
+<i>2050</i>&nbsp;    {
+<b class="fc"><i>2051</i>&nbsp;        int c = 0;</b>
+<i>2052</i>&nbsp;        // Otherwise almost verbatim copy of _finishString()
+<b class="fc"><i>2053</i>&nbsp;        int outPtr = 0;</b>
+<b class="fc"><i>2054</i>&nbsp;        char[] outBuf = _textBuffer.emptyAndGetCurrentSegment();</b>
+<i>2055</i>&nbsp;
+<i>2056</i>&nbsp;        // Here we do want to do full decoding, hence:
+<b class="fc"><i>2057</i>&nbsp;        final int[] codes = _icUTF8;</b>
+<i>2058</i>&nbsp;
+<i>2059</i>&nbsp;        main_loop:
+<i>2060</i>&nbsp;        while (true) {
+<i>2061</i>&nbsp;            // Then the tight ascii non-funny-char loop:
+<i>2062</i>&nbsp;            ascii_loop:
+<i>2063</i>&nbsp;            while (true) {
+<b class="fc"><i>2064</i>&nbsp;                int outEnd = outBuf.length;</b>
+<b class="fc"><i>2065</i>&nbsp;                if (outPtr &gt;= outBuf.length) {</b>
+<b class="nc"><i>2066</i>&nbsp;                    outBuf = _textBuffer.finishCurrentSegment();</b>
+<b class="nc"><i>2067</i>&nbsp;                    outPtr = 0;</b>
+<b class="nc"><i>2068</i>&nbsp;                    outEnd = outBuf.length;</b>
+<i>2069</i>&nbsp;                }
+<i>2070</i>&nbsp;                do {
+<b class="fc"><i>2071</i>&nbsp;                    c = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>2072</i>&nbsp;                    if (c == &#39;\&#39;&#39;) {</b>
+<b class="fc"><i>2073</i>&nbsp;                        break main_loop;</b>
+<i>2074</i>&nbsp;                    }
+<b class="fc"><i>2075</i>&nbsp;                    if (codes[c] != 0) {</b>
+<b class="fc"><i>2076</i>&nbsp;                        break ascii_loop;</b>
+<i>2077</i>&nbsp;                    }
+<b class="fc"><i>2078</i>&nbsp;                    outBuf[outPtr++] = (char) c;</b>
+<b class="fc"><i>2079</i>&nbsp;                } while (outPtr &lt; outEnd);</b>
+<b class="nc"><i>2080</i>&nbsp;            }</b>
+<b class="fc"><i>2081</i>&nbsp;            switch (codes[c]) {</b>
+<i>2082</i>&nbsp;            case 1: // backslash
+<b class="fc"><i>2083</i>&nbsp;                c = _decodeEscaped();</b>
+<b class="fc"><i>2084</i>&nbsp;                break;</b>
+<i>2085</i>&nbsp;            case 2: // 2-byte UTF
+<b class="nc"><i>2086</i>&nbsp;                c = _decodeUtf8_2(c);</b>
+<b class="nc"><i>2087</i>&nbsp;                break;</b>
+<i>2088</i>&nbsp;            case 3: // 3-byte UTF
+<b class="nc"><i>2089</i>&nbsp;                c = _decodeUtf8_3(c);</b>
+<b class="nc"><i>2090</i>&nbsp;                break;</b>
+<i>2091</i>&nbsp;            case 4: // 4-byte UTF
+<b class="nc"><i>2092</i>&nbsp;                c = _decodeUtf8_4(c);</b>
+<i>2093</i>&nbsp;                // Let&#39;s add first part right away:
+<b class="nc"><i>2094</i>&nbsp;                outBuf[outPtr++] = (char) (0xD800 | (c &gt;&gt; 10));</b>
+<b class="nc"><i>2095</i>&nbsp;                if (outPtr &gt;= outBuf.length) {</b>
+<b class="nc"><i>2096</i>&nbsp;                    outBuf = _textBuffer.finishCurrentSegment();</b>
+<b class="nc"><i>2097</i>&nbsp;                    outPtr = 0;</b>
+<i>2098</i>&nbsp;                }
+<b class="nc"><i>2099</i>&nbsp;                c = 0xDC00 | (c &amp; 0x3FF);</b>
+<i>2100</i>&nbsp;                // And let the other char output down below
+<b class="nc"><i>2101</i>&nbsp;                break;</b>
+<i>2102</i>&nbsp;            default:
+<b class="nc"><i>2103</i>&nbsp;                if (c &lt; INT_SPACE) {</b>
+<b class="nc"><i>2104</i>&nbsp;                    _throwUnquotedSpace(c, &quot;string value&quot;);</b>
+<i>2105</i>&nbsp;                }
+<i>2106</i>&nbsp;                // Is this good enough error message?
+<b class="nc"><i>2107</i>&nbsp;                _reportInvalidChar(c);</b>
+<i>2108</i>&nbsp;            }
+<i>2109</i>&nbsp;            // Need more room?
+<b class="fc"><i>2110</i>&nbsp;            if (outPtr &gt;= outBuf.length) {</b>
+<b class="nc"><i>2111</i>&nbsp;                outBuf = _textBuffer.finishCurrentSegment();</b>
+<b class="nc"><i>2112</i>&nbsp;                outPtr = 0;</b>
+<i>2113</i>&nbsp;            }
+<i>2114</i>&nbsp;            // Ok, let&#39;s add char to output:
+<b class="fc"><i>2115</i>&nbsp;            outBuf[outPtr++] = (char) c;</b>
+<i>2116</i>&nbsp;        }
+<b class="fc"><i>2117</i>&nbsp;        _textBuffer.setCurrentLength(outPtr);</b>
+<i>2118</i>&nbsp;
+<b class="fc"><i>2119</i>&nbsp;        return JsonToken.VALUE_STRING;</b>
+<i>2120</i>&nbsp;    }
+<i>2121</i>&nbsp;    
+<i>2122</i>&nbsp;    /**
+<i>2123</i>&nbsp;     * Method called if expected numeric value (due to leading sign) does not
+<i>2124</i>&nbsp;     * look like a number
+<i>2125</i>&nbsp;     */
+<i>2126</i>&nbsp;    protected JsonToken _handleInvalidNumberStart(int ch, boolean neg)
+<i>2127</i>&nbsp;        throws IOException
+<i>2128</i>&nbsp;    {
+<b class="fc"><i>2129</i>&nbsp;        while (ch == &#39;I&#39;) {</b>
+<b class="fc"><i>2130</i>&nbsp;            ch = _inputData.readUnsignedByte();</b>
+<i>2131</i>&nbsp;            String match;
+<b class="fc"><i>2132</i>&nbsp;            if (ch == &#39;N&#39;) {</b>
+<b class="fc"><i>2133</i>&nbsp;                match = neg ? &quot;-INF&quot; :&quot;+INF&quot;;</b>
+<b class="fc"><i>2134</i>&nbsp;            } else if (ch == &#39;n&#39;) {</b>
+<b class="fc"><i>2135</i>&nbsp;                match = neg ? &quot;-Infinity&quot; :&quot;+Infinity&quot;;</b>
+<i>2136</i>&nbsp;            } else {
+<i>2137</i>&nbsp;                break;
+<i>2138</i>&nbsp;            }
+<b class="fc"><i>2139</i>&nbsp;            _matchToken(match, 3);</b>
+<b class="fc"><i>2140</i>&nbsp;            if (isEnabled(Feature.ALLOW_NON_NUMERIC_NUMBERS)) {</b>
+<b class="fc"><i>2141</i>&nbsp;                return resetAsNaN(match, neg ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY);</b>
+<i>2142</i>&nbsp;            }
+<b class="fc"><i>2143</i>&nbsp;            _reportError(&quot;Non-standard token &#39;&quot;+match+&quot;&#39;: enable JsonParser.Feature.ALLOW_NON_NUMERIC_NUMBERS to allow&quot;);</b>
+<b class="nc"><i>2144</i>&nbsp;        }</b>
+<b class="fc"><i>2145</i>&nbsp;        reportUnexpectedNumberChar(ch, &quot;expected digit (0-9) to follow minus sign, for valid numeric value&quot;);</b>
+<b class="nc"><i>2146</i>&nbsp;        return null;</b>
+<i>2147</i>&nbsp;    }
+<i>2148</i>&nbsp;
+<i>2149</i>&nbsp;    protected final void _matchToken(String matchStr, int i) throws IOException
+<i>2150</i>&nbsp;    {
+<b class="fc"><i>2151</i>&nbsp;        final int len = matchStr.length();</b>
+<i>2152</i>&nbsp;        do {
+<b class="fc"><i>2153</i>&nbsp;            int ch = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>2154</i>&nbsp;            if (ch != matchStr.charAt(i)) {</b>
+<b class="fc"><i>2155</i>&nbsp;                _reportInvalidToken(ch, matchStr.substring(0, i));</b>
+<i>2156</i>&nbsp;            }
+<b class="fc"><i>2157</i>&nbsp;        } while (++i &lt; len);</b>
+<i>2158</i>&nbsp;
+<b class="fc"><i>2159</i>&nbsp;        int ch = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>2160</i>&nbsp;        if (ch &gt;= &#39;0&#39; &amp;&amp; ch != &#39;]&#39; &amp;&amp; ch != &#39;}&#39;) { // expected/allowed chars</b>
+<b class="fc"><i>2161</i>&nbsp;            _checkMatchEnd(matchStr, i, ch);</b>
+<i>2162</i>&nbsp;        }
+<b class="fc"><i>2163</i>&nbsp;        _nextByte = ch;</b>
+<b class="fc"><i>2164</i>&nbsp;    }</b>
+<i>2165</i>&nbsp;
+<i>2166</i>&nbsp;    private final void _checkMatchEnd(String matchStr, int i, int ch) throws IOException {
+<i>2167</i>&nbsp;        // but actually only alphanums are problematic
+<b class="fc"><i>2168</i>&nbsp;        char c = (char) _decodeCharForError(ch);</b>
+<b class="fc"><i>2169</i>&nbsp;        if (Character.isJavaIdentifierPart(c)) {</b>
+<b class="fc"><i>2170</i>&nbsp;            _reportInvalidToken(c, matchStr.substring(0, i));</b>
+<i>2171</i>&nbsp;        }
+<b class="nc"><i>2172</i>&nbsp;    }</b>
+<i>2173</i>&nbsp;
+<i>2174</i>&nbsp;    /*
+<i>2175</i>&nbsp;    /**********************************************************
+<i>2176</i>&nbsp;    /* Internal methods, ws skipping, escape/unescape
+<i>2177</i>&nbsp;    /**********************************************************
+<i>2178</i>&nbsp;     */
+<i>2179</i>&nbsp;
+<i>2180</i>&nbsp;    private final int _skipWS() throws IOException
+<i>2181</i>&nbsp;    {
+<b class="fc"><i>2182</i>&nbsp;        int i = _nextByte;</b>
+<b class="fc"><i>2183</i>&nbsp;        if (i &lt; 0) {</b>
+<b class="fc"><i>2184</i>&nbsp;            i = _inputData.readUnsignedByte();</b>
+<i>2185</i>&nbsp;        } else {
+<b class="fc"><i>2186</i>&nbsp;            _nextByte = -1;</b>
+<i>2187</i>&nbsp;        }
+<i>2188</i>&nbsp;        while (true) {
+<b class="fc"><i>2189</i>&nbsp;            if (i &gt; INT_SPACE) {</b>
+<b class="fc"><i>2190</i>&nbsp;                if (i == INT_SLASH || i == INT_HASH) {</b>
+<b class="fc"><i>2191</i>&nbsp;                    return _skipWSComment(i);</b>
+<i>2192</i>&nbsp;                }
+<b class="fc"><i>2193</i>&nbsp;                return i;</b>
+<i>2194</i>&nbsp;            } else {
+<i>2195</i>&nbsp;                // 06-May-2016, tatu: Could verify validity of WS, but for now why bother.
+<i>2196</i>&nbsp;                //   ... but line number is useful thingy
+<b class="fc"><i>2197</i>&nbsp;                if (i == INT_CR || i == INT_LF) {</b>
+<b class="fc"><i>2198</i>&nbsp;                    ++_currInputRow;</b>
+<i>2199</i>&nbsp;                }
+<i>2200</i>&nbsp;            }
+<b class="fc"><i>2201</i>&nbsp;            i = _inputData.readUnsignedByte();</b>
+<i>2202</i>&nbsp;        }
+<i>2203</i>&nbsp;    }
+<i>2204</i>&nbsp;
+<i>2205</i>&nbsp;    /**
+<i>2206</i>&nbsp;     * Alternative to {@link #_skipWS} that handles possible {@link EOFException}
+<i>2207</i>&nbsp;     * caused by trying to read past the end of {@link InputData}.
+<i>2208</i>&nbsp;     *
+<i>2209</i>&nbsp;     * @since 2.9
+<i>2210</i>&nbsp;     */
+<i>2211</i>&nbsp;    private final int _skipWSOrEnd() throws IOException
+<i>2212</i>&nbsp;    {
+<b class="fc"><i>2213</i>&nbsp;        int i = _nextByte;</b>
+<b class="fc"><i>2214</i>&nbsp;        if (i &lt; 0) {</b>
+<i>2215</i>&nbsp;            try {
+<b class="fc"><i>2216</i>&nbsp;                i = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>2217</i>&nbsp;            } catch (EOFException e) {</b>
+<b class="fc"><i>2218</i>&nbsp;                return _eofAsNextChar();</b>
+<b class="fc"><i>2219</i>&nbsp;            }</b>
+<i>2220</i>&nbsp;        } else {
+<b class="fc"><i>2221</i>&nbsp;            _nextByte = -1;</b>
+<i>2222</i>&nbsp;        }
+<i>2223</i>&nbsp;        while (true) {
+<b class="fc"><i>2224</i>&nbsp;            if (i &gt; INT_SPACE) {</b>
+<b class="fc"><i>2225</i>&nbsp;                if (i == INT_SLASH || i == INT_HASH) {</b>
+<b class="fc"><i>2226</i>&nbsp;                    return _skipWSComment(i);</b>
+<i>2227</i>&nbsp;                }
+<b class="fc"><i>2228</i>&nbsp;                return i;</b>
+<i>2229</i>&nbsp;            } else {
+<i>2230</i>&nbsp;                // 06-May-2016, tatu: Could verify validity of WS, but for now why bother.
+<i>2231</i>&nbsp;                //   ... but line number is useful thingy
+<b class="fc"><i>2232</i>&nbsp;                if (i == INT_CR || i == INT_LF) {</b>
+<b class="fc"><i>2233</i>&nbsp;                    ++_currInputRow;</b>
+<i>2234</i>&nbsp;                }
+<i>2235</i>&nbsp;            }
+<i>2236</i>&nbsp;            try {
+<b class="fc"><i>2237</i>&nbsp;                i = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>2238</i>&nbsp;            } catch (EOFException e) {</b>
+<b class="fc"><i>2239</i>&nbsp;                return _eofAsNextChar();</b>
+<b class="fc"><i>2240</i>&nbsp;            }</b>
+<i>2241</i>&nbsp;        }
+<i>2242</i>&nbsp;    }
+<i>2243</i>&nbsp;    
+<i>2244</i>&nbsp;    private final int _skipWSComment(int i) throws IOException
+<i>2245</i>&nbsp;    {
+<i>2246</i>&nbsp;        while (true) {
+<b class="fc"><i>2247</i>&nbsp;            if (i &gt; INT_SPACE) {</b>
+<b class="fc"><i>2248</i>&nbsp;                if (i == INT_SLASH) {</b>
+<b class="fc"><i>2249</i>&nbsp;                    _skipComment();</b>
+<b class="fc"><i>2250</i>&nbsp;                } else if (i == INT_HASH) {</b>
+<b class="fc"><i>2251</i>&nbsp;                    if (!_skipYAMLComment()) {</b>
+<b class="fc"><i>2252</i>&nbsp;                        return i;</b>
+<i>2253</i>&nbsp;                    }
+<i>2254</i>&nbsp;                } else {
+<b class="fc"><i>2255</i>&nbsp;                    return i;</b>
+<i>2256</i>&nbsp;                }
+<i>2257</i>&nbsp;            } else {
+<i>2258</i>&nbsp;                // 06-May-2016, tatu: Could verify validity of WS, but for now why bother.
+<i>2259</i>&nbsp;                //   ... but line number is useful thingy
+<b class="fc"><i>2260</i>&nbsp;                if (i == INT_CR || i == INT_LF) {</b>
+<b class="fc"><i>2261</i>&nbsp;                    ++_currInputRow;</b>
+<i>2262</i>&nbsp;                }
+<i>2263</i>&nbsp;                /*
+<i>2264</i>&nbsp;                if ((i != INT_SPACE) &amp;&amp; (i != INT_LF) &amp;&amp; (i != INT_CR)) {
+<i>2265</i>&nbsp;                    _throwInvalidSpace(i);
+<i>2266</i>&nbsp;                }
+<i>2267</i>&nbsp;                */
+<i>2268</i>&nbsp;            }
+<b class="fc"><i>2269</i>&nbsp;            i = _inputData.readUnsignedByte();</b>
+<i>2270</i>&nbsp;        }        
+<i>2271</i>&nbsp;    }
+<i>2272</i>&nbsp;
+<i>2273</i>&nbsp;    private final int _skipColon() throws IOException
+<i>2274</i>&nbsp;    {
+<b class="fc"><i>2275</i>&nbsp;        int i = _nextByte;</b>
+<b class="fc"><i>2276</i>&nbsp;        if (i &lt; 0) {</b>
+<b class="fc"><i>2277</i>&nbsp;            i = _inputData.readUnsignedByte();</b>
+<i>2278</i>&nbsp;        } else {
+<b class="fc"><i>2279</i>&nbsp;            _nextByte = -1;</b>
+<i>2280</i>&nbsp;        }
+<i>2281</i>&nbsp;        // Fast path: colon with optional single-space/tab before and/or after:
+<b class="fc"><i>2282</i>&nbsp;        if (i == INT_COLON) { // common case, no leading space</b>
+<b class="fc"><i>2283</i>&nbsp;            i = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>2284</i>&nbsp;            if (i &gt; INT_SPACE) { // nor trailing</b>
+<b class="fc"><i>2285</i>&nbsp;                if (i == INT_SLASH || i == INT_HASH) {</b>
+<b class="fc"><i>2286</i>&nbsp;                    return _skipColon2(i, true);</b>
+<i>2287</i>&nbsp;                }
+<b class="fc"><i>2288</i>&nbsp;                return i;</b>
+<i>2289</i>&nbsp;            }
+<b class="fc"><i>2290</i>&nbsp;            if (i == INT_SPACE || i == INT_TAB) {</b>
+<b class="fc"><i>2291</i>&nbsp;                i = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>2292</i>&nbsp;                if (i &gt; INT_SPACE) {</b>
+<b class="fc"><i>2293</i>&nbsp;                    if (i == INT_SLASH || i == INT_HASH) {</b>
+<b class="fc"><i>2294</i>&nbsp;                        return _skipColon2(i, true);</b>
+<i>2295</i>&nbsp;                    }
+<b class="fc"><i>2296</i>&nbsp;                    return i;</b>
+<i>2297</i>&nbsp;                }
+<i>2298</i>&nbsp;            }
+<b class="nc"><i>2299</i>&nbsp;            return _skipColon2(i, true); // true -&gt; skipped colon</b>
+<i>2300</i>&nbsp;        }
+<b class="fc"><i>2301</i>&nbsp;        if (i == INT_SPACE || i == INT_TAB) {</b>
+<b class="fc"><i>2302</i>&nbsp;            i = _inputData.readUnsignedByte();</b>
+<i>2303</i>&nbsp;        }
+<b class="fc"><i>2304</i>&nbsp;        if (i == INT_COLON) {</b>
+<b class="fc"><i>2305</i>&nbsp;            i = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>2306</i>&nbsp;            if (i &gt; INT_SPACE) {</b>
+<b class="fc"><i>2307</i>&nbsp;                if (i == INT_SLASH || i == INT_HASH) {</b>
+<b class="fc"><i>2308</i>&nbsp;                    return _skipColon2(i, true);</b>
+<i>2309</i>&nbsp;                }
+<b class="fc"><i>2310</i>&nbsp;                return i;</b>
+<i>2311</i>&nbsp;            }
+<b class="fc"><i>2312</i>&nbsp;            if (i == INT_SPACE || i == INT_TAB) {</b>
+<b class="fc"><i>2313</i>&nbsp;                i = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>2314</i>&nbsp;                if (i &gt; INT_SPACE) {</b>
+<b class="fc"><i>2315</i>&nbsp;                    if (i == INT_SLASH || i == INT_HASH) {</b>
+<b class="nc"><i>2316</i>&nbsp;                        return _skipColon2(i, true);</b>
+<i>2317</i>&nbsp;                    }
+<b class="fc"><i>2318</i>&nbsp;                    return i;</b>
+<i>2319</i>&nbsp;                }
+<i>2320</i>&nbsp;            }
+<b class="fc"><i>2321</i>&nbsp;            return _skipColon2(i, true);</b>
+<i>2322</i>&nbsp;        }
+<b class="fc"><i>2323</i>&nbsp;        return _skipColon2(i, false);</b>
+<i>2324</i>&nbsp;    }
+<i>2325</i>&nbsp;
+<i>2326</i>&nbsp;    private final int _skipColon2(int i, boolean gotColon) throws IOException
+<i>2327</i>&nbsp;    {
+<b class="fc"><i>2328</i>&nbsp;        for (;; i = _inputData.readUnsignedByte()) {</b>
+<b class="fc"><i>2329</i>&nbsp;            if (i &gt; INT_SPACE) {</b>
+<b class="fc"><i>2330</i>&nbsp;                if (i == INT_SLASH) {</b>
+<b class="fc"><i>2331</i>&nbsp;                    _skipComment();</b>
+<b class="fc"><i>2332</i>&nbsp;                    continue;</b>
+<i>2333</i>&nbsp;                }
+<b class="fc"><i>2334</i>&nbsp;                if (i == INT_HASH) {</b>
+<b class="fc"><i>2335</i>&nbsp;                    if (_skipYAMLComment()) {</b>
+<b class="fc"><i>2336</i>&nbsp;                        continue;</b>
+<i>2337</i>&nbsp;                    }
+<i>2338</i>&nbsp;                }
+<b class="fc"><i>2339</i>&nbsp;                if (gotColon) {</b>
+<b class="fc"><i>2340</i>&nbsp;                    return i;</b>
+<i>2341</i>&nbsp;                }
+<b class="fc"><i>2342</i>&nbsp;                if (i != INT_COLON) {</b>
+<b class="fc"><i>2343</i>&nbsp;                    _reportUnexpectedChar(i, &quot;was expecting a colon to separate field name and value&quot;);</b>
+<i>2344</i>&nbsp;                }
+<b class="fc"><i>2345</i>&nbsp;                gotColon = true;</b>
+<i>2346</i>&nbsp;            } else {
+<i>2347</i>&nbsp;                // 06-May-2016, tatu: Could verify validity of WS, but for now why bother.
+<i>2348</i>&nbsp;                //   ... but line number is useful thingy
+<b class="fc"><i>2349</i>&nbsp;                if (i == INT_CR || i == INT_LF) {</b>
+<b class="fc"><i>2350</i>&nbsp;                    ++_currInputRow;</b>
+<i>2351</i>&nbsp;                }
+<i>2352</i>&nbsp;            }
+<i>2353</i>&nbsp;        }
+<i>2354</i>&nbsp;    }
+<i>2355</i>&nbsp;
+<i>2356</i>&nbsp;    private final void _skipComment() throws IOException
+<i>2357</i>&nbsp;    {
+<b class="fc"><i>2358</i>&nbsp;        if (!isEnabled(Feature.ALLOW_COMMENTS)) {</b>
+<b class="fc"><i>2359</i>&nbsp;            _reportUnexpectedChar(&#39;/&#39;, &quot;maybe a (non-standard) comment? (not recognized as one since Feature &#39;ALLOW_COMMENTS&#39; not enabled for parser)&quot;);</b>
+<i>2360</i>&nbsp;        }
+<b class="fc"><i>2361</i>&nbsp;        int c = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>2362</i>&nbsp;        if (c == &#39;/&#39;) {</b>
+<b class="fc"><i>2363</i>&nbsp;            _skipLine();</b>
+<b class="fc"><i>2364</i>&nbsp;        } else if (c == &#39;*&#39;) {</b>
+<b class="fc"><i>2365</i>&nbsp;            _skipCComment();</b>
+<i>2366</i>&nbsp;        } else {
+<b class="nc"><i>2367</i>&nbsp;            _reportUnexpectedChar(c, &quot;was expecting either &#39;*&#39; or &#39;/&#39; for a comment&quot;);</b>
+<i>2368</i>&nbsp;        }
+<b class="fc"><i>2369</i>&nbsp;    }</b>
+<i>2370</i>&nbsp;
+<i>2371</i>&nbsp;    private final void _skipCComment() throws IOException
+<i>2372</i>&nbsp;    {
+<i>2373</i>&nbsp;        // Need to be UTF-8 aware here to decode content (for skipping)
+<b class="fc"><i>2374</i>&nbsp;        final int[] codes = CharTypes.getInputCodeComment();</b>
+<b class="fc"><i>2375</i>&nbsp;        int i = _inputData.readUnsignedByte();</b>
+<i>2376</i>&nbsp;
+<i>2377</i>&nbsp;        // Ok: need the matching &#39;*/&#39;
+<i>2378</i>&nbsp;        main_loop:
+<i>2379</i>&nbsp;        while (true) {
+<b class="fc"><i>2380</i>&nbsp;            int code = codes[i];</b>
+<b class="fc"><i>2381</i>&nbsp;            if (code != 0) {</b>
+<b class="fc"><i>2382</i>&nbsp;                switch (code) {</b>
+<i>2383</i>&nbsp;                case &#39;*&#39;:
+<b class="fc"><i>2384</i>&nbsp;                    i = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>2385</i>&nbsp;                    if (i == INT_SLASH) {</b>
+<b class="fc"><i>2386</i>&nbsp;                        return;</b>
+<i>2387</i>&nbsp;                    }
+<i>2388</i>&nbsp;                    continue main_loop;
+<i>2389</i>&nbsp;                case INT_LF:
+<i>2390</i>&nbsp;                case INT_CR:
+<b class="fc"><i>2391</i>&nbsp;                    ++_currInputRow;</b>
+<b class="fc"><i>2392</i>&nbsp;                    break;</b>
+<i>2393</i>&nbsp;                case 2: // 2-byte UTF
+<b class="fc"><i>2394</i>&nbsp;                    _skipUtf8_2();</b>
+<b class="fc"><i>2395</i>&nbsp;                    break;</b>
+<i>2396</i>&nbsp;                case 3: // 3-byte UTF
+<b class="nc"><i>2397</i>&nbsp;                    _skipUtf8_3();</b>
+<b class="nc"><i>2398</i>&nbsp;                    break;</b>
+<i>2399</i>&nbsp;                case 4: // 4-byte UTF
+<b class="nc"><i>2400</i>&nbsp;                    _skipUtf8_4();</b>
+<b class="nc"><i>2401</i>&nbsp;                    break;</b>
+<i>2402</i>&nbsp;                default: // e.g. -1
+<i>2403</i>&nbsp;                    // Is this good enough error message?
+<b class="nc"><i>2404</i>&nbsp;                    _reportInvalidChar(i);</b>
+<i>2405</i>&nbsp;                }
+<i>2406</i>&nbsp;            }
+<b class="fc"><i>2407</i>&nbsp;            i = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>2408</i>&nbsp;        }</b>
+<i>2409</i>&nbsp;    }
+<i>2410</i>&nbsp;
+<i>2411</i>&nbsp;    private final boolean _skipYAMLComment() throws IOException
+<i>2412</i>&nbsp;    {
+<b class="fc"><i>2413</i>&nbsp;        if (!isEnabled(Feature.ALLOW_YAML_COMMENTS)) {</b>
+<b class="fc"><i>2414</i>&nbsp;            return false;</b>
+<i>2415</i>&nbsp;        }
+<b class="fc"><i>2416</i>&nbsp;        _skipLine();</b>
+<b class="fc"><i>2417</i>&nbsp;        return true;</b>
+<i>2418</i>&nbsp;    }
+<i>2419</i>&nbsp;
+<i>2420</i>&nbsp;    /**
+<i>2421</i>&nbsp;     * Method for skipping contents of an input line; usually for CPP
+<i>2422</i>&nbsp;     * and YAML style comments.
+<i>2423</i>&nbsp;     */
+<i>2424</i>&nbsp;    private final void _skipLine() throws IOException
+<i>2425</i>&nbsp;    {
+<i>2426</i>&nbsp;        // Ok: need to find EOF or linefeed
+<b class="fc"><i>2427</i>&nbsp;        final int[] codes = CharTypes.getInputCodeComment();</b>
+<i>2428</i>&nbsp;        while (true) {
+<b class="fc"><i>2429</i>&nbsp;            int i = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>2430</i>&nbsp;            int code = codes[i];</b>
+<b class="fc"><i>2431</i>&nbsp;            if (code != 0) {</b>
+<b class="fc"><i>2432</i>&nbsp;                switch (code) {</b>
+<i>2433</i>&nbsp;                case INT_LF:
+<i>2434</i>&nbsp;                case INT_CR:
+<b class="fc"><i>2435</i>&nbsp;                    ++_currInputRow;</b>
+<b class="fc"><i>2436</i>&nbsp;                    return;</b>
+<i>2437</i>&nbsp;                case &#39;*&#39;: // nop for these comments
+<b class="nc"><i>2438</i>&nbsp;                    break;</b>
+<i>2439</i>&nbsp;                case 2: // 2-byte UTF
+<b class="nc"><i>2440</i>&nbsp;                    _skipUtf8_2();</b>
+<b class="nc"><i>2441</i>&nbsp;                    break;</b>
+<i>2442</i>&nbsp;                case 3: // 3-byte UTF
+<b class="nc"><i>2443</i>&nbsp;                    _skipUtf8_3();</b>
+<b class="nc"><i>2444</i>&nbsp;                    break;</b>
+<i>2445</i>&nbsp;                case 4: // 4-byte UTF
+<b class="nc"><i>2446</i>&nbsp;                    _skipUtf8_4();</b>
+<b class="nc"><i>2447</i>&nbsp;                    break;</b>
+<i>2448</i>&nbsp;                default: // e.g. -1
+<b class="nc"><i>2449</i>&nbsp;                    if (code &lt; 0) {</b>
+<i>2450</i>&nbsp;                        // Is this good enough error message?
+<b class="nc"><i>2451</i>&nbsp;                        _reportInvalidChar(i);</b>
+<i>2452</i>&nbsp;                    }
+<i>2453</i>&nbsp;                }
+<i>2454</i>&nbsp;            }
+<b class="fc"><i>2455</i>&nbsp;        }</b>
+<i>2456</i>&nbsp;    }
+<i>2457</i>&nbsp;    
+<i>2458</i>&nbsp;    @Override
+<i>2459</i>&nbsp;    protected char _decodeEscaped() throws IOException
+<i>2460</i>&nbsp;    {
+<b class="fc"><i>2461</i>&nbsp;        int c = _inputData.readUnsignedByte();</b>
+<i>2462</i>&nbsp;
+<b class="fc"><i>2463</i>&nbsp;        switch (c) {</b>
+<i>2464</i>&nbsp;            // First, ones that are mapped
+<i>2465</i>&nbsp;        case &#39;b&#39;:
+<b class="nc"><i>2466</i>&nbsp;            return &#39;\b&#39;;</b>
+<i>2467</i>&nbsp;        case &#39;t&#39;:
+<b class="fc"><i>2468</i>&nbsp;            return &#39;\t&#39;;</b>
+<i>2469</i>&nbsp;        case &#39;n&#39;:
+<b class="fc"><i>2470</i>&nbsp;            return &#39;\n&#39;;</b>
+<i>2471</i>&nbsp;        case &#39;f&#39;:
+<b class="nc"><i>2472</i>&nbsp;            return &#39;\f&#39;;</b>
+<i>2473</i>&nbsp;        case &#39;r&#39;:
+<b class="fc"><i>2474</i>&nbsp;            return &#39;\r&#39;;</b>
+<i>2475</i>&nbsp;
+<i>2476</i>&nbsp;            // And these are to be returned as they are
+<i>2477</i>&nbsp;        case &#39;&quot;&#39;:
+<i>2478</i>&nbsp;        case &#39;/&#39;:
+<i>2479</i>&nbsp;        case &#39;\\&#39;:
+<b class="fc"><i>2480</i>&nbsp;            return (char) c;</b>
+<i>2481</i>&nbsp;
+<i>2482</i>&nbsp;        case &#39;u&#39;: // and finally hex-escaped
+<b class="fc"><i>2483</i>&nbsp;            break;</b>
+<i>2484</i>&nbsp;
+<i>2485</i>&nbsp;        default:
+<b class="fc"><i>2486</i>&nbsp;            return _handleUnrecognizedCharacterEscape((char) _decodeCharForError(c));</b>
+<i>2487</i>&nbsp;        }
+<i>2488</i>&nbsp;
+<i>2489</i>&nbsp;        // Ok, a hex escape. Need 4 characters
+<b class="fc"><i>2490</i>&nbsp;        int value = 0;</b>
+<b class="fc"><i>2491</i>&nbsp;        for (int i = 0; i &lt; 4; ++i) {</b>
+<b class="fc"><i>2492</i>&nbsp;            int ch = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>2493</i>&nbsp;            int digit = CharTypes.charToHex(ch);</b>
+<b class="fc"><i>2494</i>&nbsp;            if (digit &lt; 0) {</b>
+<b class="nc"><i>2495</i>&nbsp;                _reportUnexpectedChar(ch, &quot;expected a hex-digit for character escape sequence&quot;);</b>
+<i>2496</i>&nbsp;            }
+<b class="fc"><i>2497</i>&nbsp;            value = (value &lt;&lt; 4) | digit;</b>
+<i>2498</i>&nbsp;        }
+<b class="fc"><i>2499</i>&nbsp;        return (char) value;</b>
+<i>2500</i>&nbsp;    }
+<i>2501</i>&nbsp;
+<i>2502</i>&nbsp;    protected int _decodeCharForError(int firstByte) throws IOException
+<i>2503</i>&nbsp;    {
+<b class="fc"><i>2504</i>&nbsp;        int c = firstByte &amp; 0xFF;</b>
+<b class="fc"><i>2505</i>&nbsp;        if (c &gt; 0x7F) { // if &gt;= 0, is ascii and fine as is</b>
+<i>2506</i>&nbsp;            int needed;
+<i>2507</i>&nbsp;            
+<i>2508</i>&nbsp;            // Ok; if we end here, we got multi-byte combination
+<b class="fc"><i>2509</i>&nbsp;            if ((c &amp; 0xE0) == 0xC0) { // 2 bytes (0x0080 - 0x07FF)</b>
+<b class="fc"><i>2510</i>&nbsp;                c &amp;= 0x1F;</b>
+<b class="fc"><i>2511</i>&nbsp;                needed = 1;</b>
+<b class="nc"><i>2512</i>&nbsp;            } else if ((c &amp; 0xF0) == 0xE0) { // 3 bytes (0x0800 - 0xFFFF)</b>
+<b class="nc"><i>2513</i>&nbsp;                c &amp;= 0x0F;</b>
+<b class="nc"><i>2514</i>&nbsp;                needed = 2;</b>
+<b class="nc"><i>2515</i>&nbsp;            } else if ((c &amp; 0xF8) == 0xF0) {</b>
+<i>2516</i>&nbsp;                // 4 bytes; double-char with surrogates and all...
+<b class="nc"><i>2517</i>&nbsp;                c &amp;= 0x07;</b>
+<b class="nc"><i>2518</i>&nbsp;                needed = 3;</b>
+<i>2519</i>&nbsp;            } else {
+<b class="nc"><i>2520</i>&nbsp;                _reportInvalidInitial(c &amp; 0xFF);</b>
+<b class="nc"><i>2521</i>&nbsp;                needed = 1; // never gets here</b>
+<i>2522</i>&nbsp;            }
+<i>2523</i>&nbsp;
+<b class="fc"><i>2524</i>&nbsp;            int d = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>2525</i>&nbsp;            if ((d &amp; 0xC0) != 0x080) {</b>
+<b class="nc"><i>2526</i>&nbsp;                _reportInvalidOther(d &amp; 0xFF);</b>
+<i>2527</i>&nbsp;            }
+<b class="fc"><i>2528</i>&nbsp;            c = (c &lt;&lt; 6) | (d &amp; 0x3F);</b>
+<i>2529</i>&nbsp;            
+<b class="fc"><i>2530</i>&nbsp;            if (needed &gt; 1) { // needed == 1 means 2 bytes total</b>
+<b class="nc"><i>2531</i>&nbsp;                d = _inputData.readUnsignedByte(); // 3rd byte</b>
+<b class="nc"><i>2532</i>&nbsp;                if ((d &amp; 0xC0) != 0x080) {</b>
+<b class="nc"><i>2533</i>&nbsp;                    _reportInvalidOther(d &amp; 0xFF);</b>
+<i>2534</i>&nbsp;                }
+<b class="nc"><i>2535</i>&nbsp;                c = (c &lt;&lt; 6) | (d &amp; 0x3F);</b>
+<b class="nc"><i>2536</i>&nbsp;                if (needed &gt; 2) { // 4 bytes? (need surrogates)</b>
+<b class="nc"><i>2537</i>&nbsp;                    d = _inputData.readUnsignedByte();</b>
+<b class="nc"><i>2538</i>&nbsp;                    if ((d &amp; 0xC0) != 0x080) {</b>
+<b class="nc"><i>2539</i>&nbsp;                        _reportInvalidOther(d &amp; 0xFF);</b>
+<i>2540</i>&nbsp;                    }
+<b class="nc"><i>2541</i>&nbsp;                    c = (c &lt;&lt; 6) | (d &amp; 0x3F);</b>
+<i>2542</i>&nbsp;                }
+<i>2543</i>&nbsp;            }
+<i>2544</i>&nbsp;        }
+<b class="fc"><i>2545</i>&nbsp;        return c;</b>
+<i>2546</i>&nbsp;    }
+<i>2547</i>&nbsp;
+<i>2548</i>&nbsp;    /*
+<i>2549</i>&nbsp;    /**********************************************************
+<i>2550</i>&nbsp;    /* Internal methods,UTF8 decoding
+<i>2551</i>&nbsp;    /**********************************************************
+<i>2552</i>&nbsp;     */
+<i>2553</i>&nbsp;
+<i>2554</i>&nbsp;    private final int _decodeUtf8_2(int c) throws IOException
+<i>2555</i>&nbsp;    {
+<b class="fc"><i>2556</i>&nbsp;        int d = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>2557</i>&nbsp;        if ((d &amp; 0xC0) != 0x080) {</b>
+<b class="nc"><i>2558</i>&nbsp;            _reportInvalidOther(d &amp; 0xFF);</b>
+<i>2559</i>&nbsp;        }
+<b class="fc"><i>2560</i>&nbsp;        return ((c &amp; 0x1F) &lt;&lt; 6) | (d &amp; 0x3F);</b>
+<i>2561</i>&nbsp;    }
+<i>2562</i>&nbsp;
+<i>2563</i>&nbsp;    private final int _decodeUtf8_3(int c1) throws IOException
+<i>2564</i>&nbsp;    {
+<b class="fc"><i>2565</i>&nbsp;        c1 &amp;= 0x0F;</b>
+<b class="fc"><i>2566</i>&nbsp;        int d = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>2567</i>&nbsp;        if ((d &amp; 0xC0) != 0x080) {</b>
+<b class="nc"><i>2568</i>&nbsp;            _reportInvalidOther(d &amp; 0xFF);</b>
+<i>2569</i>&nbsp;        }
+<b class="fc"><i>2570</i>&nbsp;        int c = (c1 &lt;&lt; 6) | (d &amp; 0x3F);</b>
+<b class="fc"><i>2571</i>&nbsp;        d = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>2572</i>&nbsp;        if ((d &amp; 0xC0) != 0x080) {</b>
+<b class="nc"><i>2573</i>&nbsp;            _reportInvalidOther(d &amp; 0xFF);</b>
+<i>2574</i>&nbsp;        }
+<b class="fc"><i>2575</i>&nbsp;        c = (c &lt;&lt; 6) | (d &amp; 0x3F);</b>
+<b class="fc"><i>2576</i>&nbsp;        return c;</b>
+<i>2577</i>&nbsp;    }
+<i>2578</i>&nbsp;
+<i>2579</i>&nbsp;    /**
+<i>2580</i>&nbsp;     * @return Character value &lt;b&gt;minus 0x10000&lt;/c&gt;; this so that caller
+<i>2581</i>&nbsp;     *    can readily expand it to actual surrogates
+<i>2582</i>&nbsp;     */
+<i>2583</i>&nbsp;    private final int _decodeUtf8_4(int c) throws IOException
+<i>2584</i>&nbsp;    {
+<b class="fc"><i>2585</i>&nbsp;        int d = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>2586</i>&nbsp;        if ((d &amp; 0xC0) != 0x080) {</b>
+<b class="nc"><i>2587</i>&nbsp;            _reportInvalidOther(d &amp; 0xFF);</b>
+<i>2588</i>&nbsp;        }
+<b class="fc"><i>2589</i>&nbsp;        c = ((c &amp; 0x07) &lt;&lt; 6) | (d &amp; 0x3F);</b>
+<b class="fc"><i>2590</i>&nbsp;        d = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>2591</i>&nbsp;        if ((d &amp; 0xC0) != 0x080) {</b>
+<b class="nc"><i>2592</i>&nbsp;            _reportInvalidOther(d &amp; 0xFF);</b>
+<i>2593</i>&nbsp;        }
+<b class="fc"><i>2594</i>&nbsp;        c = (c &lt;&lt; 6) | (d &amp; 0x3F);</b>
+<b class="fc"><i>2595</i>&nbsp;        d = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>2596</i>&nbsp;        if ((d &amp; 0xC0) != 0x080) {</b>
+<b class="nc"><i>2597</i>&nbsp;            _reportInvalidOther(d &amp; 0xFF);</b>
+<i>2598</i>&nbsp;        }
+<i>2599</i>&nbsp;
+<i>2600</i>&nbsp;        /* note: won&#39;t change it to negative here, since caller
+<i>2601</i>&nbsp;         * already knows it&#39;ll need a surrogate
+<i>2602</i>&nbsp;         */
+<b class="fc"><i>2603</i>&nbsp;        return ((c &lt;&lt; 6) | (d &amp; 0x3F)) - 0x10000;</b>
+<i>2604</i>&nbsp;    }
+<i>2605</i>&nbsp;
+<i>2606</i>&nbsp;    private final void _skipUtf8_2() throws IOException
+<i>2607</i>&nbsp;    {
+<b class="fc"><i>2608</i>&nbsp;        int c = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>2609</i>&nbsp;        if ((c &amp; 0xC0) != 0x080) {</b>
+<b class="nc"><i>2610</i>&nbsp;            _reportInvalidOther(c &amp; 0xFF);</b>
+<i>2611</i>&nbsp;        }
+<b class="fc"><i>2612</i>&nbsp;    }</b>
+<i>2613</i>&nbsp;
+<i>2614</i>&nbsp;    /* Alas, can&#39;t heavily optimize skipping, since we still have to
+<i>2615</i>&nbsp;     * do validity checks...
+<i>2616</i>&nbsp;     */
+<i>2617</i>&nbsp;    private final void _skipUtf8_3() throws IOException
+<i>2618</i>&nbsp;    {
+<i>2619</i>&nbsp;        //c &amp;= 0x0F;
+<b class="nc"><i>2620</i>&nbsp;        int c = _inputData.readUnsignedByte();</b>
+<b class="nc"><i>2621</i>&nbsp;        if ((c &amp; 0xC0) != 0x080) {</b>
+<b class="nc"><i>2622</i>&nbsp;            _reportInvalidOther(c &amp; 0xFF);</b>
+<i>2623</i>&nbsp;        }
+<b class="nc"><i>2624</i>&nbsp;        c = _inputData.readUnsignedByte();</b>
+<b class="nc"><i>2625</i>&nbsp;        if ((c &amp; 0xC0) != 0x080) {</b>
+<b class="nc"><i>2626</i>&nbsp;            _reportInvalidOther(c &amp; 0xFF);</b>
+<i>2627</i>&nbsp;        }
+<b class="nc"><i>2628</i>&nbsp;    }</b>
+<i>2629</i>&nbsp;
+<i>2630</i>&nbsp;    private final void _skipUtf8_4() throws IOException
+<i>2631</i>&nbsp;    {
+<b class="nc"><i>2632</i>&nbsp;        int d = _inputData.readUnsignedByte();</b>
+<b class="nc"><i>2633</i>&nbsp;        if ((d &amp; 0xC0) != 0x080) {</b>
+<b class="nc"><i>2634</i>&nbsp;            _reportInvalidOther(d &amp; 0xFF);</b>
+<i>2635</i>&nbsp;        }
+<b class="nc"><i>2636</i>&nbsp;        d = _inputData.readUnsignedByte();</b>
+<b class="nc"><i>2637</i>&nbsp;        if ((d &amp; 0xC0) != 0x080) {</b>
+<b class="nc"><i>2638</i>&nbsp;            _reportInvalidOther(d &amp; 0xFF);</b>
+<i>2639</i>&nbsp;        }
+<b class="nc"><i>2640</i>&nbsp;        d = _inputData.readUnsignedByte();</b>
+<b class="nc"><i>2641</i>&nbsp;        if ((d &amp; 0xC0) != 0x080) {</b>
+<b class="nc"><i>2642</i>&nbsp;            _reportInvalidOther(d &amp; 0xFF);</b>
+<i>2643</i>&nbsp;        }
+<b class="nc"><i>2644</i>&nbsp;    }</b>
+<i>2645</i>&nbsp;
+<i>2646</i>&nbsp;    /*
+<i>2647</i>&nbsp;    /**********************************************************
+<i>2648</i>&nbsp;    /* Internal methods, error reporting
+<i>2649</i>&nbsp;    /**********************************************************
+<i>2650</i>&nbsp;     */
+<i>2651</i>&nbsp;
+<i>2652</i>&nbsp;    protected void _reportInvalidToken(int ch, String matchedPart) throws IOException
+<i>2653</i>&nbsp;     {
+<b class="fc"><i>2654</i>&nbsp;         _reportInvalidToken(ch, matchedPart, &quot;&#39;null&#39;, &#39;true&#39;, &#39;false&#39; or NaN&quot;);</b>
+<b class="nc"><i>2655</i>&nbsp;     }</b>
+<i>2656</i>&nbsp;
+<i>2657</i>&nbsp;    protected void _reportInvalidToken(int ch, String matchedPart, String msg)
+<i>2658</i>&nbsp;        throws IOException
+<i>2659</i>&nbsp;     {
+<b class="fc"><i>2660</i>&nbsp;         StringBuilder sb = new StringBuilder(matchedPart);</b>
+<i>2661</i>&nbsp;
+<i>2662</i>&nbsp;         /* Let&#39;s just try to find what appears to be the token, using
+<i>2663</i>&nbsp;          * regular Java identifier character rules. It&#39;s just a heuristic,
+<i>2664</i>&nbsp;          * nothing fancy here (nor fast).
+<i>2665</i>&nbsp;          */
+<i>2666</i>&nbsp;         while (true) {
+<b class="fc"><i>2667</i>&nbsp;             char c = (char) _decodeCharForError(ch);</b>
+<b class="fc"><i>2668</i>&nbsp;             if (!Character.isJavaIdentifierPart(c)) {</b>
+<b class="fc"><i>2669</i>&nbsp;                 break;</b>
+<i>2670</i>&nbsp;             }
+<b class="fc"><i>2671</i>&nbsp;             sb.append(c);</b>
+<b class="fc"><i>2672</i>&nbsp;             ch = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>2673</i>&nbsp;         }</b>
+<b class="fc"><i>2674</i>&nbsp;         _reportError(&quot;Unrecognized token &#39;&quot;+sb.toString()+&quot;&#39;: was expecting &quot;+msg);</b>
+<b class="nc"><i>2675</i>&nbsp;     }</b>
+<i>2676</i>&nbsp;        
+<i>2677</i>&nbsp;    protected void _reportInvalidChar(int c)
+<i>2678</i>&nbsp;        throws JsonParseException
+<i>2679</i>&nbsp;    {
+<i>2680</i>&nbsp;        // Either invalid WS or illegal UTF-8 start char
+<b class="nc"><i>2681</i>&nbsp;        if (c &lt; INT_SPACE) {</b>
+<b class="nc"><i>2682</i>&nbsp;            _throwInvalidSpace(c);</b>
+<i>2683</i>&nbsp;        }
+<b class="nc"><i>2684</i>&nbsp;        _reportInvalidInitial(c);</b>
+<b class="nc"><i>2685</i>&nbsp;    }</b>
+<i>2686</i>&nbsp;
+<i>2687</i>&nbsp;    protected void _reportInvalidInitial(int mask)
+<i>2688</i>&nbsp;        throws JsonParseException
+<i>2689</i>&nbsp;    {
+<b class="nc"><i>2690</i>&nbsp;        _reportError(&quot;Invalid UTF-8 start byte 0x&quot;+Integer.toHexString(mask));</b>
+<b class="nc"><i>2691</i>&nbsp;    }</b>
+<i>2692</i>&nbsp;
+<i>2693</i>&nbsp;    private void _reportInvalidOther(int mask)
+<i>2694</i>&nbsp;        throws JsonParseException
+<i>2695</i>&nbsp;    {
+<b class="nc"><i>2696</i>&nbsp;        _reportError(&quot;Invalid UTF-8 middle byte 0x&quot;+Integer.toHexString(mask));</b>
+<b class="nc"><i>2697</i>&nbsp;    }</b>
+<i>2698</i>&nbsp;
+<i>2699</i>&nbsp;    private static int[] _growArrayBy(int[] arr, int more)
+<i>2700</i>&nbsp;    {
+<b class="fc"><i>2701</i>&nbsp;        if (arr == null) {</b>
+<b class="nc"><i>2702</i>&nbsp;            return new int[more];</b>
+<i>2703</i>&nbsp;        }
+<b class="fc"><i>2704</i>&nbsp;        return Arrays.copyOf(arr, arr.length + more);</b>
+<i>2705</i>&nbsp;    }
+<i>2706</i>&nbsp;
+<i>2707</i>&nbsp;    /*
+<i>2708</i>&nbsp;    /**********************************************************
+<i>2709</i>&nbsp;    /* Internal methods, binary access
+<i>2710</i>&nbsp;    /**********************************************************
+<i>2711</i>&nbsp;     */
+<i>2712</i>&nbsp;
+<i>2713</i>&nbsp;    /**
+<i>2714</i>&nbsp;     * Efficient handling for incremental parsing of base64-encoded
+<i>2715</i>&nbsp;     * textual content.
+<i>2716</i>&nbsp;     */
+<i>2717</i>&nbsp;    @SuppressWarnings(&quot;resource&quot;)
+<i>2718</i>&nbsp;    protected final byte[] _decodeBase64(Base64Variant b64variant) throws IOException
+<i>2719</i>&nbsp;    {
+<b class="fc"><i>2720</i>&nbsp;        ByteArrayBuilder builder = _getByteArrayBuilder();</b>
+<i>2721</i>&nbsp;
+<i>2722</i>&nbsp;        //main_loop:
+<i>2723</i>&nbsp;        while (true) {
+<i>2724</i>&nbsp;            // first, we&#39;ll skip preceding white space, if any
+<i>2725</i>&nbsp;            int ch;
+<i>2726</i>&nbsp;            do {
+<b class="fc"><i>2727</i>&nbsp;                ch = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>2728</i>&nbsp;            } while (ch &lt;= INT_SPACE);</b>
+<b class="fc"><i>2729</i>&nbsp;            int bits = b64variant.decodeBase64Char(ch);</b>
+<b class="fc"><i>2730</i>&nbsp;            if (bits &lt; 0) { // reached the end, fair and square?</b>
+<b class="fc"><i>2731</i>&nbsp;                if (ch == INT_QUOTE) {</b>
+<b class="fc"><i>2732</i>&nbsp;                    return builder.toByteArray();</b>
+<i>2733</i>&nbsp;                }
+<b class="fc"><i>2734</i>&nbsp;                bits = _decodeBase64Escape(b64variant, ch, 0);</b>
+<b class="fc"><i>2735</i>&nbsp;                if (bits &lt; 0) { // white space to skip</b>
+<b class="fc"><i>2736</i>&nbsp;                    continue;</b>
+<i>2737</i>&nbsp;                }
+<i>2738</i>&nbsp;            }
+<b class="fc"><i>2739</i>&nbsp;            int decodedData = bits;</b>
+<i>2740</i>&nbsp;            
+<i>2741</i>&nbsp;            // then second base64 char; can&#39;t get padding yet, nor ws
+<b class="fc"><i>2742</i>&nbsp;            ch = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>2743</i>&nbsp;            bits = b64variant.decodeBase64Char(ch);</b>
+<b class="fc"><i>2744</i>&nbsp;            if (bits &lt; 0) {</b>
+<b class="fc"><i>2745</i>&nbsp;                bits = _decodeBase64Escape(b64variant, ch, 1);</b>
+<i>2746</i>&nbsp;            }
+<b class="fc"><i>2747</i>&nbsp;            decodedData = (decodedData &lt;&lt; 6) | bits;</b>
+<i>2748</i>&nbsp;            // third base64 char; can be padding, but not ws
+<b class="fc"><i>2749</i>&nbsp;            ch = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>2750</i>&nbsp;            bits = b64variant.decodeBase64Char(ch);</b>
+<i>2751</i>&nbsp;
+<i>2752</i>&nbsp;            // First branch: can get padding (-&gt; 1 byte)
+<b class="fc"><i>2753</i>&nbsp;            if (bits &lt; 0) {</b>
+<b class="fc"><i>2754</i>&nbsp;                if (bits != Base64Variant.BASE64_VALUE_PADDING) {</b>
+<i>2755</i>&nbsp;                    // could also just be &#39;missing&#39;  padding
+<b class="fc"><i>2756</i>&nbsp;                    if (ch == &#39;&quot;&#39; &amp;&amp; !b64variant.usesPadding()) {</b>
+<b class="fc"><i>2757</i>&nbsp;                        decodedData &gt;&gt;= 4;</b>
+<b class="fc"><i>2758</i>&nbsp;                        builder.append(decodedData);</b>
+<b class="fc"><i>2759</i>&nbsp;                        return builder.toByteArray();</b>
+<i>2760</i>&nbsp;                    }
+<b class="fc"><i>2761</i>&nbsp;                    bits = _decodeBase64Escape(b64variant, ch, 2);</b>
+<i>2762</i>&nbsp;                }
+<b class="fc"><i>2763</i>&nbsp;                if (bits == Base64Variant.BASE64_VALUE_PADDING) {</b>
+<b class="fc"><i>2764</i>&nbsp;                    ch = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>2765</i>&nbsp;                    if (!b64variant.usesPaddingChar(ch)) {</b>
+<b class="nc"><i>2766</i>&nbsp;                        throw reportInvalidBase64Char(b64variant, ch, 3, &quot;expected padding character &#39;&quot;+b64variant.getPaddingChar()+&quot;&#39;&quot;);</b>
+<i>2767</i>&nbsp;                    }
+<i>2768</i>&nbsp;                    // Got 12 bits, only need 8, need to shift
+<b class="fc"><i>2769</i>&nbsp;                    decodedData &gt;&gt;= 4;</b>
+<b class="fc"><i>2770</i>&nbsp;                    builder.append(decodedData);</b>
+<b class="fc"><i>2771</i>&nbsp;                    continue;</b>
+<i>2772</i>&nbsp;                }
+<i>2773</i>&nbsp;            }
+<i>2774</i>&nbsp;            // Nope, 2 or 3 bytes
+<b class="fc"><i>2775</i>&nbsp;            decodedData = (decodedData &lt;&lt; 6) | bits;</b>
+<i>2776</i>&nbsp;            // fourth and last base64 char; can be padding, but not ws
+<b class="fc"><i>2777</i>&nbsp;            ch = _inputData.readUnsignedByte();</b>
+<b class="fc"><i>2778</i>&nbsp;            bits = b64variant.decodeBase64Char(ch);</b>
+<b class="fc"><i>2779</i>&nbsp;            if (bits &lt; 0) {</b>
+<b class="fc"><i>2780</i>&nbsp;                if (bits != Base64Variant.BASE64_VALUE_PADDING) {</b>
+<i>2781</i>&nbsp;                    // could also just be &#39;missing&#39;  padding
+<b class="fc"><i>2782</i>&nbsp;                    if (ch == &#39;&quot;&#39; &amp;&amp; !b64variant.usesPadding()) {</b>
+<b class="fc"><i>2783</i>&nbsp;                        decodedData &gt;&gt;= 2;</b>
+<b class="fc"><i>2784</i>&nbsp;                        builder.appendTwoBytes(decodedData);</b>
+<b class="fc"><i>2785</i>&nbsp;                        return builder.toByteArray();</b>
+<i>2786</i>&nbsp;                    }
+<b class="fc"><i>2787</i>&nbsp;                    bits = _decodeBase64Escape(b64variant, ch, 3);</b>
+<i>2788</i>&nbsp;                }
+<b class="fc"><i>2789</i>&nbsp;                if (bits == Base64Variant.BASE64_VALUE_PADDING) {</b>
+<i>2790</i>&nbsp;                    /* With padding we only get 2 bytes; but we have
+<i>2791</i>&nbsp;                     * to shift it a bit so it is identical to triplet
+<i>2792</i>&nbsp;                     * case with partial output.
+<i>2793</i>&nbsp;                     * 3 chars gives 3x6 == 18 bits, of which 2 are
+<i>2794</i>&nbsp;                     * dummies, need to discard:
+<i>2795</i>&nbsp;                     */
+<b class="fc"><i>2796</i>&nbsp;                    decodedData &gt;&gt;= 2;</b>
+<b class="fc"><i>2797</i>&nbsp;                    builder.appendTwoBytes(decodedData);</b>
+<b class="fc"><i>2798</i>&nbsp;                    continue;</b>
+<i>2799</i>&nbsp;                }
+<i>2800</i>&nbsp;            }
+<i>2801</i>&nbsp;            // otherwise, our triplet is now complete
+<b class="fc"><i>2802</i>&nbsp;            decodedData = (decodedData &lt;&lt; 6) | bits;</b>
+<b class="fc"><i>2803</i>&nbsp;            builder.appendThreeBytes(decodedData);</b>
+<b class="fc"><i>2804</i>&nbsp;        }</b>
+<i>2805</i>&nbsp;    }
+<i>2806</i>&nbsp;
+<i>2807</i>&nbsp;    /*
+<i>2808</i>&nbsp;    /**********************************************************
+<i>2809</i>&nbsp;    /* Improved location updating (refactored in 2.7)
+<i>2810</i>&nbsp;    /**********************************************************
+<i>2811</i>&nbsp;     */
+<i>2812</i>&nbsp;
+<i>2813</i>&nbsp;    @Override
+<i>2814</i>&nbsp;    public JsonLocation getTokenLocation() {
+<b class="fc"><i>2815</i>&nbsp;        final Object src = _ioContext.getSourceReference();</b>
+<b class="fc"><i>2816</i>&nbsp;        return new JsonLocation(src,</b>
+<i>2817</i>&nbsp;                -1L, -1L, _tokenInputRow, -1);
+<i>2818</i>&nbsp;    }
+<i>2819</i>&nbsp;
+<i>2820</i>&nbsp;    @Override
+<i>2821</i>&nbsp;    public JsonLocation getCurrentLocation() {
+<b class="fc"><i>2822</i>&nbsp;        final Object src = _ioContext.getSourceReference();</b>
+<b class="fc"><i>2823</i>&nbsp;        return new JsonLocation(src,</b>
+<i>2824</i>&nbsp;                -1L, -1L, _currInputRow, -1);
+<i>2825</i>&nbsp;    }
+<i>2826</i>&nbsp;
+<i>2827</i>&nbsp;    /*
+<i>2828</i>&nbsp;    /**********************************************************
+<i>2829</i>&nbsp;    /* Internal methods, other
+<i>2830</i>&nbsp;    /**********************************************************
+<i>2831</i>&nbsp;     */
+<i>2832</i>&nbsp;
+<i>2833</i>&nbsp;    private void _closeScope(int i) throws JsonParseException {
+<b class="fc"><i>2834</i>&nbsp;        if (i == INT_RBRACKET) {</b>
+<b class="fc"><i>2835</i>&nbsp;            if (!_parsingContext.inArray()) {</b>
+<b class="fc"><i>2836</i>&nbsp;                _reportMismatchedEndMarker(i, &#39;}&#39;);</b>
+<i>2837</i>&nbsp;            }
+<b class="fc"><i>2838</i>&nbsp;            _parsingContext = _parsingContext.clearAndGetParent();</b>
+<b class="fc"><i>2839</i>&nbsp;            _currToken = JsonToken.END_ARRAY;</b>
+<i>2840</i>&nbsp;        }
+<b class="fc"><i>2841</i>&nbsp;        if (i == INT_RCURLY) {</b>
+<b class="fc"><i>2842</i>&nbsp;            if (!_parsingContext.inObject()) {</b>
+<b class="fc"><i>2843</i>&nbsp;                _reportMismatchedEndMarker(i, &#39;]&#39;);</b>
+<i>2844</i>&nbsp;            }
+<b class="fc"><i>2845</i>&nbsp;            _parsingContext = _parsingContext.clearAndGetParent();</b>
+<b class="fc"><i>2846</i>&nbsp;            _currToken = JsonToken.END_OBJECT;</b>
+<i>2847</i>&nbsp;        }
+<b class="fc"><i>2848</i>&nbsp;    }</b>
+<i>2849</i>&nbsp;
+<i>2850</i>&nbsp;    /**
+<i>2851</i>&nbsp;     * Helper method needed to fix [Issue#148], masking of 0x00 character
+<i>2852</i>&nbsp;     */
+<i>2853</i>&nbsp;    private final static int pad(int q, int bytes) {
+<b class="fc"><i>2854</i>&nbsp;        return (bytes == 4) ? q : (q | (-1 &lt;&lt; (bytes &lt;&lt; 3)));</b>
+<i>2855</i>&nbsp;    }
+<i>2856</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 04:22</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,513 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: JsonStringEncoder</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.fasterxml.jackson.core.io</a> ]
+</div>
+
+<h1>Coverage Summary for Class: JsonStringEncoder (com.fasterxml.jackson.core.io)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">JsonStringEncoder</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    83.3%
+  </span>
+  <span class="absValue">
+    (10/ 12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    76.1%
+  </span>
+  <span class="absValue">
+    (166/ 218)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package com.fasterxml.jackson.core.io;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import java.lang.ref.SoftReference;
+<i>4</i>&nbsp;
+<i>5</i>&nbsp;import com.fasterxml.jackson.core.util.BufferRecycler;
+<i>6</i>&nbsp;import com.fasterxml.jackson.core.util.ByteArrayBuilder;
+<i>7</i>&nbsp;import com.fasterxml.jackson.core.util.TextBuffer;
+<i>8</i>&nbsp;
+<i>9</i>&nbsp;/**
+<i>10</i>&nbsp; * Helper class used for efficient encoding of JSON String values (including
+<i>11</i>&nbsp; * JSON field names) into Strings or UTF-8 byte arrays.
+<i>12</i>&nbsp; *&lt;p&gt;
+<i>13</i>&nbsp; * Note that methods in here are somewhat optimized, but not ridiculously so.
+<i>14</i>&nbsp; * Reason is that conversion method results are expected to be cached so that
+<i>15</i>&nbsp; * these methods will not be hot spots during normal operation.
+<i>16</i>&nbsp; */
+<i>17</i>&nbsp;public final class JsonStringEncoder
+<i>18</i>&nbsp;{
+<b class="fc"><i>19</i>&nbsp;    private final static char[] HC = CharTypes.copyHexChars();</b>
+<i>20</i>&nbsp;
+<b class="fc"><i>21</i>&nbsp;    private final static byte[] HB = CharTypes.copyHexBytes();</b>
+<i>22</i>&nbsp;
+<i>23</i>&nbsp;    private final static int SURR1_FIRST = 0xD800;
+<i>24</i>&nbsp;    private final static int SURR1_LAST = 0xDBFF;
+<i>25</i>&nbsp;    private final static int SURR2_FIRST = 0xDC00;
+<i>26</i>&nbsp;    private final static int SURR2_LAST = 0xDFFF;
+<i>27</i>&nbsp;
+<i>28</i>&nbsp;//    private final static int INT_BACKSLASH = &#39;\\&#39;;
+<i>29</i>&nbsp;//    private final static int INT_U = &#39;u&#39;;
+<i>30</i>&nbsp;//    private final static int INT_0 = &#39;0&#39;;
+<i>31</i>&nbsp;    
+<i>32</i>&nbsp;    /**
+<i>33</i>&nbsp;     * This &lt;code&gt;ThreadLocal&lt;/code&gt; contains a {@link java.lang.ref.SoftReference}
+<i>34</i>&nbsp;     * to a {@link BufferRecycler} used to provide a low-cost
+<i>35</i>&nbsp;     * buffer recycling between reader and writer instances.
+<i>36</i>&nbsp;     */
+<b class="fc"><i>37</i>&nbsp;    final protected static ThreadLocal&lt;SoftReference&lt;JsonStringEncoder&gt;&gt; _threadEncoder</b>
+<i>38</i>&nbsp;        = new ThreadLocal&lt;SoftReference&lt;JsonStringEncoder&gt;&gt;();
+<i>39</i>&nbsp;
+<i>40</i>&nbsp;    /**
+<i>41</i>&nbsp;     * Lazily constructed text buffer used to produce JSON encoded Strings
+<i>42</i>&nbsp;     * as characters (without UTF-8 encoding)
+<i>43</i>&nbsp;     */
+<i>44</i>&nbsp;    protected TextBuffer _text;
+<i>45</i>&nbsp;
+<i>46</i>&nbsp;    /**
+<i>47</i>&nbsp;     * Lazily-constructed builder used for UTF-8 encoding of text values
+<i>48</i>&nbsp;     * (quoted and unquoted)
+<i>49</i>&nbsp;     */
+<i>50</i>&nbsp;    protected ByteArrayBuilder _bytes;
+<i>51</i>&nbsp;    
+<i>52</i>&nbsp;    /**
+<i>53</i>&nbsp;     * Temporary buffer used for composing quote/escape sequences
+<i>54</i>&nbsp;     */
+<i>55</i>&nbsp;    protected final char[] _qbuf;
+<i>56</i>&nbsp;    
+<i>57</i>&nbsp;    /*
+<i>58</i>&nbsp;    /**********************************************************
+<i>59</i>&nbsp;    /* Construction, instance access
+<i>60</i>&nbsp;    /**********************************************************
+<i>61</i>&nbsp;     */
+<i>62</i>&nbsp;    
+<b class="fc"><i>63</i>&nbsp;    public JsonStringEncoder() {</b>
+<b class="fc"><i>64</i>&nbsp;        _qbuf = new char[6];</b>
+<b class="fc"><i>65</i>&nbsp;        _qbuf[0] = &#39;\\&#39;;</b>
+<b class="fc"><i>66</i>&nbsp;        _qbuf[2] = &#39;0&#39;;</b>
+<b class="fc"><i>67</i>&nbsp;        _qbuf[3] = &#39;0&#39;;</b>
+<b class="fc"><i>68</i>&nbsp;    }</b>
+<i>69</i>&nbsp;    
+<i>70</i>&nbsp;    /**
+<i>71</i>&nbsp;     * Factory method for getting an instance; this is either recycled per-thread instance,
+<i>72</i>&nbsp;     * or a newly constructed one.
+<i>73</i>&nbsp;     */
+<i>74</i>&nbsp;    public static JsonStringEncoder getInstance() {
+<b class="fc"><i>75</i>&nbsp;        SoftReference&lt;JsonStringEncoder&gt; ref = _threadEncoder.get();</b>
+<b class="fc"><i>76</i>&nbsp;        JsonStringEncoder enc = (ref == null) ? null : ref.get();</b>
+<i>77</i>&nbsp;
+<b class="fc"><i>78</i>&nbsp;        if (enc == null) {</b>
+<b class="fc"><i>79</i>&nbsp;            enc = new JsonStringEncoder();</b>
+<b class="fc"><i>80</i>&nbsp;            _threadEncoder.set(new SoftReference&lt;JsonStringEncoder&gt;(enc));</b>
+<i>81</i>&nbsp;        }
+<b class="fc"><i>82</i>&nbsp;        return enc;</b>
+<i>83</i>&nbsp;    }
+<i>84</i>&nbsp;
+<i>85</i>&nbsp;    /*
+<i>86</i>&nbsp;    /**********************************************************
+<i>87</i>&nbsp;    /* Public API
+<i>88</i>&nbsp;    /**********************************************************
+<i>89</i>&nbsp;     */
+<i>90</i>&nbsp;
+<i>91</i>&nbsp;    /**
+<i>92</i>&nbsp;     * Method that will quote text contents using JSON standard quoting,
+<i>93</i>&nbsp;     * and return results as a character array
+<i>94</i>&nbsp;     */
+<i>95</i>&nbsp;    public char[] quoteAsString(String input)
+<i>96</i>&nbsp;    {
+<b class="fc"><i>97</i>&nbsp;        TextBuffer textBuffer = _text;</b>
+<b class="fc"><i>98</i>&nbsp;        if (textBuffer == null) {</b>
+<i>99</i>&nbsp;            // no allocator; can add if we must, shouldn&#39;t need to
+<b class="fc"><i>100</i>&nbsp;            _text = textBuffer = new TextBuffer(null);</b>
+<i>101</i>&nbsp;        }
+<b class="fc"><i>102</i>&nbsp;        char[] outputBuffer = textBuffer.emptyAndGetCurrentSegment();</b>
+<b class="fc"><i>103</i>&nbsp;        final int[] escCodes = CharTypes.get7BitOutputEscapes();</b>
+<b class="fc"><i>104</i>&nbsp;        final int escCodeCount = escCodes.length;</b>
+<b class="fc"><i>105</i>&nbsp;        int inPtr = 0;</b>
+<b class="fc"><i>106</i>&nbsp;        final int inputLen = input.length();</b>
+<b class="fc"><i>107</i>&nbsp;        int outPtr = 0;</b>
+<i>108</i>&nbsp; 
+<i>109</i>&nbsp;        outer:
+<b class="fc"><i>110</i>&nbsp;        while (inPtr &lt; inputLen) {</b>
+<i>111</i>&nbsp;            tight_loop:
+<i>112</i>&nbsp;            while (true) {
+<b class="fc"><i>113</i>&nbsp;                char c = input.charAt(inPtr);</b>
+<b class="fc"><i>114</i>&nbsp;                if (c &lt; escCodeCount &amp;&amp; escCodes[c] != 0) {</b>
+<b class="fc"><i>115</i>&nbsp;                    break tight_loop;</b>
+<i>116</i>&nbsp;                }
+<b class="fc"><i>117</i>&nbsp;                if (outPtr &gt;= outputBuffer.length) {</b>
+<b class="nc"><i>118</i>&nbsp;                    outputBuffer = textBuffer.finishCurrentSegment();</b>
+<b class="nc"><i>119</i>&nbsp;                    outPtr = 0;</b>
+<i>120</i>&nbsp;                }
+<b class="fc"><i>121</i>&nbsp;                outputBuffer[outPtr++] = c;</b>
+<b class="fc"><i>122</i>&nbsp;                if (++inPtr &gt;= inputLen) {</b>
+<b class="fc"><i>123</i>&nbsp;                    break outer;</b>
+<i>124</i>&nbsp;                }
+<b class="fc"><i>125</i>&nbsp;            }</b>
+<i>126</i>&nbsp;            // something to escape; 2 or 6-char variant? 
+<b class="fc"><i>127</i>&nbsp;            char d = input.charAt(inPtr++);</b>
+<b class="fc"><i>128</i>&nbsp;            int escCode = escCodes[d];</b>
+<b class="fc"><i>129</i>&nbsp;            int length = (escCode &lt; 0)</b>
+<b class="fc"><i>130</i>&nbsp;                    ? _appendNumeric(d, _qbuf)</b>
+<b class="fc"><i>131</i>&nbsp;                    : _appendNamed(escCode, _qbuf);</b>
+<i>132</i>&nbsp;                    ;
+<b class="fc"><i>133</i>&nbsp;            if ((outPtr + length) &gt; outputBuffer.length) {</b>
+<b class="fc"><i>134</i>&nbsp;                int first = outputBuffer.length - outPtr;</b>
+<b class="fc"><i>135</i>&nbsp;                if (first &gt; 0) {</b>
+<b class="nc"><i>136</i>&nbsp;                    System.arraycopy(_qbuf, 0, outputBuffer, outPtr, first);</b>
+<i>137</i>&nbsp;                }
+<b class="fc"><i>138</i>&nbsp;                outputBuffer = textBuffer.finishCurrentSegment();</b>
+<b class="fc"><i>139</i>&nbsp;                int second = length - first;</b>
+<b class="fc"><i>140</i>&nbsp;                System.arraycopy(_qbuf, first, outputBuffer, 0, second);</b>
+<b class="fc"><i>141</i>&nbsp;                outPtr = second;</b>
+<b class="fc"><i>142</i>&nbsp;            } else {</b>
+<b class="fc"><i>143</i>&nbsp;                System.arraycopy(_qbuf, 0, outputBuffer, outPtr, length);</b>
+<b class="fc"><i>144</i>&nbsp;                outPtr += length;</b>
+<i>145</i>&nbsp;            }
+<b class="fc"><i>146</i>&nbsp;        }</b>
+<b class="fc"><i>147</i>&nbsp;        textBuffer.setCurrentLength(outPtr);</b>
+<b class="fc"><i>148</i>&nbsp;        return textBuffer.contentsAsArray();</b>
+<i>149</i>&nbsp;    }
+<i>150</i>&nbsp;
+<i>151</i>&nbsp;    /**
+<i>152</i>&nbsp;     * Method that will quote text contents using JSON standard quoting,
+<i>153</i>&nbsp;     * and append results to a supplied {@link StringBuilder}.
+<i>154</i>&nbsp;     * Use this variant if you have e.g. a {@link StringBuilder} and want to avoid superfluous copying of it.
+<i>155</i>&nbsp;     *
+<i>156</i>&nbsp;     * @since 2.8
+<i>157</i>&nbsp;     */
+<i>158</i>&nbsp;    public void quoteAsString(CharSequence input, StringBuilder output)
+<i>159</i>&nbsp;    {
+<b class="fc"><i>160</i>&nbsp;        final int[] escCodes = CharTypes.get7BitOutputEscapes();</b>
+<b class="fc"><i>161</i>&nbsp;        final int escCodeCount = escCodes.length;</b>
+<b class="fc"><i>162</i>&nbsp;        int inPtr = 0;</b>
+<b class="fc"><i>163</i>&nbsp;        final int inputLen = input.length();</b>
+<i>164</i>&nbsp;
+<i>165</i>&nbsp;        outer:
+<b class="fc"><i>166</i>&nbsp;        while (inPtr &lt; inputLen) {</b>
+<i>167</i>&nbsp;            tight_loop:
+<i>168</i>&nbsp;            while (true) {
+<b class="fc"><i>169</i>&nbsp;                char c = input.charAt(inPtr);</b>
+<b class="fc"><i>170</i>&nbsp;                if (c &lt; escCodeCount &amp;&amp; escCodes[c] != 0) {</b>
+<b class="fc"><i>171</i>&nbsp;                    break tight_loop;</b>
+<i>172</i>&nbsp;                }
+<b class="fc"><i>173</i>&nbsp;                output.append(c);</b>
+<b class="fc"><i>174</i>&nbsp;                if (++inPtr &gt;= inputLen) {</b>
+<b class="fc"><i>175</i>&nbsp;                    break outer;</b>
+<i>176</i>&nbsp;                }
+<b class="fc"><i>177</i>&nbsp;            }</b>
+<i>178</i>&nbsp;            // something to escape; 2 or 6-char variant?
+<b class="fc"><i>179</i>&nbsp;            char d = input.charAt(inPtr++);</b>
+<b class="fc"><i>180</i>&nbsp;            int escCode = escCodes[d];</b>
+<b class="fc"><i>181</i>&nbsp;            int length = (escCode &lt; 0)</b>
+<b class="fc"><i>182</i>&nbsp;                    ? _appendNumeric(d, _qbuf)</b>
+<b class="fc"><i>183</i>&nbsp;                    : _appendNamed(escCode, _qbuf);</b>
+<i>184</i>&nbsp;                    ;
+<b class="fc"><i>185</i>&nbsp;            output.append(_qbuf, 0, length);</b>
+<b class="fc"><i>186</i>&nbsp;        }</b>
+<b class="fc"><i>187</i>&nbsp;    }</b>
+<i>188</i>&nbsp;
+<i>189</i>&nbsp;    /**
+<i>190</i>&nbsp;     * Will quote given JSON String value using standard quoting, encode
+<i>191</i>&nbsp;     * results as UTF-8, and return result as a byte array.
+<i>192</i>&nbsp;     */
+<i>193</i>&nbsp;    @SuppressWarnings(&quot;resource&quot;)
+<i>194</i>&nbsp;    public byte[] quoteAsUTF8(String text)
+<i>195</i>&nbsp;    {
+<b class="fc"><i>196</i>&nbsp;        ByteArrayBuilder bb = _bytes;</b>
+<b class="fc"><i>197</i>&nbsp;        if (bb == null) {</b>
+<i>198</i>&nbsp;            // no allocator; can add if we must, shouldn&#39;t need to
+<b class="fc"><i>199</i>&nbsp;            _bytes = bb = new ByteArrayBuilder(null);</b>
+<i>200</i>&nbsp;        }
+<b class="fc"><i>201</i>&nbsp;        int inputPtr = 0;</b>
+<b class="fc"><i>202</i>&nbsp;        int inputEnd = text.length();</b>
+<b class="fc"><i>203</i>&nbsp;        int outputPtr = 0;</b>
+<b class="fc"><i>204</i>&nbsp;        byte[] outputBuffer = bb.resetAndGetFirstSegment();</b>
+<i>205</i>&nbsp;        
+<i>206</i>&nbsp;        main:
+<b class="fc"><i>207</i>&nbsp;        while (inputPtr &lt; inputEnd) {</b>
+<b class="fc"><i>208</i>&nbsp;            final int[] escCodes = CharTypes.get7BitOutputEscapes();</b>
+<i>209</i>&nbsp;
+<i>210</i>&nbsp;            inner_loop: // ASCII and escapes
+<i>211</i>&nbsp;            while (true) {
+<b class="fc"><i>212</i>&nbsp;                int ch = text.charAt(inputPtr);</b>
+<b class="fc"><i>213</i>&nbsp;                if (ch &gt; 0x7F || escCodes[ch] != 0) {</b>
+<b class="fc"><i>214</i>&nbsp;                    break inner_loop;</b>
+<i>215</i>&nbsp;                }
+<b class="fc"><i>216</i>&nbsp;                if (outputPtr &gt;= outputBuffer.length) {</b>
+<b class="nc"><i>217</i>&nbsp;                    outputBuffer = bb.finishCurrentSegment();</b>
+<b class="nc"><i>218</i>&nbsp;                    outputPtr = 0;</b>
+<i>219</i>&nbsp;                }
+<b class="fc"><i>220</i>&nbsp;                outputBuffer[outputPtr++] = (byte) ch;</b>
+<b class="fc"><i>221</i>&nbsp;                if (++inputPtr &gt;= inputEnd) {</b>
+<b class="fc"><i>222</i>&nbsp;                    break main;</b>
+<i>223</i>&nbsp;                }
+<b class="fc"><i>224</i>&nbsp;            }                </b>
+<b class="fc"><i>225</i>&nbsp;            if (outputPtr &gt;= outputBuffer.length) {</b>
+<b class="fc"><i>226</i>&nbsp;                outputBuffer = bb.finishCurrentSegment();</b>
+<b class="fc"><i>227</i>&nbsp;                outputPtr = 0;</b>
+<i>228</i>&nbsp;            }
+<i>229</i>&nbsp;            // Ok, so what did we hit?
+<b class="fc"><i>230</i>&nbsp;            int ch = (int) text.charAt(inputPtr++);</b>
+<b class="fc"><i>231</i>&nbsp;            if (ch &lt;= 0x7F) { // needs quoting</b>
+<b class="fc"><i>232</i>&nbsp;                int escape = escCodes[ch];</b>
+<i>233</i>&nbsp;                // ctrl-char, 6-byte escape...
+<b class="fc"><i>234</i>&nbsp;                outputPtr = _appendByte(ch, escape, bb, outputPtr);</b>
+<b class="fc"><i>235</i>&nbsp;                outputBuffer = bb.getCurrentSegment();</b>
+<b class="fc"><i>236</i>&nbsp;                continue main;</b>
+<i>237</i>&nbsp;            }
+<b class="fc"><i>238</i>&nbsp;            if (ch &lt;= 0x7FF) { // fine, just needs 2 byte output</b>
+<b class="fc"><i>239</i>&nbsp;                outputBuffer[outputPtr++] = (byte) (0xc0 | (ch &gt;&gt; 6));</b>
+<b class="fc"><i>240</i>&nbsp;                ch = (0x80 | (ch &amp; 0x3f));</b>
+<i>241</i>&nbsp;            } else { // 3 or 4 bytes
+<i>242</i>&nbsp;                // Surrogates?
+<b class="fc"><i>243</i>&nbsp;                if (ch &lt; SURR1_FIRST || ch &gt; SURR2_LAST) { // nope</b>
+<b class="fc"><i>244</i>&nbsp;                    outputBuffer[outputPtr++] = (byte) (0xe0 | (ch &gt;&gt; 12));</b>
+<b class="fc"><i>245</i>&nbsp;                    if (outputPtr &gt;= outputBuffer.length) {</b>
+<b class="fc"><i>246</i>&nbsp;                        outputBuffer = bb.finishCurrentSegment();</b>
+<b class="fc"><i>247</i>&nbsp;                        outputPtr = 0;</b>
+<i>248</i>&nbsp;                    }
+<b class="fc"><i>249</i>&nbsp;                    outputBuffer[outputPtr++] = (byte) (0x80 | ((ch &gt;&gt; 6) &amp; 0x3f));</b>
+<b class="fc"><i>250</i>&nbsp;                    ch = (0x80 | (ch &amp; 0x3f));</b>
+<i>251</i>&nbsp;                } else { // yes, surrogate pair
+<b class="nc"><i>252</i>&nbsp;                    if (ch &gt; SURR1_LAST) { // must be from first range</b>
+<b class="nc"><i>253</i>&nbsp;                        _illegal(ch);</b>
+<i>254</i>&nbsp;                    }
+<i>255</i>&nbsp;                    // and if so, followed by another from next range
+<b class="nc"><i>256</i>&nbsp;                    if (inputPtr &gt;= inputEnd) {</b>
+<b class="nc"><i>257</i>&nbsp;                        _illegal(ch);</b>
+<i>258</i>&nbsp;                    }
+<b class="nc"><i>259</i>&nbsp;                    ch = _convert(ch, text.charAt(inputPtr++));</b>
+<b class="nc"><i>260</i>&nbsp;                    if (ch &gt; 0x10FFFF) { // illegal, as per RFC 4627</b>
+<b class="nc"><i>261</i>&nbsp;                        _illegal(ch);</b>
+<i>262</i>&nbsp;                    }
+<b class="nc"><i>263</i>&nbsp;                    outputBuffer[outputPtr++] = (byte) (0xf0 | (ch &gt;&gt; 18));</b>
+<b class="nc"><i>264</i>&nbsp;                    if (outputPtr &gt;= outputBuffer.length) {</b>
+<b class="nc"><i>265</i>&nbsp;                        outputBuffer = bb.finishCurrentSegment();</b>
+<b class="nc"><i>266</i>&nbsp;                        outputPtr = 0;</b>
+<i>267</i>&nbsp;                    }
+<b class="nc"><i>268</i>&nbsp;                    outputBuffer[outputPtr++] = (byte) (0x80 | ((ch &gt;&gt; 12) &amp; 0x3f));</b>
+<b class="nc"><i>269</i>&nbsp;                    if (outputPtr &gt;= outputBuffer.length) {</b>
+<b class="nc"><i>270</i>&nbsp;                        outputBuffer = bb.finishCurrentSegment();</b>
+<b class="nc"><i>271</i>&nbsp;                        outputPtr = 0;</b>
+<i>272</i>&nbsp;                    }
+<b class="nc"><i>273</i>&nbsp;                    outputBuffer[outputPtr++] = (byte) (0x80 | ((ch &gt;&gt; 6) &amp; 0x3f));</b>
+<b class="nc"><i>274</i>&nbsp;                    ch = (0x80 | (ch &amp; 0x3f));</b>
+<i>275</i>&nbsp;                }
+<i>276</i>&nbsp;            }
+<b class="fc"><i>277</i>&nbsp;            if (outputPtr &gt;= outputBuffer.length) {</b>
+<b class="fc"><i>278</i>&nbsp;                outputBuffer = bb.finishCurrentSegment();</b>
+<b class="fc"><i>279</i>&nbsp;                outputPtr = 0;</b>
+<i>280</i>&nbsp;            }
+<b class="fc"><i>281</i>&nbsp;            outputBuffer[outputPtr++] = (byte) ch;</b>
+<b class="fc"><i>282</i>&nbsp;        }</b>
+<b class="fc"><i>283</i>&nbsp;        return _bytes.completeAndCoalesce(outputPtr);</b>
+<i>284</i>&nbsp;    }
+<i>285</i>&nbsp;    
+<i>286</i>&nbsp;    /**
+<i>287</i>&nbsp;     * Will encode given String as UTF-8 (without any quoting), return
+<i>288</i>&nbsp;     * resulting byte array.
+<i>289</i>&nbsp;     */
+<i>290</i>&nbsp;    @SuppressWarnings(&quot;resource&quot;)
+<i>291</i>&nbsp;    public byte[] encodeAsUTF8(String text)
+<i>292</i>&nbsp;    {
+<b class="fc"><i>293</i>&nbsp;        ByteArrayBuilder byteBuilder = _bytes;</b>
+<b class="fc"><i>294</i>&nbsp;        if (byteBuilder == null) {</b>
+<i>295</i>&nbsp;            // no allocator; can add if we must, shouldn&#39;t need to
+<b class="fc"><i>296</i>&nbsp;            _bytes = byteBuilder = new ByteArrayBuilder(null);</b>
+<i>297</i>&nbsp;        }
+<b class="fc"><i>298</i>&nbsp;        int inputPtr = 0;</b>
+<b class="fc"><i>299</i>&nbsp;        int inputEnd = text.length();</b>
+<b class="fc"><i>300</i>&nbsp;        int outputPtr = 0;</b>
+<b class="fc"><i>301</i>&nbsp;        byte[] outputBuffer = byteBuilder.resetAndGetFirstSegment();</b>
+<b class="fc"><i>302</i>&nbsp;        int outputEnd = outputBuffer.length;</b>
+<i>303</i>&nbsp;        
+<i>304</i>&nbsp;        main_loop:
+<b class="fc"><i>305</i>&nbsp;        while (inputPtr &lt; inputEnd) {</b>
+<b class="fc"><i>306</i>&nbsp;            int c = text.charAt(inputPtr++);</b>
+<i>307</i>&nbsp;
+<i>308</i>&nbsp;            // first tight loop for ascii
+<b class="fc"><i>309</i>&nbsp;            while (c &lt;= 0x7F) {</b>
+<b class="fc"><i>310</i>&nbsp;                if (outputPtr &gt;= outputEnd) {</b>
+<b class="nc"><i>311</i>&nbsp;                    outputBuffer = byteBuilder.finishCurrentSegment();</b>
+<b class="nc"><i>312</i>&nbsp;                    outputEnd = outputBuffer.length;</b>
+<b class="nc"><i>313</i>&nbsp;                    outputPtr = 0;</b>
+<i>314</i>&nbsp;                }
+<b class="fc"><i>315</i>&nbsp;                outputBuffer[outputPtr++] = (byte) c;</b>
+<b class="fc"><i>316</i>&nbsp;                if (inputPtr &gt;= inputEnd) {</b>
+<b class="fc"><i>317</i>&nbsp;                    break main_loop;</b>
+<i>318</i>&nbsp;                }
+<b class="fc"><i>319</i>&nbsp;                c = text.charAt(inputPtr++);</b>
+<i>320</i>&nbsp;            }
+<i>321</i>&nbsp;
+<i>322</i>&nbsp;            // then multi-byte...
+<b class="fc"><i>323</i>&nbsp;            if (outputPtr &gt;= outputEnd) {</b>
+<b class="fc"><i>324</i>&nbsp;                outputBuffer = byteBuilder.finishCurrentSegment();</b>
+<b class="fc"><i>325</i>&nbsp;                outputEnd = outputBuffer.length;</b>
+<b class="fc"><i>326</i>&nbsp;                outputPtr = 0;</b>
+<i>327</i>&nbsp;            }
+<b class="fc"><i>328</i>&nbsp;            if (c &lt; 0x800) { // 2-byte</b>
+<b class="fc"><i>329</i>&nbsp;                outputBuffer[outputPtr++] = (byte) (0xc0 | (c &gt;&gt; 6));</b>
+<i>330</i>&nbsp;            } else { // 3 or 4 bytes
+<i>331</i>&nbsp;                // Surrogates?
+<b class="fc"><i>332</i>&nbsp;                if (c &lt; SURR1_FIRST || c &gt; SURR2_LAST) { // nope</b>
+<b class="fc"><i>333</i>&nbsp;                    outputBuffer[outputPtr++] = (byte) (0xe0 | (c &gt;&gt; 12));</b>
+<b class="fc"><i>334</i>&nbsp;                    if (outputPtr &gt;= outputEnd) {</b>
+<b class="fc"><i>335</i>&nbsp;                        outputBuffer = byteBuilder.finishCurrentSegment();</b>
+<b class="fc"><i>336</i>&nbsp;                        outputEnd = outputBuffer.length;</b>
+<b class="fc"><i>337</i>&nbsp;                        outputPtr = 0;</b>
+<i>338</i>&nbsp;                    }
+<b class="fc"><i>339</i>&nbsp;                    outputBuffer[outputPtr++] = (byte) (0x80 | ((c &gt;&gt; 6) &amp; 0x3f));</b>
+<i>340</i>&nbsp;                } else { // yes, surrogate pair
+<b class="nc"><i>341</i>&nbsp;                    if (c &gt; SURR1_LAST) { // must be from first range</b>
+<b class="nc"><i>342</i>&nbsp;                        _illegal(c);</b>
+<i>343</i>&nbsp;                    }
+<i>344</i>&nbsp;                    // and if so, followed by another from next range
+<b class="nc"><i>345</i>&nbsp;                    if (inputPtr &gt;= inputEnd) {</b>
+<b class="nc"><i>346</i>&nbsp;                        _illegal(c);</b>
+<i>347</i>&nbsp;                    }
+<b class="nc"><i>348</i>&nbsp;                    c = _convert(c, text.charAt(inputPtr++));</b>
+<b class="nc"><i>349</i>&nbsp;                    if (c &gt; 0x10FFFF) { // illegal, as per RFC 4627</b>
+<b class="nc"><i>350</i>&nbsp;                        _illegal(c);</b>
+<i>351</i>&nbsp;                    }
+<b class="nc"><i>352</i>&nbsp;                    outputBuffer[outputPtr++] = (byte) (0xf0 | (c &gt;&gt; 18));</b>
+<b class="nc"><i>353</i>&nbsp;                    if (outputPtr &gt;= outputEnd) {</b>
+<b class="nc"><i>354</i>&nbsp;                        outputBuffer = byteBuilder.finishCurrentSegment();</b>
+<b class="nc"><i>355</i>&nbsp;                        outputEnd = outputBuffer.length;</b>
+<b class="nc"><i>356</i>&nbsp;                        outputPtr = 0;</b>
+<i>357</i>&nbsp;                    }
+<b class="nc"><i>358</i>&nbsp;                    outputBuffer[outputPtr++] = (byte) (0x80 | ((c &gt;&gt; 12) &amp; 0x3f));</b>
+<b class="nc"><i>359</i>&nbsp;                    if (outputPtr &gt;= outputEnd) {</b>
+<b class="nc"><i>360</i>&nbsp;                        outputBuffer = byteBuilder.finishCurrentSegment();</b>
+<b class="nc"><i>361</i>&nbsp;                        outputEnd = outputBuffer.length;</b>
+<b class="nc"><i>362</i>&nbsp;                        outputPtr = 0;</b>
+<i>363</i>&nbsp;                    }
+<b class="nc"><i>364</i>&nbsp;                    outputBuffer[outputPtr++] = (byte) (0x80 | ((c &gt;&gt; 6) &amp; 0x3f));</b>
+<i>365</i>&nbsp;                }
+<i>366</i>&nbsp;            }
+<b class="fc"><i>367</i>&nbsp;            if (outputPtr &gt;= outputEnd) {</b>
+<b class="fc"><i>368</i>&nbsp;                outputBuffer = byteBuilder.finishCurrentSegment();</b>
+<b class="fc"><i>369</i>&nbsp;                outputEnd = outputBuffer.length;</b>
+<b class="fc"><i>370</i>&nbsp;                outputPtr = 0;</b>
+<i>371</i>&nbsp;            }
+<b class="fc"><i>372</i>&nbsp;            outputBuffer[outputPtr++] = (byte) (0x80 | (c &amp; 0x3f));</b>
+<b class="fc"><i>373</i>&nbsp;        }</b>
+<b class="fc"><i>374</i>&nbsp;        return _bytes.completeAndCoalesce(outputPtr);</b>
+<i>375</i>&nbsp;    }
+<i>376</i>&nbsp;    
+<i>377</i>&nbsp;    /*
+<i>378</i>&nbsp;    /**********************************************************
+<i>379</i>&nbsp;    /* Internal methods
+<i>380</i>&nbsp;    /**********************************************************
+<i>381</i>&nbsp;     */
+<i>382</i>&nbsp;
+<i>383</i>&nbsp;    private int _appendNumeric(int value, char[] qbuf) {
+<b class="fc"><i>384</i>&nbsp;        qbuf[1] = &#39;u&#39;;</b>
+<i>385</i>&nbsp;        // We know it&#39;s a control char, so only the last 2 chars are non-0
+<b class="fc"><i>386</i>&nbsp;        qbuf[4] = HC[value &gt;&gt; 4];</b>
+<b class="fc"><i>387</i>&nbsp;        qbuf[5] = HC[value &amp; 0xF];</b>
+<b class="fc"><i>388</i>&nbsp;        return 6;</b>
+<i>389</i>&nbsp;    }
+<i>390</i>&nbsp;
+<i>391</i>&nbsp;    private int _appendNamed(int esc, char[] qbuf) {
+<b class="fc"><i>392</i>&nbsp;        qbuf[1] = (char) esc;</b>
+<b class="fc"><i>393</i>&nbsp;        return 2;</b>
+<i>394</i>&nbsp;    }
+<i>395</i>&nbsp;
+<i>396</i>&nbsp;    private int _appendByte(int ch, int esc, ByteArrayBuilder bb, int ptr)
+<i>397</i>&nbsp;    {
+<b class="fc"><i>398</i>&nbsp;        bb.setCurrentSegmentLength(ptr);</b>
+<b class="fc"><i>399</i>&nbsp;        bb.append(&#39;\\&#39;);</b>
+<b class="fc"><i>400</i>&nbsp;        if (esc &lt; 0) { // standard escape</b>
+<b class="fc"><i>401</i>&nbsp;            bb.append(&#39;u&#39;);</b>
+<b class="fc"><i>402</i>&nbsp;            if (ch &gt; 0xFF) {</b>
+<b class="nc"><i>403</i>&nbsp;                int hi = (ch &gt;&gt; 8);</b>
+<b class="nc"><i>404</i>&nbsp;                bb.append(HB[hi &gt;&gt; 4]);</b>
+<b class="nc"><i>405</i>&nbsp;                bb.append(HB[hi &amp; 0xF]);</b>
+<b class="nc"><i>406</i>&nbsp;                ch &amp;= 0xFF;</b>
+<b class="nc"><i>407</i>&nbsp;            } else {</b>
+<b class="fc"><i>408</i>&nbsp;                bb.append(&#39;0&#39;);</b>
+<b class="fc"><i>409</i>&nbsp;                bb.append(&#39;0&#39;);</b>
+<i>410</i>&nbsp;            }
+<b class="fc"><i>411</i>&nbsp;            bb.append(HB[ch &gt;&gt; 4]);</b>
+<b class="fc"><i>412</i>&nbsp;            bb.append(HB[ch &amp; 0xF]);</b>
+<i>413</i>&nbsp;        } else { // 2-char simple escape
+<b class="fc"><i>414</i>&nbsp;            bb.append((byte) esc);</b>
+<i>415</i>&nbsp;        }
+<b class="fc"><i>416</i>&nbsp;        return bb.getCurrentSegmentLength();</b>
+<i>417</i>&nbsp;    }
+<i>418</i>&nbsp;
+<i>419</i>&nbsp;    private static int _convert(int p1, int p2) {
+<i>420</i>&nbsp;        // Ok, then, is the second part valid?
+<b class="nc"><i>421</i>&nbsp;        if (p2 &lt; SURR2_FIRST || p2 &gt; SURR2_LAST) {</b>
+<b class="nc"><i>422</i>&nbsp;            throw new IllegalArgumentException(&quot;Broken surrogate pair: first char 0x&quot;+Integer.toHexString(p1)+&quot;, second 0x&quot;+Integer.toHexString(p2)+&quot;; illegal combination&quot;);</b>
+<i>423</i>&nbsp;        }
+<b class="nc"><i>424</i>&nbsp;        return 0x10000 + ((p1 - SURR1_FIRST) &lt;&lt; 10) + (p2 - SURR2_FIRST);</b>
+<i>425</i>&nbsp;    }
+<i>426</i>&nbsp;
+<i>427</i>&nbsp;    private static void _illegal(int c) {
+<b class="nc"><i>428</i>&nbsp;        throw new IllegalArgumentException(UTF8Writer.illegalSurrogateDesc(c));</b>
+<i>429</i>&nbsp;    }
+<i>430</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 04:22</div>
+</div>
+</body>
+</html>

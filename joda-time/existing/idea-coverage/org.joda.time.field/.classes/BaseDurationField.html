@@ -1,0 +1,251 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: BaseDurationField</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time.field</a> ]
+</div>
+
+<h1>Coverage Summary for Class: BaseDurationField (org.joda.time.field)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">BaseDurationField</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (12/ 12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (22/ 22)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2009 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time.field;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;import java.io.Serializable;
+<i>19</i>&nbsp;
+<i>20</i>&nbsp;import org.joda.time.DurationField;
+<i>21</i>&nbsp;import org.joda.time.DurationFieldType;
+<i>22</i>&nbsp;
+<i>23</i>&nbsp;/**
+<i>24</i>&nbsp; * BaseDurationField provides the common behaviour for DurationField
+<i>25</i>&nbsp; * implementations.
+<i>26</i>&nbsp; * &lt;p&gt;
+<i>27</i>&nbsp; * This class should generally not be used directly by API users. The
+<i>28</i>&nbsp; * DurationField class should be used when different kinds of DurationField
+<i>29</i>&nbsp; * objects are to be referenced.
+<i>30</i>&nbsp; * &lt;p&gt;
+<i>31</i>&nbsp; * BaseDurationField is thread-safe and immutable, and its subclasses must
+<i>32</i>&nbsp; * be as well.
+<i>33</i>&nbsp; *
+<i>34</i>&nbsp; * @author Brian S O&#39;Neill
+<i>35</i>&nbsp; * @see DecoratedDurationField
+<i>36</i>&nbsp; * @since 1.0
+<i>37</i>&nbsp; */
+<i>38</i>&nbsp;public abstract class BaseDurationField extends DurationField implements Serializable {
+<i>39</i>&nbsp;
+<i>40</i>&nbsp;    /** Serialization lock. */
+<i>41</i>&nbsp;    private static final long serialVersionUID = -2554245107589433218L;
+<i>42</i>&nbsp;
+<i>43</i>&nbsp;    /** A desriptive name for the field. */
+<i>44</i>&nbsp;    private final DurationFieldType iType;
+<i>45</i>&nbsp;
+<i>46</i>&nbsp;    protected BaseDurationField(DurationFieldType type) {
+<b class="fc"><i>47</i>&nbsp;        super();</b>
+<b class="fc"><i>48</i>&nbsp;        if (type == null) {</b>
+<b class="fc"><i>49</i>&nbsp;            throw new IllegalArgumentException(&quot;The type must not be null&quot;);</b>
+<i>50</i>&nbsp;        }
+<b class="fc"><i>51</i>&nbsp;        iType = type;</b>
+<b class="fc"><i>52</i>&nbsp;    }</b>
+<i>53</i>&nbsp;
+<i>54</i>&nbsp;    public final DurationFieldType getType() {
+<b class="fc"><i>55</i>&nbsp;        return iType;</b>
+<i>56</i>&nbsp;    }
+<i>57</i>&nbsp;
+<i>58</i>&nbsp;    public final String getName() {
+<b class="fc"><i>59</i>&nbsp;        return iType.getName();</b>
+<i>60</i>&nbsp;    }
+<i>61</i>&nbsp;
+<i>62</i>&nbsp;    /**
+<i>63</i>&nbsp;     * @return true always
+<i>64</i>&nbsp;     */
+<i>65</i>&nbsp;    public final boolean isSupported() {
+<b class="fc"><i>66</i>&nbsp;        return true;</b>
+<i>67</i>&nbsp;    }
+<i>68</i>&nbsp;
+<i>69</i>&nbsp;    //------------------------------------------------------------------------
+<i>70</i>&nbsp;    /**
+<i>71</i>&nbsp;     * Get the value of this field from the milliseconds, which is approximate
+<i>72</i>&nbsp;     * if this field is imprecise.
+<i>73</i>&nbsp;     *
+<i>74</i>&nbsp;     * @param duration  the milliseconds to query, which may be negative
+<i>75</i>&nbsp;     * @return the value of the field, in the units of the field, which may be
+<i>76</i>&nbsp;     * negative
+<i>77</i>&nbsp;     */
+<i>78</i>&nbsp;    public int getValue(long duration) {
+<b class="fc"><i>79</i>&nbsp;        return FieldUtils.safeToInt(getValueAsLong(duration));</b>
+<i>80</i>&nbsp;    }
+<i>81</i>&nbsp;
+<i>82</i>&nbsp;    /**
+<i>83</i>&nbsp;     * Get the value of this field from the milliseconds, which is approximate
+<i>84</i>&nbsp;     * if this field is imprecise.
+<i>85</i>&nbsp;     *
+<i>86</i>&nbsp;     * @param duration  the milliseconds to query, which may be negative
+<i>87</i>&nbsp;     * @return the value of the field, in the units of the field, which may be
+<i>88</i>&nbsp;     * negative
+<i>89</i>&nbsp;     */
+<i>90</i>&nbsp;    public long getValueAsLong(long duration) {
+<b class="fc"><i>91</i>&nbsp;        return duration / getUnitMillis();</b>
+<i>92</i>&nbsp;    }
+<i>93</i>&nbsp;
+<i>94</i>&nbsp;    /**
+<i>95</i>&nbsp;     * Get the value of this field from the milliseconds relative to an
+<i>96</i>&nbsp;     * instant.
+<i>97</i>&nbsp;     *
+<i>98</i>&nbsp;     * &lt;p&gt;If the milliseconds is positive, then the instant is treated as a
+<i>99</i>&nbsp;     * &quot;start instant&quot;. If negative, the instant is treated as an &quot;end
+<i>100</i>&nbsp;     * instant&quot;.
+<i>101</i>&nbsp;     *
+<i>102</i>&nbsp;     * &lt;p&gt;The default implementation returns
+<i>103</i>&nbsp;     * &lt;code&gt;Utils.safeToInt(getAsLong(millisDuration, instant))&lt;/code&gt;.
+<i>104</i>&nbsp;     * 
+<i>105</i>&nbsp;     * @param duration  the milliseconds to query, which may be negative
+<i>106</i>&nbsp;     * @param instant  the start instant to calculate relative to
+<i>107</i>&nbsp;     * @return the value of the field, in the units of the field, which may be
+<i>108</i>&nbsp;     * negative
+<i>109</i>&nbsp;     */
+<i>110</i>&nbsp;    public int getValue(long duration, long instant) {
+<b class="fc"><i>111</i>&nbsp;        return FieldUtils.safeToInt(getValueAsLong(duration, instant));</b>
+<i>112</i>&nbsp;    }
+<i>113</i>&nbsp;
+<i>114</i>&nbsp;    /**
+<i>115</i>&nbsp;     * Get the millisecond duration of this field from its value, which is
+<i>116</i>&nbsp;     * approximate if this field is imprecise.
+<i>117</i>&nbsp;     * 
+<i>118</i>&nbsp;     * @param value  the value of the field, which may be negative
+<i>119</i>&nbsp;     * @return the milliseconds that the field represents, which may be
+<i>120</i>&nbsp;     * negative
+<i>121</i>&nbsp;     */
+<i>122</i>&nbsp;    public long getMillis(int value) {
+<b class="fc"><i>123</i>&nbsp;        return value * getUnitMillis();  // safe</b>
+<i>124</i>&nbsp;    }
+<i>125</i>&nbsp;
+<i>126</i>&nbsp;    /**
+<i>127</i>&nbsp;     * Get the millisecond duration of this field from its value, which is
+<i>128</i>&nbsp;     * approximate if this field is imprecise.
+<i>129</i>&nbsp;     * 
+<i>130</i>&nbsp;     * @param value  the value of the field, which may be negative
+<i>131</i>&nbsp;     * @return the milliseconds that the field represents, which may be
+<i>132</i>&nbsp;     * negative
+<i>133</i>&nbsp;     */
+<i>134</i>&nbsp;    public long getMillis(long value) {
+<b class="fc"><i>135</i>&nbsp;        return FieldUtils.safeMultiply(value, getUnitMillis());</b>
+<i>136</i>&nbsp;    }
+<i>137</i>&nbsp;
+<i>138</i>&nbsp;    // Calculation API
+<i>139</i>&nbsp;    //------------------------------------------------------------------------
+<i>140</i>&nbsp;    public int getDifference(long minuendInstant, long subtrahendInstant) {
+<b class="fc"><i>141</i>&nbsp;        return FieldUtils.safeToInt(getDifferenceAsLong(minuendInstant, subtrahendInstant));</b>
+<i>142</i>&nbsp;    }
+<i>143</i>&nbsp;
+<i>144</i>&nbsp;    //------------------------------------------------------------------------
+<i>145</i>&nbsp;    public int compareTo(DurationField otherField) {
+<b class="fc"><i>146</i>&nbsp;        long otherMillis = otherField.getUnitMillis();</b>
+<b class="fc"><i>147</i>&nbsp;        long thisMillis = getUnitMillis();</b>
+<i>148</i>&nbsp;        // cannot do (thisMillis - otherMillis) as can overflow
+<b class="fc"><i>149</i>&nbsp;        if (thisMillis == otherMillis) {</b>
+<b class="fc"><i>150</i>&nbsp;            return 0;</b>
+<i>151</i>&nbsp;        }
+<b class="fc"><i>152</i>&nbsp;        if (thisMillis &lt; otherMillis) {</b>
+<b class="fc"><i>153</i>&nbsp;            return -1;</b>
+<i>154</i>&nbsp;        } else {
+<b class="fc"><i>155</i>&nbsp;            return 1;</b>
+<i>156</i>&nbsp;        }
+<i>157</i>&nbsp;    }
+<i>158</i>&nbsp;
+<i>159</i>&nbsp;    /**
+<i>160</i>&nbsp;     * Get a suitable debug string.
+<i>161</i>&nbsp;     * 
+<i>162</i>&nbsp;     * @return debug string
+<i>163</i>&nbsp;     */
+<i>164</i>&nbsp;    public String toString() {
+<b class="fc"><i>165</i>&nbsp;        return &quot;DurationField[&quot; + getName() + &#39;]&#39;;</b>
+<i>166</i>&nbsp;    }
+<i>167</i>&nbsp;
+<i>168</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

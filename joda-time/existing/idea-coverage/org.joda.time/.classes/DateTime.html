@@ -1,0 +1,2481 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: DateTime</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time</a> ]
+</div>
+
+<h1>Coverage Summary for Class: DateTime (org.joda.time)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">DateTime</td>
+<td class="coverageStat">
+  <span class="percent">
+    99.1%
+  </span>
+  <span class="absValue">
+    (106/ 107)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    99.6%
+  </span>
+  <span class="absValue">
+    (222/ 223)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">DateTime$Property</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (20/ 20)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    94.7%
+  </span>
+  <span class="absValue">
+    (36/ 38)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    99.2%
+  </span>
+  <span class="absValue">
+    (126/ 127)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.9%
+  </span>
+  <span class="absValue">
+    (258/ 261)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2014 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;import java.io.IOException;
+<i>19</i>&nbsp;import java.io.ObjectInputStream;
+<i>20</i>&nbsp;import java.io.ObjectOutputStream;
+<i>21</i>&nbsp;import java.io.Serializable;
+<i>22</i>&nbsp;import java.util.Locale;
+<i>23</i>&nbsp;
+<i>24</i>&nbsp;import org.joda.convert.FromString;
+<i>25</i>&nbsp;import org.joda.time.base.BaseDateTime;
+<i>26</i>&nbsp;import org.joda.time.chrono.ISOChronology;
+<i>27</i>&nbsp;import org.joda.time.field.AbstractReadableInstantFieldProperty;
+<i>28</i>&nbsp;import org.joda.time.format.DateTimeFormatter;
+<i>29</i>&nbsp;import org.joda.time.format.ISODateTimeFormat;
+<i>30</i>&nbsp;
+<i>31</i>&nbsp;/**
+<i>32</i>&nbsp; * DateTime is the standard implementation of an unmodifiable datetime class.
+<i>33</i>&nbsp; * &lt;p&gt;
+<i>34</i>&nbsp; * &lt;code&gt;DateTime&lt;/code&gt; is the most widely used implementation of
+<i>35</i>&nbsp; * {@link ReadableInstant}. As with all instants, it represents an exact
+<i>36</i>&nbsp; * point on the time-line, but limited to the precision of milliseconds.
+<i>37</i>&nbsp; * A &lt;code&gt;DateTime&lt;/code&gt; calculates its fields with respect to a
+<i>38</i>&nbsp; * {@link DateTimeZone time zone}.
+<i>39</i>&nbsp; * &lt;p&gt;
+<i>40</i>&nbsp; * Internally, the class holds two pieces of data. Firstly, it holds the
+<i>41</i>&nbsp; * datetime as milliseconds from the Java epoch of 1970-01-01T00:00:00Z.
+<i>42</i>&nbsp; * Secondly, it holds a {@link Chronology} which determines how the
+<i>43</i>&nbsp; * millisecond instant value is converted into the date time fields.
+<i>44</i>&nbsp; * The default Chronology is {@link ISOChronology} which is the agreed
+<i>45</i>&nbsp; * international standard and compatible with the modern Gregorian calendar.
+<i>46</i>&nbsp; * &lt;p&gt;
+<i>47</i>&nbsp; * Each individual field can be queried in two ways:
+<i>48</i>&nbsp; * &lt;ul&gt;
+<i>49</i>&nbsp; * &lt;li&gt;&lt;code&gt;getHourOfDay()&lt;/code&gt;
+<i>50</i>&nbsp; * &lt;li&gt;&lt;code&gt;hourOfDay().get()&lt;/code&gt;
+<i>51</i>&nbsp; * &lt;/ul&gt;
+<i>52</i>&nbsp; * The second technique also provides access to other useful methods on the
+<i>53</i>&nbsp; * field:
+<i>54</i>&nbsp; * &lt;ul&gt;
+<i>55</i>&nbsp; * &lt;li&gt;numeric value
+<i>56</i>&nbsp; * &lt;li&gt;text value
+<i>57</i>&nbsp; * &lt;li&gt;short text value
+<i>58</i>&nbsp; * &lt;li&gt;maximum/minimum values
+<i>59</i>&nbsp; * &lt;li&gt;add/subtract
+<i>60</i>&nbsp; * &lt;li&gt;set
+<i>61</i>&nbsp; * &lt;li&gt;rounding
+<i>62</i>&nbsp; * &lt;/ul&gt;
+<i>63</i>&nbsp; * &lt;p&gt;
+<i>64</i>&nbsp; * DateTime is thread-safe and immutable, provided that the Chronology is as well.
+<i>65</i>&nbsp; * All standard Chronology classes supplied are thread-safe and immutable.
+<i>66</i>&nbsp; *
+<i>67</i>&nbsp; * @author Stephen Colebourne
+<i>68</i>&nbsp; * @author Kandarp Shah
+<i>69</i>&nbsp; * @author Brian S O&#39;Neill
+<i>70</i>&nbsp; * @since 1.0
+<i>71</i>&nbsp; * @see MutableDateTime
+<i>72</i>&nbsp; */
+<i>73</i>&nbsp;public final class DateTime
+<i>74</i>&nbsp;        extends BaseDateTime
+<i>75</i>&nbsp;        implements ReadableDateTime, Serializable {
+<i>76</i>&nbsp;
+<i>77</i>&nbsp;    /** Serialization lock */
+<i>78</i>&nbsp;    private static final long serialVersionUID = -5171125899451703815L;
+<i>79</i>&nbsp;
+<i>80</i>&nbsp;    //-----------------------------------------------------------------------
+<i>81</i>&nbsp;    /**
+<i>82</i>&nbsp;     * Obtains a {@code DateTime} set to the current system millisecond time
+<i>83</i>&nbsp;     * using &lt;code&gt;ISOChronology&lt;/code&gt; in the default time zone.
+<i>84</i>&nbsp;     * 
+<i>85</i>&nbsp;     * @return the current date-time, not null
+<i>86</i>&nbsp;     * @since 2.0
+<i>87</i>&nbsp;     */
+<i>88</i>&nbsp;    public static DateTime now() {
+<b class="fc"><i>89</i>&nbsp;        return new DateTime();</b>
+<i>90</i>&nbsp;    }
+<i>91</i>&nbsp;
+<i>92</i>&nbsp;    /**
+<i>93</i>&nbsp;     * Obtains a {@code DateTime} set to the current system millisecond time
+<i>94</i>&nbsp;     * using &lt;code&gt;ISOChronology&lt;/code&gt; in the specified time zone.
+<i>95</i>&nbsp;     *
+<i>96</i>&nbsp;     * @param zone  the time zone, not null
+<i>97</i>&nbsp;     * @return the current date-time, not null
+<i>98</i>&nbsp;     * @since 2.0
+<i>99</i>&nbsp;     */
+<i>100</i>&nbsp;    public static DateTime now(DateTimeZone zone) {
+<b class="fc"><i>101</i>&nbsp;        if (zone == null) {</b>
+<b class="fc"><i>102</i>&nbsp;            throw new NullPointerException(&quot;Zone must not be null&quot;);</b>
+<i>103</i>&nbsp;        }
+<b class="fc"><i>104</i>&nbsp;        return new DateTime(zone);</b>
+<i>105</i>&nbsp;    }
+<i>106</i>&nbsp;
+<i>107</i>&nbsp;    /**
+<i>108</i>&nbsp;     * Obtains a {@code DateTime} set to the current system millisecond time
+<i>109</i>&nbsp;     * using the specified chronology.
+<i>110</i>&nbsp;     *
+<i>111</i>&nbsp;     * @param chronology  the chronology, not null
+<i>112</i>&nbsp;     * @return the current date-time, not null
+<i>113</i>&nbsp;     * @since 2.0
+<i>114</i>&nbsp;     */
+<i>115</i>&nbsp;    public static DateTime now(Chronology chronology) {
+<b class="fc"><i>116</i>&nbsp;        if (chronology == null) {</b>
+<b class="fc"><i>117</i>&nbsp;            throw new NullPointerException(&quot;Chronology must not be null&quot;);</b>
+<i>118</i>&nbsp;        }
+<b class="fc"><i>119</i>&nbsp;        return new DateTime(chronology);</b>
+<i>120</i>&nbsp;    }
+<i>121</i>&nbsp;
+<i>122</i>&nbsp;    //-----------------------------------------------------------------------
+<i>123</i>&nbsp;    /**
+<i>124</i>&nbsp;     * Parses a {@code DateTime} from the specified string.
+<i>125</i>&nbsp;     * &lt;p&gt;
+<i>126</i>&nbsp;     * This uses {@link ISODateTimeFormat#dateTimeParser()}{@code .withOffsetParsed()}
+<i>127</i>&nbsp;     * which is different to passing a {@code String} to the constructor.
+<i>128</i>&nbsp;     * &lt;p&gt;
+<i>129</i>&nbsp;     * Sometimes this method and {@code new DateTime(str)} return different results.
+<i>130</i>&nbsp;     * This can be confusing as the difference is not visible in {@link #toString()}.
+<i>131</i>&nbsp;     * &lt;p&gt;
+<i>132</i>&nbsp;     * When passed a date-time string without an offset, such as &#39;2010-06-30T01:20&#39;,
+<i>133</i>&nbsp;     * both the constructor and this method use the default time-zone.
+<i>134</i>&nbsp;     * As such, {@code DateTime.parse(&quot;2010-06-30T01:20&quot;)} and
+<i>135</i>&nbsp;     * {@code new DateTime(&quot;2010-06-30T01:20&quot;))} are equal.
+<i>136</i>&nbsp;     * &lt;p&gt;
+<i>137</i>&nbsp;     * However, when this method is passed a date-time string with an offset,
+<i>138</i>&nbsp;     * the offset is directly parsed and stored.
+<i>139</i>&nbsp;     * As such, {@code DateTime.parse(&quot;2010-06-30T01:20+02:00&quot;)} and
+<i>140</i>&nbsp;     * {@code new DateTime(&quot;2010-06-30T01:20+02:00&quot;))} are NOT equal.
+<i>141</i>&nbsp;     * The object produced via this method has a zone of {@code DateTimeZone.forOffsetHours(2)}.
+<i>142</i>&nbsp;     * The object produced via the constructor has a zone of {@code DateTimeZone.getDefault()}.
+<i>143</i>&nbsp;     * 
+<i>144</i>&nbsp;     * @param str  the string to parse, not null
+<i>145</i>&nbsp;     * @since 2.0
+<i>146</i>&nbsp;     */
+<i>147</i>&nbsp;    @FromString
+<i>148</i>&nbsp;    public static DateTime parse(String str) {
+<b class="fc"><i>149</i>&nbsp;        return parse(str, ISODateTimeFormat.dateTimeParser().withOffsetParsed());</b>
+<i>150</i>&nbsp;    }
+<i>151</i>&nbsp;
+<i>152</i>&nbsp;    /**
+<i>153</i>&nbsp;     * Parses a {@code DateTime} from the specified string using a formatter.
+<i>154</i>&nbsp;     * 
+<i>155</i>&nbsp;     * @param str  the string to parse, not null
+<i>156</i>&nbsp;     * @param formatter  the formatter to use, not null
+<i>157</i>&nbsp;     * @since 2.0
+<i>158</i>&nbsp;     */
+<i>159</i>&nbsp;    public static DateTime parse(String str, DateTimeFormatter formatter) {
+<b class="fc"><i>160</i>&nbsp;        return formatter.parseDateTime(str);</b>
+<i>161</i>&nbsp;    }
+<i>162</i>&nbsp;
+<i>163</i>&nbsp;    //-----------------------------------------------------------------------
+<i>164</i>&nbsp;    /**
+<i>165</i>&nbsp;     * Constructs an instance set to the current system millisecond time
+<i>166</i>&nbsp;     * using &lt;code&gt;ISOChronology&lt;/code&gt; in the default time zone.
+<i>167</i>&nbsp;     * 
+<i>168</i>&nbsp;     * @see #now()
+<i>169</i>&nbsp;     */
+<i>170</i>&nbsp;    public DateTime() {
+<b class="fc"><i>171</i>&nbsp;        super();</b>
+<b class="fc"><i>172</i>&nbsp;    }</b>
+<i>173</i>&nbsp;
+<i>174</i>&nbsp;    /**
+<i>175</i>&nbsp;     * Constructs an instance set to the current system millisecond time
+<i>176</i>&nbsp;     * using &lt;code&gt;ISOChronology&lt;/code&gt; in the specified time zone.
+<i>177</i>&nbsp;     * &lt;p&gt;
+<i>178</i>&nbsp;     * If the specified time zone is null, the default zone is used.
+<i>179</i>&nbsp;     *
+<i>180</i>&nbsp;     * @param zone  the time zone, null means default zone
+<i>181</i>&nbsp;     * @see #now(DateTimeZone)
+<i>182</i>&nbsp;     */
+<i>183</i>&nbsp;    public DateTime(DateTimeZone zone) {
+<b class="fc"><i>184</i>&nbsp;        super(zone);</b>
+<b class="fc"><i>185</i>&nbsp;    }</b>
+<i>186</i>&nbsp;
+<i>187</i>&nbsp;    /**
+<i>188</i>&nbsp;     * Constructs an instance set to the current system millisecond time
+<i>189</i>&nbsp;     * using the specified chronology.
+<i>190</i>&nbsp;     * &lt;p&gt;
+<i>191</i>&nbsp;     * If the chronology is null, &lt;code&gt;ISOChronology&lt;/code&gt;
+<i>192</i>&nbsp;     * in the default time zone is used.
+<i>193</i>&nbsp;     *
+<i>194</i>&nbsp;     * @param chronology  the chronology, null means ISOChronology in default zone
+<i>195</i>&nbsp;     * @see #now(Chronology)
+<i>196</i>&nbsp;     */
+<i>197</i>&nbsp;    public DateTime(Chronology chronology) {
+<b class="fc"><i>198</i>&nbsp;        super(chronology);</b>
+<b class="fc"><i>199</i>&nbsp;    }</b>
+<i>200</i>&nbsp;
+<i>201</i>&nbsp;    //-----------------------------------------------------------------------
+<i>202</i>&nbsp;    /**
+<i>203</i>&nbsp;     * Constructs an instance set to the milliseconds from 1970-01-01T00:00:00Z
+<i>204</i>&nbsp;     * using &lt;code&gt;ISOChronology&lt;/code&gt; in the default time zone.
+<i>205</i>&nbsp;     *
+<i>206</i>&nbsp;     * @param instant  the milliseconds from 1970-01-01T00:00:00Z
+<i>207</i>&nbsp;     */
+<i>208</i>&nbsp;    public DateTime(long instant) {
+<b class="fc"><i>209</i>&nbsp;        super(instant);</b>
+<b class="fc"><i>210</i>&nbsp;    }</b>
+<i>211</i>&nbsp;
+<i>212</i>&nbsp;    /**
+<i>213</i>&nbsp;     * Constructs an instance set to the milliseconds from 1970-01-01T00:00:00Z
+<i>214</i>&nbsp;     * using &lt;code&gt;ISOChronology&lt;/code&gt; in the specified time zone.
+<i>215</i>&nbsp;     * &lt;p&gt;
+<i>216</i>&nbsp;     * If the specified time zone is null, the default zone is used.
+<i>217</i>&nbsp;     *
+<i>218</i>&nbsp;     * @param instant  the milliseconds from 1970-01-01T00:00:00Z
+<i>219</i>&nbsp;     * @param zone  the time zone, null means default zone
+<i>220</i>&nbsp;     */
+<i>221</i>&nbsp;    public DateTime(long instant, DateTimeZone zone) {
+<b class="fc"><i>222</i>&nbsp;        super(instant, zone);</b>
+<b class="fc"><i>223</i>&nbsp;    }</b>
+<i>224</i>&nbsp;
+<i>225</i>&nbsp;    /**
+<i>226</i>&nbsp;     * Constructs an instance set to the milliseconds from 1970-01-01T00:00:00Z
+<i>227</i>&nbsp;     * using the specified chronology.
+<i>228</i>&nbsp;     * &lt;p&gt;
+<i>229</i>&nbsp;     * If the chronology is null, &lt;code&gt;ISOChronology&lt;/code&gt;
+<i>230</i>&nbsp;     * in the default time zone is used.
+<i>231</i>&nbsp;     *
+<i>232</i>&nbsp;     * @param instant  the milliseconds from 1970-01-01T00:00:00Z
+<i>233</i>&nbsp;     * @param chronology  the chronology, null means ISOChronology in default zone
+<i>234</i>&nbsp;     */
+<i>235</i>&nbsp;    public DateTime(long instant, Chronology chronology) {
+<b class="fc"><i>236</i>&nbsp;        super(instant, chronology);</b>
+<b class="fc"><i>237</i>&nbsp;    }</b>
+<i>238</i>&nbsp;
+<i>239</i>&nbsp;    //-----------------------------------------------------------------------
+<i>240</i>&nbsp;    /**
+<i>241</i>&nbsp;     * Constructs an instance from an Object that represents a datetime.
+<i>242</i>&nbsp;     * &lt;p&gt;
+<i>243</i>&nbsp;     * If the object implies a chronology (such as GregorianCalendar does),
+<i>244</i>&nbsp;     * then that chronology will be used. Otherwise, ISO default is used.
+<i>245</i>&nbsp;     * Thus if a GregorianCalendar is passed in, the chronology used will
+<i>246</i>&nbsp;     * be GJ, but if a Date is passed in the chronology will be ISO.
+<i>247</i>&nbsp;     * &lt;p&gt;
+<i>248</i>&nbsp;     * The recognised object types are defined in
+<i>249</i>&nbsp;     * {@link org.joda.time.convert.ConverterManager ConverterManager} and
+<i>250</i>&nbsp;     * include ReadableInstant, String, Calendar and Date.
+<i>251</i>&nbsp;     * The String formats are described by {@link ISODateTimeFormat#dateTimeParser()}.
+<i>252</i>&nbsp;     *
+<i>253</i>&nbsp;     * @param instant  the datetime object, null means now
+<i>254</i>&nbsp;     * @throws IllegalArgumentException if the instant is invalid
+<i>255</i>&nbsp;     */
+<i>256</i>&nbsp;    public DateTime(Object instant) {
+<b class="fc"><i>257</i>&nbsp;        super(instant, (Chronology) null);</b>
+<b class="fc"><i>258</i>&nbsp;    }</b>
+<i>259</i>&nbsp;
+<i>260</i>&nbsp;    /**
+<i>261</i>&nbsp;     * Constructs an instance from an Object that represents a datetime,
+<i>262</i>&nbsp;     * forcing the time zone to that specified.
+<i>263</i>&nbsp;     * &lt;p&gt;
+<i>264</i>&nbsp;     * If the object implies a chronology (such as GregorianCalendar does),
+<i>265</i>&nbsp;     * then that chronology will be used, but with the time zone adjusted.
+<i>266</i>&nbsp;     * Otherwise, ISO is used in the specified time zone.
+<i>267</i>&nbsp;     * If the specified time zone is null, the default zone is used.
+<i>268</i>&nbsp;     * Thus if a GregorianCalendar is passed in, the chronology used will
+<i>269</i>&nbsp;     * be GJ, but if a Date is passed in the chronology will be ISO.
+<i>270</i>&nbsp;     * &lt;p&gt;
+<i>271</i>&nbsp;     * The recognised object types are defined in
+<i>272</i>&nbsp;     * {@link org.joda.time.convert.ConverterManager ConverterManager} and
+<i>273</i>&nbsp;     * include ReadableInstant, String, Calendar and Date.
+<i>274</i>&nbsp;     * The String formats are described by {@link ISODateTimeFormat#dateTimeParser()}.
+<i>275</i>&nbsp;     *
+<i>276</i>&nbsp;     * @param instant  the datetime object, null means now
+<i>277</i>&nbsp;     * @param zone  the time zone, null means default time zone
+<i>278</i>&nbsp;     * @throws IllegalArgumentException if the instant is invalid
+<i>279</i>&nbsp;     */
+<i>280</i>&nbsp;    public DateTime(Object instant, DateTimeZone zone) {
+<b class="fc"><i>281</i>&nbsp;        super(instant, zone);</b>
+<b class="fc"><i>282</i>&nbsp;    }</b>
+<i>283</i>&nbsp;
+<i>284</i>&nbsp;    /**
+<i>285</i>&nbsp;     * Constructs an instance from an Object that represents a datetime,
+<i>286</i>&nbsp;     * using the specified chronology.
+<i>287</i>&nbsp;     * &lt;p&gt;
+<i>288</i>&nbsp;     * If the chronology is null, ISO in the default time zone is used.
+<i>289</i>&nbsp;     * Any chronology implied by the object (such as GregorianCalendar does)
+<i>290</i>&nbsp;     * is ignored.
+<i>291</i>&nbsp;     * &lt;p&gt;
+<i>292</i>&nbsp;     * The recognised object types are defined in
+<i>293</i>&nbsp;     * {@link org.joda.time.convert.ConverterManager ConverterManager} and
+<i>294</i>&nbsp;     * include ReadableInstant, String, Calendar and Date.
+<i>295</i>&nbsp;     * The String formats are described by {@link ISODateTimeFormat#dateTimeParser()}.
+<i>296</i>&nbsp;     *
+<i>297</i>&nbsp;     * @param instant  the datetime object, null means now
+<i>298</i>&nbsp;     * @param chronology  the chronology, null means ISO in default zone
+<i>299</i>&nbsp;     * @throws IllegalArgumentException if the instant is invalid
+<i>300</i>&nbsp;     */
+<i>301</i>&nbsp;    public DateTime(Object instant, Chronology chronology) {
+<b class="fc"><i>302</i>&nbsp;        super(instant, DateTimeUtils.getChronology(chronology));</b>
+<b class="fc"><i>303</i>&nbsp;    }</b>
+<i>304</i>&nbsp;
+<i>305</i>&nbsp;    //-----------------------------------------------------------------------
+<i>306</i>&nbsp;    /**
+<i>307</i>&nbsp;     * Constructs an instance from datetime field values
+<i>308</i>&nbsp;     * using &lt;code&gt;ISOChronology&lt;/code&gt; in the default time zone.
+<i>309</i>&nbsp;     *
+<i>310</i>&nbsp;     * @param year  the year
+<i>311</i>&nbsp;     * @param monthOfYear  the month of the year, from 1 to 12
+<i>312</i>&nbsp;     * @param dayOfMonth  the day of the month, from 1 to 31
+<i>313</i>&nbsp;     * @param hourOfDay  the hour of the day, from 0 to 23
+<i>314</i>&nbsp;     * @param minuteOfHour  the minute of the hour, from 0 to 59
+<i>315</i>&nbsp;     * @since 2.0
+<i>316</i>&nbsp;     */
+<i>317</i>&nbsp;    public DateTime(
+<i>318</i>&nbsp;            int year,
+<i>319</i>&nbsp;            int monthOfYear,
+<i>320</i>&nbsp;            int dayOfMonth,
+<i>321</i>&nbsp;            int hourOfDay,
+<i>322</i>&nbsp;            int minuteOfHour) {
+<b class="fc"><i>323</i>&nbsp;        super(year, monthOfYear, dayOfMonth, hourOfDay, minuteOfHour, 0, 0);</b>
+<b class="fc"><i>324</i>&nbsp;    }</b>
+<i>325</i>&nbsp;
+<i>326</i>&nbsp;    /**
+<i>327</i>&nbsp;     * Constructs an instance from datetime field values
+<i>328</i>&nbsp;     * using &lt;code&gt;ISOChronology&lt;/code&gt; in the specified time zone.
+<i>329</i>&nbsp;     * &lt;p&gt;
+<i>330</i>&nbsp;     * If the specified time zone is null, the default zone is used.
+<i>331</i>&nbsp;     *
+<i>332</i>&nbsp;     * @param year  the year
+<i>333</i>&nbsp;     * @param monthOfYear  the month of the year, from 1 to 12
+<i>334</i>&nbsp;     * @param dayOfMonth  the day of the month, from 1 to 31
+<i>335</i>&nbsp;     * @param hourOfDay  the hour of the day, from 0 to 23
+<i>336</i>&nbsp;     * @param minuteOfHour  the minute of the hour, from 0 to 59
+<i>337</i>&nbsp;     * @param zone  the time zone, null means default time zone
+<i>338</i>&nbsp;     * @since 2.0
+<i>339</i>&nbsp;     */
+<i>340</i>&nbsp;    public DateTime(
+<i>341</i>&nbsp;            int year,
+<i>342</i>&nbsp;            int monthOfYear,
+<i>343</i>&nbsp;            int dayOfMonth,
+<i>344</i>&nbsp;            int hourOfDay,
+<i>345</i>&nbsp;            int minuteOfHour,
+<i>346</i>&nbsp;            DateTimeZone zone) {
+<b class="fc"><i>347</i>&nbsp;        super(year, monthOfYear, dayOfMonth,</b>
+<i>348</i>&nbsp;              hourOfDay, minuteOfHour, 0, 0, zone);
+<b class="fc"><i>349</i>&nbsp;    }</b>
+<i>350</i>&nbsp;
+<i>351</i>&nbsp;    /**
+<i>352</i>&nbsp;     * Constructs an instance from datetime field values
+<i>353</i>&nbsp;     * using the specified chronology.
+<i>354</i>&nbsp;     * &lt;p&gt;
+<i>355</i>&nbsp;     * If the chronology is null, &lt;code&gt;ISOChronology&lt;/code&gt;
+<i>356</i>&nbsp;     * in the default time zone is used.
+<i>357</i>&nbsp;     *
+<i>358</i>&nbsp;     * @param year  the year, valid values defined by the chronology
+<i>359</i>&nbsp;     * @param monthOfYear  the month of the year, valid values defined by the chronology
+<i>360</i>&nbsp;     * @param dayOfMonth  the day of the month, valid values defined by the chronology
+<i>361</i>&nbsp;     * @param hourOfDay  the hour of the day, valid values defined by the chronology
+<i>362</i>&nbsp;     * @param minuteOfHour  the minute of the hour, valid values defined by the chronology
+<i>363</i>&nbsp;     * @param chronology  the chronology, null means ISOChronology in default zone
+<i>364</i>&nbsp;     * @since 2.0
+<i>365</i>&nbsp;     */
+<i>366</i>&nbsp;    public DateTime(
+<i>367</i>&nbsp;            int year,
+<i>368</i>&nbsp;            int monthOfYear,
+<i>369</i>&nbsp;            int dayOfMonth,
+<i>370</i>&nbsp;            int hourOfDay,
+<i>371</i>&nbsp;            int minuteOfHour,
+<i>372</i>&nbsp;            Chronology chronology) {
+<b class="fc"><i>373</i>&nbsp;        super(year, monthOfYear, dayOfMonth,</b>
+<i>374</i>&nbsp;              hourOfDay, minuteOfHour, 0, 0, chronology);
+<b class="fc"><i>375</i>&nbsp;    }</b>
+<i>376</i>&nbsp;
+<i>377</i>&nbsp;    //-----------------------------------------------------------------------
+<i>378</i>&nbsp;    /**
+<i>379</i>&nbsp;     * Constructs an instance from datetime field values
+<i>380</i>&nbsp;     * using &lt;code&gt;ISOChronology&lt;/code&gt; in the default time zone.
+<i>381</i>&nbsp;     *
+<i>382</i>&nbsp;     * @param year  the year
+<i>383</i>&nbsp;     * @param monthOfYear  the month of the year, from 1 to 12
+<i>384</i>&nbsp;     * @param dayOfMonth  the day of the month, from 1 to 31
+<i>385</i>&nbsp;     * @param hourOfDay  the hour of the day, from 0 to 23
+<i>386</i>&nbsp;     * @param minuteOfHour  the minute of the hour, from 0 to 59
+<i>387</i>&nbsp;     * @param secondOfMinute  the second of the minute, from 0 to 59
+<i>388</i>&nbsp;     * @since 2.0
+<i>389</i>&nbsp;     */
+<i>390</i>&nbsp;    public DateTime(
+<i>391</i>&nbsp;            int year,
+<i>392</i>&nbsp;            int monthOfYear,
+<i>393</i>&nbsp;            int dayOfMonth,
+<i>394</i>&nbsp;            int hourOfDay,
+<i>395</i>&nbsp;            int minuteOfHour,
+<i>396</i>&nbsp;            int secondOfMinute) {
+<b class="fc"><i>397</i>&nbsp;        super(year, monthOfYear, dayOfMonth, hourOfDay, minuteOfHour, secondOfMinute, 0);</b>
+<b class="fc"><i>398</i>&nbsp;    }</b>
+<i>399</i>&nbsp;
+<i>400</i>&nbsp;    /**
+<i>401</i>&nbsp;     * Constructs an instance from datetime field values
+<i>402</i>&nbsp;     * using &lt;code&gt;ISOChronology&lt;/code&gt; in the specified time zone.
+<i>403</i>&nbsp;     * &lt;p&gt;
+<i>404</i>&nbsp;     * If the specified time zone is null, the default zone is used.
+<i>405</i>&nbsp;     *
+<i>406</i>&nbsp;     * @param year  the year
+<i>407</i>&nbsp;     * @param monthOfYear  the month of the year, from 1 to 12
+<i>408</i>&nbsp;     * @param dayOfMonth  the day of the month, from 1 to 31
+<i>409</i>&nbsp;     * @param hourOfDay  the hour of the day, from 0 to 23
+<i>410</i>&nbsp;     * @param minuteOfHour  the minute of the hour, from 0 to 59
+<i>411</i>&nbsp;     * @param secondOfMinute  the second of the minute, from 0 to 59
+<i>412</i>&nbsp;     * @param zone  the time zone, null means default time zone
+<i>413</i>&nbsp;     * @since 2.0
+<i>414</i>&nbsp;     */
+<i>415</i>&nbsp;    public DateTime(
+<i>416</i>&nbsp;            int year,
+<i>417</i>&nbsp;            int monthOfYear,
+<i>418</i>&nbsp;            int dayOfMonth,
+<i>419</i>&nbsp;            int hourOfDay,
+<i>420</i>&nbsp;            int minuteOfHour,
+<i>421</i>&nbsp;            int secondOfMinute,
+<i>422</i>&nbsp;            DateTimeZone zone) {
+<b class="fc"><i>423</i>&nbsp;        super(year, monthOfYear, dayOfMonth,</b>
+<i>424</i>&nbsp;              hourOfDay, minuteOfHour, secondOfMinute, 0, zone);
+<b class="fc"><i>425</i>&nbsp;    }</b>
+<i>426</i>&nbsp;
+<i>427</i>&nbsp;    /**
+<i>428</i>&nbsp;     * Constructs an instance from datetime field values
+<i>429</i>&nbsp;     * using the specified chronology.
+<i>430</i>&nbsp;     * &lt;p&gt;
+<i>431</i>&nbsp;     * If the chronology is null, &lt;code&gt;ISOChronology&lt;/code&gt;
+<i>432</i>&nbsp;     * in the default time zone is used.
+<i>433</i>&nbsp;     *
+<i>434</i>&nbsp;     * @param year  the year, valid values defined by the chronology
+<i>435</i>&nbsp;     * @param monthOfYear  the month of the year, valid values defined by the chronology
+<i>436</i>&nbsp;     * @param dayOfMonth  the day of the month, valid values defined by the chronology
+<i>437</i>&nbsp;     * @param hourOfDay  the hour of the day, valid values defined by the chronology
+<i>438</i>&nbsp;     * @param minuteOfHour  the minute of the hour, valid values defined by the chronology
+<i>439</i>&nbsp;     * @param secondOfMinute  the second of the minute, valid values defined by the chronology
+<i>440</i>&nbsp;     * @param chronology  the chronology, null means ISOChronology in default zone
+<i>441</i>&nbsp;     * @since 2.0
+<i>442</i>&nbsp;     */
+<i>443</i>&nbsp;    public DateTime(
+<i>444</i>&nbsp;            int year,
+<i>445</i>&nbsp;            int monthOfYear,
+<i>446</i>&nbsp;            int dayOfMonth,
+<i>447</i>&nbsp;            int hourOfDay,
+<i>448</i>&nbsp;            int minuteOfHour,
+<i>449</i>&nbsp;            int secondOfMinute,
+<i>450</i>&nbsp;            Chronology chronology) {
+<b class="fc"><i>451</i>&nbsp;        super(year, monthOfYear, dayOfMonth,</b>
+<i>452</i>&nbsp;              hourOfDay, minuteOfHour, secondOfMinute, 0, chronology);
+<b class="fc"><i>453</i>&nbsp;    }</b>
+<i>454</i>&nbsp;
+<i>455</i>&nbsp;    //-----------------------------------------------------------------------
+<i>456</i>&nbsp;    /**
+<i>457</i>&nbsp;     * Constructs an instance from datetime field values
+<i>458</i>&nbsp;     * using &lt;code&gt;ISOChronology&lt;/code&gt; in the default time zone.
+<i>459</i>&nbsp;     *
+<i>460</i>&nbsp;     * @param year  the year
+<i>461</i>&nbsp;     * @param monthOfYear  the month of the year, from 1 to 12
+<i>462</i>&nbsp;     * @param dayOfMonth  the day of the month, from 1 to 31
+<i>463</i>&nbsp;     * @param hourOfDay  the hour of the day, from 0 to 23
+<i>464</i>&nbsp;     * @param minuteOfHour  the minute of the hour, from 0 to 59
+<i>465</i>&nbsp;     * @param secondOfMinute  the second of the minute, from 0 to 59
+<i>466</i>&nbsp;     * @param millisOfSecond  the millisecond of the second, from 0 to 999
+<i>467</i>&nbsp;     */
+<i>468</i>&nbsp;    public DateTime(
+<i>469</i>&nbsp;            int year,
+<i>470</i>&nbsp;            int monthOfYear,
+<i>471</i>&nbsp;            int dayOfMonth,
+<i>472</i>&nbsp;            int hourOfDay,
+<i>473</i>&nbsp;            int minuteOfHour,
+<i>474</i>&nbsp;            int secondOfMinute,
+<i>475</i>&nbsp;            int millisOfSecond) {
+<b class="fc"><i>476</i>&nbsp;        super(year, monthOfYear, dayOfMonth, hourOfDay, minuteOfHour, secondOfMinute, millisOfSecond);</b>
+<b class="fc"><i>477</i>&nbsp;    }</b>
+<i>478</i>&nbsp;
+<i>479</i>&nbsp;    /**
+<i>480</i>&nbsp;     * Constructs an instance from datetime field values
+<i>481</i>&nbsp;     * using &lt;code&gt;ISOChronology&lt;/code&gt; in the specified time zone.
+<i>482</i>&nbsp;     * &lt;p&gt;
+<i>483</i>&nbsp;     * If the specified time zone is null, the default zone is used.
+<i>484</i>&nbsp;     *
+<i>485</i>&nbsp;     * @param year  the year
+<i>486</i>&nbsp;     * @param monthOfYear  the month of the year, from 1 to 12
+<i>487</i>&nbsp;     * @param dayOfMonth  the day of the month, from 1 to 31
+<i>488</i>&nbsp;     * @param hourOfDay  the hour of the day, from 0 to 23
+<i>489</i>&nbsp;     * @param minuteOfHour  the minute of the hour, from 0 to 59
+<i>490</i>&nbsp;     * @param secondOfMinute  the second of the minute, from 0 to 59
+<i>491</i>&nbsp;     * @param millisOfSecond  the millisecond of the second, from 0 to 999
+<i>492</i>&nbsp;     * @param zone  the time zone, null means default time zone
+<i>493</i>&nbsp;     */
+<i>494</i>&nbsp;    public DateTime(
+<i>495</i>&nbsp;            int year,
+<i>496</i>&nbsp;            int monthOfYear,
+<i>497</i>&nbsp;            int dayOfMonth,
+<i>498</i>&nbsp;            int hourOfDay,
+<i>499</i>&nbsp;            int minuteOfHour,
+<i>500</i>&nbsp;            int secondOfMinute,
+<i>501</i>&nbsp;            int millisOfSecond,
+<i>502</i>&nbsp;            DateTimeZone zone) {
+<b class="fc"><i>503</i>&nbsp;        super(year, monthOfYear, dayOfMonth,</b>
+<i>504</i>&nbsp;              hourOfDay, minuteOfHour, secondOfMinute, millisOfSecond, zone);
+<b class="fc"><i>505</i>&nbsp;    }</b>
+<i>506</i>&nbsp;
+<i>507</i>&nbsp;    /**
+<i>508</i>&nbsp;     * Constructs an instance from datetime field values
+<i>509</i>&nbsp;     * using the specified chronology.
+<i>510</i>&nbsp;     * &lt;p&gt;
+<i>511</i>&nbsp;     * If the chronology is null, &lt;code&gt;ISOChronology&lt;/code&gt;
+<i>512</i>&nbsp;     * in the default time zone is used.
+<i>513</i>&nbsp;     *
+<i>514</i>&nbsp;     * @param year  the year, valid values defined by the chronology
+<i>515</i>&nbsp;     * @param monthOfYear  the month of the year, valid values defined by the chronology
+<i>516</i>&nbsp;     * @param dayOfMonth  the day of the month, valid values defined by the chronology
+<i>517</i>&nbsp;     * @param hourOfDay  the hour of the day, valid values defined by the chronology
+<i>518</i>&nbsp;     * @param minuteOfHour  the minute of the hour, valid values defined by the chronology
+<i>519</i>&nbsp;     * @param secondOfMinute  the second of the minute, valid values defined by the chronology
+<i>520</i>&nbsp;     * @param millisOfSecond  the millisecond of the second, valid values defined by the chronology
+<i>521</i>&nbsp;     * @param chronology  the chronology, null means ISOChronology in default zone
+<i>522</i>&nbsp;     */
+<i>523</i>&nbsp;    public DateTime(
+<i>524</i>&nbsp;            int year,
+<i>525</i>&nbsp;            int monthOfYear,
+<i>526</i>&nbsp;            int dayOfMonth,
+<i>527</i>&nbsp;            int hourOfDay,
+<i>528</i>&nbsp;            int minuteOfHour,
+<i>529</i>&nbsp;            int secondOfMinute,
+<i>530</i>&nbsp;            int millisOfSecond,
+<i>531</i>&nbsp;            Chronology chronology) {
+<b class="fc"><i>532</i>&nbsp;        super(year, monthOfYear, dayOfMonth,</b>
+<i>533</i>&nbsp;              hourOfDay, minuteOfHour, secondOfMinute, millisOfSecond, chronology);
+<b class="fc"><i>534</i>&nbsp;    }</b>
+<i>535</i>&nbsp;
+<i>536</i>&nbsp;    //-----------------------------------------------------------------------
+<i>537</i>&nbsp;    /**
+<i>538</i>&nbsp;     * Get this object as a DateTime by returning &lt;code&gt;this&lt;/code&gt;.
+<i>539</i>&nbsp;     * 
+<i>540</i>&nbsp;     * @return &lt;code&gt;this&lt;/code&gt;
+<i>541</i>&nbsp;     */
+<i>542</i>&nbsp;    public DateTime toDateTime() {
+<b class="fc"><i>543</i>&nbsp;        return this;</b>
+<i>544</i>&nbsp;    }
+<i>545</i>&nbsp;
+<i>546</i>&nbsp;    /**
+<i>547</i>&nbsp;     * Get this object as a DateTime using ISOChronology in the default zone,
+<i>548</i>&nbsp;     * returning &lt;code&gt;this&lt;/code&gt; if possible.
+<i>549</i>&nbsp;     * 
+<i>550</i>&nbsp;     * @return a DateTime using the same millis
+<i>551</i>&nbsp;     */
+<i>552</i>&nbsp;    public DateTime toDateTimeISO() {
+<b class="fc"><i>553</i>&nbsp;        if (getChronology() == ISOChronology.getInstance()) {</b>
+<b class="fc"><i>554</i>&nbsp;            return this;</b>
+<i>555</i>&nbsp;        }
+<b class="fc"><i>556</i>&nbsp;        return super.toDateTimeISO();</b>
+<i>557</i>&nbsp;    }
+<i>558</i>&nbsp;
+<i>559</i>&nbsp;    /**
+<i>560</i>&nbsp;     * Get this object as a DateTime, returning &lt;code&gt;this&lt;/code&gt; if possible.
+<i>561</i>&nbsp;     * 
+<i>562</i>&nbsp;     * @param zone time zone to apply, or default if null
+<i>563</i>&nbsp;     * @return a DateTime using the same millis
+<i>564</i>&nbsp;     */
+<i>565</i>&nbsp;    public DateTime toDateTime(DateTimeZone zone) {
+<b class="fc"><i>566</i>&nbsp;        zone = DateTimeUtils.getZone(zone);</b>
+<b class="fc"><i>567</i>&nbsp;        if (getZone() == zone) {</b>
+<b class="fc"><i>568</i>&nbsp;            return this;</b>
+<i>569</i>&nbsp;        }
+<b class="fc"><i>570</i>&nbsp;        return super.toDateTime(zone);</b>
+<i>571</i>&nbsp;    }
+<i>572</i>&nbsp;
+<i>573</i>&nbsp;    /**
+<i>574</i>&nbsp;     * Get this object as a DateTime, returning &lt;code&gt;this&lt;/code&gt; if possible.
+<i>575</i>&nbsp;     * 
+<i>576</i>&nbsp;     * @param chronology chronology to apply, or ISOChronology if null
+<i>577</i>&nbsp;     * @return a DateTime using the same millis
+<i>578</i>&nbsp;     */
+<i>579</i>&nbsp;    public DateTime toDateTime(Chronology chronology) {
+<b class="fc"><i>580</i>&nbsp;        chronology = DateTimeUtils.getChronology(chronology);</b>
+<b class="fc"><i>581</i>&nbsp;        if (getChronology() == chronology) {</b>
+<b class="fc"><i>582</i>&nbsp;            return this;</b>
+<i>583</i>&nbsp;        }
+<b class="fc"><i>584</i>&nbsp;        return super.toDateTime(chronology);</b>
+<i>585</i>&nbsp;    }
+<i>586</i>&nbsp;
+<i>587</i>&nbsp;    //-----------------------------------------------------------------------
+<i>588</i>&nbsp;    /**
+<i>589</i>&nbsp;     * Returns a copy of this datetime with different millis.
+<i>590</i>&nbsp;     * &lt;p&gt;
+<i>591</i>&nbsp;     * The returned object will be either be a new instance or &lt;code&gt;this&lt;/code&gt;.
+<i>592</i>&nbsp;     * Only the millis will change, the chronology and time zone are kept.
+<i>593</i>&nbsp;     *
+<i>594</i>&nbsp;     * @param newMillis  the new millis, from 1970-01-01T00:00:00Z
+<i>595</i>&nbsp;     * @return a copy of this datetime with different millis
+<i>596</i>&nbsp;     */
+<i>597</i>&nbsp;    public DateTime withMillis(long newMillis) {
+<b class="fc"><i>598</i>&nbsp;        return (newMillis == getMillis() ? this : new DateTime(newMillis, getChronology()));</b>
+<i>599</i>&nbsp;    }
+<i>600</i>&nbsp;
+<i>601</i>&nbsp;    /**
+<i>602</i>&nbsp;     * Returns a copy of this datetime with a different chronology.
+<i>603</i>&nbsp;     * &lt;p&gt;
+<i>604</i>&nbsp;     * The returned object will be either be a new instance or &lt;code&gt;this&lt;/code&gt;.
+<i>605</i>&nbsp;     * Only the chronology will change, the millis are kept.
+<i>606</i>&nbsp;     *
+<i>607</i>&nbsp;     * @param newChronology  the new chronology, null means ISO default
+<i>608</i>&nbsp;     * @return a copy of this datetime with a different chronology
+<i>609</i>&nbsp;     */
+<i>610</i>&nbsp;    public DateTime withChronology(Chronology newChronology) {
+<b class="fc"><i>611</i>&nbsp;        newChronology = DateTimeUtils.getChronology(newChronology);</b>
+<b class="fc"><i>612</i>&nbsp;        return (newChronology == getChronology() ? this : new DateTime(getMillis(), newChronology));</b>
+<i>613</i>&nbsp;    }
+<i>614</i>&nbsp;
+<i>615</i>&nbsp;    //-----------------------------------------------------------------------
+<i>616</i>&nbsp;    /**
+<i>617</i>&nbsp;     * Returns a copy of this datetime with a different time zone, preserving the
+<i>618</i>&nbsp;     * millisecond instant.
+<i>619</i>&nbsp;     * &lt;p&gt;
+<i>620</i>&nbsp;     * This method is useful for finding the local time in another timezone.
+<i>621</i>&nbsp;     * For example, if this instant holds 12:30 in Europe/London, the result
+<i>622</i>&nbsp;     * from this method with Europe/Paris would be 13:30.
+<i>623</i>&nbsp;     * &lt;p&gt;
+<i>624</i>&nbsp;     * The returned object will be a new instance of the same implementation type.
+<i>625</i>&nbsp;     * This method changes the time zone, and does not change the
+<i>626</i>&nbsp;     * millisecond instant, with the effect that the field values usually change.
+<i>627</i>&nbsp;     * The returned object will be either be a new instance or &lt;code&gt;this&lt;/code&gt;.
+<i>628</i>&nbsp;     *
+<i>629</i>&nbsp;     * @param newZone  the new time zone
+<i>630</i>&nbsp;     * @return a copy of this datetime with a different time zone
+<i>631</i>&nbsp;     * @see #withZoneRetainFields
+<i>632</i>&nbsp;     */
+<i>633</i>&nbsp;    public DateTime withZone(DateTimeZone newZone) {
+<b class="fc"><i>634</i>&nbsp;        return withChronology(getChronology().withZone(newZone));</b>
+<i>635</i>&nbsp;    }
+<i>636</i>&nbsp;
+<i>637</i>&nbsp;    /**
+<i>638</i>&nbsp;     * Returns a copy of this datetime with a different time zone, preserving the
+<i>639</i>&nbsp;     * field values.
+<i>640</i>&nbsp;     * &lt;p&gt;
+<i>641</i>&nbsp;     * This method is useful for finding the millisecond time in another timezone.
+<i>642</i>&nbsp;     * For example, if this instant holds 12:30 in Europe/London (ie. 12:30Z),
+<i>643</i>&nbsp;     * the result from this method with Europe/Paris would be 12:30 (ie. 11:30Z).
+<i>644</i>&nbsp;     * &lt;p&gt;
+<i>645</i>&nbsp;     * The returned object will be a new instance of the same implementation type.
+<i>646</i>&nbsp;     * This method changes the time zone and the millisecond instant to keep
+<i>647</i>&nbsp;     * the field values the same.
+<i>648</i>&nbsp;     * The returned object will be either be a new instance or &lt;code&gt;this&lt;/code&gt;.
+<i>649</i>&nbsp;     *
+<i>650</i>&nbsp;     * @param newZone  the new time zone, null means default
+<i>651</i>&nbsp;     * @return a copy of this datetime with a different time zone
+<i>652</i>&nbsp;     * @see #withZone
+<i>653</i>&nbsp;     */
+<i>654</i>&nbsp;    public DateTime withZoneRetainFields(DateTimeZone newZone) {
+<b class="fc"><i>655</i>&nbsp;        newZone = DateTimeUtils.getZone(newZone);</b>
+<b class="fc"><i>656</i>&nbsp;        DateTimeZone originalZone = DateTimeUtils.getZone(getZone());</b>
+<b class="fc"><i>657</i>&nbsp;        if (newZone == originalZone) {</b>
+<b class="fc"><i>658</i>&nbsp;            return this;</b>
+<i>659</i>&nbsp;        }
+<i>660</i>&nbsp;        
+<b class="fc"><i>661</i>&nbsp;        long millis = originalZone.getMillisKeepLocal(newZone, getMillis());</b>
+<b class="fc"><i>662</i>&nbsp;        return new DateTime(millis, getChronology().withZone(newZone));</b>
+<i>663</i>&nbsp;    }
+<i>664</i>&nbsp;
+<i>665</i>&nbsp;    /**
+<i>666</i>&nbsp;     * Returns a copy of this ZonedDateTime changing the zone offset to the earlier
+<i>667</i>&nbsp;     * of the two valid offsets at a local time-line overlap.
+<i>668</i>&nbsp;     * &lt;p&gt;
+<i>669</i>&nbsp;     * This method only has any effect when the local time-line overlaps, such as at
+<i>670</i>&nbsp;     * an autumn daylight savings cutover. In this scenario, there are two valid offsets
+<i>671</i>&nbsp;     * for the local date-time. Calling this method will return a date-time with the
+<i>672</i>&nbsp;     * earlier of the two selected.
+<i>673</i>&nbsp;     * &lt;p&gt;
+<i>674</i>&nbsp;     * If this method is called when it is not an overlap, this is returned.
+<i>675</i>&nbsp;     * &lt;p&gt;
+<i>676</i>&nbsp;     * This instance is immutable and unaffected by this method call.
+<i>677</i>&nbsp;     *
+<i>678</i>&nbsp;     * @return a copy of this datetime with the earliest valid offset for the local datetime
+<i>679</i>&nbsp;     */
+<i>680</i>&nbsp;    public DateTime withEarlierOffsetAtOverlap() {
+<b class="fc"><i>681</i>&nbsp;        long newMillis = getZone().adjustOffset(getMillis(), false);</b>
+<b class="fc"><i>682</i>&nbsp;        return withMillis(newMillis);</b>
+<i>683</i>&nbsp;    }
+<i>684</i>&nbsp;
+<i>685</i>&nbsp;    /**
+<i>686</i>&nbsp;     * Returns a copy of this ZonedDateTime changing the zone offset to the later
+<i>687</i>&nbsp;     * of the two valid offsets at a local time-line overlap.
+<i>688</i>&nbsp;     * &lt;p&gt;
+<i>689</i>&nbsp;     * This method only has any effect when the local time-line overlaps, such as at
+<i>690</i>&nbsp;     * an autumn daylight savings cutover. In this scenario, there are two valid offsets
+<i>691</i>&nbsp;     * for the local date-time. Calling this method will return a date-time with the
+<i>692</i>&nbsp;     * later of the two selected.
+<i>693</i>&nbsp;     * &lt;p&gt;
+<i>694</i>&nbsp;     * If this method is called when it is not an overlap, this is returned.
+<i>695</i>&nbsp;     * &lt;p&gt;
+<i>696</i>&nbsp;     * This instance is immutable and unaffected by this method call.
+<i>697</i>&nbsp;     *
+<i>698</i>&nbsp;     * @return a copy of this datetime with the latest valid offset for the local datetime
+<i>699</i>&nbsp;     */
+<i>700</i>&nbsp;    public DateTime withLaterOffsetAtOverlap() {
+<b class="fc"><i>701</i>&nbsp;        long newMillis = getZone().adjustOffset(getMillis(), true);</b>
+<b class="fc"><i>702</i>&nbsp;        return withMillis(newMillis);</b>
+<i>703</i>&nbsp;    }
+<i>704</i>&nbsp;
+<i>705</i>&nbsp;    //-----------------------------------------------------------------------
+<i>706</i>&nbsp;    /**
+<i>707</i>&nbsp;     * Returns a copy of this datetime with the specified date, retaining the time fields.
+<i>708</i>&nbsp;     * &lt;p&gt;
+<i>709</i>&nbsp;     * If the date is already the date passed in, then &lt;code&gt;this&lt;/code&gt; is returned.
+<i>710</i>&nbsp;     * &lt;p&gt;
+<i>711</i>&nbsp;     * To set a single field use the properties, for example:
+<i>712</i>&nbsp;     * &lt;pre&gt;
+<i>713</i>&nbsp;     * DateTime set = monthOfYear().setCopy(6);
+<i>714</i>&nbsp;     * &lt;/pre&gt;
+<i>715</i>&nbsp;     * &lt;p&gt;
+<i>716</i>&nbsp;     * If the time is invalid on the new date due to the time-zone, the time will be adjusted.
+<i>717</i>&nbsp;     * &lt;p&gt;
+<i>718</i>&nbsp;     * This instance is immutable and unaffected by this method call.
+<i>719</i>&nbsp;     *
+<i>720</i>&nbsp;     * @param year  the new year value
+<i>721</i>&nbsp;     * @param monthOfYear  the new monthOfYear value
+<i>722</i>&nbsp;     * @param dayOfMonth  the new dayOfMonth value
+<i>723</i>&nbsp;     * @return a copy of this datetime with a different date
+<i>724</i>&nbsp;     * @throws IllegalArgumentException if any value if invalid
+<i>725</i>&nbsp;     */
+<i>726</i>&nbsp;    public DateTime withDate(int year, int monthOfYear, int dayOfMonth) {
+<b class="fc"><i>727</i>&nbsp;        Chronology chrono = getChronology();</b>
+<b class="fc"><i>728</i>&nbsp;        long localInstant = chrono.withUTC().getDateTimeMillis(year, monthOfYear, dayOfMonth, getMillisOfDay());</b>
+<b class="fc"><i>729</i>&nbsp;        return withMillis(chrono.getZone().convertLocalToUTC(localInstant, false, getMillis()));</b>
+<i>730</i>&nbsp;    }
+<i>731</i>&nbsp;
+<i>732</i>&nbsp;    /**
+<i>733</i>&nbsp;     * Returns a copy of this datetime with the specified date, retaining the time fields.
+<i>734</i>&nbsp;     * &lt;p&gt;
+<i>735</i>&nbsp;     * If the time is invalid on the new date due to the time-zone, the time will be adjusted.
+<i>736</i>&nbsp;     * &lt;p&gt;
+<i>737</i>&nbsp;     * This instance is immutable and unaffected by this method call.
+<i>738</i>&nbsp;     *
+<i>739</i>&nbsp;     * @param date  the local date
+<i>740</i>&nbsp;     * @return a copy of this datetime with a different date
+<i>741</i>&nbsp;     * @throws IllegalArgumentException if the time-of-day is invalid for the date
+<i>742</i>&nbsp;     * @throws NullPointerException if the date is null
+<i>743</i>&nbsp;     */
+<i>744</i>&nbsp;    public DateTime withDate(LocalDate date) {
+<b class="fc"><i>745</i>&nbsp;        return withDate(</b>
+<b class="fc"><i>746</i>&nbsp;            date.getYear(), date.getMonthOfYear(), date.getDayOfMonth());</b>
+<i>747</i>&nbsp;    }
+<i>748</i>&nbsp;
+<i>749</i>&nbsp;    /**
+<i>750</i>&nbsp;     * Returns a copy of this datetime with the specified time, retaining the date fields.
+<i>751</i>&nbsp;     * &lt;p&gt;
+<i>752</i>&nbsp;     * If the time is already the time passed in, then &lt;code&gt;this&lt;/code&gt; is returned.
+<i>753</i>&nbsp;     * &lt;p&gt;
+<i>754</i>&nbsp;     * To set a single field use the properties, for example:
+<i>755</i>&nbsp;     * &lt;pre&gt;
+<i>756</i>&nbsp;     * DateTime set = dt.hourOfDay().setCopy(6);
+<i>757</i>&nbsp;     * &lt;/pre&gt;
+<i>758</i>&nbsp;     * &lt;p&gt;
+<i>759</i>&nbsp;     * If the new time is invalid due to the time-zone, the time will be adjusted.
+<i>760</i>&nbsp;     * &lt;p&gt;
+<i>761</i>&nbsp;     * This instance is immutable and unaffected by this method call.
+<i>762</i>&nbsp;     *
+<i>763</i>&nbsp;     * @param hourOfDay  the hour of the day
+<i>764</i>&nbsp;     * @param minuteOfHour  the minute of the hour
+<i>765</i>&nbsp;     * @param secondOfMinute  the second of the minute
+<i>766</i>&nbsp;     * @param millisOfSecond  the millisecond of the second
+<i>767</i>&nbsp;     * @return a copy of this datetime with a different time
+<i>768</i>&nbsp;     * @throws IllegalArgumentException if any value if invalid
+<i>769</i>&nbsp;     */
+<i>770</i>&nbsp;    public DateTime withTime(int hourOfDay, int minuteOfHour, int secondOfMinute, int millisOfSecond) {
+<b class="fc"><i>771</i>&nbsp;        Chronology chrono = getChronology();</b>
+<b class="fc"><i>772</i>&nbsp;        long localInstant = chrono.withUTC().getDateTimeMillis(</b>
+<b class="fc"><i>773</i>&nbsp;            getYear(), getMonthOfYear(), getDayOfMonth(), hourOfDay, minuteOfHour, secondOfMinute, millisOfSecond);</b>
+<b class="fc"><i>774</i>&nbsp;        return withMillis(chrono.getZone().convertLocalToUTC(localInstant, false, getMillis()));</b>
+<i>775</i>&nbsp;    }
+<i>776</i>&nbsp;
+<i>777</i>&nbsp;    /**
+<i>778</i>&nbsp;     * Returns a copy of this datetime with the specified time, retaining the date fields.
+<i>779</i>&nbsp;     * &lt;p&gt;
+<i>780</i>&nbsp;     * If the new time is invalid due to the time-zone, the time will be adjusted.
+<i>781</i>&nbsp;     * &lt;p&gt;
+<i>782</i>&nbsp;     * This instance is immutable and unaffected by this method call.
+<i>783</i>&nbsp;     *
+<i>784</i>&nbsp;     * @param time  the local time
+<i>785</i>&nbsp;     * @return a copy of this datetime with a different time
+<i>786</i>&nbsp;     * @throws IllegalArgumentException if the time-of-day is invalid for the date
+<i>787</i>&nbsp;     * @throws NullPointerException if the time is null
+<i>788</i>&nbsp;     */
+<i>789</i>&nbsp;    public DateTime withTime(LocalTime time) {
+<b class="fc"><i>790</i>&nbsp;        return withTime(</b>
+<b class="fc"><i>791</i>&nbsp;            time.getHourOfDay(), time.getMinuteOfHour(), time.getSecondOfMinute(), time.getMillisOfSecond());</b>
+<i>792</i>&nbsp;    }
+<i>793</i>&nbsp;
+<i>794</i>&nbsp;    /**
+<i>795</i>&nbsp;     * Returns a copy of this datetime with the time set to the start of the day.
+<i>796</i>&nbsp;     * &lt;p&gt;
+<i>797</i>&nbsp;     * The time will normally be midnight, as that is the earliest time on
+<i>798</i>&nbsp;     * any given day. However, in some time zones when Daylight Savings Time
+<i>799</i>&nbsp;     * starts, there is no midnight because time jumps from 11:59 to 01:00.
+<i>800</i>&nbsp;     * This method handles that situation by returning 01:00 on that date.
+<i>801</i>&nbsp;     * &lt;p&gt;
+<i>802</i>&nbsp;     * This instance is immutable and unaffected by this method call.
+<i>803</i>&nbsp;     *
+<i>804</i>&nbsp;     * @return a copy of this datetime with the time set to the start of the day, not null
+<i>805</i>&nbsp;     */
+<i>806</i>&nbsp;    public DateTime withTimeAtStartOfDay() {
+<b class="nc"><i>807</i>&nbsp;        return toLocalDate().toDateTimeAtStartOfDay(getZone());</b>
+<i>808</i>&nbsp;    }
+<i>809</i>&nbsp;
+<i>810</i>&nbsp;    //-----------------------------------------------------------------------
+<i>811</i>&nbsp;    /**
+<i>812</i>&nbsp;     * Returns a copy of this datetime with the partial set of fields replacing those
+<i>813</i>&nbsp;     * from this instance.
+<i>814</i>&nbsp;     * &lt;p&gt;
+<i>815</i>&nbsp;     * For example, if the partial is a &lt;code&gt;TimeOfDay&lt;/code&gt; then the time fields
+<i>816</i>&nbsp;     * would be changed in the returned instance.
+<i>817</i>&nbsp;     * If the partial is null, then &lt;code&gt;this&lt;/code&gt; is returned.
+<i>818</i>&nbsp;     *
+<i>819</i>&nbsp;     * @param partial  the partial set of fields to apply to this datetime, null ignored
+<i>820</i>&nbsp;     * @return a copy of this datetime with a different set of fields
+<i>821</i>&nbsp;     * @throws IllegalArgumentException if any value is invalid
+<i>822</i>&nbsp;     */
+<i>823</i>&nbsp;    public DateTime withFields(ReadablePartial partial) {
+<b class="fc"><i>824</i>&nbsp;        if (partial == null) {</b>
+<b class="fc"><i>825</i>&nbsp;            return this;</b>
+<i>826</i>&nbsp;        }
+<b class="fc"><i>827</i>&nbsp;        return withMillis(getChronology().set(partial, getMillis()));</b>
+<i>828</i>&nbsp;    }
+<i>829</i>&nbsp;
+<i>830</i>&nbsp;    /**
+<i>831</i>&nbsp;     * Returns a copy of this datetime with the specified field set to a new value.
+<i>832</i>&nbsp;     * &lt;p&gt;
+<i>833</i>&nbsp;     * For example, if the field type is &lt;code&gt;hourOfDay&lt;/code&gt; then the hour of day
+<i>834</i>&nbsp;     * field would be changed in the returned instance.
+<i>835</i>&nbsp;     * If the field type is null, then &lt;code&gt;this&lt;/code&gt; is returned.
+<i>836</i>&nbsp;     * &lt;p&gt;
+<i>837</i>&nbsp;     * These three lines are equivalent:
+<i>838</i>&nbsp;     * &lt;pre&gt;
+<i>839</i>&nbsp;     * DateTime updated = dt.withField(DateTimeFieldType.dayOfMonth(), 6);
+<i>840</i>&nbsp;     * DateTime updated = dt.dayOfMonth().setCopy(6);
+<i>841</i>&nbsp;     * DateTime updated = dt.property(DateTimeFieldType.dayOfMonth()).setCopy(6);
+<i>842</i>&nbsp;     * &lt;/pre&gt;
+<i>843</i>&nbsp;     *
+<i>844</i>&nbsp;     * @param fieldType  the field type to set, not null
+<i>845</i>&nbsp;     * @param value  the value to set
+<i>846</i>&nbsp;     * @return a copy of this datetime with the field set
+<i>847</i>&nbsp;     * @throws IllegalArgumentException if the value is null or invalid
+<i>848</i>&nbsp;     */
+<i>849</i>&nbsp;    public DateTime withField(DateTimeFieldType fieldType, int value) {
+<b class="fc"><i>850</i>&nbsp;        if (fieldType == null) {</b>
+<b class="fc"><i>851</i>&nbsp;            throw new IllegalArgumentException(&quot;Field must not be null&quot;);</b>
+<i>852</i>&nbsp;        }
+<b class="fc"><i>853</i>&nbsp;        long instant = fieldType.getField(getChronology()).set(getMillis(), value);</b>
+<b class="fc"><i>854</i>&nbsp;        return withMillis(instant);</b>
+<i>855</i>&nbsp;    }
+<i>856</i>&nbsp;
+<i>857</i>&nbsp;    /**
+<i>858</i>&nbsp;     * Returns a copy of this datetime with the value of the specified field increased.
+<i>859</i>&nbsp;     * &lt;p&gt;
+<i>860</i>&nbsp;     * If the addition is zero or the field is null, then &lt;code&gt;this&lt;/code&gt; is returned.
+<i>861</i>&nbsp;     * &lt;p&gt;
+<i>862</i>&nbsp;     * These three lines are equivalent:
+<i>863</i>&nbsp;     * &lt;pre&gt;
+<i>864</i>&nbsp;     * DateTime added = dt.withFieldAdded(DurationFieldType.years(), 6);
+<i>865</i>&nbsp;     * DateTime added = dt.plusYears(6);
+<i>866</i>&nbsp;     * DateTime added = dt.plus(Period.years(6));
+<i>867</i>&nbsp;     * &lt;/pre&gt;
+<i>868</i>&nbsp;     * 
+<i>869</i>&nbsp;     * @param fieldType  the field type to add to, not null
+<i>870</i>&nbsp;     * @param amount  the amount to add
+<i>871</i>&nbsp;     * @return a copy of this datetime with the field updated
+<i>872</i>&nbsp;     * @throws IllegalArgumentException if the value is null or invalid
+<i>873</i>&nbsp;     * @throws ArithmeticException if the new datetime exceeds the capacity of a long
+<i>874</i>&nbsp;     */
+<i>875</i>&nbsp;    public DateTime withFieldAdded(DurationFieldType fieldType, int amount) {
+<b class="fc"><i>876</i>&nbsp;        if (fieldType == null) {</b>
+<b class="fc"><i>877</i>&nbsp;            throw new IllegalArgumentException(&quot;Field must not be null&quot;);</b>
+<i>878</i>&nbsp;        }
+<b class="fc"><i>879</i>&nbsp;        if (amount == 0) {</b>
+<b class="fc"><i>880</i>&nbsp;            return this;</b>
+<i>881</i>&nbsp;        }
+<b class="fc"><i>882</i>&nbsp;        long instant = fieldType.getField(getChronology()).add(getMillis(), amount);</b>
+<b class="fc"><i>883</i>&nbsp;        return withMillis(instant);</b>
+<i>884</i>&nbsp;    }
+<i>885</i>&nbsp;
+<i>886</i>&nbsp;    //-----------------------------------------------------------------------
+<i>887</i>&nbsp;    /**
+<i>888</i>&nbsp;     * Returns a copy of this datetime with the specified duration added.
+<i>889</i>&nbsp;     * &lt;p&gt;
+<i>890</i>&nbsp;     * If the addition is zero, then &lt;code&gt;this&lt;/code&gt; is returned.
+<i>891</i>&nbsp;     * 
+<i>892</i>&nbsp;     * @param durationToAdd  the duration to add to this one
+<i>893</i>&nbsp;     * @param scalar  the amount of times to add, such as -1 to subtract once
+<i>894</i>&nbsp;     * @return a copy of this datetime with the duration added
+<i>895</i>&nbsp;     * @throws ArithmeticException if the new datetime exceeds the capacity of a long
+<i>896</i>&nbsp;     */
+<i>897</i>&nbsp;    public DateTime withDurationAdded(long durationToAdd, int scalar) {
+<b class="fc"><i>898</i>&nbsp;        if (durationToAdd == 0 || scalar == 0) {</b>
+<b class="fc"><i>899</i>&nbsp;            return this;</b>
+<i>900</i>&nbsp;        }
+<b class="fc"><i>901</i>&nbsp;        long instant = getChronology().add(getMillis(), durationToAdd, scalar);</b>
+<b class="fc"><i>902</i>&nbsp;        return withMillis(instant);</b>
+<i>903</i>&nbsp;    }
+<i>904</i>&nbsp;
+<i>905</i>&nbsp;    /**
+<i>906</i>&nbsp;     * Returns a copy of this datetime with the specified duration added.
+<i>907</i>&nbsp;     * &lt;p&gt;
+<i>908</i>&nbsp;     * If the addition is zero, then &lt;code&gt;this&lt;/code&gt; is returned.
+<i>909</i>&nbsp;     * 
+<i>910</i>&nbsp;     * @param durationToAdd  the duration to add to this one, null means zero
+<i>911</i>&nbsp;     * @param scalar  the amount of times to add, such as -1 to subtract once
+<i>912</i>&nbsp;     * @return a copy of this datetime with the duration added
+<i>913</i>&nbsp;     * @throws ArithmeticException if the new datetime exceeds the capacity of a long
+<i>914</i>&nbsp;     */
+<i>915</i>&nbsp;    public DateTime withDurationAdded(ReadableDuration durationToAdd, int scalar) {
+<b class="fc"><i>916</i>&nbsp;        if (durationToAdd == null || scalar == 0) {</b>
+<b class="fc"><i>917</i>&nbsp;            return this;</b>
+<i>918</i>&nbsp;        }
+<b class="fc"><i>919</i>&nbsp;        return withDurationAdded(durationToAdd.getMillis(), scalar);</b>
+<i>920</i>&nbsp;    }
+<i>921</i>&nbsp;
+<i>922</i>&nbsp;    /**
+<i>923</i>&nbsp;     * Returns a copy of this datetime with the specified period added.
+<i>924</i>&nbsp;     * &lt;p&gt;
+<i>925</i>&nbsp;     * If the addition is zero, then &lt;code&gt;this&lt;/code&gt; is returned.
+<i>926</i>&nbsp;     * &lt;p&gt;
+<i>927</i>&nbsp;     * This method is typically used to add multiple copies of complex
+<i>928</i>&nbsp;     * period instances. Adding one field is best achieved using methods
+<i>929</i>&nbsp;     * like {@link #withFieldAdded(DurationFieldType, int)}
+<i>930</i>&nbsp;     * or {@link #plusYears(int)}.
+<i>931</i>&nbsp;     * 
+<i>932</i>&nbsp;     * @param period  the period to add to this one, null means zero
+<i>933</i>&nbsp;     * @param scalar  the amount of times to add, such as -1 to subtract once
+<i>934</i>&nbsp;     * @return a copy of this datetime with the period added
+<i>935</i>&nbsp;     * @throws ArithmeticException if the new datetime exceeds the capacity of a long
+<i>936</i>&nbsp;     */
+<i>937</i>&nbsp;    public DateTime withPeriodAdded(ReadablePeriod period, int scalar) {
+<b class="fc"><i>938</i>&nbsp;        if (period == null || scalar == 0) {</b>
+<b class="fc"><i>939</i>&nbsp;            return this;</b>
+<i>940</i>&nbsp;        }
+<b class="fc"><i>941</i>&nbsp;        long instant = getChronology().add(period, getMillis(), scalar);</b>
+<b class="fc"><i>942</i>&nbsp;        return withMillis(instant);</b>
+<i>943</i>&nbsp;    }
+<i>944</i>&nbsp;
+<i>945</i>&nbsp;    //-----------------------------------------------------------------------
+<i>946</i>&nbsp;    /**
+<i>947</i>&nbsp;     * Returns a copy of this datetime with the specified duration added.
+<i>948</i>&nbsp;     * &lt;p&gt;
+<i>949</i>&nbsp;     * If the amount is zero or null, then &lt;code&gt;this&lt;/code&gt; is returned.
+<i>950</i>&nbsp;     * This datetime instance is immutable and unaffected by this method call.
+<i>951</i>&nbsp;     * 
+<i>952</i>&nbsp;     * @param duration  the duration, in millis, to add to this one
+<i>953</i>&nbsp;     * @return a copy of this datetime with the duration added
+<i>954</i>&nbsp;     * @throws ArithmeticException if the new datetime exceeds the capacity of a long
+<i>955</i>&nbsp;     */
+<i>956</i>&nbsp;    public DateTime plus(long duration) {
+<b class="fc"><i>957</i>&nbsp;        return withDurationAdded(duration, 1);</b>
+<i>958</i>&nbsp;    }
+<i>959</i>&nbsp;
+<i>960</i>&nbsp;    /**
+<i>961</i>&nbsp;     * Returns a copy of this datetime with the specified duration added.
+<i>962</i>&nbsp;     * &lt;p&gt;
+<i>963</i>&nbsp;     * If the amount is zero or null, then &lt;code&gt;this&lt;/code&gt; is returned.
+<i>964</i>&nbsp;     * This datetime instance is immutable and unaffected by this method call.
+<i>965</i>&nbsp;     * 
+<i>966</i>&nbsp;     * @param duration  the duration to add to this one, null means zero
+<i>967</i>&nbsp;     * @return a copy of this datetime with the duration added
+<i>968</i>&nbsp;     * @throws ArithmeticException if the new datetime exceeds the capacity of a long
+<i>969</i>&nbsp;     */
+<i>970</i>&nbsp;    public DateTime plus(ReadableDuration duration) {
+<b class="fc"><i>971</i>&nbsp;        return withDurationAdded(duration, 1);</b>
+<i>972</i>&nbsp;    }
+<i>973</i>&nbsp;
+<i>974</i>&nbsp;    /**
+<i>975</i>&nbsp;     * Returns a copy of this datetime with the specified period added.
+<i>976</i>&nbsp;     * &lt;p&gt;
+<i>977</i>&nbsp;     * This method will add each element of the period one by one, from largest
+<i>978</i>&nbsp;     * to smallest, adjusting the datetime to be accurate between each.
+<i>979</i>&nbsp;     * &lt;p&gt;
+<i>980</i>&nbsp;     * Thus, adding a period of one month and one day to 2007-03-31 will
+<i>981</i>&nbsp;     * work as follows:
+<i>982</i>&nbsp;     * First add one month and adjust, resulting in 2007-04-30
+<i>983</i>&nbsp;     * Then add one day and adjust, resulting in 2007-05-01.
+<i>984</i>&nbsp;     * &lt;p&gt;
+<i>985</i>&nbsp;     * This method is typically used to add complex period instances.
+<i>986</i>&nbsp;     * Adding one field is best achieved using methods
+<i>987</i>&nbsp;     * like {@link #plusYears(int)}.
+<i>988</i>&nbsp;     * &lt;p&gt;
+<i>989</i>&nbsp;     * If the amount is zero or null, then &lt;code&gt;this&lt;/code&gt; is returned.
+<i>990</i>&nbsp;     * This datetime instance is immutable and unaffected by this method call.
+<i>991</i>&nbsp;     * 
+<i>992</i>&nbsp;     * @param period  the duration to add to this one, null means zero
+<i>993</i>&nbsp;     * @return a copy of this datetime with the period added
+<i>994</i>&nbsp;     * @throws ArithmeticException if the new datetime exceeds the capacity of a long
+<i>995</i>&nbsp;     */
+<i>996</i>&nbsp;    public DateTime plus(ReadablePeriod period) {
+<b class="fc"><i>997</i>&nbsp;        return withPeriodAdded(period, 1);</b>
+<i>998</i>&nbsp;    }
+<i>999</i>&nbsp;
+<i>1000</i>&nbsp;    //-----------------------------------------------------------------------
+<i>1001</i>&nbsp;    /**
+<i>1002</i>&nbsp;     * Returns a copy of this datetime plus the specified number of years.
+<i>1003</i>&nbsp;     * &lt;p&gt;
+<i>1004</i>&nbsp;     * The calculation will do its best to only change the year field
+<i>1005</i>&nbsp;     * retaining the same month of year.
+<i>1006</i>&nbsp;     * However, in certain circumstances, it may be necessary to alter
+<i>1007</i>&nbsp;     * smaller fields. For example, 2008-02-29 plus one year cannot result
+<i>1008</i>&nbsp;     * in 2009-02-29, so the day of month is adjusted to 2009-02-28.
+<i>1009</i>&nbsp;     * &lt;p&gt;
+<i>1010</i>&nbsp;     * The following three lines are identical in effect:
+<i>1011</i>&nbsp;     * &lt;pre&gt;
+<i>1012</i>&nbsp;     * DateTime added = dt.plusYears(6);
+<i>1013</i>&nbsp;     * DateTime added = dt.plus(Period.years(6));
+<i>1014</i>&nbsp;     * DateTime added = dt.withFieldAdded(DurationFieldType.years(), 6);
+<i>1015</i>&nbsp;     * &lt;/pre&gt;
+<i>1016</i>&nbsp;     * &lt;p&gt;
+<i>1017</i>&nbsp;     * This datetime instance is immutable and unaffected by this method call.
+<i>1018</i>&nbsp;     *
+<i>1019</i>&nbsp;     * @param years  the amount of years to add, may be negative
+<i>1020</i>&nbsp;     * @return the new datetime plus the increased years
+<i>1021</i>&nbsp;     * @since 1.1
+<i>1022</i>&nbsp;     */
+<i>1023</i>&nbsp;    public DateTime plusYears(int years) {
+<b class="fc"><i>1024</i>&nbsp;        if (years == 0) {</b>
+<b class="fc"><i>1025</i>&nbsp;            return this;</b>
+<i>1026</i>&nbsp;        }
+<b class="fc"><i>1027</i>&nbsp;        long instant = getChronology().years().add(getMillis(), years);</b>
+<b class="fc"><i>1028</i>&nbsp;        return withMillis(instant);</b>
+<i>1029</i>&nbsp;    }
+<i>1030</i>&nbsp;
+<i>1031</i>&nbsp;    /**
+<i>1032</i>&nbsp;     * Returns a copy of this datetime plus the specified number of months.
+<i>1033</i>&nbsp;     * &lt;p&gt;
+<i>1034</i>&nbsp;     * The calculation will do its best to only change the month field
+<i>1035</i>&nbsp;     * retaining the same day of month.
+<i>1036</i>&nbsp;     * However, in certain circumstances, it may be necessary to alter
+<i>1037</i>&nbsp;     * smaller fields. For example, 2007-03-31 plus one month cannot result
+<i>1038</i>&nbsp;     * in 2007-04-31, so the day of month is adjusted to 2007-04-30.
+<i>1039</i>&nbsp;     * &lt;p&gt;
+<i>1040</i>&nbsp;     * The following three lines are identical in effect:
+<i>1041</i>&nbsp;     * &lt;pre&gt;
+<i>1042</i>&nbsp;     * DateTime added = dt.plusMonths(6);
+<i>1043</i>&nbsp;     * DateTime added = dt.plus(Period.months(6));
+<i>1044</i>&nbsp;     * DateTime added = dt.withFieldAdded(DurationFieldType.months(), 6);
+<i>1045</i>&nbsp;     * &lt;/pre&gt;
+<i>1046</i>&nbsp;     * &lt;p&gt;
+<i>1047</i>&nbsp;     * This datetime instance is immutable and unaffected by this method call.
+<i>1048</i>&nbsp;     *
+<i>1049</i>&nbsp;     * @param months  the amount of months to add, may be negative
+<i>1050</i>&nbsp;     * @return the new datetime plus the increased months
+<i>1051</i>&nbsp;     * @since 1.1
+<i>1052</i>&nbsp;     */
+<i>1053</i>&nbsp;    public DateTime plusMonths(int months) {
+<b class="fc"><i>1054</i>&nbsp;        if (months == 0) {</b>
+<b class="fc"><i>1055</i>&nbsp;            return this;</b>
+<i>1056</i>&nbsp;        }
+<b class="fc"><i>1057</i>&nbsp;        long instant = getChronology().months().add(getMillis(), months);</b>
+<b class="fc"><i>1058</i>&nbsp;        return withMillis(instant);</b>
+<i>1059</i>&nbsp;    }
+<i>1060</i>&nbsp;
+<i>1061</i>&nbsp;    /**
+<i>1062</i>&nbsp;     * Returns a copy of this datetime plus the specified number of weeks.
+<i>1063</i>&nbsp;     * &lt;p&gt;
+<i>1064</i>&nbsp;     * The calculation operates as if it were adding the equivalent in days.
+<i>1065</i>&nbsp;     * &lt;p&gt;
+<i>1066</i>&nbsp;     * The following three lines are identical in effect:
+<i>1067</i>&nbsp;     * &lt;pre&gt;
+<i>1068</i>&nbsp;     * DateTime added = dt.plusWeeks(6);
+<i>1069</i>&nbsp;     * DateTime added = dt.plus(Period.weeks(6));
+<i>1070</i>&nbsp;     * DateTime added = dt.withFieldAdded(DurationFieldType.weeks(), 6);
+<i>1071</i>&nbsp;     * &lt;/pre&gt;
+<i>1072</i>&nbsp;     * &lt;p&gt;
+<i>1073</i>&nbsp;     * This datetime instance is immutable and unaffected by this method call.
+<i>1074</i>&nbsp;     *
+<i>1075</i>&nbsp;     * @param weeks  the amount of weeks to add, may be negative
+<i>1076</i>&nbsp;     * @return the new datetime plus the increased weeks
+<i>1077</i>&nbsp;     * @since 1.1
+<i>1078</i>&nbsp;     */
+<i>1079</i>&nbsp;    public DateTime plusWeeks(int weeks) {
+<b class="fc"><i>1080</i>&nbsp;        if (weeks == 0) {</b>
+<b class="fc"><i>1081</i>&nbsp;            return this;</b>
+<i>1082</i>&nbsp;        }
+<b class="fc"><i>1083</i>&nbsp;        long instant = getChronology().weeks().add(getMillis(), weeks);</b>
+<b class="fc"><i>1084</i>&nbsp;        return withMillis(instant);</b>
+<i>1085</i>&nbsp;    }
+<i>1086</i>&nbsp;
+<i>1087</i>&nbsp;    /**
+<i>1088</i>&nbsp;     * Returns a copy of this datetime plus the specified number of days.
+<i>1089</i>&nbsp;     * &lt;p&gt;
+<i>1090</i>&nbsp;     * The calculation will do its best to only change the day field
+<i>1091</i>&nbsp;     * retaining the same time of day.
+<i>1092</i>&nbsp;     * However, in certain circumstances, typically daylight savings cutover,
+<i>1093</i>&nbsp;     * it may be necessary to alter the time fields.
+<i>1094</i>&nbsp;     * &lt;p&gt;
+<i>1095</i>&nbsp;     * In spring an hour is typically removed. If adding one day results in
+<i>1096</i>&nbsp;     * the time being within the cutover then the time is adjusted to be
+<i>1097</i>&nbsp;     * within summer time. For example, if the cutover is from 01:59 to 03:00
+<i>1098</i>&nbsp;     * and the result of this method would have been 02:30, then the result
+<i>1099</i>&nbsp;     * will be adjusted to 03:30.
+<i>1100</i>&nbsp;     * &lt;p&gt;
+<i>1101</i>&nbsp;     * The following three lines are identical in effect:
+<i>1102</i>&nbsp;     * &lt;pre&gt;
+<i>1103</i>&nbsp;     * DateTime added = dt.plusDays(6);
+<i>1104</i>&nbsp;     * DateTime added = dt.plus(Period.days(6));
+<i>1105</i>&nbsp;     * DateTime added = dt.withFieldAdded(DurationFieldType.days(), 6);
+<i>1106</i>&nbsp;     * &lt;/pre&gt;
+<i>1107</i>&nbsp;     * &lt;p&gt;
+<i>1108</i>&nbsp;     * This datetime instance is immutable and unaffected by this method call.
+<i>1109</i>&nbsp;     *
+<i>1110</i>&nbsp;     * @param days  the amount of days to add, may be negative
+<i>1111</i>&nbsp;     * @return the new datetime plus the increased days
+<i>1112</i>&nbsp;     * @since 1.1
+<i>1113</i>&nbsp;     */
+<i>1114</i>&nbsp;    public DateTime plusDays(int days) {
+<b class="fc"><i>1115</i>&nbsp;        if (days == 0) {</b>
+<b class="fc"><i>1116</i>&nbsp;            return this;</b>
+<i>1117</i>&nbsp;        }
+<b class="fc"><i>1118</i>&nbsp;        long instant = getChronology().days().add(getMillis(), days);</b>
+<b class="fc"><i>1119</i>&nbsp;        return withMillis(instant);</b>
+<i>1120</i>&nbsp;    }
+<i>1121</i>&nbsp;
+<i>1122</i>&nbsp;    /**
+<i>1123</i>&nbsp;     * Returns a copy of this datetime plus the specified number of hours.
+<i>1124</i>&nbsp;     * &lt;p&gt;
+<i>1125</i>&nbsp;     * The calculation will add a duration equivalent to the number of hours
+<i>1126</i>&nbsp;     * expressed in milliseconds.
+<i>1127</i>&nbsp;     * &lt;p&gt;
+<i>1128</i>&nbsp;     * For example, if a spring daylight savings cutover is from 01:59 to 03:00
+<i>1129</i>&nbsp;     * then adding one hour to 01:30 will result in 03:30. This is a duration
+<i>1130</i>&nbsp;     * of one hour later, even though the hour field value changed from 1 to 3.
+<i>1131</i>&nbsp;     * &lt;p&gt;
+<i>1132</i>&nbsp;     * The following three lines are identical in effect:
+<i>1133</i>&nbsp;     * &lt;pre&gt;
+<i>1134</i>&nbsp;     * DateTime added = dt.plusHours(6);
+<i>1135</i>&nbsp;     * DateTime added = dt.plus(Period.hours(6));
+<i>1136</i>&nbsp;     * DateTime added = dt.withFieldAdded(DurationFieldType.hours(), 6);
+<i>1137</i>&nbsp;     * &lt;/pre&gt;
+<i>1138</i>&nbsp;     * &lt;p&gt;
+<i>1139</i>&nbsp;     * This datetime instance is immutable and unaffected by this method call.
+<i>1140</i>&nbsp;     *
+<i>1141</i>&nbsp;     * @param hours  the amount of hours to add, may be negative
+<i>1142</i>&nbsp;     * @return the new datetime plus the increased hours
+<i>1143</i>&nbsp;     * @since 1.1
+<i>1144</i>&nbsp;     */
+<i>1145</i>&nbsp;    public DateTime plusHours(int hours) {
+<b class="fc"><i>1146</i>&nbsp;        if (hours == 0) {</b>
+<b class="fc"><i>1147</i>&nbsp;            return this;</b>
+<i>1148</i>&nbsp;        }
+<b class="fc"><i>1149</i>&nbsp;        long instant = getChronology().hours().add(getMillis(), hours);</b>
+<b class="fc"><i>1150</i>&nbsp;        return withMillis(instant);</b>
+<i>1151</i>&nbsp;    }
+<i>1152</i>&nbsp;
+<i>1153</i>&nbsp;    /**
+<i>1154</i>&nbsp;     * Returns a copy of this datetime plus the specified number of minutes.
+<i>1155</i>&nbsp;     * &lt;p&gt;
+<i>1156</i>&nbsp;     * The calculation will add a duration equivalent to the number of minutes
+<i>1157</i>&nbsp;     * expressed in milliseconds.
+<i>1158</i>&nbsp;     * &lt;p&gt;
+<i>1159</i>&nbsp;     * The following three lines are identical in effect:
+<i>1160</i>&nbsp;     * &lt;pre&gt;
+<i>1161</i>&nbsp;     * DateTime added = dt.plusMinutes(6);
+<i>1162</i>&nbsp;     * DateTime added = dt.plus(Period.minutes(6));
+<i>1163</i>&nbsp;     * DateTime added = dt.withFieldAdded(DurationFieldType.minutes(), 6);
+<i>1164</i>&nbsp;     * &lt;/pre&gt;
+<i>1165</i>&nbsp;     * &lt;p&gt;
+<i>1166</i>&nbsp;     * This datetime instance is immutable and unaffected by this method call.
+<i>1167</i>&nbsp;     *
+<i>1168</i>&nbsp;     * @param minutes  the amount of minutes to add, may be negative
+<i>1169</i>&nbsp;     * @return the new datetime plus the increased minutes
+<i>1170</i>&nbsp;     * @since 1.1
+<i>1171</i>&nbsp;     */
+<i>1172</i>&nbsp;    public DateTime plusMinutes(int minutes) {
+<b class="fc"><i>1173</i>&nbsp;        if (minutes == 0) {</b>
+<b class="fc"><i>1174</i>&nbsp;            return this;</b>
+<i>1175</i>&nbsp;        }
+<b class="fc"><i>1176</i>&nbsp;        long instant = getChronology().minutes().add(getMillis(), minutes);</b>
+<b class="fc"><i>1177</i>&nbsp;        return withMillis(instant);</b>
+<i>1178</i>&nbsp;    }
+<i>1179</i>&nbsp;
+<i>1180</i>&nbsp;    /**
+<i>1181</i>&nbsp;     * Returns a copy of this datetime plus the specified number of seconds.
+<i>1182</i>&nbsp;     * &lt;p&gt;
+<i>1183</i>&nbsp;     * The calculation will add a duration equivalent to the number of seconds
+<i>1184</i>&nbsp;     * expressed in milliseconds.
+<i>1185</i>&nbsp;     * &lt;p&gt;
+<i>1186</i>&nbsp;     * The following three lines are identical in effect:
+<i>1187</i>&nbsp;     * &lt;pre&gt;
+<i>1188</i>&nbsp;     * DateTime added = dt.plusSeconds(6);
+<i>1189</i>&nbsp;     * DateTime added = dt.plus(Period.seconds(6));
+<i>1190</i>&nbsp;     * DateTime added = dt.withFieldAdded(DurationFieldType.seconds(), 6);
+<i>1191</i>&nbsp;     * &lt;/pre&gt;
+<i>1192</i>&nbsp;     * &lt;p&gt;
+<i>1193</i>&nbsp;     * This datetime instance is immutable and unaffected by this method call.
+<i>1194</i>&nbsp;     *
+<i>1195</i>&nbsp;     * @param seconds  the amount of seconds to add, may be negative
+<i>1196</i>&nbsp;     * @return the new datetime plus the increased seconds
+<i>1197</i>&nbsp;     * @since 1.1
+<i>1198</i>&nbsp;     */
+<i>1199</i>&nbsp;    public DateTime plusSeconds(int seconds) {
+<b class="fc"><i>1200</i>&nbsp;        if (seconds == 0) {</b>
+<b class="fc"><i>1201</i>&nbsp;            return this;</b>
+<i>1202</i>&nbsp;        }
+<b class="fc"><i>1203</i>&nbsp;        long instant = getChronology().seconds().add(getMillis(), seconds);</b>
+<b class="fc"><i>1204</i>&nbsp;        return withMillis(instant);</b>
+<i>1205</i>&nbsp;    }
+<i>1206</i>&nbsp;
+<i>1207</i>&nbsp;    /**
+<i>1208</i>&nbsp;     * Returns a copy of this datetime plus the specified number of millis.
+<i>1209</i>&nbsp;     * &lt;p&gt;
+<i>1210</i>&nbsp;     * The calculation will add a duration equivalent to the number of milliseconds.
+<i>1211</i>&nbsp;     * &lt;p&gt;
+<i>1212</i>&nbsp;     * The following three lines are identical in effect:
+<i>1213</i>&nbsp;     * &lt;pre&gt;
+<i>1214</i>&nbsp;     * DateTime added = dt.plusMillis(6);
+<i>1215</i>&nbsp;     * DateTime added = dt.plus(Period.millis(6));
+<i>1216</i>&nbsp;     * DateTime added = dt.withFieldAdded(DurationFieldType.millis(), 6);
+<i>1217</i>&nbsp;     * &lt;/pre&gt;
+<i>1218</i>&nbsp;     * &lt;p&gt;
+<i>1219</i>&nbsp;     * This datetime instance is immutable and unaffected by this method call.
+<i>1220</i>&nbsp;     *
+<i>1221</i>&nbsp;     * @param millis  the amount of millis to add, may be negative
+<i>1222</i>&nbsp;     * @return the new datetime plus the increased millis
+<i>1223</i>&nbsp;     * @since 1.1
+<i>1224</i>&nbsp;     */
+<i>1225</i>&nbsp;    public DateTime plusMillis(int millis) {
+<b class="fc"><i>1226</i>&nbsp;        if (millis == 0) {</b>
+<b class="fc"><i>1227</i>&nbsp;            return this;</b>
+<i>1228</i>&nbsp;        }
+<b class="fc"><i>1229</i>&nbsp;        long instant = getChronology().millis().add(getMillis(), millis);</b>
+<b class="fc"><i>1230</i>&nbsp;        return withMillis(instant);</b>
+<i>1231</i>&nbsp;    }
+<i>1232</i>&nbsp;
+<i>1233</i>&nbsp;    //-----------------------------------------------------------------------
+<i>1234</i>&nbsp;    /**
+<i>1235</i>&nbsp;     * Returns a copy of this datetime with the specified duration taken away.
+<i>1236</i>&nbsp;     * &lt;p&gt;
+<i>1237</i>&nbsp;     * If the amount is zero or null, then &lt;code&gt;this&lt;/code&gt; is returned.
+<i>1238</i>&nbsp;     * This datetime instance is immutable and unaffected by this method call.
+<i>1239</i>&nbsp;     * 
+<i>1240</i>&nbsp;     * @param duration  the duration, in millis, to reduce this instant by
+<i>1241</i>&nbsp;     * @return a copy of this datetime with the duration taken away
+<i>1242</i>&nbsp;     * @throws ArithmeticException if the new datetime exceeds the capacity of a long
+<i>1243</i>&nbsp;     */
+<i>1244</i>&nbsp;    public DateTime minus(long duration) {
+<b class="fc"><i>1245</i>&nbsp;        return withDurationAdded(duration, -1);</b>
+<i>1246</i>&nbsp;    }
+<i>1247</i>&nbsp;
+<i>1248</i>&nbsp;    /**
+<i>1249</i>&nbsp;     * Returns a copy of this datetime with the specified duration taken away.
+<i>1250</i>&nbsp;     * &lt;p&gt;
+<i>1251</i>&nbsp;     * If the amount is zero or null, then &lt;code&gt;this&lt;/code&gt; is returned.
+<i>1252</i>&nbsp;     * This datetime instance is immutable and unaffected by this method call.
+<i>1253</i>&nbsp;     * 
+<i>1254</i>&nbsp;     * @param duration  the duration to reduce this instant by
+<i>1255</i>&nbsp;     * @return a copy of this datetime with the duration taken away
+<i>1256</i>&nbsp;     * @throws ArithmeticException if the new datetime exceeds the capacity of a long
+<i>1257</i>&nbsp;     */
+<i>1258</i>&nbsp;    public DateTime minus(ReadableDuration duration) {
+<b class="fc"><i>1259</i>&nbsp;        return withDurationAdded(duration, -1);</b>
+<i>1260</i>&nbsp;    }
+<i>1261</i>&nbsp;
+<i>1262</i>&nbsp;    /**
+<i>1263</i>&nbsp;     * Returns a copy of this datetime with the specified period taken away.
+<i>1264</i>&nbsp;     * &lt;p&gt;
+<i>1265</i>&nbsp;     * This method will subtract each element of the period one by one, from
+<i>1266</i>&nbsp;     * largest to smallest, adjusting the datetime to be accurate between each.
+<i>1267</i>&nbsp;     * &lt;p&gt;
+<i>1268</i>&nbsp;     * Thus, subtracting a period of one month and one day from 2007-05-31 will
+<i>1269</i>&nbsp;     * work as follows:
+<i>1270</i>&nbsp;     * First subtract one month and adjust, resulting in 2007-04-30
+<i>1271</i>&nbsp;     * Then subtract one day and adjust, resulting in 2007-04-29.
+<i>1272</i>&nbsp;     * Note that the day has been adjusted by two.
+<i>1273</i>&nbsp;     * &lt;p&gt;
+<i>1274</i>&nbsp;     * This method is typically used to subtract complex period instances.
+<i>1275</i>&nbsp;     * Subtracting one field is best achieved using methods
+<i>1276</i>&nbsp;     * like {@link #minusYears(int)}.
+<i>1277</i>&nbsp;     * &lt;p&gt;
+<i>1278</i>&nbsp;     * If the amount is zero or null, then &lt;code&gt;this&lt;/code&gt; is returned.
+<i>1279</i>&nbsp;     * This datetime instance is immutable and unaffected by this method call.
+<i>1280</i>&nbsp;     * 
+<i>1281</i>&nbsp;     * @param period  the period to reduce this instant by
+<i>1282</i>&nbsp;     * @return a copy of this datetime with the period taken away
+<i>1283</i>&nbsp;     * @throws ArithmeticException if the new datetime exceeds the capacity of a long
+<i>1284</i>&nbsp;     */
+<i>1285</i>&nbsp;    public DateTime minus(ReadablePeriod period) {
+<b class="fc"><i>1286</i>&nbsp;        return withPeriodAdded(period, -1);</b>
+<i>1287</i>&nbsp;    }
+<i>1288</i>&nbsp;
+<i>1289</i>&nbsp;    //-----------------------------------------------------------------------
+<i>1290</i>&nbsp;    /**
+<i>1291</i>&nbsp;     * Returns a copy of this datetime minus the specified number of years.
+<i>1292</i>&nbsp;     * &lt;p&gt;
+<i>1293</i>&nbsp;     * The calculation will do its best to only change the year field
+<i>1294</i>&nbsp;     * retaining the same month of year.
+<i>1295</i>&nbsp;     * However, in certain circumstances, it may be necessary to alter
+<i>1296</i>&nbsp;     * smaller fields. For example, 2008-02-29 minus one year cannot result
+<i>1297</i>&nbsp;     * in 2007-02-29, so the day of month is adjusted to 2007-02-28.
+<i>1298</i>&nbsp;     * &lt;p&gt;
+<i>1299</i>&nbsp;     * The following three lines are identical in effect:
+<i>1300</i>&nbsp;     * &lt;pre&gt;
+<i>1301</i>&nbsp;     * DateTime subtracted = dt.minusYears(6);
+<i>1302</i>&nbsp;     * DateTime subtracted = dt.minus(Period.years(6));
+<i>1303</i>&nbsp;     * DateTime subtracted = dt.withFieldAdded(DurationFieldType.years(), -6);
+<i>1304</i>&nbsp;     * &lt;/pre&gt;
+<i>1305</i>&nbsp;     * &lt;p&gt;
+<i>1306</i>&nbsp;     * This datetime instance is immutable and unaffected by this method call.
+<i>1307</i>&nbsp;     *
+<i>1308</i>&nbsp;     * @param years  the amount of years to subtract, may be negative
+<i>1309</i>&nbsp;     * @return the new datetime minus the increased years
+<i>1310</i>&nbsp;     * @since 1.1
+<i>1311</i>&nbsp;     */
+<i>1312</i>&nbsp;    public DateTime minusYears(int years) {
+<b class="fc"><i>1313</i>&nbsp;        if (years == 0) {</b>
+<b class="fc"><i>1314</i>&nbsp;            return this;</b>
+<i>1315</i>&nbsp;        }
+<b class="fc"><i>1316</i>&nbsp;        long instant = getChronology().years().subtract(getMillis(), years);</b>
+<b class="fc"><i>1317</i>&nbsp;        return withMillis(instant);</b>
+<i>1318</i>&nbsp;    }
+<i>1319</i>&nbsp;
+<i>1320</i>&nbsp;    /**
+<i>1321</i>&nbsp;     * Returns a copy of this datetime minus the specified number of months.
+<i>1322</i>&nbsp;     * &lt;p&gt;
+<i>1323</i>&nbsp;     * The calculation will do its best to only change the month field
+<i>1324</i>&nbsp;     * retaining the same day of month.
+<i>1325</i>&nbsp;     * However, in certain circumstances, it may be necessary to alter
+<i>1326</i>&nbsp;     * smaller fields. For example, 2007-05-31 minus one month cannot result
+<i>1327</i>&nbsp;     * in 2007-04-31, so the day of month is adjusted to 2007-04-30.
+<i>1328</i>&nbsp;     * &lt;p&gt;
+<i>1329</i>&nbsp;     * The following three lines are identical in effect:
+<i>1330</i>&nbsp;     * &lt;pre&gt;
+<i>1331</i>&nbsp;     * DateTime subtracted = dt.minusMonths(6);
+<i>1332</i>&nbsp;     * DateTime subtracted = dt.minus(Period.months(6));
+<i>1333</i>&nbsp;     * DateTime subtracted = dt.withFieldAdded(DurationFieldType.months(), -6);
+<i>1334</i>&nbsp;     * &lt;/pre&gt;
+<i>1335</i>&nbsp;     * &lt;p&gt;
+<i>1336</i>&nbsp;     * This datetime instance is immutable and unaffected by this method call.
+<i>1337</i>&nbsp;     *
+<i>1338</i>&nbsp;     * @param months  the amount of months to subtract, may be negative
+<i>1339</i>&nbsp;     * @return the new datetime minus the increased months
+<i>1340</i>&nbsp;     * @since 1.1
+<i>1341</i>&nbsp;     */
+<i>1342</i>&nbsp;    public DateTime minusMonths(int months) {
+<b class="fc"><i>1343</i>&nbsp;        if (months == 0) {</b>
+<b class="fc"><i>1344</i>&nbsp;            return this;</b>
+<i>1345</i>&nbsp;        }
+<b class="fc"><i>1346</i>&nbsp;        long instant = getChronology().months().subtract(getMillis(), months);</b>
+<b class="fc"><i>1347</i>&nbsp;        return withMillis(instant);</b>
+<i>1348</i>&nbsp;    }
+<i>1349</i>&nbsp;
+<i>1350</i>&nbsp;    /**
+<i>1351</i>&nbsp;     * Returns a copy of this datetime minus the specified number of weeks.
+<i>1352</i>&nbsp;     * &lt;p&gt;
+<i>1353</i>&nbsp;     * The calculation operates as if it were subtracting the equivalent in days.
+<i>1354</i>&nbsp;     * &lt;p&gt;
+<i>1355</i>&nbsp;     * The following three lines are identical in effect:
+<i>1356</i>&nbsp;     * &lt;pre&gt;
+<i>1357</i>&nbsp;     * DateTime subtracted = dt.minusWeeks(6);
+<i>1358</i>&nbsp;     * DateTime subtracted = dt.minus(Period.weeks(6));
+<i>1359</i>&nbsp;     * DateTime subtracted = dt.withFieldAdded(DurationFieldType.weeks(), -6);
+<i>1360</i>&nbsp;     * &lt;/pre&gt;
+<i>1361</i>&nbsp;     * &lt;p&gt;
+<i>1362</i>&nbsp;     * This datetime instance is immutable and unaffected by this method call.
+<i>1363</i>&nbsp;     *
+<i>1364</i>&nbsp;     * @param weeks  the amount of weeks to subtract, may be negative
+<i>1365</i>&nbsp;     * @return the new datetime minus the increased weeks
+<i>1366</i>&nbsp;     * @since 1.1
+<i>1367</i>&nbsp;     */
+<i>1368</i>&nbsp;    public DateTime minusWeeks(int weeks) {
+<b class="fc"><i>1369</i>&nbsp;        if (weeks == 0) {</b>
+<b class="fc"><i>1370</i>&nbsp;            return this;</b>
+<i>1371</i>&nbsp;        }
+<b class="fc"><i>1372</i>&nbsp;        long instant = getChronology().weeks().subtract(getMillis(), weeks);</b>
+<b class="fc"><i>1373</i>&nbsp;        return withMillis(instant);</b>
+<i>1374</i>&nbsp;    }
+<i>1375</i>&nbsp;
+<i>1376</i>&nbsp;    /**
+<i>1377</i>&nbsp;     * Returns a copy of this datetime minus the specified number of days.
+<i>1378</i>&nbsp;     * &lt;p&gt;
+<i>1379</i>&nbsp;     * The calculation will do its best to only change the day field
+<i>1380</i>&nbsp;     * retaining the same time of day.
+<i>1381</i>&nbsp;     * However, in certain circumstances, typically daylight savings cutover,
+<i>1382</i>&nbsp;     * it may be necessary to alter the time fields.
+<i>1383</i>&nbsp;     * &lt;p&gt;
+<i>1384</i>&nbsp;     * In spring an hour is typically removed. If subtracting one day results
+<i>1385</i>&nbsp;     * in the time being within the cutover then the time is adjusted to be
+<i>1386</i>&nbsp;     * within summer time. For example, if the cutover is from 01:59 to 03:00
+<i>1387</i>&nbsp;     * and the result of this method would have been 02:30, then the result
+<i>1388</i>&nbsp;     * will be adjusted to 03:30.
+<i>1389</i>&nbsp;     * &lt;p&gt;
+<i>1390</i>&nbsp;     * The following three lines are identical in effect:
+<i>1391</i>&nbsp;     * &lt;pre&gt;
+<i>1392</i>&nbsp;     * DateTime subtracted = dt.minusDays(6);
+<i>1393</i>&nbsp;     * DateTime subtracted = dt.minus(Period.days(6));
+<i>1394</i>&nbsp;     * DateTime subtracted = dt.withFieldAdded(DurationFieldType.days(), -6);
+<i>1395</i>&nbsp;     * &lt;/pre&gt;
+<i>1396</i>&nbsp;     * &lt;p&gt;
+<i>1397</i>&nbsp;     * This datetime instance is immutable and unaffected by this method call.
+<i>1398</i>&nbsp;     *
+<i>1399</i>&nbsp;     * @param days  the amount of days to subtract, may be negative
+<i>1400</i>&nbsp;     * @return the new datetime minus the increased days
+<i>1401</i>&nbsp;     * @since 1.1
+<i>1402</i>&nbsp;     */
+<i>1403</i>&nbsp;    public DateTime minusDays(int days) {
+<b class="fc"><i>1404</i>&nbsp;        if (days == 0) {</b>
+<b class="fc"><i>1405</i>&nbsp;            return this;</b>
+<i>1406</i>&nbsp;        }
+<b class="fc"><i>1407</i>&nbsp;        long instant = getChronology().days().subtract(getMillis(), days);</b>
+<b class="fc"><i>1408</i>&nbsp;        return withMillis(instant);</b>
+<i>1409</i>&nbsp;    }
+<i>1410</i>&nbsp;
+<i>1411</i>&nbsp;    /**
+<i>1412</i>&nbsp;     * Returns a copy of this datetime minus the specified number of hours.
+<i>1413</i>&nbsp;     * &lt;p&gt;
+<i>1414</i>&nbsp;     * The calculation will subtract a duration equivalent to the number of
+<i>1415</i>&nbsp;     * hours expressed in milliseconds.
+<i>1416</i>&nbsp;     * &lt;p&gt;
+<i>1417</i>&nbsp;     * For example, if a spring daylight savings cutover is from 01:59 to 03:00
+<i>1418</i>&nbsp;     * then subtracting one hour from 03:30 will result in 01:30. This is a
+<i>1419</i>&nbsp;     * duration of one hour earlier, even though the hour field value changed
+<i>1420</i>&nbsp;     * from 3 to 1.
+<i>1421</i>&nbsp;     * &lt;p&gt;
+<i>1422</i>&nbsp;     * The following three lines are identical in effect:
+<i>1423</i>&nbsp;     * &lt;pre&gt;
+<i>1424</i>&nbsp;     * DateTime subtracted = dt.minusHours(6);
+<i>1425</i>&nbsp;     * DateTime subtracted = dt.minus(Period.hours(6));
+<i>1426</i>&nbsp;     * DateTime subtracted = dt.withFieldAdded(DurationFieldType.hours(), -6);
+<i>1427</i>&nbsp;     * &lt;/pre&gt;
+<i>1428</i>&nbsp;     * &lt;p&gt;
+<i>1429</i>&nbsp;     * This datetime instance is immutable and unaffected by this method call.
+<i>1430</i>&nbsp;     *
+<i>1431</i>&nbsp;     * @param hours  the amount of hours to subtract, may be negative
+<i>1432</i>&nbsp;     * @return the new datetime minus the increased hours
+<i>1433</i>&nbsp;     * @since 1.1
+<i>1434</i>&nbsp;     */
+<i>1435</i>&nbsp;    public DateTime minusHours(int hours) {
+<b class="fc"><i>1436</i>&nbsp;        if (hours == 0) {</b>
+<b class="fc"><i>1437</i>&nbsp;            return this;</b>
+<i>1438</i>&nbsp;        }
+<b class="fc"><i>1439</i>&nbsp;        long instant = getChronology().hours().subtract(getMillis(), hours);</b>
+<b class="fc"><i>1440</i>&nbsp;        return withMillis(instant);</b>
+<i>1441</i>&nbsp;    }
+<i>1442</i>&nbsp;
+<i>1443</i>&nbsp;    /**
+<i>1444</i>&nbsp;     * Returns a copy of this datetime minus the specified number of minutes.
+<i>1445</i>&nbsp;     * &lt;p&gt;
+<i>1446</i>&nbsp;     * The calculation will subtract a duration equivalent to the number of
+<i>1447</i>&nbsp;     * minutes expressed in milliseconds.
+<i>1448</i>&nbsp;     * &lt;p&gt;
+<i>1449</i>&nbsp;     * The following three lines are identical in effect:
+<i>1450</i>&nbsp;     * &lt;pre&gt;
+<i>1451</i>&nbsp;     * DateTime subtracted = dt.minusMinutes(6);
+<i>1452</i>&nbsp;     * DateTime subtracted = dt.minus(Period.minutes(6));
+<i>1453</i>&nbsp;     * DateTime subtracted = dt.withFieldAdded(DurationFieldType.minutes(), -6);
+<i>1454</i>&nbsp;     * &lt;/pre&gt;
+<i>1455</i>&nbsp;     * &lt;p&gt;
+<i>1456</i>&nbsp;     * This datetime instance is immutable and unaffected by this method call.
+<i>1457</i>&nbsp;     *
+<i>1458</i>&nbsp;     * @param minutes  the amount of minutes to subtract, may be negative
+<i>1459</i>&nbsp;     * @return the new datetime minus the increased minutes
+<i>1460</i>&nbsp;     * @since 1.1
+<i>1461</i>&nbsp;     */
+<i>1462</i>&nbsp;    public DateTime minusMinutes(int minutes) {
+<b class="fc"><i>1463</i>&nbsp;        if (minutes == 0) {</b>
+<b class="fc"><i>1464</i>&nbsp;            return this;</b>
+<i>1465</i>&nbsp;        }
+<b class="fc"><i>1466</i>&nbsp;        long instant = getChronology().minutes().subtract(getMillis(), minutes);</b>
+<b class="fc"><i>1467</i>&nbsp;        return withMillis(instant);</b>
+<i>1468</i>&nbsp;    }
+<i>1469</i>&nbsp;
+<i>1470</i>&nbsp;    /**
+<i>1471</i>&nbsp;     * Returns a copy of this datetime minus the specified number of seconds.
+<i>1472</i>&nbsp;     * &lt;p&gt;
+<i>1473</i>&nbsp;     * The calculation will subtract a duration equivalent to the number of
+<i>1474</i>&nbsp;     * seconds expressed in milliseconds.
+<i>1475</i>&nbsp;     * &lt;p&gt;
+<i>1476</i>&nbsp;     * The following three lines are identical in effect:
+<i>1477</i>&nbsp;     * &lt;pre&gt;
+<i>1478</i>&nbsp;     * DateTime subtracted = dt.minusSeconds(6);
+<i>1479</i>&nbsp;     * DateTime subtracted = dt.minus(Period.seconds(6));
+<i>1480</i>&nbsp;     * DateTime subtracted = dt.withFieldAdded(DurationFieldType.seconds(), -6);
+<i>1481</i>&nbsp;     * &lt;/pre&gt;
+<i>1482</i>&nbsp;     * &lt;p&gt;
+<i>1483</i>&nbsp;     * This datetime instance is immutable and unaffected by this method call.
+<i>1484</i>&nbsp;     *
+<i>1485</i>&nbsp;     * @param seconds  the amount of seconds to subtract, may be negative
+<i>1486</i>&nbsp;     * @return the new datetime minus the increased seconds
+<i>1487</i>&nbsp;     * @since 1.1
+<i>1488</i>&nbsp;     */
+<i>1489</i>&nbsp;    public DateTime minusSeconds(int seconds) {
+<b class="fc"><i>1490</i>&nbsp;        if (seconds == 0) {</b>
+<b class="fc"><i>1491</i>&nbsp;            return this;</b>
+<i>1492</i>&nbsp;        }
+<b class="fc"><i>1493</i>&nbsp;        long instant = getChronology().seconds().subtract(getMillis(), seconds);</b>
+<b class="fc"><i>1494</i>&nbsp;        return withMillis(instant);</b>
+<i>1495</i>&nbsp;    }
+<i>1496</i>&nbsp;
+<i>1497</i>&nbsp;    /**
+<i>1498</i>&nbsp;     * Returns a copy of this datetime minus the specified number of millis.
+<i>1499</i>&nbsp;     * &lt;p&gt;
+<i>1500</i>&nbsp;     * The calculation will subtract a duration equivalent to the number of
+<i>1501</i>&nbsp;     * milliseconds.
+<i>1502</i>&nbsp;     * &lt;p&gt;
+<i>1503</i>&nbsp;     * The following three lines are identical in effect:
+<i>1504</i>&nbsp;     * &lt;pre&gt;
+<i>1505</i>&nbsp;     * DateTime subtracted = dt.minusMillis(6);
+<i>1506</i>&nbsp;     * DateTime subtracted = dt.minus(Period.millis(6));
+<i>1507</i>&nbsp;     * DateTime subtracted = dt.withFieldAdded(DurationFieldType.millis(), -6);
+<i>1508</i>&nbsp;     * &lt;/pre&gt;
+<i>1509</i>&nbsp;     * &lt;p&gt;
+<i>1510</i>&nbsp;     * This datetime instance is immutable and unaffected by this method call.
+<i>1511</i>&nbsp;     *
+<i>1512</i>&nbsp;     * @param millis  the amount of millis to subtract, may be negative
+<i>1513</i>&nbsp;     * @return the new datetime minus the increased millis
+<i>1514</i>&nbsp;     * @since 1.1
+<i>1515</i>&nbsp;     */
+<i>1516</i>&nbsp;    public DateTime minusMillis(int millis) {
+<b class="fc"><i>1517</i>&nbsp;        if (millis == 0) {</b>
+<b class="fc"><i>1518</i>&nbsp;            return this;</b>
+<i>1519</i>&nbsp;        }
+<b class="fc"><i>1520</i>&nbsp;        long instant = getChronology().millis().subtract(getMillis(), millis);</b>
+<b class="fc"><i>1521</i>&nbsp;        return withMillis(instant);</b>
+<i>1522</i>&nbsp;    }
+<i>1523</i>&nbsp;
+<i>1524</i>&nbsp;    //-----------------------------------------------------------------------
+<i>1525</i>&nbsp;    /**
+<i>1526</i>&nbsp;     * Gets the property object for the specified type, which contains many useful methods.
+<i>1527</i>&nbsp;     *
+<i>1528</i>&nbsp;     * @param type  the field type to get the chronology for
+<i>1529</i>&nbsp;     * @return the property object
+<i>1530</i>&nbsp;     * @throws IllegalArgumentException if the field is null or unsupported
+<i>1531</i>&nbsp;     */
+<i>1532</i>&nbsp;    public Property property(DateTimeFieldType type) {
+<b class="fc"><i>1533</i>&nbsp;        if (type == null) {</b>
+<b class="fc"><i>1534</i>&nbsp;            throw new IllegalArgumentException(&quot;The DateTimeFieldType must not be null&quot;);</b>
+<i>1535</i>&nbsp;        }
+<b class="fc"><i>1536</i>&nbsp;        DateTimeField field = type.getField(getChronology());</b>
+<b class="fc"><i>1537</i>&nbsp;        if (field.isSupported() == false) {</b>
+<b class="fc"><i>1538</i>&nbsp;            throw new IllegalArgumentException(&quot;Field &#39;&quot; + type + &quot;&#39; is not supported&quot;);</b>
+<i>1539</i>&nbsp;        }
+<b class="fc"><i>1540</i>&nbsp;        return new Property(this, field);</b>
+<i>1541</i>&nbsp;    }
+<i>1542</i>&nbsp;
+<i>1543</i>&nbsp;    //-----------------------------------------------------------------------
+<i>1544</i>&nbsp;    /**
+<i>1545</i>&nbsp;     * Converts this object to a &lt;code&gt;DateMidnight&lt;/code&gt; using the
+<i>1546</i>&nbsp;     * same millis and chronology.
+<i>1547</i>&nbsp;     * 
+<i>1548</i>&nbsp;     * @return a DateMidnight using the same millis and chronology
+<i>1549</i>&nbsp;     * @deprecated DateMidnight is deprecated
+<i>1550</i>&nbsp;     */
+<i>1551</i>&nbsp;    @Deprecated
+<i>1552</i>&nbsp;    public DateMidnight toDateMidnight() {
+<b class="fc"><i>1553</i>&nbsp;        return new DateMidnight(getMillis(), getChronology());</b>
+<i>1554</i>&nbsp;    }
+<i>1555</i>&nbsp;
+<i>1556</i>&nbsp;    /**
+<i>1557</i>&nbsp;     * Converts this object to a &lt;code&gt;YearMonthDay&lt;/code&gt; using the
+<i>1558</i>&nbsp;     * same millis and chronology.
+<i>1559</i>&nbsp;     * 
+<i>1560</i>&nbsp;     * @return a YearMonthDay using the same millis and chronology
+<i>1561</i>&nbsp;     * @deprecated Use LocalDate instead of YearMonthDay
+<i>1562</i>&nbsp;     */
+<i>1563</i>&nbsp;    @Deprecated
+<i>1564</i>&nbsp;    public YearMonthDay toYearMonthDay() {
+<b class="fc"><i>1565</i>&nbsp;        return new YearMonthDay(getMillis(), getChronology());</b>
+<i>1566</i>&nbsp;    }
+<i>1567</i>&nbsp;
+<i>1568</i>&nbsp;    /**
+<i>1569</i>&nbsp;     * Converts this object to a &lt;code&gt;TimeOfDay&lt;/code&gt; using the
+<i>1570</i>&nbsp;     * same millis and chronology.
+<i>1571</i>&nbsp;     * 
+<i>1572</i>&nbsp;     * @return a TimeOfDay using the same millis and chronology
+<i>1573</i>&nbsp;     * @deprecated Use LocalTime instead of TimeOfDay
+<i>1574</i>&nbsp;     */
+<i>1575</i>&nbsp;    @Deprecated
+<i>1576</i>&nbsp;    public TimeOfDay toTimeOfDay() {
+<b class="fc"><i>1577</i>&nbsp;        return new TimeOfDay(getMillis(), getChronology());</b>
+<i>1578</i>&nbsp;    }
+<i>1579</i>&nbsp;
+<i>1580</i>&nbsp;    /**
+<i>1581</i>&nbsp;     * Converts this object to a &lt;code&gt;LocalDateTime&lt;/code&gt; with
+<i>1582</i>&nbsp;     * the same datetime and chronology.
+<i>1583</i>&nbsp;     *
+<i>1584</i>&nbsp;     * @return a LocalDateTime with the same datetime and chronology
+<i>1585</i>&nbsp;     * @since 1.3
+<i>1586</i>&nbsp;     */
+<i>1587</i>&nbsp;    public LocalDateTime toLocalDateTime() {
+<b class="fc"><i>1588</i>&nbsp;        return new LocalDateTime(getMillis(), getChronology());</b>
+<i>1589</i>&nbsp;    }
+<i>1590</i>&nbsp;
+<i>1591</i>&nbsp;    /**
+<i>1592</i>&nbsp;     * Converts this object to a &lt;code&gt;LocalDate&lt;/code&gt; with the
+<i>1593</i>&nbsp;     * same date and chronology.
+<i>1594</i>&nbsp;     *
+<i>1595</i>&nbsp;     * @return a LocalDate with the same date and chronology
+<i>1596</i>&nbsp;     * @since 1.3
+<i>1597</i>&nbsp;     */
+<i>1598</i>&nbsp;    public LocalDate toLocalDate() {
+<b class="fc"><i>1599</i>&nbsp;        return new LocalDate(getMillis(), getChronology());</b>
+<i>1600</i>&nbsp;    }
+<i>1601</i>&nbsp;
+<i>1602</i>&nbsp;    /**
+<i>1603</i>&nbsp;     * Converts this object to a &lt;code&gt;LocalTime&lt;/code&gt; with the
+<i>1604</i>&nbsp;     * same time and chronology.
+<i>1605</i>&nbsp;     *
+<i>1606</i>&nbsp;     * @return a LocalTime with the same time and chronology
+<i>1607</i>&nbsp;     * @since 1.3
+<i>1608</i>&nbsp;     */
+<i>1609</i>&nbsp;    public LocalTime toLocalTime() {
+<b class="fc"><i>1610</i>&nbsp;        return new LocalTime(getMillis(), getChronology());</b>
+<i>1611</i>&nbsp;    }
+<i>1612</i>&nbsp;
+<i>1613</i>&nbsp;    //-----------------------------------------------------------------------
+<i>1614</i>&nbsp;    /**
+<i>1615</i>&nbsp;     * Returns a copy of this datetime with the era field updated.
+<i>1616</i>&nbsp;     * &lt;p&gt;
+<i>1617</i>&nbsp;     * DateTime is immutable, so there are no set methods.
+<i>1618</i>&nbsp;     * Instead, this method returns a new instance with the value of
+<i>1619</i>&nbsp;     * era changed.
+<i>1620</i>&nbsp;     *
+<i>1621</i>&nbsp;     * @param era  the era to set
+<i>1622</i>&nbsp;     * @return a copy of this object with the field set
+<i>1623</i>&nbsp;     * @throws IllegalArgumentException if the value is invalid
+<i>1624</i>&nbsp;     * @since 1.3
+<i>1625</i>&nbsp;     */
+<i>1626</i>&nbsp;    public DateTime withEra(int era) {
+<b class="fc"><i>1627</i>&nbsp;        return withMillis(getChronology().era().set(getMillis(), era));</b>
+<i>1628</i>&nbsp;    }
+<i>1629</i>&nbsp;
+<i>1630</i>&nbsp;    /**
+<i>1631</i>&nbsp;     * Returns a copy of this datetime with the century of era field updated.
+<i>1632</i>&nbsp;     * &lt;p&gt;
+<i>1633</i>&nbsp;     * DateTime is immutable, so there are no set methods.
+<i>1634</i>&nbsp;     * Instead, this method returns a new instance with the value of
+<i>1635</i>&nbsp;     * century of era changed.
+<i>1636</i>&nbsp;     *
+<i>1637</i>&nbsp;     * @param centuryOfEra  the centurey of era to set
+<i>1638</i>&nbsp;     * @return a copy of this object with the field set
+<i>1639</i>&nbsp;     * @throws IllegalArgumentException if the value is invalid
+<i>1640</i>&nbsp;     * @since 1.3
+<i>1641</i>&nbsp;     */
+<i>1642</i>&nbsp;    public DateTime withCenturyOfEra(int centuryOfEra) {
+<b class="fc"><i>1643</i>&nbsp;        return withMillis(getChronology().centuryOfEra().set(getMillis(), centuryOfEra));</b>
+<i>1644</i>&nbsp;    }
+<i>1645</i>&nbsp;
+<i>1646</i>&nbsp;    /**
+<i>1647</i>&nbsp;     * Returns a copy of this datetime with the year of era field updated.
+<i>1648</i>&nbsp;     * &lt;p&gt;
+<i>1649</i>&nbsp;     * DateTime is immutable, so there are no set methods.
+<i>1650</i>&nbsp;     * Instead, this method returns a new instance with the value of
+<i>1651</i>&nbsp;     * year of era changed.
+<i>1652</i>&nbsp;     *
+<i>1653</i>&nbsp;     * @param yearOfEra  the year of era to set
+<i>1654</i>&nbsp;     * @return a copy of this object with the field set
+<i>1655</i>&nbsp;     * @throws IllegalArgumentException if the value is invalid
+<i>1656</i>&nbsp;     * @since 1.3
+<i>1657</i>&nbsp;     */
+<i>1658</i>&nbsp;    public DateTime withYearOfEra(int yearOfEra) {
+<b class="fc"><i>1659</i>&nbsp;        return withMillis(getChronology().yearOfEra().set(getMillis(), yearOfEra));</b>
+<i>1660</i>&nbsp;    }
+<i>1661</i>&nbsp;
+<i>1662</i>&nbsp;    /**
+<i>1663</i>&nbsp;     * Returns a copy of this datetime with the year of century field updated.
+<i>1664</i>&nbsp;     * &lt;p&gt;
+<i>1665</i>&nbsp;     * DateTime is immutable, so there are no set methods.
+<i>1666</i>&nbsp;     * Instead, this method returns a new instance with the value of
+<i>1667</i>&nbsp;     * year of century changed.
+<i>1668</i>&nbsp;     *
+<i>1669</i>&nbsp;     * @param yearOfCentury  the year of century to set
+<i>1670</i>&nbsp;     * @return a copy of this object with the field set
+<i>1671</i>&nbsp;     * @throws IllegalArgumentException if the value is invalid
+<i>1672</i>&nbsp;     * @since 1.3
+<i>1673</i>&nbsp;     */
+<i>1674</i>&nbsp;    public DateTime withYearOfCentury(int yearOfCentury) {
+<b class="fc"><i>1675</i>&nbsp;        return withMillis(getChronology().yearOfCentury().set(getMillis(), yearOfCentury));</b>
+<i>1676</i>&nbsp;    }
+<i>1677</i>&nbsp;
+<i>1678</i>&nbsp;    /**
+<i>1679</i>&nbsp;     * Returns a copy of this datetime with the year field updated.
+<i>1680</i>&nbsp;     * &lt;p&gt;
+<i>1681</i>&nbsp;     * DateTime is immutable, so there are no set methods.
+<i>1682</i>&nbsp;     * Instead, this method returns a new instance with the value of
+<i>1683</i>&nbsp;     * year changed.
+<i>1684</i>&nbsp;     *
+<i>1685</i>&nbsp;     * @param year  the year to set
+<i>1686</i>&nbsp;     * @return a copy of this object with the field set
+<i>1687</i>&nbsp;     * @throws IllegalArgumentException if the value is invalid
+<i>1688</i>&nbsp;     * @since 1.3
+<i>1689</i>&nbsp;     */
+<i>1690</i>&nbsp;    public DateTime withYear(int year) {
+<b class="fc"><i>1691</i>&nbsp;        return withMillis(getChronology().year().set(getMillis(), year));</b>
+<i>1692</i>&nbsp;    }
+<i>1693</i>&nbsp;
+<i>1694</i>&nbsp;    /**
+<i>1695</i>&nbsp;     * Returns a copy of this datetime with the weekyear field updated.
+<i>1696</i>&nbsp;     * &lt;p&gt;
+<i>1697</i>&nbsp;     * The weekyear is the year that matches with the weekOfWeekyear field.
+<i>1698</i>&nbsp;     * In the standard ISO8601 week algorithm, the first week of the year
+<i>1699</i>&nbsp;     * is that in which at least 4 days are in the year. As a result of this
+<i>1700</i>&nbsp;     * definition, day 1 of the first week may be in the previous year.
+<i>1701</i>&nbsp;     * The weekyear allows you to query the effective year for that day.
+<i>1702</i>&nbsp;     * &lt;p&gt;
+<i>1703</i>&nbsp;     * DateTime is immutable, so there are no set methods.
+<i>1704</i>&nbsp;     * Instead, this method returns a new instance with the value of
+<i>1705</i>&nbsp;     * weekyear changed.
+<i>1706</i>&nbsp;     *
+<i>1707</i>&nbsp;     * @param weekyear  the weekyear to set
+<i>1708</i>&nbsp;     * @return a copy of this object with the field set
+<i>1709</i>&nbsp;     * @throws IllegalArgumentException if the value is invalid
+<i>1710</i>&nbsp;     * @since 1.3
+<i>1711</i>&nbsp;     */
+<i>1712</i>&nbsp;    public DateTime withWeekyear(int weekyear) {
+<b class="fc"><i>1713</i>&nbsp;        return withMillis(getChronology().weekyear().set(getMillis(), weekyear));</b>
+<i>1714</i>&nbsp;    }
+<i>1715</i>&nbsp;
+<i>1716</i>&nbsp;    /**
+<i>1717</i>&nbsp;     * Returns a copy of this datetime with the month of year field updated.
+<i>1718</i>&nbsp;     * &lt;p&gt;
+<i>1719</i>&nbsp;     * DateTime is immutable, so there are no set methods.
+<i>1720</i>&nbsp;     * Instead, this method returns a new instance with the value of
+<i>1721</i>&nbsp;     * month of year changed.
+<i>1722</i>&nbsp;     *
+<i>1723</i>&nbsp;     * @param monthOfYear  the month of year to set
+<i>1724</i>&nbsp;     * @return a copy of this object with the field set
+<i>1725</i>&nbsp;     * @throws IllegalArgumentException if the value is invalid
+<i>1726</i>&nbsp;     * @since 1.3
+<i>1727</i>&nbsp;     */
+<i>1728</i>&nbsp;    public DateTime withMonthOfYear(int monthOfYear) {
+<b class="fc"><i>1729</i>&nbsp;        return withMillis(getChronology().monthOfYear().set(getMillis(), monthOfYear));</b>
+<i>1730</i>&nbsp;    }
+<i>1731</i>&nbsp;
+<i>1732</i>&nbsp;    /**
+<i>1733</i>&nbsp;     * Returns a copy of this datetime with the week of weekyear field updated.
+<i>1734</i>&nbsp;     * &lt;p&gt;
+<i>1735</i>&nbsp;     * This field is associated with the &quot;weekyear&quot; via {@link #withWeekyear(int)}.
+<i>1736</i>&nbsp;     * In the standard ISO8601 week algorithm, the first week of the year
+<i>1737</i>&nbsp;     * is that in which at least 4 days are in the year. As a result of this
+<i>1738</i>&nbsp;     * definition, day 1 of the first week may be in the previous year.
+<i>1739</i>&nbsp;     * &lt;p&gt;
+<i>1740</i>&nbsp;     * DateTime is immutable, so there are no set methods.
+<i>1741</i>&nbsp;     * Instead, this method returns a new instance with the value of
+<i>1742</i>&nbsp;     * week of weekyear changed.
+<i>1743</i>&nbsp;     *
+<i>1744</i>&nbsp;     * @param weekOfWeekyear  the week of weekyear to set
+<i>1745</i>&nbsp;     * @return a copy of this object with the field set
+<i>1746</i>&nbsp;     * @throws IllegalArgumentException if the value is invalid
+<i>1747</i>&nbsp;     * @since 1.3
+<i>1748</i>&nbsp;     */
+<i>1749</i>&nbsp;    public DateTime withWeekOfWeekyear(int weekOfWeekyear) {
+<b class="fc"><i>1750</i>&nbsp;        return withMillis(getChronology().weekOfWeekyear().set(getMillis(), weekOfWeekyear));</b>
+<i>1751</i>&nbsp;    }
+<i>1752</i>&nbsp;
+<i>1753</i>&nbsp;    /**
+<i>1754</i>&nbsp;     * Returns a copy of this datetime with the day of year field updated.
+<i>1755</i>&nbsp;     * &lt;p&gt;
+<i>1756</i>&nbsp;     * DateTime is immutable, so there are no set methods.
+<i>1757</i>&nbsp;     * Instead, this method returns a new instance with the value of
+<i>1758</i>&nbsp;     * day of year changed.
+<i>1759</i>&nbsp;     *
+<i>1760</i>&nbsp;     * @param dayOfYear  the day of year to set
+<i>1761</i>&nbsp;     * @return a copy of this object with the field set
+<i>1762</i>&nbsp;     * @throws IllegalArgumentException if the value is invalid
+<i>1763</i>&nbsp;     * @since 1.3
+<i>1764</i>&nbsp;     */
+<i>1765</i>&nbsp;    public DateTime withDayOfYear(int dayOfYear) {
+<b class="fc"><i>1766</i>&nbsp;        return withMillis(getChronology().dayOfYear().set(getMillis(), dayOfYear));</b>
+<i>1767</i>&nbsp;    }
+<i>1768</i>&nbsp;
+<i>1769</i>&nbsp;    /**
+<i>1770</i>&nbsp;     * Returns a copy of this datetime with the day of month field updated.
+<i>1771</i>&nbsp;     * &lt;p&gt;
+<i>1772</i>&nbsp;     * DateTime is immutable, so there are no set methods.
+<i>1773</i>&nbsp;     * Instead, this method returns a new instance with the value of
+<i>1774</i>&nbsp;     * day of month changed.
+<i>1775</i>&nbsp;     *
+<i>1776</i>&nbsp;     * @param dayOfMonth  the day of month to set
+<i>1777</i>&nbsp;     * @return a copy of this object with the field set
+<i>1778</i>&nbsp;     * @throws IllegalArgumentException if the value is invalid
+<i>1779</i>&nbsp;     * @since 1.3
+<i>1780</i>&nbsp;     */
+<i>1781</i>&nbsp;    public DateTime withDayOfMonth(int dayOfMonth) {
+<b class="fc"><i>1782</i>&nbsp;        return withMillis(getChronology().dayOfMonth().set(getMillis(), dayOfMonth));</b>
+<i>1783</i>&nbsp;    }
+<i>1784</i>&nbsp;
+<i>1785</i>&nbsp;    /**
+<i>1786</i>&nbsp;     * Returns a copy of this datetime with the day of week field updated.
+<i>1787</i>&nbsp;     * &lt;p&gt;
+<i>1788</i>&nbsp;     * DateTime is immutable, so there are no set methods.
+<i>1789</i>&nbsp;     * Instead, this method returns a new instance with the value of
+<i>1790</i>&nbsp;     * day of week changed.
+<i>1791</i>&nbsp;     *
+<i>1792</i>&nbsp;     * @param dayOfWeek  the day of week to set
+<i>1793</i>&nbsp;     * @return a copy of this object with the field set
+<i>1794</i>&nbsp;     * @throws IllegalArgumentException if the value is invalid
+<i>1795</i>&nbsp;     * @since 1.3
+<i>1796</i>&nbsp;     */
+<i>1797</i>&nbsp;    public DateTime withDayOfWeek(int dayOfWeek) {
+<b class="fc"><i>1798</i>&nbsp;        return withMillis(getChronology().dayOfWeek().set(getMillis(), dayOfWeek));</b>
+<i>1799</i>&nbsp;    }
+<i>1800</i>&nbsp;
+<i>1801</i>&nbsp;    //-----------------------------------------------------------------------
+<i>1802</i>&nbsp;    /**
+<i>1803</i>&nbsp;     * Returns a copy of this datetime with the hour of day field updated.
+<i>1804</i>&nbsp;     * &lt;p&gt;
+<i>1805</i>&nbsp;     * DateTime is immutable, so there are no set methods.
+<i>1806</i>&nbsp;     * Instead, this method returns a new instance with the value of
+<i>1807</i>&nbsp;     * hour of day changed.
+<i>1808</i>&nbsp;     *
+<i>1809</i>&nbsp;     * @param hour  the hour of day to set
+<i>1810</i>&nbsp;     * @return a copy of this object with the field set
+<i>1811</i>&nbsp;     * @throws IllegalArgumentException if the value is invalid
+<i>1812</i>&nbsp;     * @since 1.3
+<i>1813</i>&nbsp;     */
+<i>1814</i>&nbsp;    public DateTime withHourOfDay(int hour) {
+<b class="fc"><i>1815</i>&nbsp;        return withMillis(getChronology().hourOfDay().set(getMillis(), hour));</b>
+<i>1816</i>&nbsp;    }
+<i>1817</i>&nbsp;
+<i>1818</i>&nbsp;    /**
+<i>1819</i>&nbsp;     * Returns a copy of this datetime with the minute of hour updated.
+<i>1820</i>&nbsp;     * &lt;p&gt;
+<i>1821</i>&nbsp;     * DateTime is immutable, so there are no set methods.
+<i>1822</i>&nbsp;     * Instead, this method returns a new instance with the value of
+<i>1823</i>&nbsp;     * minute of hour changed.
+<i>1824</i>&nbsp;     *
+<i>1825</i>&nbsp;     * @param minute  the minute of hour to set
+<i>1826</i>&nbsp;     * @return a copy of this object with the field set
+<i>1827</i>&nbsp;     * @throws IllegalArgumentException if the value is invalid
+<i>1828</i>&nbsp;     * @since 1.3
+<i>1829</i>&nbsp;     */
+<i>1830</i>&nbsp;    public DateTime withMinuteOfHour(int minute) {
+<b class="fc"><i>1831</i>&nbsp;        return withMillis(getChronology().minuteOfHour().set(getMillis(), minute));</b>
+<i>1832</i>&nbsp;    }
+<i>1833</i>&nbsp;
+<i>1834</i>&nbsp;    /**
+<i>1835</i>&nbsp;     * Returns a copy of this datetime with the second of minute field updated.
+<i>1836</i>&nbsp;     * &lt;p&gt;
+<i>1837</i>&nbsp;     * DateTime is immutable, so there are no set methods.
+<i>1838</i>&nbsp;     * Instead, this method returns a new instance with the value of
+<i>1839</i>&nbsp;     * second of minute changed.
+<i>1840</i>&nbsp;     *
+<i>1841</i>&nbsp;     * @param second  the second of minute to set
+<i>1842</i>&nbsp;     * @return a copy of this object with the field set
+<i>1843</i>&nbsp;     * @throws IllegalArgumentException if the value is invalid
+<i>1844</i>&nbsp;     * @since 1.3
+<i>1845</i>&nbsp;     */
+<i>1846</i>&nbsp;    public DateTime withSecondOfMinute(int second) {
+<b class="fc"><i>1847</i>&nbsp;        return withMillis(getChronology().secondOfMinute().set(getMillis(), second));</b>
+<i>1848</i>&nbsp;    }
+<i>1849</i>&nbsp;
+<i>1850</i>&nbsp;    /**
+<i>1851</i>&nbsp;     * Returns a copy of this datetime with the millis of second field updated.
+<i>1852</i>&nbsp;     * &lt;p&gt;
+<i>1853</i>&nbsp;     * DateTime is immutable, so there are no set methods.
+<i>1854</i>&nbsp;     * Instead, this method returns a new instance with the value of
+<i>1855</i>&nbsp;     * millis of second changed.
+<i>1856</i>&nbsp;     *
+<i>1857</i>&nbsp;     * @param millis  the millis of second to set
+<i>1858</i>&nbsp;     * @return a copy of this object with the field set
+<i>1859</i>&nbsp;     * @throws IllegalArgumentException if the value is invalid
+<i>1860</i>&nbsp;     * @since 1.3
+<i>1861</i>&nbsp;     */
+<i>1862</i>&nbsp;    public DateTime withMillisOfSecond(int millis) {
+<b class="fc"><i>1863</i>&nbsp;        return withMillis(getChronology().millisOfSecond().set(getMillis(), millis));</b>
+<i>1864</i>&nbsp;    }
+<i>1865</i>&nbsp;
+<i>1866</i>&nbsp;    /**
+<i>1867</i>&nbsp;     * Returns a copy of this datetime with the millis of day field updated.
+<i>1868</i>&nbsp;     * &lt;p&gt;
+<i>1869</i>&nbsp;     * DateTime is immutable, so there are no set methods.
+<i>1870</i>&nbsp;     * Instead, this method returns a new instance with the value of
+<i>1871</i>&nbsp;     * millis of day changed.
+<i>1872</i>&nbsp;     *
+<i>1873</i>&nbsp;     * @param millis  the millis of day to set
+<i>1874</i>&nbsp;     * @return a copy of this object with the field set
+<i>1875</i>&nbsp;     * @throws IllegalArgumentException if the value is invalid
+<i>1876</i>&nbsp;     * @since 1.3
+<i>1877</i>&nbsp;     */
+<i>1878</i>&nbsp;    public DateTime withMillisOfDay(int millis) {
+<b class="fc"><i>1879</i>&nbsp;        return withMillis(getChronology().millisOfDay().set(getMillis(), millis));</b>
+<i>1880</i>&nbsp;    }
+<i>1881</i>&nbsp;
+<i>1882</i>&nbsp;    // Date properties
+<i>1883</i>&nbsp;    //-----------------------------------------------------------------------
+<i>1884</i>&nbsp;    /**
+<i>1885</i>&nbsp;     * Get the era property which provides access to advanced functionality.
+<i>1886</i>&nbsp;     * 
+<i>1887</i>&nbsp;     * @return the era property
+<i>1888</i>&nbsp;     */
+<i>1889</i>&nbsp;    public Property era() {
+<b class="fc"><i>1890</i>&nbsp;        return new Property(this, getChronology().era());</b>
+<i>1891</i>&nbsp;    }
+<i>1892</i>&nbsp;
+<i>1893</i>&nbsp;    /**
+<i>1894</i>&nbsp;     * Get the century of era property which provides access to advanced functionality.
+<i>1895</i>&nbsp;     * 
+<i>1896</i>&nbsp;     * @return the year of era property
+<i>1897</i>&nbsp;     */
+<i>1898</i>&nbsp;    public Property centuryOfEra() {
+<b class="fc"><i>1899</i>&nbsp;        return new Property(this, getChronology().centuryOfEra());</b>
+<i>1900</i>&nbsp;    }
+<i>1901</i>&nbsp;
+<i>1902</i>&nbsp;    /**
+<i>1903</i>&nbsp;     * Get the year of century property which provides access to advanced functionality.
+<i>1904</i>&nbsp;     * 
+<i>1905</i>&nbsp;     * @return the year of era property
+<i>1906</i>&nbsp;     */
+<i>1907</i>&nbsp;    public Property yearOfCentury() {
+<b class="fc"><i>1908</i>&nbsp;        return new Property(this, getChronology().yearOfCentury());</b>
+<i>1909</i>&nbsp;    }
+<i>1910</i>&nbsp;
+<i>1911</i>&nbsp;    /**
+<i>1912</i>&nbsp;     * Get the year of era property which provides access to advanced functionality.
+<i>1913</i>&nbsp;     * 
+<i>1914</i>&nbsp;     * @return the year of era property
+<i>1915</i>&nbsp;     */
+<i>1916</i>&nbsp;    public Property yearOfEra() {
+<b class="fc"><i>1917</i>&nbsp;        return new Property(this, getChronology().yearOfEra());</b>
+<i>1918</i>&nbsp;    }
+<i>1919</i>&nbsp;
+<i>1920</i>&nbsp;    /**
+<i>1921</i>&nbsp;     * Get the year property which provides access to advanced functionality.
+<i>1922</i>&nbsp;     * 
+<i>1923</i>&nbsp;     * @return the year property
+<i>1924</i>&nbsp;     */
+<i>1925</i>&nbsp;    public Property year() {
+<b class="fc"><i>1926</i>&nbsp;        return new Property(this, getChronology().year());</b>
+<i>1927</i>&nbsp;    }
+<i>1928</i>&nbsp;
+<i>1929</i>&nbsp;    /**
+<i>1930</i>&nbsp;     * Get the year of a week based year property which provides access to advanced functionality.
+<i>1931</i>&nbsp;     * 
+<i>1932</i>&nbsp;     * @return the year of a week based year property
+<i>1933</i>&nbsp;     */
+<i>1934</i>&nbsp;    public Property weekyear() {
+<b class="fc"><i>1935</i>&nbsp;        return new Property(this, getChronology().weekyear());</b>
+<i>1936</i>&nbsp;    }
+<i>1937</i>&nbsp;
+<i>1938</i>&nbsp;    /**
+<i>1939</i>&nbsp;     * Get the month of year property which provides access to advanced functionality.
+<i>1940</i>&nbsp;     * 
+<i>1941</i>&nbsp;     * @return the month of year property
+<i>1942</i>&nbsp;     */
+<i>1943</i>&nbsp;    public Property monthOfYear() {
+<b class="fc"><i>1944</i>&nbsp;        return new Property(this, getChronology().monthOfYear());</b>
+<i>1945</i>&nbsp;    }
+<i>1946</i>&nbsp;
+<i>1947</i>&nbsp;    /**
+<i>1948</i>&nbsp;     * Get the week of a week based year property which provides access to advanced functionality.
+<i>1949</i>&nbsp;     * 
+<i>1950</i>&nbsp;     * @return the week of a week based year property
+<i>1951</i>&nbsp;     */
+<i>1952</i>&nbsp;    public Property weekOfWeekyear() {
+<b class="fc"><i>1953</i>&nbsp;        return new Property(this, getChronology().weekOfWeekyear());</b>
+<i>1954</i>&nbsp;    }
+<i>1955</i>&nbsp;
+<i>1956</i>&nbsp;    /**
+<i>1957</i>&nbsp;     * Get the day of year property which provides access to advanced functionality.
+<i>1958</i>&nbsp;     * 
+<i>1959</i>&nbsp;     * @return the day of year property
+<i>1960</i>&nbsp;     */
+<i>1961</i>&nbsp;    public Property dayOfYear() {
+<b class="fc"><i>1962</i>&nbsp;        return new Property(this, getChronology().dayOfYear());</b>
+<i>1963</i>&nbsp;    }
+<i>1964</i>&nbsp;
+<i>1965</i>&nbsp;    /**
+<i>1966</i>&nbsp;     * Get the day of month property which provides access to advanced functionality.
+<i>1967</i>&nbsp;     * 
+<i>1968</i>&nbsp;     * @return the day of month property
+<i>1969</i>&nbsp;     */
+<i>1970</i>&nbsp;    public Property dayOfMonth() {
+<b class="fc"><i>1971</i>&nbsp;        return new Property(this, getChronology().dayOfMonth());</b>
+<i>1972</i>&nbsp;    }
+<i>1973</i>&nbsp;
+<i>1974</i>&nbsp;    /**
+<i>1975</i>&nbsp;     * Get the day of week property which provides access to advanced functionality.
+<i>1976</i>&nbsp;     * 
+<i>1977</i>&nbsp;     * @return the day of week property
+<i>1978</i>&nbsp;     */
+<i>1979</i>&nbsp;    public Property dayOfWeek() {
+<b class="fc"><i>1980</i>&nbsp;        return new Property(this, getChronology().dayOfWeek());</b>
+<i>1981</i>&nbsp;    }
+<i>1982</i>&nbsp;
+<i>1983</i>&nbsp;    // Time properties
+<i>1984</i>&nbsp;    //-----------------------------------------------------------------------
+<i>1985</i>&nbsp;    /**
+<i>1986</i>&nbsp;     * Get the hour of day field property which provides access to advanced functionality.
+<i>1987</i>&nbsp;     * 
+<i>1988</i>&nbsp;     * @return the hour of day property
+<i>1989</i>&nbsp;     */
+<i>1990</i>&nbsp;    public Property hourOfDay() {
+<b class="fc"><i>1991</i>&nbsp;        return new Property(this, getChronology().hourOfDay());</b>
+<i>1992</i>&nbsp;    }
+<i>1993</i>&nbsp;
+<i>1994</i>&nbsp;    /**
+<i>1995</i>&nbsp;     * Get the minute of day property which provides access to advanced functionality.
+<i>1996</i>&nbsp;     * 
+<i>1997</i>&nbsp;     * @return the minute of day property
+<i>1998</i>&nbsp;     */
+<i>1999</i>&nbsp;    public Property minuteOfDay() {
+<b class="fc"><i>2000</i>&nbsp;        return new Property(this, getChronology().minuteOfDay());</b>
+<i>2001</i>&nbsp;    }
+<i>2002</i>&nbsp;
+<i>2003</i>&nbsp;    /**
+<i>2004</i>&nbsp;     * Get the minute of hour field property which provides access to advanced functionality.
+<i>2005</i>&nbsp;     * 
+<i>2006</i>&nbsp;     * @return the minute of hour property
+<i>2007</i>&nbsp;     */
+<i>2008</i>&nbsp;    public Property minuteOfHour() {
+<b class="fc"><i>2009</i>&nbsp;        return new Property(this, getChronology().minuteOfHour());</b>
+<i>2010</i>&nbsp;    }
+<i>2011</i>&nbsp;
+<i>2012</i>&nbsp;    /**
+<i>2013</i>&nbsp;     * Get the second of day property which provides access to advanced functionality.
+<i>2014</i>&nbsp;     * 
+<i>2015</i>&nbsp;     * @return the second of day property
+<i>2016</i>&nbsp;     */
+<i>2017</i>&nbsp;    public Property secondOfDay() {
+<b class="fc"><i>2018</i>&nbsp;        return new Property(this, getChronology().secondOfDay());</b>
+<i>2019</i>&nbsp;    }
+<i>2020</i>&nbsp;
+<i>2021</i>&nbsp;    /**
+<i>2022</i>&nbsp;     * Get the second of minute field property which provides access to advanced functionality.
+<i>2023</i>&nbsp;     * 
+<i>2024</i>&nbsp;     * @return the second of minute property
+<i>2025</i>&nbsp;     */
+<i>2026</i>&nbsp;    public Property secondOfMinute() {
+<b class="fc"><i>2027</i>&nbsp;        return new Property(this, getChronology().secondOfMinute());</b>
+<i>2028</i>&nbsp;    }
+<i>2029</i>&nbsp;
+<i>2030</i>&nbsp;    /**
+<i>2031</i>&nbsp;     * Get the millis of day property which provides access to advanced functionality.
+<i>2032</i>&nbsp;     * 
+<i>2033</i>&nbsp;     * @return the millis of day property
+<i>2034</i>&nbsp;     */
+<i>2035</i>&nbsp;    public Property millisOfDay() {
+<b class="fc"><i>2036</i>&nbsp;        return new Property(this, getChronology().millisOfDay());</b>
+<i>2037</i>&nbsp;    }
+<i>2038</i>&nbsp;
+<i>2039</i>&nbsp;    /**
+<i>2040</i>&nbsp;     * Get the millis of second property which provides access to advanced functionality.
+<i>2041</i>&nbsp;     * 
+<i>2042</i>&nbsp;     * @return the millis of second property
+<i>2043</i>&nbsp;     */
+<i>2044</i>&nbsp;    public Property millisOfSecond() {
+<b class="fc"><i>2045</i>&nbsp;        return new Property(this, getChronology().millisOfSecond());</b>
+<i>2046</i>&nbsp;    }
+<i>2047</i>&nbsp;
+<i>2048</i>&nbsp;    //-----------------------------------------------------------------------
+<i>2049</i>&nbsp;    /**
+<i>2050</i>&nbsp;     * DateTime.Property binds a DateTime to a DateTimeField allowing powerful
+<i>2051</i>&nbsp;     * datetime functionality to be easily accessed.
+<i>2052</i>&nbsp;     * &lt;p&gt;
+<i>2053</i>&nbsp;     * The simplest use of this class is as an alternative get method, here used to
+<i>2054</i>&nbsp;     * get the year &#39;1972&#39; (as an int) and the month &#39;December&#39; (as a String).
+<i>2055</i>&nbsp;     * &lt;pre&gt;
+<i>2056</i>&nbsp;     * DateTime dt = new DateTime(1972, 12, 3, 0, 0, 0, 0);
+<i>2057</i>&nbsp;     * int year = dt.year().get();
+<i>2058</i>&nbsp;     * String monthStr = dt.month().getAsText();
+<i>2059</i>&nbsp;     * &lt;/pre&gt;
+<i>2060</i>&nbsp;     * &lt;p&gt;
+<i>2061</i>&nbsp;     * Methods are also provided that allow date modification. These return new instances
+<i>2062</i>&nbsp;     * of DateTime - they do not modify the original. The example below yields two
+<i>2063</i>&nbsp;     * independent immutable date objects 20 years apart.
+<i>2064</i>&nbsp;     * &lt;pre&gt;
+<i>2065</i>&nbsp;     * DateTime dt = new DateTime(1972, 12, 3, 0, 0, 0, 0);
+<i>2066</i>&nbsp;     * DateTime dt20 = dt.year().addToCopy(20);
+<i>2067</i>&nbsp;     * &lt;/pre&gt;
+<i>2068</i>&nbsp;     * Serious modification of dates (ie. more than just changing one or two fields)
+<i>2069</i>&nbsp;     * should use the {@link org.joda.time.MutableDateTime MutableDateTime} class.
+<i>2070</i>&nbsp;     * &lt;p&gt;
+<i>2071</i>&nbsp;     * DateTime.Propery itself is thread-safe and immutable, as well as the
+<i>2072</i>&nbsp;     * DateTime being operated on.
+<i>2073</i>&nbsp;     *
+<i>2074</i>&nbsp;     * @author Stephen Colebourne
+<i>2075</i>&nbsp;     * @author Brian S O&#39;Neill
+<i>2076</i>&nbsp;     * @since 1.0
+<i>2077</i>&nbsp;     */
+<i>2078</i>&nbsp;    public static final class Property extends AbstractReadableInstantFieldProperty {
+<i>2079</i>&nbsp;        
+<i>2080</i>&nbsp;        /** Serialization version */
+<i>2081</i>&nbsp;        private static final long serialVersionUID = -6983323811635733510L;
+<i>2082</i>&nbsp;        
+<i>2083</i>&nbsp;        /** The instant this property is working against */
+<i>2084</i>&nbsp;        private DateTime iInstant;
+<i>2085</i>&nbsp;        /** The field this property is working against */
+<i>2086</i>&nbsp;        private DateTimeField iField;
+<i>2087</i>&nbsp;        
+<i>2088</i>&nbsp;        /**
+<i>2089</i>&nbsp;         * Constructor.
+<i>2090</i>&nbsp;         * 
+<i>2091</i>&nbsp;         * @param instant  the instant to set
+<i>2092</i>&nbsp;         * @param field  the field to use
+<i>2093</i>&nbsp;         */
+<i>2094</i>&nbsp;        Property(DateTime instant, DateTimeField field) {
+<b class="fc"><i>2095</i>&nbsp;            super();</b>
+<b class="fc"><i>2096</i>&nbsp;            iInstant = instant;</b>
+<b class="fc"><i>2097</i>&nbsp;            iField = field;</b>
+<b class="fc"><i>2098</i>&nbsp;        }</b>
+<i>2099</i>&nbsp;        
+<i>2100</i>&nbsp;        /**
+<i>2101</i>&nbsp;         * Writes the property in a safe serialization format.
+<i>2102</i>&nbsp;         */
+<i>2103</i>&nbsp;        private void writeObject(ObjectOutputStream oos) throws IOException {
+<b class="fc"><i>2104</i>&nbsp;            oos.writeObject(iInstant);</b>
+<b class="fc"><i>2105</i>&nbsp;            oos.writeObject(iField.getType());</b>
+<b class="fc"><i>2106</i>&nbsp;        }</b>
+<i>2107</i>&nbsp;
+<i>2108</i>&nbsp;        /**
+<i>2109</i>&nbsp;         * Reads the property from a safe serialization format.
+<i>2110</i>&nbsp;         */
+<i>2111</i>&nbsp;        private void readObject(ObjectInputStream oos) throws IOException, ClassNotFoundException {
+<b class="fc"><i>2112</i>&nbsp;            iInstant = (DateTime) oos.readObject();</b>
+<b class="fc"><i>2113</i>&nbsp;            DateTimeFieldType type = (DateTimeFieldType) oos.readObject();</b>
+<b class="fc"><i>2114</i>&nbsp;            iField = type.getField(iInstant.getChronology());</b>
+<b class="fc"><i>2115</i>&nbsp;        }</b>
+<i>2116</i>&nbsp;
+<i>2117</i>&nbsp;        //-----------------------------------------------------------------------
+<i>2118</i>&nbsp;        /**
+<i>2119</i>&nbsp;         * Gets the field being used.
+<i>2120</i>&nbsp;         * 
+<i>2121</i>&nbsp;         * @return the field
+<i>2122</i>&nbsp;         */
+<i>2123</i>&nbsp;        public DateTimeField getField() {
+<b class="fc"><i>2124</i>&nbsp;            return iField;</b>
+<i>2125</i>&nbsp;        }
+<i>2126</i>&nbsp;        
+<i>2127</i>&nbsp;        /**
+<i>2128</i>&nbsp;         * Gets the milliseconds of the datetime that this property is linked to.
+<i>2129</i>&nbsp;         * 
+<i>2130</i>&nbsp;         * @return the milliseconds
+<i>2131</i>&nbsp;         */
+<i>2132</i>&nbsp;        protected long getMillis() {
+<b class="fc"><i>2133</i>&nbsp;            return iInstant.getMillis();</b>
+<i>2134</i>&nbsp;        }
+<i>2135</i>&nbsp;        
+<i>2136</i>&nbsp;        /**
+<i>2137</i>&nbsp;         * Gets the chronology of the datetime that this property is linked to.
+<i>2138</i>&nbsp;         * 
+<i>2139</i>&nbsp;         * @return the chronology
+<i>2140</i>&nbsp;         * @since 1.4
+<i>2141</i>&nbsp;         */
+<i>2142</i>&nbsp;        protected Chronology getChronology() {
+<b class="fc"><i>2143</i>&nbsp;            return iInstant.getChronology();</b>
+<i>2144</i>&nbsp;        }
+<i>2145</i>&nbsp;        
+<i>2146</i>&nbsp;        /**
+<i>2147</i>&nbsp;         * Gets the datetime being used.
+<i>2148</i>&nbsp;         * 
+<i>2149</i>&nbsp;         * @return the datetime
+<i>2150</i>&nbsp;         */
+<i>2151</i>&nbsp;        public DateTime getDateTime() {
+<b class="fc"><i>2152</i>&nbsp;            return iInstant;</b>
+<i>2153</i>&nbsp;        }
+<i>2154</i>&nbsp;        
+<i>2155</i>&nbsp;        //-----------------------------------------------------------------------
+<i>2156</i>&nbsp;        /**
+<i>2157</i>&nbsp;         * Adds to this field in a copy of this DateTime.
+<i>2158</i>&nbsp;         * &lt;p&gt;
+<i>2159</i>&nbsp;         * The DateTime attached to this property is unchanged by this call.
+<i>2160</i>&nbsp;         * This operation is faster than converting a DateTime to a MutableDateTime
+<i>2161</i>&nbsp;         * and back again when setting one field. When setting multiple fields,
+<i>2162</i>&nbsp;         * it is generally quicker to make the conversion to MutableDateTime.
+<i>2163</i>&nbsp;         * 
+<i>2164</i>&nbsp;         * @param value  the value to add to the field in the copy
+<i>2165</i>&nbsp;         * @return a copy of the DateTime with the field value changed
+<i>2166</i>&nbsp;         * @throws IllegalArgumentException if the value isn&#39;t valid
+<i>2167</i>&nbsp;         */
+<i>2168</i>&nbsp;        public DateTime addToCopy(int value) {
+<b class="fc"><i>2169</i>&nbsp;            return iInstant.withMillis(iField.add(iInstant.getMillis(), value));</b>
+<i>2170</i>&nbsp;        }
+<i>2171</i>&nbsp;        
+<i>2172</i>&nbsp;        /**
+<i>2173</i>&nbsp;         * Adds to this field in a copy of this DateTime.
+<i>2174</i>&nbsp;         * &lt;p&gt;
+<i>2175</i>&nbsp;         * The DateTime attached to this property is unchanged by this call.
+<i>2176</i>&nbsp;         * This operation is faster than converting a DateTime to a MutableDateTime
+<i>2177</i>&nbsp;         * and back again when setting one field. When setting multiple fields,
+<i>2178</i>&nbsp;         * it is generally quicker to make the conversion to MutableDateTime.
+<i>2179</i>&nbsp;         * 
+<i>2180</i>&nbsp;         * @param value  the value to add to the field in the copy
+<i>2181</i>&nbsp;         * @return a copy of the DateTime with the field value changed
+<i>2182</i>&nbsp;         * @throws IllegalArgumentException if the value isn&#39;t valid
+<i>2183</i>&nbsp;         */
+<i>2184</i>&nbsp;        public DateTime addToCopy(long value) {
+<b class="fc"><i>2185</i>&nbsp;            return iInstant.withMillis(iField.add(iInstant.getMillis(), value));</b>
+<i>2186</i>&nbsp;        }
+<i>2187</i>&nbsp;        
+<i>2188</i>&nbsp;        /**
+<i>2189</i>&nbsp;         * Adds to this field, possibly wrapped, in a copy of this DateTime.
+<i>2190</i>&nbsp;         * A wrapped operation only changes this field.
+<i>2191</i>&nbsp;         * Thus 31st January addWrapField one day goes to the 1st January.
+<i>2192</i>&nbsp;         * &lt;p&gt;
+<i>2193</i>&nbsp;         * The DateTime attached to this property is unchanged by this call.
+<i>2194</i>&nbsp;         * This operation is faster than converting a DateTime to a MutableDateTime
+<i>2195</i>&nbsp;         * and back again when setting one field. When setting multiple fields,
+<i>2196</i>&nbsp;         * it is generally quicker to make the conversion to MutableDateTime.
+<i>2197</i>&nbsp;         * 
+<i>2198</i>&nbsp;         * @param value  the value to add to the field in the copy
+<i>2199</i>&nbsp;         * @return a copy of the DateTime with the field value changed
+<i>2200</i>&nbsp;         * @throws IllegalArgumentException if the value isn&#39;t valid
+<i>2201</i>&nbsp;         */
+<i>2202</i>&nbsp;        public DateTime addWrapFieldToCopy(int value) {
+<b class="fc"><i>2203</i>&nbsp;            return iInstant.withMillis(iField.addWrapField(iInstant.getMillis(), value));</b>
+<i>2204</i>&nbsp;        }
+<i>2205</i>&nbsp;        
+<i>2206</i>&nbsp;        //-----------------------------------------------------------------------
+<i>2207</i>&nbsp;        /**
+<i>2208</i>&nbsp;         * Sets this field in a copy of the DateTime.
+<i>2209</i>&nbsp;         * &lt;p&gt;
+<i>2210</i>&nbsp;         * The DateTime attached to this property is unchanged by this call.
+<i>2211</i>&nbsp;         * This operation is faster than converting a DateTime to a MutableDateTime
+<i>2212</i>&nbsp;         * and back again when setting one field. When setting multiple fields,
+<i>2213</i>&nbsp;         * it is generally quicker to make the conversion to MutableDateTime.
+<i>2214</i>&nbsp;         * 
+<i>2215</i>&nbsp;         * @param value  the value to set the field in the copy to
+<i>2216</i>&nbsp;         * @return a copy of the DateTime with the field value changed
+<i>2217</i>&nbsp;         * @throws IllegalArgumentException if the value isn&#39;t valid
+<i>2218</i>&nbsp;         */
+<i>2219</i>&nbsp;        public DateTime setCopy(int value) {
+<b class="fc"><i>2220</i>&nbsp;            return iInstant.withMillis(iField.set(iInstant.getMillis(), value));</b>
+<i>2221</i>&nbsp;        }
+<i>2222</i>&nbsp;        
+<i>2223</i>&nbsp;        /**
+<i>2224</i>&nbsp;         * Sets this field in a copy of the DateTime to a parsed text value.
+<i>2225</i>&nbsp;         * &lt;p&gt;
+<i>2226</i>&nbsp;         * The DateTime attached to this property is unchanged by this call.
+<i>2227</i>&nbsp;         * This operation is faster than converting a DateTime to a MutableDateTime
+<i>2228</i>&nbsp;         * and back again when setting one field. When setting multiple fields,
+<i>2229</i>&nbsp;         * it is generally quicker to make the conversion to MutableDateTime.
+<i>2230</i>&nbsp;         * 
+<i>2231</i>&nbsp;         * @param text  the text value to set
+<i>2232</i>&nbsp;         * @param locale  optional locale to use for selecting a text symbol
+<i>2233</i>&nbsp;         * @return a copy of the DateTime with the field value changed
+<i>2234</i>&nbsp;         * @throws IllegalArgumentException if the text value isn&#39;t valid
+<i>2235</i>&nbsp;         */
+<i>2236</i>&nbsp;        public DateTime setCopy(String text, Locale locale) {
+<b class="fc"><i>2237</i>&nbsp;            return iInstant.withMillis(iField.set(iInstant.getMillis(), text, locale));</b>
+<i>2238</i>&nbsp;        }
+<i>2239</i>&nbsp;        
+<i>2240</i>&nbsp;        /**
+<i>2241</i>&nbsp;         * Sets this field in a copy of the DateTime to a parsed text value.
+<i>2242</i>&nbsp;         * &lt;p&gt;
+<i>2243</i>&nbsp;         * The DateTime attached to this property is unchanged by this call.
+<i>2244</i>&nbsp;         * This operation is faster than converting a DateTime to a MutableDateTime
+<i>2245</i>&nbsp;         * and back again when setting one field. When setting multiple fields,
+<i>2246</i>&nbsp;         * it is generally quicker to make the conversion to MutableDateTime.
+<i>2247</i>&nbsp;         * 
+<i>2248</i>&nbsp;         * @param text  the text value to set
+<i>2249</i>&nbsp;         * @return a copy of the DateTime with the field value changed
+<i>2250</i>&nbsp;         * @throws IllegalArgumentException if the text value isn&#39;t valid
+<i>2251</i>&nbsp;         */
+<i>2252</i>&nbsp;        public DateTime setCopy(String text) {
+<b class="fc"><i>2253</i>&nbsp;            return setCopy(text, null);</b>
+<i>2254</i>&nbsp;        }
+<i>2255</i>&nbsp;        
+<i>2256</i>&nbsp;        //-----------------------------------------------------------------------
+<i>2257</i>&nbsp;        /**
+<i>2258</i>&nbsp;         * Returns a new DateTime with this field set to the maximum value
+<i>2259</i>&nbsp;         * for this field.
+<i>2260</i>&nbsp;         * &lt;p&gt;
+<i>2261</i>&nbsp;         * This operation is useful for obtaining a DateTime on the last day
+<i>2262</i>&nbsp;         * of the month, as month lengths vary.
+<i>2263</i>&nbsp;         * &lt;pre&gt;
+<i>2264</i>&nbsp;         * DateTime lastDayOfMonth = dt.dayOfMonth().withMaximumValue();
+<i>2265</i>&nbsp;         * &lt;/pre&gt;
+<i>2266</i>&nbsp;         * &lt;p&gt;
+<i>2267</i>&nbsp;         * Where possible, the offset from UTC will be retained, thus applications
+<i>2268</i>&nbsp;         * may need to call {@link DateTime#withLaterOffsetAtOverlap()} on the result
+<i>2269</i>&nbsp;         * to force the later time during a DST overlap if desired.
+<i>2270</i>&nbsp;         * &lt;p&gt;
+<i>2271</i>&nbsp;         * From v2.2, this method handles a daylight svaings time gap, setting the
+<i>2272</i>&nbsp;         * time to the last instant before the gap.
+<i>2273</i>&nbsp;         * &lt;p&gt;
+<i>2274</i>&nbsp;         * The DateTime attached to this property is unchanged by this call.
+<i>2275</i>&nbsp;         *
+<i>2276</i>&nbsp;         * @return a copy of the DateTime with this field set to its maximum
+<i>2277</i>&nbsp;         * @since 1.2
+<i>2278</i>&nbsp;         */
+<i>2279</i>&nbsp;        public DateTime withMaximumValue() {
+<i>2280</i>&nbsp;            try {
+<b class="fc"><i>2281</i>&nbsp;                return setCopy(getMaximumValue());</b>
+<b class="fc"><i>2282</i>&nbsp;            } catch (RuntimeException ex) {</b>
+<b class="fc"><i>2283</i>&nbsp;                if (IllegalInstantException.isIllegalInstant(ex)) {</b>
+<i>2284</i>&nbsp;                    // adding MILLIS_PER_DAY is not perfect, but will work in almost all situations
+<b class="fc"><i>2285</i>&nbsp;                    long beforeGap = getChronology().getZone().previousTransition(getMillis() + DateTimeConstants.MILLIS_PER_DAY);</b>
+<b class="fc"><i>2286</i>&nbsp;                    return new DateTime(beforeGap, getChronology());</b>
+<i>2287</i>&nbsp;                }
+<b class="nc"><i>2288</i>&nbsp;                throw ex;</b>
+<i>2289</i>&nbsp;            }
+<i>2290</i>&nbsp;        }
+<i>2291</i>&nbsp;        
+<i>2292</i>&nbsp;        /**
+<i>2293</i>&nbsp;         * Returns a new DateTime with this field set to the minimum value
+<i>2294</i>&nbsp;         * for this field.
+<i>2295</i>&nbsp;         * &lt;p&gt;
+<i>2296</i>&nbsp;         * Where possible, the offset from UTC will be retained, thus applications
+<i>2297</i>&nbsp;         * may need to call {@link DateTime#withEarlierOffsetAtOverlap()} on the result
+<i>2298</i>&nbsp;         * to force the earlier time during a DST overlap if desired.
+<i>2299</i>&nbsp;         * &lt;p&gt;
+<i>2300</i>&nbsp;         * From v2.2, this method handles a daylight svaings time gap, setting the
+<i>2301</i>&nbsp;         * time to the first instant after the gap.
+<i>2302</i>&nbsp;         * &lt;p&gt;
+<i>2303</i>&nbsp;         * The DateTime attached to this property is unchanged by this call.
+<i>2304</i>&nbsp;         *
+<i>2305</i>&nbsp;         * @return a copy of the DateTime with this field set to its minimum
+<i>2306</i>&nbsp;         * @since 1.2
+<i>2307</i>&nbsp;         */
+<i>2308</i>&nbsp;        public DateTime withMinimumValue() {
+<i>2309</i>&nbsp;            try {
+<b class="fc"><i>2310</i>&nbsp;                return setCopy(getMinimumValue());</b>
+<b class="fc"><i>2311</i>&nbsp;            } catch (RuntimeException ex) {</b>
+<b class="fc"><i>2312</i>&nbsp;                if (IllegalInstantException.isIllegalInstant(ex)) {</b>
+<i>2313</i>&nbsp;                    // subtracting MILLIS_PER_DAY is not perfect, but will work in almost all situations
+<b class="fc"><i>2314</i>&nbsp;                    long afterGap = getChronology().getZone().nextTransition(getMillis() - DateTimeConstants.MILLIS_PER_DAY);</b>
+<b class="fc"><i>2315</i>&nbsp;                    return new DateTime(afterGap, getChronology());</b>
+<i>2316</i>&nbsp;                }
+<b class="nc"><i>2317</i>&nbsp;                throw ex;</b>
+<i>2318</i>&nbsp;            }
+<i>2319</i>&nbsp;        }
+<i>2320</i>&nbsp;        
+<i>2321</i>&nbsp;        //-----------------------------------------------------------------------
+<i>2322</i>&nbsp;        /**
+<i>2323</i>&nbsp;         * Rounds to the lowest whole unit of this field on a copy of this DateTime.
+<i>2324</i>&nbsp;         *
+<i>2325</i>&nbsp;         * @return a copy of the DateTime with the field value changed
+<i>2326</i>&nbsp;         */
+<i>2327</i>&nbsp;        public DateTime roundFloorCopy() {
+<b class="fc"><i>2328</i>&nbsp;            return iInstant.withMillis(iField.roundFloor(iInstant.getMillis()));</b>
+<i>2329</i>&nbsp;        }
+<i>2330</i>&nbsp;        
+<i>2331</i>&nbsp;        /**
+<i>2332</i>&nbsp;         * Rounds to the highest whole unit of this field on a copy of this DateTime.
+<i>2333</i>&nbsp;         *
+<i>2334</i>&nbsp;         * @return a copy of the DateTime with the field value changed
+<i>2335</i>&nbsp;         */
+<i>2336</i>&nbsp;        public DateTime roundCeilingCopy() {
+<b class="fc"><i>2337</i>&nbsp;            return iInstant.withMillis(iField.roundCeiling(iInstant.getMillis()));</b>
+<i>2338</i>&nbsp;        }
+<i>2339</i>&nbsp;        
+<i>2340</i>&nbsp;        /**
+<i>2341</i>&nbsp;         * Rounds to the nearest whole unit of this field on a copy of this DateTime,
+<i>2342</i>&nbsp;         * favoring the floor if halfway.
+<i>2343</i>&nbsp;         *
+<i>2344</i>&nbsp;         * @return a copy of the DateTime with the field value changed
+<i>2345</i>&nbsp;         */
+<i>2346</i>&nbsp;        public DateTime roundHalfFloorCopy() {
+<b class="fc"><i>2347</i>&nbsp;            return iInstant.withMillis(iField.roundHalfFloor(iInstant.getMillis()));</b>
+<i>2348</i>&nbsp;        }
+<i>2349</i>&nbsp;        
+<i>2350</i>&nbsp;        /**
+<i>2351</i>&nbsp;         * Rounds to the nearest whole unit of this field on a copy of this DateTime,
+<i>2352</i>&nbsp;         * favoring the ceiling if halfway.
+<i>2353</i>&nbsp;         *
+<i>2354</i>&nbsp;         * @return a copy of the DateTime with the field value changed
+<i>2355</i>&nbsp;         */
+<i>2356</i>&nbsp;        public DateTime roundHalfCeilingCopy() {
+<b class="fc"><i>2357</i>&nbsp;            return iInstant.withMillis(iField.roundHalfCeiling(iInstant.getMillis()));</b>
+<i>2358</i>&nbsp;        }
+<i>2359</i>&nbsp;        
+<i>2360</i>&nbsp;        /**
+<i>2361</i>&nbsp;         * Rounds to the nearest whole unit of this field on a copy of this
+<i>2362</i>&nbsp;         * DateTime.  If halfway, the ceiling is favored over the floor only if
+<i>2363</i>&nbsp;         * it makes this field&#39;s value even.
+<i>2364</i>&nbsp;         *
+<i>2365</i>&nbsp;         * @return a copy of the DateTime with the field value changed
+<i>2366</i>&nbsp;         */
+<i>2367</i>&nbsp;        public DateTime roundHalfEvenCopy() {
+<b class="fc"><i>2368</i>&nbsp;            return iInstant.withMillis(iField.roundHalfEven(iInstant.getMillis()));</b>
+<i>2369</i>&nbsp;        }
+<i>2370</i>&nbsp;    }
+<i>2371</i>&nbsp;
+<i>2372</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

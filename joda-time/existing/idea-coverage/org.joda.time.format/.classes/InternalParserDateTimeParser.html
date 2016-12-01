@@ -1,0 +1,155 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: InternalParserDateTimeParser</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time.format</a> ]
+</div>
+
+<h1>Coverage Summary for Class: InternalParserDateTimeParser (org.joda.time.format)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">InternalParserDateTimeParser</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    83.3%
+  </span>
+  <span class="absValue">
+    (5/ 6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    78.9%
+  </span>
+  <span class="absValue">
+    (15/ 19)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2014 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time.format;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;
+<i>19</i>&nbsp;/**
+<i>20</i>&nbsp; * Adapter between old and new printer interface.
+<i>21</i>&nbsp; *
+<i>22</i>&nbsp; * @author Stephen Colebourne
+<i>23</i>&nbsp; * @since 2.4
+<i>24</i>&nbsp; */
+<i>25</i>&nbsp;class InternalParserDateTimeParser implements DateTimeParser, InternalParser {
+<i>26</i>&nbsp;    
+<i>27</i>&nbsp;    private final InternalParser underlying;
+<i>28</i>&nbsp;
+<i>29</i>&nbsp;    static DateTimeParser of(InternalParser underlying) {
+<b class="fc"><i>30</i>&nbsp;        if (underlying instanceof DateTimeParserInternalParser) {</b>
+<b class="nc"><i>31</i>&nbsp;            return ((DateTimeParserInternalParser) underlying).getUnderlying();</b>
+<i>32</i>&nbsp;        }
+<b class="fc"><i>33</i>&nbsp;        if (underlying instanceof DateTimeParser) {</b>
+<b class="fc"><i>34</i>&nbsp;            return (DateTimeParser) underlying;</b>
+<i>35</i>&nbsp;        }
+<b class="fc"><i>36</i>&nbsp;        if (underlying == null) {</b>
+<b class="fc"><i>37</i>&nbsp;            return null;</b>
+<i>38</i>&nbsp;        }
+<b class="fc"><i>39</i>&nbsp;        return new InternalParserDateTimeParser(underlying);</b>
+<i>40</i>&nbsp;    }
+<i>41</i>&nbsp;
+<b class="fc"><i>42</i>&nbsp;    private InternalParserDateTimeParser(InternalParser underlying) {</b>
+<b class="fc"><i>43</i>&nbsp;        this.underlying = underlying;</b>
+<b class="fc"><i>44</i>&nbsp;    }</b>
+<i>45</i>&nbsp;
+<i>46</i>&nbsp;    //-------------------------------------------------------------------------
+<i>47</i>&nbsp;    public int estimateParsedLength() {
+<b class="fc"><i>48</i>&nbsp;        return underlying.estimateParsedLength();</b>
+<i>49</i>&nbsp;    }
+<i>50</i>&nbsp;
+<i>51</i>&nbsp;    public int parseInto(DateTimeParserBucket bucket, CharSequence text, int position) {
+<b class="fc"><i>52</i>&nbsp;        return underlying.parseInto(bucket, text, position);</b>
+<i>53</i>&nbsp;    }
+<i>54</i>&nbsp;
+<i>55</i>&nbsp;    public int parseInto(DateTimeParserBucket bucket, String text, int position) {
+<b class="nc"><i>56</i>&nbsp;        return underlying.parseInto(bucket, text, position);</b>
+<i>57</i>&nbsp;    }
+<i>58</i>&nbsp;
+<i>59</i>&nbsp;    //-----------------------------------------------------------------------
+<i>60</i>&nbsp;    @Override
+<i>61</i>&nbsp;    public boolean equals(Object obj) {
+<b class="fc"><i>62</i>&nbsp;        if (obj == this) {</b>
+<b class="nc"><i>63</i>&nbsp;            return true;</b>
+<i>64</i>&nbsp;        }
+<b class="fc"><i>65</i>&nbsp;        if (obj instanceof InternalParserDateTimeParser) {</b>
+<b class="fc"><i>66</i>&nbsp;            InternalParserDateTimeParser other = (InternalParserDateTimeParser) obj;</b>
+<b class="fc"><i>67</i>&nbsp;            return underlying.equals(other.underlying);</b>
+<i>68</i>&nbsp;        }
+<b class="nc"><i>69</i>&nbsp;        return false;</b>
+<i>70</i>&nbsp;    }
+<i>71</i>&nbsp;
+<i>72</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

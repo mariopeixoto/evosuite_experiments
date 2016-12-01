@@ -1,0 +1,214 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: ReadablePeriod</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time</a> ]
+</div>
+
+<h1>Coverage Summary for Class: ReadablePeriod (org.joda.time)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+</tr>
+<tr>
+  <td class="name">ReadablePeriod</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2005 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;/**
+<i>19</i>&nbsp; * Defines a time period specified in terms of individual duration fields
+<i>20</i>&nbsp; * such as years and days.
+<i>21</i>&nbsp; * &lt;p&gt;
+<i>22</i>&nbsp; * The implementation of this interface may be mutable or immutable. This
+<i>23</i>&nbsp; * interface only gives access to retrieve data, never to change it.
+<i>24</i>&nbsp; * &lt;p&gt;
+<i>25</i>&nbsp; * Periods are split up into multiple fields, for example days and seconds.
+<i>26</i>&nbsp; * Implementations are not required to evenly distribute the values across the fields.
+<i>27</i>&nbsp; * The value for each field may be positive or negative.
+<i>28</i>&nbsp; * &lt;p&gt;
+<i>29</i>&nbsp; * When a time period is added to an instant, the effect is to add each field in turn.
+<i>30</i>&nbsp; * For example, a time period could be defined as 3 months, 2 days and -1 hours.
+<i>31</i>&nbsp; * In most circumstances this would be the same as 3 months, 1 day, and 23 hours.
+<i>32</i>&nbsp; * However, when adding across a daylight savings boundary, a day may be 23 or 25 hours long.
+<i>33</i>&nbsp; * Thus, the time period is always added field by field to the datetime.
+<i>34</i>&nbsp; * &lt;p&gt;
+<i>35</i>&nbsp; * Periods are independent of chronology, and can only be treated as durations
+<i>36</i>&nbsp; * when paired with a time via an interval.
+<i>37</i>&nbsp; *
+<i>38</i>&nbsp; * @see ReadableDuration
+<i>39</i>&nbsp; * @see ReadableInterval
+<i>40</i>&nbsp; * @author Brian S O&#39;Neill
+<i>41</i>&nbsp; * @author Stephen Colebourne
+<i>42</i>&nbsp; * @since 1.0
+<i>43</i>&nbsp; */
+<i>44</i>&nbsp;public interface ReadablePeriod {
+<i>45</i>&nbsp;
+<i>46</i>&nbsp;    /**
+<i>47</i>&nbsp;     * Gets the period type that defines which fields are included in the period.
+<i>48</i>&nbsp;     *
+<i>49</i>&nbsp;     * @return the period type
+<i>50</i>&nbsp;     */
+<i>51</i>&nbsp;    PeriodType getPeriodType();
+<i>52</i>&nbsp;
+<i>53</i>&nbsp;    /**
+<i>54</i>&nbsp;     * Gets the number of fields that this period supports.
+<i>55</i>&nbsp;     *
+<i>56</i>&nbsp;     * @return the number of fields supported
+<i>57</i>&nbsp;     */
+<i>58</i>&nbsp;    int size();
+<i>59</i>&nbsp;
+<i>60</i>&nbsp;    /**
+<i>61</i>&nbsp;     * Gets the field type at the specified index.
+<i>62</i>&nbsp;     *
+<i>63</i>&nbsp;     * @param index  the index to retrieve
+<i>64</i>&nbsp;     * @return the field at the specified index
+<i>65</i>&nbsp;     * @throws IndexOutOfBoundsException if the index is invalid
+<i>66</i>&nbsp;     */
+<i>67</i>&nbsp;    DurationFieldType getFieldType(int index);
+<i>68</i>&nbsp;
+<i>69</i>&nbsp;    /**
+<i>70</i>&nbsp;     * Gets the value at the specified index.
+<i>71</i>&nbsp;     *
+<i>72</i>&nbsp;     * @param index  the index to retrieve
+<i>73</i>&nbsp;     * @return the value of the field at the specified index
+<i>74</i>&nbsp;     * @throws IndexOutOfBoundsException if the index is invalid
+<i>75</i>&nbsp;     */
+<i>76</i>&nbsp;    int getValue(int index);
+<i>77</i>&nbsp;
+<i>78</i>&nbsp;    /**
+<i>79</i>&nbsp;     * Gets the value of one of the fields.
+<i>80</i>&nbsp;     * &lt;p&gt;
+<i>81</i>&nbsp;     * If the field type specified is not supported by the period then zero
+<i>82</i>&nbsp;     * is returned.
+<i>83</i>&nbsp;     *
+<i>84</i>&nbsp;     * @param field  the field type to query, null returns zero
+<i>85</i>&nbsp;     * @return the value of that field, zero if field not supported
+<i>86</i>&nbsp;     */
+<i>87</i>&nbsp;    int get(DurationFieldType field);
+<i>88</i>&nbsp;
+<i>89</i>&nbsp;    /**
+<i>90</i>&nbsp;     * Checks whether the field type specified is supported by this period.
+<i>91</i>&nbsp;     *
+<i>92</i>&nbsp;     * @param field  the field to check, may be null which returns false
+<i>93</i>&nbsp;     * @return true if the field is supported
+<i>94</i>&nbsp;     */
+<i>95</i>&nbsp;    boolean isSupported(DurationFieldType field);
+<i>96</i>&nbsp;
+<i>97</i>&nbsp;    //-----------------------------------------------------------------------
+<i>98</i>&nbsp;    /**
+<i>99</i>&nbsp;     * Get this period as an immutable &lt;code&gt;Period&lt;/code&gt; object.
+<i>100</i>&nbsp;     * &lt;p&gt;
+<i>101</i>&nbsp;     * This will either typecast this instance, or create a new &lt;code&gt;Period&lt;/code&gt;.
+<i>102</i>&nbsp;     * 
+<i>103</i>&nbsp;     * @return a Duration using the same field set and values
+<i>104</i>&nbsp;     */
+<i>105</i>&nbsp;    Period toPeriod();
+<i>106</i>&nbsp;
+<i>107</i>&nbsp;    /**
+<i>108</i>&nbsp;     * Get this object as a &lt;code&gt;MutablePeriod&lt;/code&gt;.
+<i>109</i>&nbsp;     * &lt;p&gt;
+<i>110</i>&nbsp;     * This will always return a new &lt;code&gt;MutablePeriod&lt;/code&gt; with the same fields.
+<i>111</i>&nbsp;     * 
+<i>112</i>&nbsp;     * @return a MutablePeriod using the same field set and values
+<i>113</i>&nbsp;     */
+<i>114</i>&nbsp;    MutablePeriod toMutablePeriod();
+<i>115</i>&nbsp;
+<i>116</i>&nbsp;    //-----------------------------------------------------------------------
+<i>117</i>&nbsp;    /**
+<i>118</i>&nbsp;     * Compares this object with the specified object for equality based
+<i>119</i>&nbsp;     * on the value and type of each supported field.
+<i>120</i>&nbsp;     * All ReadablePeriod instances are accepted.
+<i>121</i>&nbsp;     * &lt;p&gt;
+<i>122</i>&nbsp;     * Note that a period of 1 day is not equal to a period of 24 hours,
+<i>123</i>&nbsp;     * nor is 1 hour equal to 60 minutes. Only periods with the same amount
+<i>124</i>&nbsp;     * in each field are equal.
+<i>125</i>&nbsp;     * &lt;p&gt;
+<i>126</i>&nbsp;     * This is because periods represent an abstracted definition of a time
+<i>127</i>&nbsp;     * period (eg. a day may not actually be 24 hours, it might be 23 or 25
+<i>128</i>&nbsp;     * at daylight savings boundary).
+<i>129</i>&nbsp;     * &lt;p&gt;
+<i>130</i>&nbsp;     * To compare the actual duration of two periods, convert both to
+<i>131</i>&nbsp;     * {@link Duration}s, an operation that emphasises that the result may
+<i>132</i>&nbsp;     * differ according to the date you choose.
+<i>133</i>&nbsp;     *
+<i>134</i>&nbsp;     * @param readablePeriod  a readable period to check against
+<i>135</i>&nbsp;     * @return true if all the field values and types are equal, false if
+<i>136</i>&nbsp;     *  not or the period is null or of an incorrect type
+<i>137</i>&nbsp;     */
+<i>138</i>&nbsp;    boolean equals(Object readablePeriod);
+<i>139</i>&nbsp;
+<i>140</i>&nbsp;    /**
+<i>141</i>&nbsp;     * Gets a hash code for the period that is compatible with the equals method.
+<i>142</i>&nbsp;     * The hashcode is calculated as follows:
+<i>143</i>&nbsp;     * &lt;pre&gt;
+<i>144</i>&nbsp;     *  int total = 17;
+<i>145</i>&nbsp;     *  for (int i = 0; i &lt; fields.length; i++) {
+<i>146</i>&nbsp;     *      total = 27 * total + getValue(i);
+<i>147</i>&nbsp;     *      total = 27 * total + getFieldType(i).hashCode();
+<i>148</i>&nbsp;     *  }
+<i>149</i>&nbsp;     *  return total;
+<i>150</i>&nbsp;     * &lt;/pre&gt;
+<i>151</i>&nbsp;     *
+<i>152</i>&nbsp;     * @return a hash code
+<i>153</i>&nbsp;     */
+<i>154</i>&nbsp;    int hashCode();
+<i>155</i>&nbsp;
+<i>156</i>&nbsp;    //-----------------------------------------------------------------------
+<i>157</i>&nbsp;    /**
+<i>158</i>&nbsp;     * Gets the value as a String in the style of the ISO8601 duration format.
+<i>159</i>&nbsp;     * Technically, the output can breach the ISO specification as weeks may be included.
+<i>160</i>&nbsp;     * &lt;p&gt;
+<i>161</i>&nbsp;     * For example, &quot;PT6H3M5S&quot; represents 6 hours, 3 minutes, 5 seconds.
+<i>162</i>&nbsp;     *
+<i>163</i>&nbsp;     * @return the value as an ISO8601 style string
+<i>164</i>&nbsp;     */
+<i>165</i>&nbsp;    String toString();
+<i>166</i>&nbsp;
+<i>167</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

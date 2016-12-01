@@ -1,0 +1,130 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: PeriodPrinter</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time.format</a> ]
+</div>
+
+<h1>Coverage Summary for Class: PeriodPrinter (org.joda.time.format)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+</tr>
+<tr>
+  <td class="name">PeriodPrinter</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2005 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time.format;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;import java.io.IOException;
+<i>19</i>&nbsp;import java.io.Writer;
+<i>20</i>&nbsp;import java.util.Locale;
+<i>21</i>&nbsp;
+<i>22</i>&nbsp;import org.joda.time.ReadablePeriod;
+<i>23</i>&nbsp;
+<i>24</i>&nbsp;/**
+<i>25</i>&nbsp; * Internal interface for printing textual representations of time periods.
+<i>26</i>&nbsp; * &lt;p&gt;
+<i>27</i>&nbsp; * Application users will rarely use this class directly. Instead, you
+<i>28</i>&nbsp; * will use one of the factory classes to create a {@link PeriodFormatter}.
+<i>29</i>&nbsp; * &lt;p&gt;
+<i>30</i>&nbsp; * The factory classes are:&lt;br /&gt;
+<i>31</i>&nbsp; * - {@link PeriodFormatterBuilder}&lt;br /&gt;
+<i>32</i>&nbsp; * - {@link PeriodFormat}&lt;br /&gt;
+<i>33</i>&nbsp; * - {@link ISOPeriodFormat}&lt;br /&gt;
+<i>34</i>&nbsp; *
+<i>35</i>&nbsp; * @author Brian S O&#39;Neill
+<i>36</i>&nbsp; * @author Stephen Colebourne
+<i>37</i>&nbsp; * @since 1.0
+<i>38</i>&nbsp; * @see PeriodFormatter
+<i>39</i>&nbsp; * @see PeriodFormatterBuilder
+<i>40</i>&nbsp; * @see PeriodFormat
+<i>41</i>&nbsp; */
+<i>42</i>&nbsp;public interface PeriodPrinter {
+<i>43</i>&nbsp;
+<i>44</i>&nbsp;    /**
+<i>45</i>&nbsp;     * Returns the exact number of characters produced for the given period.
+<i>46</i>&nbsp;     * 
+<i>47</i>&nbsp;     * @param period  the period to use
+<i>48</i>&nbsp;     * @param locale  the locale to use
+<i>49</i>&nbsp;     * @return the estimated length
+<i>50</i>&nbsp;     */
+<i>51</i>&nbsp;    int calculatePrintedLength(ReadablePeriod period, Locale locale);
+<i>52</i>&nbsp;
+<i>53</i>&nbsp;    /**
+<i>54</i>&nbsp;     * Returns the amount of fields from the given period that this printer
+<i>55</i>&nbsp;     * will print.
+<i>56</i>&nbsp;     * 
+<i>57</i>&nbsp;     * @param period  the period to use
+<i>58</i>&nbsp;     * @param stopAt stop counting at this value, enter a number &amp;ge; 256 to count all
+<i>59</i>&nbsp;     * @param locale  the locale to use
+<i>60</i>&nbsp;     * @return amount of fields printed
+<i>61</i>&nbsp;     */
+<i>62</i>&nbsp;    int countFieldsToPrint(ReadablePeriod period, int stopAt, Locale locale);
+<i>63</i>&nbsp;
+<i>64</i>&nbsp;    //-----------------------------------------------------------------------
+<i>65</i>&nbsp;    /**
+<i>66</i>&nbsp;     * Prints a ReadablePeriod to a StringBuffer.
+<i>67</i>&nbsp;     *
+<i>68</i>&nbsp;     * @param buf  the formatted period is appended to this buffer
+<i>69</i>&nbsp;     * @param period  the period to format
+<i>70</i>&nbsp;     * @param locale  the locale to use
+<i>71</i>&nbsp;     */
+<i>72</i>&nbsp;    void printTo(StringBuffer buf, ReadablePeriod period, Locale locale);
+<i>73</i>&nbsp;
+<i>74</i>&nbsp;    /**
+<i>75</i>&nbsp;     * Prints a ReadablePeriod to a Writer.
+<i>76</i>&nbsp;     *
+<i>77</i>&nbsp;     * @param out  the formatted period is written out
+<i>78</i>&nbsp;     * @param period  the period to format
+<i>79</i>&nbsp;     * @param locale  the locale to use
+<i>80</i>&nbsp;     */
+<i>81</i>&nbsp;    void printTo(Writer out, ReadablePeriod period, Locale locale) throws IOException;
+<i>82</i>&nbsp;
+<i>83</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

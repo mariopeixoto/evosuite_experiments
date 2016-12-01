@@ -1,0 +1,184 @@
+Going to execute command:
+/Library/Java/Home/bin/java  -jar  /Users/mario/Downloads/evosuite-1.0.3.jar  -continuous  execute  -Dspawn_process_manager_port=63795  -Dctg_memory=8000  -Dctg_cores=4  -Dctg_time_per_class=1  -Dctg_export_folder=src/test/evo  -Dctg_selected_cuts_file_location=/var/folders/fw/p1v413pn3d37fq0grpb41s8w0000gn/T/EvoSuite_ctg_CUT_file7055273589254068583.txt  -DCP_file_path=/var/folders/fw/p1v413pn3d37fq0grpb41s8w0000gn/T/EvoSuite_ctg_classpath_file1569357758429513071.txt
+in folder: /Users/mario/Documents/experiments/jackson-core
+Going to execute command:
+/Library/Java/Home/bin/java  -jar  /Users/mario/Downloads/evosuite-1.0.3.jar  -continuous  execute  -Dspawn_process_manager_port=63795  -Dctg_memory=8000  -Dctg_cores=4  -Dctg_time_per_class=1  -Dctg_export_folder=src/test/evo  -Dctg_selected_cuts_file_location=/var/folders/fw/p1v413pn3d37fq0grpb41s8w0000gn/T/EvoSuite_ctg_CUT_file7055273589254068583.txt  -DCP_file_path=/var/folders/fw/p1v413pn3d37fq0grpb41s8w0000gn/T/EvoSuite_ctg_classpath_file1569357758429513071.txt
+in folder: /Users/mario/Documents/experiments/jackson-core
+* EvoSuite 1.0.3
+Going to execute 73 jobs
+Estimated completion time: 19 minutes, by 2016-11-30T04:44:31.847
+Going to start job for: com.fasterxml.jackson.core.json.UTF8JsonGenerator. Expected to end in 71 seconds, by 2016-11-30T04:26:42.870
+Going to start job for: com.fasterxml.jackson.core.json.ReaderBasedJsonParser. Expected to end in 90 seconds, by 2016-11-30T04:27:01.870
+Going to start job for: com.fasterxml.jackson.core.json.UTF8DataInputJsonParser. Expected to end in 82 seconds, by 2016-11-30T04:26:53.870
+Going to start job for: com.fasterxml.jackson.core.json.UTF8StreamJsonParser. Expected to end in 92 seconds, by 2016-11-30T04:27:03.870
+Completed job. Left: 72
+Going to start job for: com.fasterxml.jackson.core.json.WriterBasedJsonGenerator. Expected to end in 70 seconds, by 2016-11-30T04:27:51.263
+Completed job. Left: 71
+Going to start job for: com.fasterxml.jackson.core.filter.FilteringParserDelegate. Expected to end in 66 seconds, by 2016-11-30T04:27:54.746
+Completed job. Left: 70
+Going to start job for: com.fasterxml.jackson.core.sym.ByteQuadsCanonicalizer. Expected to end in 66 seconds, by 2016-11-30T04:28:02.368
+Completed job. Left: 69
+Going to start job for: com.fasterxml.jackson.core.filter.FilteringGeneratorDelegate. Expected to end in 65 seconds, by 2016-11-30T04:28:04.157
+Completed job. Left: 68
+Going to start job for: com.fasterxml.jackson.core.base.ParserBase. Expected to end in 65 seconds, by 2016-11-30T04:28:52.647
+Completed job. Left: 67
+Going to start job for: com.fasterxml.jackson.core.base.ParserMinimalBase. Expected to end in 64 seconds, by 2016-11-30T04:29:00.014
+Completed job. Left: 66
+Going to start job for: com.fasterxml.jackson.core.json.ByteSourceJsonBootstrapper. Expected to end in 63 seconds, by 2016-11-30T04:29:08.939
+Completed job. Left: 65
+Going to start job for: com.fasterxml.jackson.core.util.TextBuffer. Expected to end in 63 seconds, by 2016-11-30T04:29:10.174
+Completed job. Left: 64
+Going to start job for: com.fasterxml.jackson.core.io.JsonStringEncoder. Expected to end in 62 seconds, by 2016-11-30T04:29:47.217
+Completed job. Left: 63
+Going to start job for: com.fasterxml.jackson.core.io.UTF8Writer. Expected to end in 62 seconds, by 2016-11-30T04:29:53.829
+Completed job. Left: 62
+Going to start job for: com.fasterxml.jackson.core.io.NumberInput. Expected to end in 62 seconds, by 2016-11-30T04:30:12.290
+Completed job. Left: 61
+Going to start job for: com.fasterxml.jackson.core.JsonGenerator. Expected to end in 62 seconds, by 2016-11-30T04:30:13.159
+Completed job. Left: 60
+Going to start job for: com.fasterxml.jackson.core.JsonPointer. Expected to end in 62 seconds, by 2016-11-30T04:30:47.070
+Completed job. Left: 59
+Going to start job for: com.fasterxml.jackson.core.JsonFactory. Expected to end in 62 seconds, by 2016-11-30T04:30:47.097
+Completed job. Left: 58
+Going to start job for: com.fasterxml.jackson.core.base.GeneratorBase. Expected to end in 61 seconds, by 2016-11-30T04:31:12.432
+Completed job. Left: 57
+Going to start job for: com.fasterxml.jackson.core.filter.TokenFilterContext. Expected to end in 61 seconds, by 2016-11-30T04:31:13.131
+Completed job. Left: 56
+Going to start job for: com.fasterxml.jackson.core.sym.CharsToNameCanonicalizer. Expected to end in 61 seconds, by 2016-11-30T04:31:47.088
+Completed job. Left: 55
+Going to start job for: com.fasterxml.jackson.core.io.NumberOutput. Expected to end in 61 seconds, by 2016-11-30T04:31:49.589
+Completed job. Left: 54
+Going to start job for: com.fasterxml.jackson.core.Base64Variant. Expected to end in 61 seconds, by 2016-11-30T04:32:02.773
+Completed job. Left: 53
+Going to start job for: com.fasterxml.jackson.core.JsonParser. Expected to end in 61 seconds, by 2016-11-30T04:32:12.139
+Completed job. Left: 52
+Going to start job for: com.fasterxml.jackson.core.io.UTF32Reader. Expected to end in 61 seconds, by 2016-11-30T04:32:48.031
+Completed job. Left: 51
+Going to start job for: com.fasterxml.jackson.core.util.JsonParserSequence. Expected to end in 60 seconds, by 2016-11-30T04:32:47.726
+Completed job. Left: 50
+Going to start job for: com.fasterxml.jackson.core.filter.TokenFilter. Expected to end in 60 seconds, by 2016-11-30T04:33:07.761
+Completed job. Left: 49
+Going to start job for: com.fasterxml.jackson.core.io.CharTypes. Expected to end in 60 seconds, by 2016-11-30T04:33:08.105
+Completed job. Left: 48
+Going to start job for: com.fasterxml.jackson.core.util.MinimalPrettyPrinter. Expected to end in 60 seconds, by 2016-11-30T04:33:45.956
+Completed job. Left: 47
+Going to start job for: com.fasterxml.jackson.core.sym.Name1. Expected to end in 60 seconds, by 2016-11-30T04:33:51.120
+Completed job. Left: 46
+Going to start job for: com.fasterxml.jackson.core.sym.Name2. Expected to end in 60 seconds, by 2016-11-30T04:33:54.702
+Completed job. Left: 45
+Going to start job for: com.fasterxml.jackson.core.sym.Name3. Expected to end in 60 seconds, by 2016-11-30T04:33:57.760
+Completed job. Left: 44
+Going to start job for: com.fasterxml.jackson.core.sym.Name. Expected to end in 60 seconds, by 2016-11-30T04:34:32.608
+Completed job. Left: 43
+Going to start job for: com.fasterxml.jackson.core.json.DupDetector. Expected to end in 60 seconds, by 2016-11-30T04:34:38.456
+Completed job. Left: 42
+Going to start job for: com.fasterxml.jackson.core.util.RequestPayload. Expected to end in 60 seconds, by 2016-11-30T04:34:45.445
+Completed job. Left: 41
+Going to start job for: com.fasterxml.jackson.core.type.TypeReference. Expected to end in 60 seconds, by 2016-11-30T04:34:51.457
+Completed job. Left: 40
+Going to start job for: com.fasterxml.jackson.core.JsonParseException. Expected to end in 60 seconds, by 2016-11-30T04:35:08.141
+Completed job. Left: 39
+Going to start job for: com.fasterxml.jackson.core.json.JsonWriteContext. Expected to end in 60 seconds, by 2016-11-30T04:35:16.808
+Completed job. Left: 38
+Going to start job for: com.fasterxml.jackson.core.util.JsonParserDelegate. Expected to end in 60 seconds, by 2016-11-30T04:35:27.763
+Completed job. Left: 37
+Going to start job for: com.fasterxml.jackson.core.filter.JsonPointerBasedFilter. Expected to end in 60 seconds, by 2016-11-30T04:35:38.056
+Completed job. Left: 36
+Going to start job for: com.fasterxml.jackson.core.Version. Expected to end in 60 seconds, by 2016-11-30T04:35:52.133
+Completed job. Left: 35
+Going to start job for: com.fasterxml.jackson.core.util.VersionUtil. Expected to end in 60 seconds, by 2016-11-30T04:36:18.826
+Completed job. Left: 34
+Going to start job for: com.fasterxml.jackson.core.util.DefaultIndenter. Expected to end in 60 seconds, by 2016-11-30T04:36:18.954
+Completed job. Left: 33
+Going to start job for: com.fasterxml.jackson.core.io.InputDecorator. Expected to end in 60 seconds, by 2016-11-30T04:36:26.552
+Completed job. Left: 32
+Going to start job for: com.fasterxml.jackson.core.util.JsonGeneratorDelegate. Expected to end in 60 seconds, by 2016-11-30T04:36:52
+Completed job. Left: 31
+Going to start job for: com.fasterxml.jackson.core.io.OutputDecorator. Expected to end in 60 seconds, by 2016-11-30T04:37:09.658
+Completed job. Left: 30
+Going to start job for: com.fasterxml.jackson.core.json.JsonGeneratorImpl. Expected to end in 60 seconds, by 2016-11-30T04:37:11.559
+Completed job. Left: 29
+Going to start job for: com.fasterxml.jackson.core.io.MergedStream. Expected to end in 60 seconds, by 2016-11-30T04:37:12.786
+Completed job. Left: 28
+Going to start job for: com.fasterxml.jackson.core.io.JsonEOFException. Expected to end in 60 seconds, by 2016-11-30T04:37:43.938
+Completed job. Left: 27
+Going to start job for: com.fasterxml.jackson.core.JsonLocation. Expected to end in 60 seconds, by 2016-11-30T04:37:53.524
+Completed job. Left: 26
+Going to start job for: com.fasterxml.jackson.core.format.DataFormatMatcher. Expected to end in 60 seconds, by 2016-11-30T04:37:58.925
+Completed job. Left: 25
+Going to start job for: com.fasterxml.jackson.core.io.CharacterEscapes. Expected to end in 60 seconds, by 2016-11-30T04:38:03.015
+Completed job. Left: 24
+Going to start job for: com.fasterxml.jackson.core.ObjectCodec. Expected to end in 60 seconds, by 2016-11-30T04:38:32.327
+Completed job. Left: 23
+Going to start job for: com.fasterxml.jackson.core.json.JsonReadContext. Expected to end in 60 seconds, by 2016-11-30T04:38:47.188
+Completed job. Left: 22
+Going to start job for: com.fasterxml.jackson.core.type.ResolvedType. Expected to end in 60 seconds, by 2016-11-30T04:38:47.699
+Completed job. Left: 21
+Going to start job for: com.fasterxml.jackson.core.util.InternCache. Expected to end in 60 seconds, by 2016-11-30T04:38:52.055
+Completed job. Left: 20
+Going to start job for: com.fasterxml.jackson.core.format.DataFormatDetector. Expected to end in 60 seconds, by 2016-11-30T04:39:22.548
+Completed job. Left: 19
+Going to start job for: com.fasterxml.jackson.core.io.DataOutputAsStream. Expected to end in 60 seconds, by 2016-11-30T04:39:34.303
+Completed job. Left: 18
+Going to start job for: com.fasterxml.jackson.core.io.SerializedString. Expected to end in 60 seconds, by 2016-11-30T04:39:38.668
+Completed job. Left: 17
+Going to start job for: com.fasterxml.jackson.core.io.SegmentedStringWriter. Expected to end in 60 seconds, by 2016-11-30T04:39:42.250
+Completed job. Left: 16
+Going to start job for: com.fasterxml.jackson.core.JsonEncoding. Expected to end in 60 seconds, by 2016-11-30T04:40:14.472
+Completed job. Left: 15
+Going to start job for: com.fasterxml.jackson.core.util.DefaultPrettyPrinter. Expected to end in 60 seconds, by 2016-11-30T04:40:21.544
+Completed job. Left: 14
+Going to start job for: com.fasterxml.jackson.core.JsonGenerationException. Expected to end in 60 seconds, by 2016-11-30T04:40:31.315
+Completed job. Left: 13
+Going to start job for: com.fasterxml.jackson.core.JsonToken. Expected to end in 60 seconds, by 2016-11-30T04:40:32.215
+Completed job. Left: 12
+Going to start job for: com.fasterxml.jackson.core.util.BufferRecycler. Expected to end in 60 seconds, by 2016-11-30T04:41:01.923
+Completed job. Left: 11
+Going to start job for: com.fasterxml.jackson.core.TreeCodec. Expected to end in 60 seconds, by 2016-11-30T04:41:15.107
+Completed job. Left: 10
+Going to start job for: com.fasterxml.jackson.core.sym.NameN. Expected to end in 60 seconds, by 2016-11-30T04:41:20.058
+Completed job. Left: 9
+Going to start job for: com.fasterxml.jackson.core.JsonProcessingException. Expected to end in 60 seconds, by 2016-11-30T04:41:24.260
+Completed job. Left: 8
+Going to start job for: com.fasterxml.jackson.core.JsonStreamContext. Expected to end in 60 seconds, by 2016-11-30T04:41:53.067
+Completed job. Left: 7
+Going to start job for: com.fasterxml.jackson.core.Base64Variants. Expected to end in 60 seconds, by 2016-11-30T04:42:00.175
+Completed job. Left: 6
+Going to start job for: com.fasterxml.jackson.core.JsonpCharacterEscapes. Expected to end in 60 seconds, by 2016-11-30T04:42:10.934
+Completed job. Left: 5
+Going to start job for: com.fasterxml.jackson.core.util.ByteArrayBuilder. Expected to end in 60 seconds, by 2016-11-30T04:42:13.456
+Completed job. Left: 4
+Going to start job for: com.fasterxml.jackson.core.io.IOContext. Expected to end in 60 seconds, by 2016-11-30T04:42:41.963
+Completed job. Left: 3
+Completed job. Left: 2
+Completed job. Left: 1
+Completed job. Left: 0
+Removed test suites: 0
+
+=== CTG run results ===
+New test suites: 69
+
+Missing classes:
+com.fasterxml.jackson.core.FormatFeature
+com.fasterxml.jackson.core.FormatSchema
+com.fasterxml.jackson.core.JsonTokenId
+com.fasterxml.jackson.core.PrettyPrinter
+com.fasterxml.jackson.core.SerializableString
+com.fasterxml.jackson.core.TreeNode
+com.fasterxml.jackson.core.Versioned
+com.fasterxml.jackson.core.base.package-info
+com.fasterxml.jackson.core.format.InputAccessor
+com.fasterxml.jackson.core.format.MatchStrength
+com.fasterxml.jackson.core.format.package-info
+com.fasterxml.jackson.core.json.package-info
+com.fasterxml.jackson.core.package-info
+com.fasterxml.jackson.core.sym.ByteQuadsCanonicalizer
+com.fasterxml.jackson.core.sym.package-info
+com.fasterxml.jackson.core.type.package-info
+com.fasterxml.jackson.core.util.ByteArrayBuilder
+com.fasterxml.jackson.core.util.Instantiatable
+com.fasterxml.jackson.core.util.JsonParserSequence
+com.fasterxml.jackson.core.util.RequestPayload
+com.fasterxml.jackson.core.util.package-info
+
+WARN: failed to generate tests for 21 classes out of 90

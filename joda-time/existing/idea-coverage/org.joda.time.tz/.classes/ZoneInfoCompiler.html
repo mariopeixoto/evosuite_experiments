@@ -1,0 +1,1067 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: ZoneInfoCompiler</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time.tz</a> ]
+</div>
+
+<h1>Coverage Summary for Class: ZoneInfoCompiler (org.joda.time.tz)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">ZoneInfoCompiler</td>
+<td class="coverageStat">
+  <span class="percent">
+    93.8%
+  </span>
+  <span class="absValue">
+    (15/ 16)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    72.2%
+  </span>
+  <span class="absValue">
+    (197/ 273)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">ZoneInfoCompiler$DateTimeOfYear</td>
+<td class="coverageStat">
+  <span class="percent">
+    80%
+  </span>
+  <span class="absValue">
+    (4/ 5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    88.1%
+  </span>
+  <span class="absValue">
+    (59/ 67)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">ZoneInfoCompiler$Rule</td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (3/ 4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    78.1%
+  </span>
+  <span class="absValue">
+    (25/ 32)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">ZoneInfoCompiler$RuleSet</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/ 3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    91.7%
+  </span>
+  <span class="absValue">
+    (11/ 12)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">ZoneInfoCompiler$Zone</td>
+<td class="coverageStat">
+  <span class="percent">
+    83.3%
+  </span>
+  <span class="absValue">
+    (5/ 6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    83.3%
+  </span>
+  <span class="absValue">
+    (35/ 42)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    88.2%
+  </span>
+  <span class="absValue">
+    (30/ 34)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    76.8%
+  </span>
+  <span class="absValue">
+    (327/ 426)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2013 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time.tz;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;import java.io.BufferedReader;
+<i>19</i>&nbsp;import java.io.DataOutputStream;
+<i>20</i>&nbsp;import java.io.File;
+<i>21</i>&nbsp;import java.io.FileInputStream;
+<i>22</i>&nbsp;import java.io.FileOutputStream;
+<i>23</i>&nbsp;import java.io.FileReader;
+<i>24</i>&nbsp;import java.io.IOException;
+<i>25</i>&nbsp;import java.io.InputStream;
+<i>26</i>&nbsp;import java.io.OutputStream;
+<i>27</i>&nbsp;import java.util.ArrayList;
+<i>28</i>&nbsp;import java.util.HashMap;
+<i>29</i>&nbsp;import java.util.List;
+<i>30</i>&nbsp;import java.util.Locale;
+<i>31</i>&nbsp;import java.util.Map;
+<i>32</i>&nbsp;import java.util.Map.Entry;
+<i>33</i>&nbsp;import java.util.StringTokenizer;
+<i>34</i>&nbsp;import java.util.TreeMap;
+<i>35</i>&nbsp;
+<i>36</i>&nbsp;import org.joda.time.Chronology;
+<i>37</i>&nbsp;import org.joda.time.DateTime;
+<i>38</i>&nbsp;import org.joda.time.DateTimeField;
+<i>39</i>&nbsp;import org.joda.time.DateTimeZone;
+<i>40</i>&nbsp;import org.joda.time.LocalDate;
+<i>41</i>&nbsp;import org.joda.time.MutableDateTime;
+<i>42</i>&nbsp;import org.joda.time.chrono.ISOChronology;
+<i>43</i>&nbsp;import org.joda.time.chrono.LenientChronology;
+<i>44</i>&nbsp;import org.joda.time.format.DateTimeFormatter;
+<i>45</i>&nbsp;import org.joda.time.format.ISODateTimeFormat;
+<i>46</i>&nbsp;
+<i>47</i>&nbsp;/**
+<i>48</i>&nbsp; * Compiles IANA ZoneInfo database files into binary files for each time zone
+<i>49</i>&nbsp; * in the database. {@link DateTimeZoneBuilder} is used to construct and encode
+<i>50</i>&nbsp; * compiled data files. {@link ZoneInfoProvider} loads the encoded files and
+<i>51</i>&nbsp; * converts them back into {@link DateTimeZone} objects.
+<i>52</i>&nbsp; * &lt;p&gt;
+<i>53</i>&nbsp; * Although this tool is similar to zic, the binary formats are not
+<i>54</i>&nbsp; * compatible. The latest IANA time zone database files may be obtained
+<i>55</i>&nbsp; * &lt;a href=&quot;http://www.iana.org/time-zones&quot;&gt;here&lt;/a&gt;.
+<i>56</i>&nbsp; * &lt;p&gt;
+<i>57</i>&nbsp; * ZoneInfoCompiler is mutable and not thread-safe, although the main method
+<i>58</i>&nbsp; * may be safely invoked by multiple threads.
+<i>59</i>&nbsp; *
+<i>60</i>&nbsp; * @author Brian S O&#39;Neill
+<i>61</i>&nbsp; * @since 1.0
+<i>62</i>&nbsp; */
+<i>63</i>&nbsp;public class ZoneInfoCompiler {
+<i>64</i>&nbsp;    static DateTimeOfYear cStartOfYear;
+<i>65</i>&nbsp;
+<i>66</i>&nbsp;    static Chronology cLenientISO;
+<i>67</i>&nbsp;
+<i>68</i>&nbsp;    //-----------------------------------------------------------------------
+<i>69</i>&nbsp;    /**
+<i>70</i>&nbsp;     * Launches the ZoneInfoCompiler tool.
+<i>71</i>&nbsp;     *
+<i>72</i>&nbsp;     * &lt;pre&gt;
+<i>73</i>&nbsp;     * Usage: java org.joda.time.tz.ZoneInfoCompiler &amp;lt;options&amp;gt; &amp;lt;source files&amp;gt;
+<i>74</i>&nbsp;     * where possible options include:
+<i>75</i>&nbsp;     *   -src &amp;lt;directory&amp;gt;    Specify where to read source files
+<i>76</i>&nbsp;     *   -dst &amp;lt;directory&amp;gt;    Specify where to write generated files
+<i>77</i>&nbsp;     *   -verbose            Output verbosely (default false)
+<i>78</i>&nbsp;     * &lt;/pre&gt;
+<i>79</i>&nbsp;     */
+<i>80</i>&nbsp;    public static void main(String[] args) throws Exception {
+<b class="fc"><i>81</i>&nbsp;        if (args.length == 0) {</b>
+<b class="nc"><i>82</i>&nbsp;            printUsage();</b>
+<b class="nc"><i>83</i>&nbsp;            return;</b>
+<i>84</i>&nbsp;        }
+<i>85</i>&nbsp;
+<b class="fc"><i>86</i>&nbsp;        File inputDir = null;</b>
+<b class="fc"><i>87</i>&nbsp;        File outputDir = null;</b>
+<b class="fc"><i>88</i>&nbsp;        boolean verbose = false;</b>
+<i>89</i>&nbsp;
+<i>90</i>&nbsp;        int i;
+<b class="fc"><i>91</i>&nbsp;        for (i=0; i&lt;args.length; i++) {</b>
+<i>92</i>&nbsp;            try {
+<b class="fc"><i>93</i>&nbsp;                if (&quot;-src&quot;.equals(args[i])) {</b>
+<b class="fc"><i>94</i>&nbsp;                    inputDir = new File(args[++i]);</b>
+<b class="fc"><i>95</i>&nbsp;                } else if (&quot;-dst&quot;.equals(args[i])) {</b>
+<b class="fc"><i>96</i>&nbsp;                    outputDir = new File(args[++i]);</b>
+<b class="fc"><i>97</i>&nbsp;                } else if (&quot;-verbose&quot;.equals(args[i])) {</b>
+<b class="nc"><i>98</i>&nbsp;                    verbose = true;</b>
+<b class="fc"><i>99</i>&nbsp;                } else if (&quot;-?&quot;.equals(args[i])) {</b>
+<b class="nc"><i>100</i>&nbsp;                    printUsage();</b>
+<b class="nc"><i>101</i>&nbsp;                    return;</b>
+<i>102</i>&nbsp;                } else {
+<b class="fc"><i>103</i>&nbsp;                    break;</b>
+<i>104</i>&nbsp;                }
+<b class="nc"><i>105</i>&nbsp;            } catch (IndexOutOfBoundsException e) {</b>
+<b class="nc"><i>106</i>&nbsp;                printUsage();</b>
+<b class="nc"><i>107</i>&nbsp;                return;</b>
+<b class="fc"><i>108</i>&nbsp;            }</b>
+<i>109</i>&nbsp;        }
+<i>110</i>&nbsp;
+<b class="fc"><i>111</i>&nbsp;        if (i &gt;= args.length) {</b>
+<b class="nc"><i>112</i>&nbsp;            printUsage();</b>
+<b class="nc"><i>113</i>&nbsp;            return;</b>
+<i>114</i>&nbsp;        }
+<i>115</i>&nbsp;
+<b class="fc"><i>116</i>&nbsp;        File[] sources = new File[args.length - i];</b>
+<b class="fc"><i>117</i>&nbsp;        for (int j=0; i&lt;args.length; i++,j++) {</b>
+<b class="fc"><i>118</i>&nbsp;            sources[j] = inputDir == null ? new File(args[i]) : new File(inputDir, args[i]);</b>
+<i>119</i>&nbsp;        }
+<i>120</i>&nbsp;
+<b class="fc"><i>121</i>&nbsp;        ZoneInfoLogger.set(verbose);</b>
+<b class="fc"><i>122</i>&nbsp;        ZoneInfoCompiler zic = new ZoneInfoCompiler();</b>
+<b class="fc"><i>123</i>&nbsp;        zic.compile(outputDir, sources);</b>
+<b class="fc"><i>124</i>&nbsp;    }</b>
+<i>125</i>&nbsp;
+<i>126</i>&nbsp;    private static void printUsage() {
+<b class="nc"><i>127</i>&nbsp;        System.out.println(&quot;Usage: java org.joda.time.tz.ZoneInfoCompiler &lt;options&gt; &lt;source files&gt;&quot;);</b>
+<b class="nc"><i>128</i>&nbsp;        System.out.println(&quot;where possible options include:&quot;);</b>
+<b class="nc"><i>129</i>&nbsp;        System.out.println(&quot;  -src &lt;directory&gt;    Specify where to read source files&quot;);</b>
+<b class="nc"><i>130</i>&nbsp;        System.out.println(&quot;  -dst &lt;directory&gt;    Specify where to write generated files&quot;);</b>
+<b class="nc"><i>131</i>&nbsp;        System.out.println(&quot;  -verbose            Output verbosely (default false)&quot;);</b>
+<b class="nc"><i>132</i>&nbsp;    }</b>
+<i>133</i>&nbsp;
+<i>134</i>&nbsp;    static DateTimeOfYear getStartOfYear() {
+<b class="fc"><i>135</i>&nbsp;        if (cStartOfYear == null) {</b>
+<b class="fc"><i>136</i>&nbsp;            cStartOfYear = new DateTimeOfYear();</b>
+<i>137</i>&nbsp;        }
+<b class="fc"><i>138</i>&nbsp;        return cStartOfYear;</b>
+<i>139</i>&nbsp;    }
+<i>140</i>&nbsp;
+<i>141</i>&nbsp;    static Chronology getLenientISOChronology() {
+<b class="fc"><i>142</i>&nbsp;        if (cLenientISO == null) {</b>
+<b class="fc"><i>143</i>&nbsp;            cLenientISO = LenientChronology.getInstance(ISOChronology.getInstanceUTC());</b>
+<i>144</i>&nbsp;        }
+<b class="fc"><i>145</i>&nbsp;        return cLenientISO;</b>
+<i>146</i>&nbsp;    }
+<i>147</i>&nbsp;
+<i>148</i>&nbsp;    /**
+<i>149</i>&nbsp;     * @param zimap maps string ids to DateTimeZone objects.
+<i>150</i>&nbsp;     */
+<i>151</i>&nbsp;    static void writeZoneInfoMap(DataOutputStream dout, Map&lt;String, DateTimeZone&gt; zimap) throws IOException {
+<i>152</i>&nbsp;        // Build the string pool.
+<b class="fc"><i>153</i>&nbsp;        Map&lt;String, Short&gt; idToIndex = new HashMap&lt;String, Short&gt;(zimap.size());</b>
+<b class="fc"><i>154</i>&nbsp;        TreeMap&lt;Short, String&gt; indexToId = new TreeMap&lt;Short, String&gt;();</b>
+<i>155</i>&nbsp;
+<b class="fc"><i>156</i>&nbsp;        short count = 0;</b>
+<b class="fc"><i>157</i>&nbsp;        for (Entry&lt;String, DateTimeZone&gt; entry : zimap.entrySet()) {</b>
+<b class="fc"><i>158</i>&nbsp;            String id = (String)entry.getKey();</b>
+<b class="fc"><i>159</i>&nbsp;            if (!idToIndex.containsKey(id)) {</b>
+<b class="fc"><i>160</i>&nbsp;                Short index = Short.valueOf(count);</b>
+<b class="fc"><i>161</i>&nbsp;                idToIndex.put(id, index);</b>
+<b class="fc"><i>162</i>&nbsp;                indexToId.put(index, id);</b>
+<b class="fc"><i>163</i>&nbsp;                if (++count == 0) {</b>
+<b class="nc"><i>164</i>&nbsp;                    throw new InternalError(&quot;Too many time zone ids&quot;);</b>
+<i>165</i>&nbsp;                }
+<i>166</i>&nbsp;            }
+<b class="fc"><i>167</i>&nbsp;            id = ((DateTimeZone)entry.getValue()).getID();</b>
+<b class="fc"><i>168</i>&nbsp;            if (!idToIndex.containsKey(id)) {</b>
+<b class="nc"><i>169</i>&nbsp;                Short index = Short.valueOf(count);</b>
+<b class="nc"><i>170</i>&nbsp;                idToIndex.put(id, index);</b>
+<b class="nc"><i>171</i>&nbsp;                indexToId.put(index, id);</b>
+<b class="nc"><i>172</i>&nbsp;                if (++count == 0) {</b>
+<b class="nc"><i>173</i>&nbsp;                    throw new InternalError(&quot;Too many time zone ids&quot;);</b>
+<i>174</i>&nbsp;                }
+<i>175</i>&nbsp;            }
+<b class="fc"><i>176</i>&nbsp;        }</b>
+<i>177</i>&nbsp;
+<i>178</i>&nbsp;        // Write the string pool, ordered by index.
+<b class="fc"><i>179</i>&nbsp;        dout.writeShort(indexToId.size());</b>
+<b class="fc"><i>180</i>&nbsp;        for (String id : indexToId.values()) {</b>
+<b class="fc"><i>181</i>&nbsp;            dout.writeUTF(id);</b>
+<b class="fc"><i>182</i>&nbsp;        }</b>
+<i>183</i>&nbsp;
+<i>184</i>&nbsp;        // Write the mappings.
+<b class="fc"><i>185</i>&nbsp;        dout.writeShort(zimap.size());</b>
+<b class="fc"><i>186</i>&nbsp;        for (Entry&lt;String, DateTimeZone&gt; entry : zimap.entrySet()) {</b>
+<b class="fc"><i>187</i>&nbsp;            String id = entry.getKey();</b>
+<b class="fc"><i>188</i>&nbsp;            dout.writeShort(idToIndex.get(id).shortValue());</b>
+<b class="fc"><i>189</i>&nbsp;            id = entry.getValue().getID();</b>
+<b class="fc"><i>190</i>&nbsp;            dout.writeShort(idToIndex.get(id).shortValue());</b>
+<b class="fc"><i>191</i>&nbsp;        }</b>
+<b class="fc"><i>192</i>&nbsp;    }</b>
+<i>193</i>&nbsp;
+<i>194</i>&nbsp;    static int parseYear(String str, int def) {
+<b class="fc"><i>195</i>&nbsp;        str = str.toLowerCase(Locale.ENGLISH);</b>
+<b class="fc"><i>196</i>&nbsp;        if (str.equals(&quot;minimum&quot;) || str.equals(&quot;min&quot;)) {</b>
+<b class="nc"><i>197</i>&nbsp;            return Integer.MIN_VALUE;</b>
+<b class="fc"><i>198</i>&nbsp;        } else if (str.equals(&quot;maximum&quot;) || str.equals(&quot;max&quot;)) {</b>
+<b class="fc"><i>199</i>&nbsp;            return Integer.MAX_VALUE;</b>
+<b class="fc"><i>200</i>&nbsp;        } else if (str.equals(&quot;only&quot;)) {</b>
+<b class="fc"><i>201</i>&nbsp;            return def;</b>
+<i>202</i>&nbsp;        }
+<b class="fc"><i>203</i>&nbsp;        return Integer.parseInt(str);</b>
+<i>204</i>&nbsp;    }
+<i>205</i>&nbsp;
+<i>206</i>&nbsp;    static int parseMonth(String str) {
+<b class="fc"><i>207</i>&nbsp;        DateTimeField field = ISOChronology.getInstanceUTC().monthOfYear();</b>
+<b class="fc"><i>208</i>&nbsp;        return field.get(field.set(0, str, Locale.ENGLISH));</b>
+<i>209</i>&nbsp;    }
+<i>210</i>&nbsp;
+<i>211</i>&nbsp;    static int parseDayOfWeek(String str) {
+<b class="fc"><i>212</i>&nbsp;        DateTimeField field = ISOChronology.getInstanceUTC().dayOfWeek();</b>
+<b class="fc"><i>213</i>&nbsp;        return field.get(field.set(0, str, Locale.ENGLISH));</b>
+<i>214</i>&nbsp;    }
+<i>215</i>&nbsp;    
+<i>216</i>&nbsp;    static String parseOptional(String str) {
+<b class="fc"><i>217</i>&nbsp;        return (str.equals(&quot;-&quot;)) ? null : str;</b>
+<i>218</i>&nbsp;    }
+<i>219</i>&nbsp;
+<i>220</i>&nbsp;    static int parseTime(String str) {
+<b class="fc"><i>221</i>&nbsp;        DateTimeFormatter p = ISODateTimeFormat.hourMinuteSecondFraction();</b>
+<b class="fc"><i>222</i>&nbsp;        MutableDateTime mdt = new MutableDateTime(0, getLenientISOChronology());</b>
+<b class="fc"><i>223</i>&nbsp;        int pos = 0;</b>
+<b class="fc"><i>224</i>&nbsp;        if (str.startsWith(&quot;-&quot;)) {</b>
+<b class="fc"><i>225</i>&nbsp;            pos = 1;</b>
+<i>226</i>&nbsp;        }
+<b class="fc"><i>227</i>&nbsp;        int newPos = p.parseInto(mdt, str, pos);</b>
+<b class="fc"><i>228</i>&nbsp;        if (newPos == ~pos) {</b>
+<b class="fc"><i>229</i>&nbsp;            throw new IllegalArgumentException(str);</b>
+<i>230</i>&nbsp;        }
+<b class="fc"><i>231</i>&nbsp;        int millis = (int)mdt.getMillis();</b>
+<b class="fc"><i>232</i>&nbsp;        if (pos == 1) {</b>
+<b class="fc"><i>233</i>&nbsp;            millis = -millis;</b>
+<i>234</i>&nbsp;        }
+<b class="fc"><i>235</i>&nbsp;        return millis;</b>
+<i>236</i>&nbsp;    }
+<i>237</i>&nbsp;
+<i>238</i>&nbsp;    static char parseZoneChar(char c) {
+<b class="fc"><i>239</i>&nbsp;        switch (c) {</b>
+<i>240</i>&nbsp;        case &#39;s&#39;: case &#39;S&#39;:
+<i>241</i>&nbsp;            // Standard time
+<b class="nc"><i>242</i>&nbsp;            return &#39;s&#39;;</b>
+<i>243</i>&nbsp;        case &#39;u&#39;: case &#39;U&#39;: case &#39;g&#39;: case &#39;G&#39;: case &#39;z&#39;: case &#39;Z&#39;:
+<i>244</i>&nbsp;            // UTC
+<b class="fc"><i>245</i>&nbsp;            return &#39;u&#39;;</b>
+<i>246</i>&nbsp;        case &#39;w&#39;: case &#39;W&#39;: default:
+<i>247</i>&nbsp;            // Wall time
+<b class="fc"><i>248</i>&nbsp;            return &#39;w&#39;;</b>
+<i>249</i>&nbsp;        }
+<i>250</i>&nbsp;    }
+<i>251</i>&nbsp;
+<i>252</i>&nbsp;    /**
+<i>253</i>&nbsp;     * @return false if error.
+<i>254</i>&nbsp;     */
+<i>255</i>&nbsp;    static boolean test(String id, DateTimeZone tz) {
+<b class="fc"><i>256</i>&nbsp;        if (!id.equals(tz.getID())) {</b>
+<b class="nc"><i>257</i>&nbsp;            return true;</b>
+<i>258</i>&nbsp;        }
+<i>259</i>&nbsp;
+<i>260</i>&nbsp;        // Test to ensure that reported transitions are not duplicated.
+<i>261</i>&nbsp;
+<b class="fc"><i>262</i>&nbsp;        long millis = ISOChronology.getInstanceUTC().year().set(0, 1850);</b>
+<b class="fc"><i>263</i>&nbsp;        long end = ISOChronology.getInstanceUTC().year().set(0, 2050);</b>
+<i>264</i>&nbsp;
+<b class="fc"><i>265</i>&nbsp;        int offset = tz.getOffset(millis);</b>
+<b class="fc"><i>266</i>&nbsp;        int stdOffset = tz.getStandardOffset(millis);</b>
+<b class="fc"><i>267</i>&nbsp;        String key = tz.getNameKey(millis);</b>
+<i>268</i>&nbsp;
+<b class="fc"><i>269</i>&nbsp;        List&lt;Long&gt; transitions = new ArrayList&lt;Long&gt;();</b>
+<i>270</i>&nbsp;
+<i>271</i>&nbsp;        while (true) {
+<b class="fc"><i>272</i>&nbsp;            long next = tz.nextTransition(millis);</b>
+<b class="fc"><i>273</i>&nbsp;            if (next == millis || next &gt; end) {</b>
+<b class="fc"><i>274</i>&nbsp;                break;</b>
+<i>275</i>&nbsp;            }
+<i>276</i>&nbsp;
+<b class="fc"><i>277</i>&nbsp;            millis = next;</b>
+<i>278</i>&nbsp;
+<b class="fc"><i>279</i>&nbsp;            int nextOffset = tz.getOffset(millis);</b>
+<b class="fc"><i>280</i>&nbsp;            int nextStdOffset = tz.getStandardOffset(millis);</b>
+<b class="fc"><i>281</i>&nbsp;            String nextKey = tz.getNameKey(millis);</b>
+<i>282</i>&nbsp;
+<b class="fc"><i>283</i>&nbsp;            if (offset == nextOffset &amp;&amp; stdOffset == nextStdOffset &amp;&amp; key.equals(nextKey)) {</b>
+<b class="nc"><i>284</i>&nbsp;                System.out.println(&quot;*d* Error in &quot; + tz.getID() + &quot; &quot;</b>
+<i>285</i>&nbsp;                                   + new DateTime(millis,
+<b class="nc"><i>286</i>&nbsp;                                                  ISOChronology.getInstanceUTC()));</b>
+<b class="nc"><i>287</i>&nbsp;                return false;</b>
+<i>288</i>&nbsp;            }
+<i>289</i>&nbsp;
+<b class="fc"><i>290</i>&nbsp;            if (nextKey == null || (nextKey.length() &lt; 3 &amp;&amp; !&quot;??&quot;.equals(nextKey))) {</b>
+<b class="nc"><i>291</i>&nbsp;                System.out.println(&quot;*s* Error in &quot; + tz.getID() + &quot; &quot;</b>
+<i>292</i>&nbsp;                                   + new DateTime(millis,
+<b class="nc"><i>293</i>&nbsp;                                                  ISOChronology.getInstanceUTC())</b>
+<i>294</i>&nbsp;                                   + &quot;, nameKey=&quot; + nextKey);
+<b class="nc"><i>295</i>&nbsp;                return false;</b>
+<i>296</i>&nbsp;            }
+<i>297</i>&nbsp;
+<b class="fc"><i>298</i>&nbsp;            transitions.add(Long.valueOf(millis));</b>
+<i>299</i>&nbsp;
+<b class="fc"><i>300</i>&nbsp;            offset = nextOffset;</b>
+<b class="fc"><i>301</i>&nbsp;            key = nextKey;</b>
+<b class="fc"><i>302</i>&nbsp;        }</b>
+<i>303</i>&nbsp;
+<i>304</i>&nbsp;        // Now verify that reverse transitions match up.
+<i>305</i>&nbsp;
+<b class="fc"><i>306</i>&nbsp;        millis = ISOChronology.getInstanceUTC().year().set(0, 2050);</b>
+<b class="fc"><i>307</i>&nbsp;        end = ISOChronology.getInstanceUTC().year().set(0, 1850);</b>
+<i>308</i>&nbsp;
+<b class="fc"><i>309</i>&nbsp;        for (int i=transitions.size(); --i&gt;= 0; ) {</b>
+<b class="fc"><i>310</i>&nbsp;            long prev = tz.previousTransition(millis);</b>
+<b class="fc"><i>311</i>&nbsp;            if (prev == millis || prev &lt; end) {</b>
+<b class="nc"><i>312</i>&nbsp;                break;</b>
+<i>313</i>&nbsp;            }
+<i>314</i>&nbsp;
+<b class="fc"><i>315</i>&nbsp;            millis = prev;</b>
+<i>316</i>&nbsp;
+<b class="fc"><i>317</i>&nbsp;            long trans = transitions.get(i).longValue();</b>
+<i>318</i>&nbsp;            
+<b class="fc"><i>319</i>&nbsp;            if (trans - 1 != millis) {</b>
+<b class="nc"><i>320</i>&nbsp;                System.out.println(&quot;*r* Error in &quot; + tz.getID() + &quot; &quot;</b>
+<i>321</i>&nbsp;                                   + new DateTime(millis,
+<b class="nc"><i>322</i>&nbsp;                                                  ISOChronology.getInstanceUTC()) + &quot; != &quot;</b>
+<i>323</i>&nbsp;                                   + new DateTime(trans - 1,
+<b class="nc"><i>324</i>&nbsp;                                                  ISOChronology.getInstanceUTC()));</b>
+<i>325</i>&nbsp;                                   
+<b class="nc"><i>326</i>&nbsp;                return false;</b>
+<i>327</i>&nbsp;            }
+<b class="fc"><i>328</i>&nbsp;        }</b>
+<i>329</i>&nbsp;
+<b class="fc"><i>330</i>&nbsp;        return true;</b>
+<i>331</i>&nbsp;    }
+<i>332</i>&nbsp;
+<i>333</i>&nbsp;    // Maps names to RuleSets.
+<i>334</i>&nbsp;    private Map&lt;String, RuleSet&gt; iRuleSets;
+<i>335</i>&nbsp;
+<i>336</i>&nbsp;    // List of Zone objects.
+<i>337</i>&nbsp;    private List&lt;Zone&gt; iZones;
+<i>338</i>&nbsp;
+<i>339</i>&nbsp;    // List String pairs to link.
+<i>340</i>&nbsp;    private List&lt;String&gt; iGoodLinks;
+<i>341</i>&nbsp;
+<i>342</i>&nbsp;    // List String pairs to link.
+<i>343</i>&nbsp;    private List&lt;String&gt; iBackLinks;
+<i>344</i>&nbsp;
+<b class="fc"><i>345</i>&nbsp;    public ZoneInfoCompiler() {</b>
+<b class="fc"><i>346</i>&nbsp;        iRuleSets = new HashMap&lt;String, RuleSet&gt;();</b>
+<b class="fc"><i>347</i>&nbsp;        iZones = new ArrayList&lt;Zone&gt;();</b>
+<b class="fc"><i>348</i>&nbsp;        iGoodLinks = new ArrayList&lt;String&gt;();</b>
+<b class="fc"><i>349</i>&nbsp;        iBackLinks = new ArrayList&lt;String&gt;();</b>
+<b class="fc"><i>350</i>&nbsp;    }</b>
+<i>351</i>&nbsp;
+<i>352</i>&nbsp;    /**
+<i>353</i>&nbsp;     * Returns a map of ids to DateTimeZones.
+<i>354</i>&nbsp;     *
+<i>355</i>&nbsp;     * @param outputDir optional directory to write compiled data files to
+<i>356</i>&nbsp;     * @param sources optional list of source files to parse
+<i>357</i>&nbsp;     */
+<i>358</i>&nbsp;    public Map&lt;String, DateTimeZone&gt; compile(File outputDir, File[] sources) throws IOException {
+<b class="fc"><i>359</i>&nbsp;        if (sources != null) {</b>
+<b class="fc"><i>360</i>&nbsp;            for (int i=0; i&lt;sources.length; i++) {</b>
+<b class="fc"><i>361</i>&nbsp;                BufferedReader in = null;</b>
+<i>362</i>&nbsp;                try {
+<b class="fc"><i>363</i>&nbsp;                    in = new BufferedReader(new FileReader(sources[i]));</b>
+<b class="fc"><i>364</i>&nbsp;                    parseDataFile(in, &quot;backward&quot;.equals(sources[i].getName()));</b>
+<i>365</i>&nbsp;                } finally {
+<b class="fc"><i>366</i>&nbsp;                    if (in != null) {</b>
+<b class="fc"><i>367</i>&nbsp;                        in.close();</b>
+<i>368</i>&nbsp;                    }
+<i>369</i>&nbsp;                }
+<i>370</i>&nbsp;            }
+<i>371</i>&nbsp;        }
+<i>372</i>&nbsp;
+<b class="fc"><i>373</i>&nbsp;        if (outputDir != null) {</b>
+<b class="fc"><i>374</i>&nbsp;            if (!outputDir.exists() &amp;&amp; !outputDir.mkdirs()) {</b>
+<b class="nc"><i>375</i>&nbsp;                throw new IOException(&quot;Destination directory doesn&#39;t exist and cannot be created: &quot; + outputDir);</b>
+<i>376</i>&nbsp;            }
+<b class="fc"><i>377</i>&nbsp;            if (!outputDir.isDirectory()) {</b>
+<b class="nc"><i>378</i>&nbsp;                throw new IOException(&quot;Destination is not a directory: &quot; + outputDir);</b>
+<i>379</i>&nbsp;            }
+<i>380</i>&nbsp;        }
+<i>381</i>&nbsp;
+<b class="fc"><i>382</i>&nbsp;        Map&lt;String, DateTimeZone&gt; map = new TreeMap&lt;String, DateTimeZone&gt;();</b>
+<b class="fc"><i>383</i>&nbsp;        Map&lt;String, Zone&gt; sourceMap = new TreeMap&lt;String, Zone&gt;();</b>
+<i>384</i>&nbsp;
+<b class="fc"><i>385</i>&nbsp;        System.out.println(&quot;Writing zoneinfo files&quot;);</b>
+<i>386</i>&nbsp;        // write out the standard entries
+<b class="fc"><i>387</i>&nbsp;        for (int i = 0; i &lt; iZones.size(); i++) {</b>
+<b class="fc"><i>388</i>&nbsp;            Zone zone = iZones.get(i);</b>
+<b class="fc"><i>389</i>&nbsp;            DateTimeZoneBuilder builder = new DateTimeZoneBuilder();</b>
+<b class="fc"><i>390</i>&nbsp;            zone.addToBuilder(builder, iRuleSets);</b>
+<b class="fc"><i>391</i>&nbsp;            DateTimeZone tz = builder.toDateTimeZone(zone.iName, true);</b>
+<b class="fc"><i>392</i>&nbsp;            if (test(tz.getID(), tz)) {</b>
+<b class="fc"><i>393</i>&nbsp;                map.put(tz.getID(), tz);</b>
+<b class="fc"><i>394</i>&nbsp;                sourceMap.put(tz.getID(), zone);</b>
+<b class="fc"><i>395</i>&nbsp;                if (outputDir != null) {</b>
+<b class="fc"><i>396</i>&nbsp;                    writeZone(outputDir, builder, tz);</b>
+<i>397</i>&nbsp;                }
+<i>398</i>&nbsp;            }
+<i>399</i>&nbsp;        }
+<i>400</i>&nbsp;
+<i>401</i>&nbsp;        // revive zones from &quot;good&quot; links
+<b class="fc"><i>402</i>&nbsp;        for (int i = 0; i &lt; iGoodLinks.size(); i += 2) {</b>
+<b class="nc"><i>403</i>&nbsp;            String baseId = iGoodLinks.get(i);</b>
+<b class="nc"><i>404</i>&nbsp;            String alias = iGoodLinks.get(i + 1);</b>
+<b class="nc"><i>405</i>&nbsp;            Zone sourceZone = sourceMap.get(baseId);</b>
+<b class="nc"><i>406</i>&nbsp;            if (sourceZone == null) {</b>
+<b class="nc"><i>407</i>&nbsp;                System.out.println(&quot;Cannot find source zone &#39;&quot; + baseId + &quot;&#39; to link alias &#39;&quot; + alias + &quot;&#39; to&quot;);</b>
+<i>408</i>&nbsp;            } else {
+<b class="nc"><i>409</i>&nbsp;                DateTimeZoneBuilder builder = new DateTimeZoneBuilder();</b>
+<b class="nc"><i>410</i>&nbsp;                sourceZone.addToBuilder(builder, iRuleSets);</b>
+<b class="nc"><i>411</i>&nbsp;                DateTimeZone revived = builder.toDateTimeZone(alias, true);</b>
+<b class="nc"><i>412</i>&nbsp;                if (test(revived.getID(), revived)) {</b>
+<b class="nc"><i>413</i>&nbsp;                    map.put(revived.getID(), revived);</b>
+<b class="nc"><i>414</i>&nbsp;                    if (outputDir != null) {</b>
+<b class="nc"><i>415</i>&nbsp;                        writeZone(outputDir, builder, revived);</b>
+<i>416</i>&nbsp;                    }
+<i>417</i>&nbsp;                }
+<b class="nc"><i>418</i>&nbsp;                map.put(revived.getID(), revived);</b>
+<b class="nc"><i>419</i>&nbsp;                if (ZoneInfoLogger.verbose()) {</b>
+<b class="nc"><i>420</i>&nbsp;                    System.out.println(&quot;Good link: &quot; + alias + &quot; -&gt; &quot; + baseId + &quot; revived&quot;);</b>
+<i>421</i>&nbsp;                }
+<i>422</i>&nbsp;            }
+<i>423</i>&nbsp;        }
+<i>424</i>&nbsp;
+<i>425</i>&nbsp;        // store &quot;back&quot; links as aliases (where name is permanently mapped
+<b class="fc"><i>426</i>&nbsp;        for (int pass = 0; pass &lt; 2; pass++) {</b>
+<b class="fc"><i>427</i>&nbsp;            for (int i = 0; i &lt; iBackLinks.size(); i += 2) {</b>
+<b class="nc"><i>428</i>&nbsp;                String id = iBackLinks.get(i);</b>
+<b class="nc"><i>429</i>&nbsp;                String alias = iBackLinks.get(i + 1);</b>
+<b class="nc"><i>430</i>&nbsp;                DateTimeZone tz = map.get(id);</b>
+<b class="nc"><i>431</i>&nbsp;                if (tz == null) {</b>
+<b class="nc"><i>432</i>&nbsp;                    if (pass &gt; 0) {</b>
+<b class="nc"><i>433</i>&nbsp;                        System.out.println(&quot;Cannot find time zone &#39;&quot; + id + &quot;&#39; to link alias &#39;&quot; + alias + &quot;&#39; to&quot;);</b>
+<i>434</i>&nbsp;                    }
+<i>435</i>&nbsp;                } else {
+<b class="nc"><i>436</i>&nbsp;                    map.put(alias, tz);</b>
+<b class="nc"><i>437</i>&nbsp;                    if (ZoneInfoLogger.verbose()) {</b>
+<b class="nc"><i>438</i>&nbsp;                        System.out.println(&quot;Back link: &quot; + alias + &quot; -&gt; &quot; + tz.getID());</b>
+<i>439</i>&nbsp;                    }
+<i>440</i>&nbsp;                }
+<i>441</i>&nbsp;            }
+<i>442</i>&nbsp;        }
+<i>443</i>&nbsp;
+<i>444</i>&nbsp;        // write map that unites the time-zone data, pointing aliases and real zones at files
+<b class="fc"><i>445</i>&nbsp;        if (outputDir != null) {</b>
+<b class="fc"><i>446</i>&nbsp;            System.out.println(&quot;Writing ZoneInfoMap&quot;);</b>
+<b class="fc"><i>447</i>&nbsp;            File file = new File(outputDir, &quot;ZoneInfoMap&quot;);</b>
+<b class="fc"><i>448</i>&nbsp;            if (!file.getParentFile().exists()) {</b>
+<b class="nc"><i>449</i>&nbsp;                file.getParentFile().mkdirs();</b>
+<i>450</i>&nbsp;            }
+<i>451</i>&nbsp;
+<b class="fc"><i>452</i>&nbsp;            OutputStream out = new FileOutputStream(file);</b>
+<b class="fc"><i>453</i>&nbsp;            DataOutputStream dout = new DataOutputStream(out);</b>
+<i>454</i>&nbsp;            try {
+<i>455</i>&nbsp;                // Sort and filter out any duplicates that match case.
+<b class="fc"><i>456</i>&nbsp;                Map&lt;String, DateTimeZone&gt; zimap = new TreeMap&lt;String, DateTimeZone&gt;(String.CASE_INSENSITIVE_ORDER);</b>
+<b class="fc"><i>457</i>&nbsp;                zimap.putAll(map);</b>
+<b class="fc"><i>458</i>&nbsp;                writeZoneInfoMap(dout, zimap);</b>
+<i>459</i>&nbsp;            } finally {
+<b class="fc"><i>460</i>&nbsp;                dout.close();</b>
+<b class="fc"><i>461</i>&nbsp;            }</b>
+<i>462</i>&nbsp;        }
+<i>463</i>&nbsp;
+<b class="fc"><i>464</i>&nbsp;        return map;</b>
+<i>465</i>&nbsp;    }
+<i>466</i>&nbsp;
+<i>467</i>&nbsp;    private void writeZone(File outputDir, DateTimeZoneBuilder builder, DateTimeZone tz) throws IOException {
+<b class="fc"><i>468</i>&nbsp;        if (ZoneInfoLogger.verbose()) {</b>
+<b class="nc"><i>469</i>&nbsp;            System.out.println(&quot;Writing &quot; + tz.getID());</b>
+<i>470</i>&nbsp;        }
+<b class="fc"><i>471</i>&nbsp;        File file = new File(outputDir, tz.getID());</b>
+<b class="fc"><i>472</i>&nbsp;        if (!file.getParentFile().exists()) {</b>
+<b class="fc"><i>473</i>&nbsp;            file.getParentFile().mkdirs();</b>
+<i>474</i>&nbsp;        }
+<b class="fc"><i>475</i>&nbsp;        OutputStream out = new FileOutputStream(file);</b>
+<i>476</i>&nbsp;        try {
+<b class="fc"><i>477</i>&nbsp;            builder.writeTo(tz.getID(), out);</b>
+<i>478</i>&nbsp;        } finally {
+<b class="fc"><i>479</i>&nbsp;            out.close();</b>
+<b class="fc"><i>480</i>&nbsp;        }</b>
+<i>481</i>&nbsp;
+<i>482</i>&nbsp;        // Test if it can be read back.
+<b class="fc"><i>483</i>&nbsp;        InputStream in = new FileInputStream(file);</b>
+<b class="fc"><i>484</i>&nbsp;        DateTimeZone tz2 = DateTimeZoneBuilder.readFrom(in, tz.getID());</b>
+<b class="fc"><i>485</i>&nbsp;        in.close();</b>
+<i>486</i>&nbsp;
+<b class="fc"><i>487</i>&nbsp;        if (!tz.equals(tz2)) {</b>
+<b class="nc"><i>488</i>&nbsp;            System.out.println(&quot;*e* Error in &quot; + tz.getID() +</b>
+<i>489</i>&nbsp;                               &quot;: Didn&#39;t read properly from file&quot;);
+<i>490</i>&nbsp;        }
+<b class="fc"><i>491</i>&nbsp;    }</b>
+<i>492</i>&nbsp;
+<i>493</i>&nbsp;    public void parseDataFile(BufferedReader in, boolean backward) throws IOException {
+<b class="fc"><i>494</i>&nbsp;        Zone zone = null;</b>
+<i>495</i>&nbsp;        String line;
+<b class="fc"><i>496</i>&nbsp;        while ((line = in.readLine()) != null) {</b>
+<b class="fc"><i>497</i>&nbsp;            String trimmed = line.trim();</b>
+<b class="fc"><i>498</i>&nbsp;            if (trimmed.length() == 0 || trimmed.charAt(0) == &#39;#&#39;) {</b>
+<b class="fc"><i>499</i>&nbsp;                continue;</b>
+<i>500</i>&nbsp;            }
+<i>501</i>&nbsp;
+<b class="fc"><i>502</i>&nbsp;            int index = line.indexOf(&#39;#&#39;);</b>
+<b class="fc"><i>503</i>&nbsp;            if (index &gt;= 0) {</b>
+<b class="fc"><i>504</i>&nbsp;                line = line.substring(0, index);</b>
+<i>505</i>&nbsp;            }
+<i>506</i>&nbsp;
+<i>507</i>&nbsp;            //System.out.println(line);
+<i>508</i>&nbsp;
+<b class="fc"><i>509</i>&nbsp;            StringTokenizer st = new StringTokenizer(line, &quot; \t&quot;);</b>
+<i>510</i>&nbsp;
+<b class="fc"><i>511</i>&nbsp;            if (Character.isWhitespace(line.charAt(0)) &amp;&amp; st.hasMoreTokens()) {</b>
+<b class="fc"><i>512</i>&nbsp;                if (zone != null) {</b>
+<i>513</i>&nbsp;                    // Zone continuation
+<b class="fc"><i>514</i>&nbsp;                    zone.chain(st);</b>
+<i>515</i>&nbsp;                }
+<i>516</i>&nbsp;                continue;
+<i>517</i>&nbsp;            } else {
+<b class="fc"><i>518</i>&nbsp;                if (zone != null) {</b>
+<b class="nc"><i>519</i>&nbsp;                    iZones.add(zone);</b>
+<i>520</i>&nbsp;                }
+<b class="fc"><i>521</i>&nbsp;                zone = null;</b>
+<i>522</i>&nbsp;            }
+<i>523</i>&nbsp;
+<b class="fc"><i>524</i>&nbsp;            if (st.hasMoreTokens()) {</b>
+<b class="fc"><i>525</i>&nbsp;                String token = st.nextToken();</b>
+<b class="fc"><i>526</i>&nbsp;                if (token.equalsIgnoreCase(&quot;Rule&quot;)) {</b>
+<b class="fc"><i>527</i>&nbsp;                    Rule r = new Rule(st);</b>
+<b class="fc"><i>528</i>&nbsp;                    RuleSet rs = iRuleSets.get(r.iName);</b>
+<b class="fc"><i>529</i>&nbsp;                    if (rs == null) {</b>
+<b class="fc"><i>530</i>&nbsp;                        rs = new RuleSet(r);</b>
+<b class="fc"><i>531</i>&nbsp;                        iRuleSets.put(r.iName, rs);</b>
+<i>532</i>&nbsp;                    } else {
+<b class="fc"><i>533</i>&nbsp;                        rs.addRule(r);</b>
+<i>534</i>&nbsp;                    }
+<b class="fc"><i>535</i>&nbsp;                } else if (token.equalsIgnoreCase(&quot;Zone&quot;)) {</b>
+<b class="fc"><i>536</i>&nbsp;                    if (st.countTokens() &lt; 4) {</b>
+<b class="fc"><i>537</i>&nbsp;                        throw new IllegalArgumentException(&quot;Attempting to create a Zone from an incomplete tokenizer&quot;);</b>
+<i>538</i>&nbsp;                    }
+<b class="fc"><i>539</i>&nbsp;                    zone = new Zone(st);</b>
+<b class="nc"><i>540</i>&nbsp;                } else if (token.equalsIgnoreCase(&quot;Link&quot;)) {</b>
+<b class="nc"><i>541</i>&nbsp;                    String real = st.nextToken();</b>
+<b class="nc"><i>542</i>&nbsp;                    String alias = st.nextToken();</b>
+<i>543</i>&nbsp;                    // links in &quot;backward&quot; are deprecated names
+<i>544</i>&nbsp;                    // links in other files should be kept
+<i>545</i>&nbsp;                    // special case a few to try to repair terrible damage to tzdb
+<b class="nc"><i>546</i>&nbsp;                    if (backward || alias.equals(&quot;US/Pacific-New&quot;) || alias.startsWith(&quot;Etc/&quot;) || alias.equals(&quot;GMT&quot;)) {</b>
+<b class="nc"><i>547</i>&nbsp;                        iBackLinks.add(real);</b>
+<b class="nc"><i>548</i>&nbsp;                        iBackLinks.add(alias);</b>
+<i>549</i>&nbsp;                    } else {
+<b class="nc"><i>550</i>&nbsp;                        iGoodLinks.add(real);</b>
+<b class="nc"><i>551</i>&nbsp;                        iGoodLinks.add(alias);</b>
+<i>552</i>&nbsp;                    }
+<b class="nc"><i>553</i>&nbsp;                } else {</b>
+<b class="nc"><i>554</i>&nbsp;                    System.out.println(&quot;Unknown line: &quot; + line);</b>
+<i>555</i>&nbsp;                }
+<i>556</i>&nbsp;            }
+<b class="fc"><i>557</i>&nbsp;        }</b>
+<i>558</i>&nbsp;
+<b class="fc"><i>559</i>&nbsp;        if (zone != null) {</b>
+<b class="fc"><i>560</i>&nbsp;            iZones.add(zone);</b>
+<i>561</i>&nbsp;        }
+<b class="fc"><i>562</i>&nbsp;    }</b>
+<i>563</i>&nbsp;
+<i>564</i>&nbsp;    static class DateTimeOfYear {
+<i>565</i>&nbsp;        public final int iMonthOfYear;
+<i>566</i>&nbsp;        public final int iDayOfMonth;
+<i>567</i>&nbsp;        public final int iDayOfWeek;
+<i>568</i>&nbsp;        public final boolean iAdvanceDayOfWeek;
+<i>569</i>&nbsp;        public final int iMillisOfDay;
+<i>570</i>&nbsp;        public final char iZoneChar;
+<i>571</i>&nbsp;
+<b class="fc"><i>572</i>&nbsp;        DateTimeOfYear() {</b>
+<b class="fc"><i>573</i>&nbsp;            iMonthOfYear = 1;</b>
+<b class="fc"><i>574</i>&nbsp;            iDayOfMonth = 1;</b>
+<b class="fc"><i>575</i>&nbsp;            iDayOfWeek = 0;</b>
+<b class="fc"><i>576</i>&nbsp;            iAdvanceDayOfWeek = false;</b>
+<b class="fc"><i>577</i>&nbsp;            iMillisOfDay = 0;</b>
+<b class="fc"><i>578</i>&nbsp;            iZoneChar = &#39;w&#39;;</b>
+<b class="fc"><i>579</i>&nbsp;        }</b>
+<i>580</i>&nbsp;
+<b class="fc"><i>581</i>&nbsp;        DateTimeOfYear(StringTokenizer st) {</b>
+<b class="fc"><i>582</i>&nbsp;            int month = 1;</b>
+<b class="fc"><i>583</i>&nbsp;            int day = 1;</b>
+<b class="fc"><i>584</i>&nbsp;            int dayOfWeek = 0;</b>
+<b class="fc"><i>585</i>&nbsp;            int millis = 0;</b>
+<b class="fc"><i>586</i>&nbsp;            boolean advance = false;</b>
+<b class="fc"><i>587</i>&nbsp;            char zoneChar = &#39;w&#39;;</b>
+<i>588</i>&nbsp;
+<b class="fc"><i>589</i>&nbsp;            if (st.hasMoreTokens()) {</b>
+<b class="fc"><i>590</i>&nbsp;                month = parseMonth(st.nextToken());</b>
+<i>591</i>&nbsp;
+<b class="fc"><i>592</i>&nbsp;                if (st.hasMoreTokens()) {</b>
+<b class="fc"><i>593</i>&nbsp;                    String str = st.nextToken();</b>
+<b class="fc"><i>594</i>&nbsp;                    if (str.startsWith(&quot;last&quot;)) {</b>
+<b class="fc"><i>595</i>&nbsp;                        day = -1;</b>
+<b class="fc"><i>596</i>&nbsp;                        dayOfWeek = parseDayOfWeek(str.substring(4));</b>
+<b class="fc"><i>597</i>&nbsp;                        advance = false;</b>
+<i>598</i>&nbsp;                    } else {
+<i>599</i>&nbsp;                        try {
+<b class="fc"><i>600</i>&nbsp;                            day = Integer.parseInt(str);</b>
+<b class="fc"><i>601</i>&nbsp;                            dayOfWeek = 0;</b>
+<b class="fc"><i>602</i>&nbsp;                            advance = false;</b>
+<b class="fc"><i>603</i>&nbsp;                        } catch (NumberFormatException e) {</b>
+<b class="fc"><i>604</i>&nbsp;                            int index = str.indexOf(&quot;&gt;=&quot;);</b>
+<b class="fc"><i>605</i>&nbsp;                            if (index &gt; 0) {</b>
+<b class="fc"><i>606</i>&nbsp;                                day = Integer.parseInt(str.substring(index + 2));</b>
+<b class="fc"><i>607</i>&nbsp;                                dayOfWeek = parseDayOfWeek(str.substring(0, index));</b>
+<b class="fc"><i>608</i>&nbsp;                                advance = true;</b>
+<i>609</i>&nbsp;                            } else {
+<b class="nc"><i>610</i>&nbsp;                                index = str.indexOf(&quot;&lt;=&quot;);</b>
+<b class="nc"><i>611</i>&nbsp;                                if (index &gt; 0) {</b>
+<b class="nc"><i>612</i>&nbsp;                                    day = Integer.parseInt(str.substring(index + 2));</b>
+<b class="nc"><i>613</i>&nbsp;                                    dayOfWeek = parseDayOfWeek(str.substring(0, index));</b>
+<b class="nc"><i>614</i>&nbsp;                                    advance = false;</b>
+<i>615</i>&nbsp;                                } else {
+<b class="nc"><i>616</i>&nbsp;                                    throw new IllegalArgumentException(str);</b>
+<i>617</i>&nbsp;                                }
+<i>618</i>&nbsp;                            }
+<b class="fc"><i>619</i>&nbsp;                        }</b>
+<i>620</i>&nbsp;                    }
+<i>621</i>&nbsp;
+<b class="fc"><i>622</i>&nbsp;                    if (st.hasMoreTokens()) {</b>
+<b class="fc"><i>623</i>&nbsp;                        str = st.nextToken();</b>
+<b class="fc"><i>624</i>&nbsp;                        zoneChar = parseZoneChar(str.charAt(str.length() - 1));</b>
+<b class="fc"><i>625</i>&nbsp;                        if (str.equals(&quot;24:00&quot;)) {</b>
+<i>626</i>&nbsp;                            // handle end of year
+<b class="fc"><i>627</i>&nbsp;                            if (month == 12 &amp;&amp; day == 31) {</b>
+<b class="nc"><i>628</i>&nbsp;                                millis = parseTime(&quot;23:59:59.999&quot;);</b>
+<i>629</i>&nbsp;                            } else {
+<b class="fc"><i>630</i>&nbsp;                                LocalDate date = (day == -1 ?</b>
+<b class="fc"><i>631</i>&nbsp;                                        new LocalDate(2001, month, 1).plusMonths(1) :</b>
+<b class="fc"><i>632</i>&nbsp;                                        new LocalDate(2001, month, day).plusDays(1));</b>
+<b class="fc"><i>633</i>&nbsp;                                advance = (day != -1 &amp;&amp; dayOfWeek != 0);</b>
+<b class="fc"><i>634</i>&nbsp;                                month = date.getMonthOfYear();</b>
+<b class="fc"><i>635</i>&nbsp;                                day = date.getDayOfMonth();</b>
+<b class="fc"><i>636</i>&nbsp;                                if (dayOfWeek != 0) {</b>
+<b class="fc"><i>637</i>&nbsp;                                    dayOfWeek = ((dayOfWeek - 1 + 1) % 7) + 1;</b>
+<i>638</i>&nbsp;                                }
+<b class="fc"><i>639</i>&nbsp;                            }</b>
+<i>640</i>&nbsp;                        } else {
+<b class="fc"><i>641</i>&nbsp;                            millis = parseTime(str);</b>
+<i>642</i>&nbsp;                        }
+<i>643</i>&nbsp;                    }
+<i>644</i>&nbsp;                }
+<i>645</i>&nbsp;            }
+<i>646</i>&nbsp;
+<b class="fc"><i>647</i>&nbsp;            iMonthOfYear = month;</b>
+<b class="fc"><i>648</i>&nbsp;            iDayOfMonth = day;</b>
+<b class="fc"><i>649</i>&nbsp;            iDayOfWeek = dayOfWeek;</b>
+<b class="fc"><i>650</i>&nbsp;            iAdvanceDayOfWeek = advance;</b>
+<b class="fc"><i>651</i>&nbsp;            iMillisOfDay = millis;</b>
+<b class="fc"><i>652</i>&nbsp;            iZoneChar = zoneChar;</b>
+<b class="fc"><i>653</i>&nbsp;        }</b>
+<i>654</i>&nbsp;
+<i>655</i>&nbsp;        /**
+<i>656</i>&nbsp;         * Adds a recurring savings rule to the builder.
+<i>657</i>&nbsp;         */
+<i>658</i>&nbsp;        public void addRecurring(DateTimeZoneBuilder builder, String nameKey,
+<i>659</i>&nbsp;                                 int saveMillis, int fromYear, int toYear)
+<i>660</i>&nbsp;        {
+<b class="fc"><i>661</i>&nbsp;            builder.addRecurringSavings(nameKey, saveMillis,</b>
+<i>662</i>&nbsp;                                        fromYear, toYear,
+<i>663</i>&nbsp;                                        iZoneChar,
+<i>664</i>&nbsp;                                        iMonthOfYear,
+<i>665</i>&nbsp;                                        iDayOfMonth,
+<i>666</i>&nbsp;                                        iDayOfWeek,
+<i>667</i>&nbsp;                                        iAdvanceDayOfWeek,
+<i>668</i>&nbsp;                                        iMillisOfDay);
+<b class="fc"><i>669</i>&nbsp;        }</b>
+<i>670</i>&nbsp;
+<i>671</i>&nbsp;        /**
+<i>672</i>&nbsp;         * Adds a cutover to the builder.
+<i>673</i>&nbsp;         */
+<i>674</i>&nbsp;        public void addCutover(DateTimeZoneBuilder builder, int year) {
+<b class="fc"><i>675</i>&nbsp;            builder.addCutover(year,</b>
+<i>676</i>&nbsp;                               iZoneChar,
+<i>677</i>&nbsp;                               iMonthOfYear,
+<i>678</i>&nbsp;                               iDayOfMonth,
+<i>679</i>&nbsp;                               iDayOfWeek,
+<i>680</i>&nbsp;                               iAdvanceDayOfWeek,
+<i>681</i>&nbsp;                               iMillisOfDay);
+<b class="fc"><i>682</i>&nbsp;        }</b>
+<i>683</i>&nbsp;
+<i>684</i>&nbsp;        public String toString() {
+<b class="nc"><i>685</i>&nbsp;            return</b>
+<i>686</i>&nbsp;                &quot;MonthOfYear: &quot; + iMonthOfYear + &quot;\n&quot; +
+<i>687</i>&nbsp;                &quot;DayOfMonth: &quot; + iDayOfMonth + &quot;\n&quot; +
+<i>688</i>&nbsp;                &quot;DayOfWeek: &quot; + iDayOfWeek + &quot;\n&quot; +
+<i>689</i>&nbsp;                &quot;AdvanceDayOfWeek: &quot; + iAdvanceDayOfWeek + &quot;\n&quot; +
+<i>690</i>&nbsp;                &quot;MillisOfDay: &quot; + iMillisOfDay + &quot;\n&quot; +
+<i>691</i>&nbsp;                &quot;ZoneChar: &quot; + iZoneChar + &quot;\n&quot;;
+<i>692</i>&nbsp;        }
+<i>693</i>&nbsp;    }
+<i>694</i>&nbsp;
+<i>695</i>&nbsp;    private static class Rule {
+<i>696</i>&nbsp;        public final String iName;
+<i>697</i>&nbsp;        public final int iFromYear;
+<i>698</i>&nbsp;        public final int iToYear;
+<i>699</i>&nbsp;        public final String iType;
+<i>700</i>&nbsp;        public final DateTimeOfYear iDateTimeOfYear;
+<i>701</i>&nbsp;        public final int iSaveMillis;
+<i>702</i>&nbsp;        public final String iLetterS;
+<i>703</i>&nbsp;
+<b class="fc"><i>704</i>&nbsp;        Rule(StringTokenizer st) {</b>
+<b class="fc"><i>705</i>&nbsp;            if (st.countTokens() &lt; 6) {</b>
+<b class="fc"><i>706</i>&nbsp;                throw new IllegalArgumentException(&quot;Attempting to create a Rule from an incomplete tokenizer&quot;);</b>
+<i>707</i>&nbsp;            }
+<b class="fc"><i>708</i>&nbsp;            iName = st.nextToken().intern();</b>
+<b class="fc"><i>709</i>&nbsp;            iFromYear = parseYear(st.nextToken(), 0);</b>
+<b class="fc"><i>710</i>&nbsp;            iToYear = parseYear(st.nextToken(), iFromYear);</b>
+<b class="fc"><i>711</i>&nbsp;            if (iToYear &lt; iFromYear) {</b>
+<b class="nc"><i>712</i>&nbsp;                throw new IllegalArgumentException();</b>
+<i>713</i>&nbsp;            }
+<b class="fc"><i>714</i>&nbsp;            iType = parseOptional(st.nextToken());</b>
+<b class="fc"><i>715</i>&nbsp;            iDateTimeOfYear = new DateTimeOfYear(st);</b>
+<b class="fc"><i>716</i>&nbsp;            iSaveMillis = parseTime(st.nextToken());</b>
+<b class="fc"><i>717</i>&nbsp;            iLetterS = parseOptional(st.nextToken());</b>
+<b class="fc"><i>718</i>&nbsp;        }</b>
+<i>719</i>&nbsp;
+<i>720</i>&nbsp;        /**
+<i>721</i>&nbsp;         * Adds a recurring savings rule to the builder.
+<i>722</i>&nbsp;         */
+<i>723</i>&nbsp;        public void addRecurring(DateTimeZoneBuilder builder, String nameFormat) {
+<b class="fc"><i>724</i>&nbsp;            String nameKey = formatName(nameFormat);</b>
+<b class="fc"><i>725</i>&nbsp;            iDateTimeOfYear.addRecurring</b>
+<b class="fc"><i>726</i>&nbsp;                (builder, nameKey, iSaveMillis, iFromYear, iToYear);</b>
+<b class="fc"><i>727</i>&nbsp;        }</b>
+<i>728</i>&nbsp;
+<i>729</i>&nbsp;        private String formatName(String nameFormat) {
+<b class="fc"><i>730</i>&nbsp;            int index = nameFormat.indexOf(&#39;/&#39;);</b>
+<b class="fc"><i>731</i>&nbsp;            if (index &gt; 0) {</b>
+<b class="nc"><i>732</i>&nbsp;                if (iSaveMillis == 0) {</b>
+<i>733</i>&nbsp;                    // Extract standard name.
+<b class="nc"><i>734</i>&nbsp;                    return nameFormat.substring(0, index).intern();</b>
+<i>735</i>&nbsp;                } else {
+<b class="nc"><i>736</i>&nbsp;                    return nameFormat.substring(index + 1).intern();</b>
+<i>737</i>&nbsp;                }
+<i>738</i>&nbsp;            }
+<b class="fc"><i>739</i>&nbsp;            index = nameFormat.indexOf(&quot;%s&quot;);</b>
+<b class="fc"><i>740</i>&nbsp;            if (index &lt; 0) {</b>
+<b class="nc"><i>741</i>&nbsp;                return nameFormat;</b>
+<i>742</i>&nbsp;            }
+<b class="fc"><i>743</i>&nbsp;            String left = nameFormat.substring(0, index);</b>
+<b class="fc"><i>744</i>&nbsp;            String right = nameFormat.substring(index + 2);</b>
+<i>745</i>&nbsp;            String name;
+<b class="fc"><i>746</i>&nbsp;            if (iLetterS == null) {</b>
+<b class="nc"><i>747</i>&nbsp;                name = left.concat(right);</b>
+<i>748</i>&nbsp;            } else {
+<b class="fc"><i>749</i>&nbsp;                name = left + iLetterS + right;</b>
+<i>750</i>&nbsp;            }
+<b class="fc"><i>751</i>&nbsp;            return name.intern();</b>
+<i>752</i>&nbsp;        }
+<i>753</i>&nbsp;
+<i>754</i>&nbsp;        public String toString() {
+<b class="nc"><i>755</i>&nbsp;            return</b>
+<i>756</i>&nbsp;                &quot;[Rule]\n&quot; + 
+<i>757</i>&nbsp;                &quot;Name: &quot; + iName + &quot;\n&quot; +
+<i>758</i>&nbsp;                &quot;FromYear: &quot; + iFromYear + &quot;\n&quot; +
+<i>759</i>&nbsp;                &quot;ToYear: &quot; + iToYear + &quot;\n&quot; +
+<i>760</i>&nbsp;                &quot;Type: &quot; + iType + &quot;\n&quot; +
+<i>761</i>&nbsp;                iDateTimeOfYear +
+<i>762</i>&nbsp;                &quot;SaveMillis: &quot; + iSaveMillis + &quot;\n&quot; +
+<i>763</i>&nbsp;                &quot;LetterS: &quot; + iLetterS + &quot;\n&quot;;
+<i>764</i>&nbsp;        }
+<i>765</i>&nbsp;    }
+<i>766</i>&nbsp;
+<i>767</i>&nbsp;    private static class RuleSet {
+<i>768</i>&nbsp;        private List&lt;Rule&gt; iRules;
+<i>769</i>&nbsp;
+<b class="fc"><i>770</i>&nbsp;        RuleSet(Rule rule) {</b>
+<b class="fc"><i>771</i>&nbsp;            iRules = new ArrayList&lt;Rule&gt;();</b>
+<b class="fc"><i>772</i>&nbsp;            iRules.add(rule);</b>
+<b class="fc"><i>773</i>&nbsp;        }</b>
+<i>774</i>&nbsp;
+<i>775</i>&nbsp;        void addRule(Rule rule) {
+<b class="fc"><i>776</i>&nbsp;            if (!(rule.iName.equals(iRules.get(0).iName))) {</b>
+<b class="nc"><i>777</i>&nbsp;                throw new IllegalArgumentException(&quot;Rule name mismatch&quot;);</b>
+<i>778</i>&nbsp;            }
+<b class="fc"><i>779</i>&nbsp;            iRules.add(rule);</b>
+<b class="fc"><i>780</i>&nbsp;        }</b>
+<i>781</i>&nbsp;
+<i>782</i>&nbsp;        /**
+<i>783</i>&nbsp;         * Adds recurring savings rules to the builder.
+<i>784</i>&nbsp;         */
+<i>785</i>&nbsp;        public void addRecurring(DateTimeZoneBuilder builder, String nameFormat) {
+<b class="fc"><i>786</i>&nbsp;            for (int i=0; i&lt;iRules.size(); i++) {</b>
+<b class="fc"><i>787</i>&nbsp;                Rule rule = iRules.get(i);</b>
+<b class="fc"><i>788</i>&nbsp;                rule.addRecurring(builder, nameFormat);</b>
+<i>789</i>&nbsp;            }
+<b class="fc"><i>790</i>&nbsp;        }</b>
+<i>791</i>&nbsp;    }
+<i>792</i>&nbsp;
+<i>793</i>&nbsp;    private static class Zone {
+<i>794</i>&nbsp;        public final String iName;
+<i>795</i>&nbsp;        public final int iOffsetMillis;
+<i>796</i>&nbsp;        public final String iRules;
+<i>797</i>&nbsp;        public final String iFormat;
+<i>798</i>&nbsp;        public final int iUntilYear;
+<i>799</i>&nbsp;        public final DateTimeOfYear iUntilDateTimeOfYear;
+<i>800</i>&nbsp;
+<i>801</i>&nbsp;        private Zone iNext;
+<i>802</i>&nbsp;
+<i>803</i>&nbsp;        Zone(StringTokenizer st) {
+<b class="fc"><i>804</i>&nbsp;            this(st.nextToken(), st);</b>
+<b class="fc"><i>805</i>&nbsp;        }</b>
+<i>806</i>&nbsp;
+<b class="fc"><i>807</i>&nbsp;        private Zone(String name, StringTokenizer st) {</b>
+<b class="fc"><i>808</i>&nbsp;            iName = name.intern();</b>
+<b class="fc"><i>809</i>&nbsp;            iOffsetMillis = parseTime(st.nextToken());</b>
+<b class="fc"><i>810</i>&nbsp;            iRules = parseOptional(st.nextToken());</b>
+<b class="fc"><i>811</i>&nbsp;            iFormat = st.nextToken().intern();</b>
+<i>812</i>&nbsp;
+<b class="fc"><i>813</i>&nbsp;            int year = Integer.MAX_VALUE;</b>
+<b class="fc"><i>814</i>&nbsp;            DateTimeOfYear dtOfYear = getStartOfYear();</b>
+<i>815</i>&nbsp;
+<b class="fc"><i>816</i>&nbsp;            if (st.hasMoreTokens()) {</b>
+<b class="fc"><i>817</i>&nbsp;                year = Integer.parseInt(st.nextToken());</b>
+<b class="fc"><i>818</i>&nbsp;                if (st.hasMoreTokens()) {</b>
+<b class="fc"><i>819</i>&nbsp;                    dtOfYear = new DateTimeOfYear(st);</b>
+<i>820</i>&nbsp;                }
+<i>821</i>&nbsp;            }
+<i>822</i>&nbsp;
+<b class="fc"><i>823</i>&nbsp;            iUntilYear = year;</b>
+<b class="fc"><i>824</i>&nbsp;            iUntilDateTimeOfYear = dtOfYear;</b>
+<b class="fc"><i>825</i>&nbsp;        }</b>
+<i>826</i>&nbsp;
+<i>827</i>&nbsp;        void chain(StringTokenizer st) {
+<b class="fc"><i>828</i>&nbsp;            if (iNext != null) {</b>
+<b class="fc"><i>829</i>&nbsp;                iNext.chain(st);</b>
+<i>830</i>&nbsp;            } else {
+<b class="fc"><i>831</i>&nbsp;                iNext = new Zone(iName, st);</b>
+<i>832</i>&nbsp;            }
+<b class="fc"><i>833</i>&nbsp;        }</b>
+<i>834</i>&nbsp;
+<i>835</i>&nbsp;        /*
+<i>836</i>&nbsp;        public DateTimeZone buildDateTimeZone(Map ruleSets) {
+<i>837</i>&nbsp;            DateTimeZoneBuilder builder = new DateTimeZoneBuilder();
+<i>838</i>&nbsp;            addToBuilder(builder, ruleSets);
+<i>839</i>&nbsp;            return builder.toDateTimeZone(iName);
+<i>840</i>&nbsp;        }
+<i>841</i>&nbsp;        */
+<i>842</i>&nbsp;
+<i>843</i>&nbsp;        /**
+<i>844</i>&nbsp;         * Adds zone info to the builder.
+<i>845</i>&nbsp;         */
+<i>846</i>&nbsp;        public void addToBuilder(DateTimeZoneBuilder builder, Map&lt;String, RuleSet&gt; ruleSets) {
+<b class="fc"><i>847</i>&nbsp;            addToBuilder(this, builder, ruleSets);</b>
+<b class="fc"><i>848</i>&nbsp;        }</b>
+<i>849</i>&nbsp;
+<i>850</i>&nbsp;        private static void addToBuilder(Zone zone,
+<i>851</i>&nbsp;                                         DateTimeZoneBuilder builder,
+<i>852</i>&nbsp;                                         Map&lt;String, RuleSet&gt; ruleSets)
+<i>853</i>&nbsp;        {
+<b class="fc"><i>854</i>&nbsp;            for (; zone != null; zone = zone.iNext) {</b>
+<b class="fc"><i>855</i>&nbsp;                builder.setStandardOffset(zone.iOffsetMillis);</b>
+<i>856</i>&nbsp;
+<b class="fc"><i>857</i>&nbsp;                if (zone.iRules == null) {</b>
+<b class="fc"><i>858</i>&nbsp;                    builder.setFixedSavings(zone.iFormat, 0);</b>
+<i>859</i>&nbsp;                } else {
+<i>860</i>&nbsp;                    try {
+<i>861</i>&nbsp;                        // Check if iRules actually just refers to a savings.
+<b class="fc"><i>862</i>&nbsp;                        int saveMillis = parseTime(zone.iRules);</b>
+<b class="nc"><i>863</i>&nbsp;                        builder.setFixedSavings(zone.iFormat, saveMillis);</b>
+<i>864</i>&nbsp;                    }
+<b class="fc"><i>865</i>&nbsp;                    catch (Exception e) {</b>
+<b class="fc"><i>866</i>&nbsp;                        RuleSet rs = ruleSets.get(zone.iRules);</b>
+<b class="fc"><i>867</i>&nbsp;                        if (rs == null) {</b>
+<b class="nc"><i>868</i>&nbsp;                            throw new IllegalArgumentException</b>
+<i>869</i>&nbsp;                                (&quot;Rules not found: &quot; + zone.iRules);
+<i>870</i>&nbsp;                        }
+<b class="fc"><i>871</i>&nbsp;                        rs.addRecurring(builder, zone.iFormat);</b>
+<b class="nc"><i>872</i>&nbsp;                    }</b>
+<i>873</i>&nbsp;                }
+<i>874</i>&nbsp;
+<b class="fc"><i>875</i>&nbsp;                if (zone.iUntilYear == Integer.MAX_VALUE) {</b>
+<b class="fc"><i>876</i>&nbsp;                    break;</b>
+<i>877</i>&nbsp;                }
+<i>878</i>&nbsp;
+<b class="fc"><i>879</i>&nbsp;                zone.iUntilDateTimeOfYear.addCutover(builder, zone.iUntilYear);</b>
+<i>880</i>&nbsp;            }
+<b class="fc"><i>881</i>&nbsp;        }</b>
+<i>882</i>&nbsp;
+<i>883</i>&nbsp;        public String toString() {
+<b class="nc"><i>884</i>&nbsp;            String str =</b>
+<i>885</i>&nbsp;                &quot;[Zone]\n&quot; + 
+<i>886</i>&nbsp;                &quot;Name: &quot; + iName + &quot;\n&quot; +
+<i>887</i>&nbsp;                &quot;OffsetMillis: &quot; + iOffsetMillis + &quot;\n&quot; +
+<i>888</i>&nbsp;                &quot;Rules: &quot; + iRules + &quot;\n&quot; +
+<i>889</i>&nbsp;                &quot;Format: &quot; + iFormat + &quot;\n&quot; +
+<i>890</i>&nbsp;                &quot;UntilYear: &quot; + iUntilYear + &quot;\n&quot; +
+<i>891</i>&nbsp;                iUntilDateTimeOfYear;
+<i>892</i>&nbsp;
+<b class="nc"><i>893</i>&nbsp;            if (iNext == null) {</b>
+<b class="nc"><i>894</i>&nbsp;                return str;</b>
+<i>895</i>&nbsp;            }
+<i>896</i>&nbsp;
+<b class="nc"><i>897</i>&nbsp;            return str + &quot;...\n&quot; + iNext.toString();</b>
+<i>898</i>&nbsp;        }
+<i>899</i>&nbsp;    }
+<i>900</i>&nbsp;}
+<i>901</i>&nbsp;
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

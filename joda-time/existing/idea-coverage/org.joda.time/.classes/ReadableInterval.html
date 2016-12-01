@@ -1,0 +1,368 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: ReadableInterval</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time</a> ]
+</div>
+
+<h1>Coverage Summary for Class: ReadableInterval (org.joda.time)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+</tr>
+<tr>
+  <td class="name">ReadableInterval</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2006 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;/** 
+<i>19</i>&nbsp; * Readable interface for an interval of time between two instants.
+<i>20</i>&nbsp; * &lt;p&gt;
+<i>21</i>&nbsp; * A time interval represents a period of time between two instants.
+<i>22</i>&nbsp; * Intervals are inclusive of the start instant and exclusive of the end.
+<i>23</i>&nbsp; * The end instant is always greater than or equal to the start instant.
+<i>24</i>&nbsp; * &lt;p&gt;
+<i>25</i>&nbsp; * Intervals have a fixed millisecond duration.
+<i>26</i>&nbsp; * This is the difference between the start and end instants.
+<i>27</i>&nbsp; * The duration is represented separately by {@link ReadableDuration}.
+<i>28</i>&nbsp; * As a result, intervals are not comparable.
+<i>29</i>&nbsp; * To compare the length of two intervals, you should compare their durations.
+<i>30</i>&nbsp; * &lt;p&gt;
+<i>31</i>&nbsp; * An interval can also be converted to a {@link ReadablePeriod}.
+<i>32</i>&nbsp; * This represents the difference between the start and end points in terms of fields
+<i>33</i>&nbsp; * such as years and days.
+<i>34</i>&nbsp; * &lt;p&gt;
+<i>35</i>&nbsp; * Methods that are passed an interval as a parameter will treat &lt;code&gt;null&lt;/code&gt;
+<i>36</i>&nbsp; * as a zero length interval at the current instant in time.
+<i>37</i>&nbsp; *
+<i>38</i>&nbsp; * @author Sean Geoghegan
+<i>39</i>&nbsp; * @author Brian S O&#39;Neill
+<i>40</i>&nbsp; * @author Stephen Colebourne
+<i>41</i>&nbsp; * @since 1.0
+<i>42</i>&nbsp; */
+<i>43</i>&nbsp;public interface ReadableInterval {
+<i>44</i>&nbsp;
+<i>45</i>&nbsp;    /**
+<i>46</i>&nbsp;     * Gets the chronology of the interval, which is the chronology of the first datetime.
+<i>47</i>&nbsp;     *
+<i>48</i>&nbsp;     * @return the chronology of the interval
+<i>49</i>&nbsp;     */
+<i>50</i>&nbsp;    Chronology getChronology();
+<i>51</i>&nbsp;
+<i>52</i>&nbsp;    /**
+<i>53</i>&nbsp;     * Gets the start of this time interval which is inclusive.
+<i>54</i>&nbsp;     *
+<i>55</i>&nbsp;     * @return the start of the time interval,
+<i>56</i>&nbsp;     *  millisecond instant from 1970-01-01T00:00:00Z
+<i>57</i>&nbsp;     */
+<i>58</i>&nbsp;    long getStartMillis();
+<i>59</i>&nbsp;
+<i>60</i>&nbsp;    /**
+<i>61</i>&nbsp;     * Gets the start of this time interval, which is inclusive, as a DateTime.
+<i>62</i>&nbsp;     *
+<i>63</i>&nbsp;     * @return the start of the time interval
+<i>64</i>&nbsp;     */
+<i>65</i>&nbsp;    DateTime getStart();
+<i>66</i>&nbsp;
+<i>67</i>&nbsp;    /** 
+<i>68</i>&nbsp;     * Gets the end of this time interval which is exclusive.
+<i>69</i>&nbsp;     *
+<i>70</i>&nbsp;     * @return the end of the time interval,
+<i>71</i>&nbsp;     *  millisecond instant from 1970-01-01T00:00:00Z
+<i>72</i>&nbsp;     */
+<i>73</i>&nbsp;    long getEndMillis();
+<i>74</i>&nbsp;
+<i>75</i>&nbsp;    /** 
+<i>76</i>&nbsp;     * Gets the end of this time interval, which is exclusive, as a DateTime.
+<i>77</i>&nbsp;     *
+<i>78</i>&nbsp;     * @return the end of the time interval
+<i>79</i>&nbsp;     */
+<i>80</i>&nbsp;    DateTime getEnd();
+<i>81</i>&nbsp;
+<i>82</i>&nbsp;    //-----------------------------------------------------------------------
+<i>83</i>&nbsp;    /**
+<i>84</i>&nbsp;     * Does this time interval contain the specified instant.
+<i>85</i>&nbsp;     * &lt;p&gt;
+<i>86</i>&nbsp;     * Non-zero duration intervals are inclusive of the start instant and
+<i>87</i>&nbsp;     * exclusive of the end. A zero duration interval cannot contain anything.
+<i>88</i>&nbsp;     * &lt;p&gt;
+<i>89</i>&nbsp;     * For example:
+<i>90</i>&nbsp;     * &lt;pre&gt;
+<i>91</i>&nbsp;     * [09:00 to 10:00) contains 08:59  = false (before start)
+<i>92</i>&nbsp;     * [09:00 to 10:00) contains 09:00  = true
+<i>93</i>&nbsp;     * [09:00 to 10:00) contains 09:59  = true
+<i>94</i>&nbsp;     * [09:00 to 10:00) contains 10:00  = false (equals end)
+<i>95</i>&nbsp;     * [09:00 to 10:00) contains 10:01  = false (after end)
+<i>96</i>&nbsp;     * 
+<i>97</i>&nbsp;     * [14:00 to 14:00) contains 14:00  = false (zero duration contains nothing)
+<i>98</i>&nbsp;     * &lt;/pre&gt;
+<i>99</i>&nbsp;     *
+<i>100</i>&nbsp;     * @param instant  the instant, null means now
+<i>101</i>&nbsp;     * @return true if this time interval contains the instant
+<i>102</i>&nbsp;     */
+<i>103</i>&nbsp;    boolean contains(ReadableInstant instant);
+<i>104</i>&nbsp;    
+<i>105</i>&nbsp;    /**
+<i>106</i>&nbsp;     * Does this time interval contain the specified time interval.
+<i>107</i>&nbsp;     * &lt;p&gt;
+<i>108</i>&nbsp;     * Non-zero duration intervals are inclusive of the start instant and
+<i>109</i>&nbsp;     * exclusive of the end. The other interval is contained if this interval
+<i>110</i>&nbsp;     * wholly contains, starts, finishes or equals it.
+<i>111</i>&nbsp;     * A zero duration interval cannot contain anything.
+<i>112</i>&nbsp;     * &lt;p&gt;
+<i>113</i>&nbsp;     * When two intervals are compared the result is one of three states:
+<i>114</i>&nbsp;     * (a) they abut, (b) there is a gap between them, (c) they overlap.
+<i>115</i>&nbsp;     * The &lt;code&gt;contains&lt;/code&gt; method is not related to these states.
+<i>116</i>&nbsp;     * In particular, a zero duration interval is contained at the start of
+<i>117</i>&nbsp;     * a larger interval, but does not overlap (it abuts instead).
+<i>118</i>&nbsp;     * &lt;p&gt;
+<i>119</i>&nbsp;     * For example:
+<i>120</i>&nbsp;     * &lt;pre&gt;
+<i>121</i>&nbsp;     * [09:00 to 10:00) contains [09:00 to 10:00)  = true
+<i>122</i>&nbsp;     * [09:00 to 10:00) contains [09:00 to 09:30)  = true
+<i>123</i>&nbsp;     * [09:00 to 10:00) contains [09:30 to 10:00)  = true
+<i>124</i>&nbsp;     * [09:00 to 10:00) contains [09:15 to 09:45)  = true
+<i>125</i>&nbsp;     * [09:00 to 10:00) contains [09:00 to 09:00)  = true
+<i>126</i>&nbsp;     * 
+<i>127</i>&nbsp;     * [09:00 to 10:00) contains [08:59 to 10:00)  = false (otherStart before thisStart)
+<i>128</i>&nbsp;     * [09:00 to 10:00) contains [09:00 to 10:01)  = false (otherEnd after thisEnd)
+<i>129</i>&nbsp;     * [09:00 to 10:00) contains [10:00 to 10:00)  = false (otherStart equals thisEnd)
+<i>130</i>&nbsp;     * 
+<i>131</i>&nbsp;     * [14:00 to 14:00) contains [14:00 to 14:00)  = false (zero duration contains nothing)
+<i>132</i>&nbsp;     * &lt;/pre&gt;
+<i>133</i>&nbsp;     *
+<i>134</i>&nbsp;     * @param interval  the time interval to compare to, null means a zero duration interval now
+<i>135</i>&nbsp;     * @return true if this time interval contains the time interval
+<i>136</i>&nbsp;     */
+<i>137</i>&nbsp;    boolean contains(ReadableInterval interval);
+<i>138</i>&nbsp;    
+<i>139</i>&nbsp;    /**
+<i>140</i>&nbsp;     * Does this time interval overlap the specified time interval.
+<i>141</i>&nbsp;     * &lt;p&gt;
+<i>142</i>&nbsp;     * Intervals are inclusive of the start instant and exclusive of the end.
+<i>143</i>&nbsp;     * An interval overlaps another if it shares some common part of the
+<i>144</i>&nbsp;     * datetime continuum. 
+<i>145</i>&nbsp;     * &lt;p&gt;
+<i>146</i>&nbsp;     * When two intervals are compared the result is one of three states:
+<i>147</i>&nbsp;     * (a) they abut, (b) there is a gap between them, (c) they overlap.
+<i>148</i>&nbsp;     * The abuts state takes precedence over the other two, thus a zero duration
+<i>149</i>&nbsp;     * interval at the start of a larger interval abuts and does not overlap.
+<i>150</i>&nbsp;     * &lt;p&gt;
+<i>151</i>&nbsp;     * For example:
+<i>152</i>&nbsp;     * &lt;pre&gt;
+<i>153</i>&nbsp;     * [09:00 to 10:00) overlaps [08:00 to 08:30)  = false (completely before)
+<i>154</i>&nbsp;     * [09:00 to 10:00) overlaps [08:00 to 09:00)  = false (abuts before)
+<i>155</i>&nbsp;     * [09:00 to 10:00) overlaps [08:00 to 09:30)  = true
+<i>156</i>&nbsp;     * [09:00 to 10:00) overlaps [08:00 to 10:00)  = true
+<i>157</i>&nbsp;     * [09:00 to 10:00) overlaps [08:00 to 11:00)  = true
+<i>158</i>&nbsp;     * 
+<i>159</i>&nbsp;     * [09:00 to 10:00) overlaps [09:00 to 09:00)  = false (abuts before)
+<i>160</i>&nbsp;     * [09:00 to 10:00) overlaps [09:00 to 09:30)  = true
+<i>161</i>&nbsp;     * [09:00 to 10:00) overlaps [09:00 to 10:00)  = true
+<i>162</i>&nbsp;     * [09:00 to 10:00) overlaps [09:00 to 11:00)  = true
+<i>163</i>&nbsp;     * 
+<i>164</i>&nbsp;     * [09:00 to 10:00) overlaps [09:30 to 09:30)  = true
+<i>165</i>&nbsp;     * [09:00 to 10:00) overlaps [09:30 to 10:00)  = true
+<i>166</i>&nbsp;     * [09:00 to 10:00) overlaps [09:30 to 11:00)  = true
+<i>167</i>&nbsp;     * 
+<i>168</i>&nbsp;     * [09:00 to 10:00) overlaps [10:00 to 10:00)  = false (abuts after)
+<i>169</i>&nbsp;     * [09:00 to 10:00) overlaps [10:00 to 11:00)  = false (abuts after)
+<i>170</i>&nbsp;     * 
+<i>171</i>&nbsp;     * [09:00 to 10:00) overlaps [10:30 to 11:00)  = false (completely after)
+<i>172</i>&nbsp;     * 
+<i>173</i>&nbsp;     * [14:00 to 14:00) overlaps [14:00 to 14:00)  = false (abuts before and after)
+<i>174</i>&nbsp;     * [14:00 to 14:00) overlaps [13:00 to 15:00)  = true
+<i>175</i>&nbsp;     * &lt;/pre&gt;
+<i>176</i>&nbsp;     *
+<i>177</i>&nbsp;     * @param interval  the time interval to compare to, null means a zero length interval now
+<i>178</i>&nbsp;     * @return true if the time intervals overlap
+<i>179</i>&nbsp;     */
+<i>180</i>&nbsp;    boolean overlaps(ReadableInterval interval);
+<i>181</i>&nbsp;    
+<i>182</i>&nbsp;    //-----------------------------------------------------------------------
+<i>183</i>&nbsp;    /**
+<i>184</i>&nbsp;     * Is this time interval after the specified instant.
+<i>185</i>&nbsp;     * &lt;p&gt;
+<i>186</i>&nbsp;     * Intervals are inclusive of the start instant and exclusive of the end.
+<i>187</i>&nbsp;     * 
+<i>188</i>&nbsp;     * @param instant  the instant to compare to, null means now
+<i>189</i>&nbsp;     * @return true if this time interval is after the instant
+<i>190</i>&nbsp;     */
+<i>191</i>&nbsp;    boolean isAfter(ReadableInstant instant);
+<i>192</i>&nbsp;    
+<i>193</i>&nbsp;    /**
+<i>194</i>&nbsp;     * Is this time interval entirely after the specified interval.
+<i>195</i>&nbsp;     * &lt;p&gt;
+<i>196</i>&nbsp;     * Intervals are inclusive of the start instant and exclusive of the end.
+<i>197</i>&nbsp;     * 
+<i>198</i>&nbsp;     * @param interval  the interval to compare to, null means now
+<i>199</i>&nbsp;     * @return true if this time interval is after the interval specified
+<i>200</i>&nbsp;     */
+<i>201</i>&nbsp;    boolean isAfter(ReadableInterval interval);
+<i>202</i>&nbsp;    
+<i>203</i>&nbsp;    /**
+<i>204</i>&nbsp;     * Is this time interval before the specified instant.
+<i>205</i>&nbsp;     * &lt;p&gt;
+<i>206</i>&nbsp;     * Intervals are inclusive of the start instant and exclusive of the end.
+<i>207</i>&nbsp;     * 
+<i>208</i>&nbsp;     * @param instant  the instant to compare to, null means now
+<i>209</i>&nbsp;     * @return true if this time interval is before the instant
+<i>210</i>&nbsp;     */
+<i>211</i>&nbsp;    boolean isBefore(ReadableInstant instant);
+<i>212</i>&nbsp;    
+<i>213</i>&nbsp;    /**
+<i>214</i>&nbsp;     * Is this time interval entirely before the specified interval.
+<i>215</i>&nbsp;     * &lt;p&gt;
+<i>216</i>&nbsp;     * Intervals are inclusive of the start instant and exclusive of the end.
+<i>217</i>&nbsp;     * 
+<i>218</i>&nbsp;     * @param interval  the interval to compare to, null means now
+<i>219</i>&nbsp;     * @return true if this time interval is before the interval specified
+<i>220</i>&nbsp;     */
+<i>221</i>&nbsp;    boolean isBefore(ReadableInterval interval);
+<i>222</i>&nbsp;    
+<i>223</i>&nbsp;    //-----------------------------------------------------------------------
+<i>224</i>&nbsp;    /**
+<i>225</i>&nbsp;     * Get this interval as an immutable &lt;code&gt;Interval&lt;/code&gt; object.
+<i>226</i>&nbsp;     * &lt;p&gt;
+<i>227</i>&nbsp;     * This will either typecast this instance, or create a new &lt;code&gt;Interval&lt;/code&gt;.
+<i>228</i>&nbsp;     *
+<i>229</i>&nbsp;     * @return the interval as an Interval object
+<i>230</i>&nbsp;     */
+<i>231</i>&nbsp;    Interval toInterval();
+<i>232</i>&nbsp;
+<i>233</i>&nbsp;    /**
+<i>234</i>&nbsp;     * Get this time interval as a &lt;code&gt;MutableInterval&lt;/code&gt;.
+<i>235</i>&nbsp;     * &lt;p&gt;
+<i>236</i>&nbsp;     * This will always return a new &lt;code&gt;MutableInterval&lt;/code&gt; with the same interval.
+<i>237</i>&nbsp;     *
+<i>238</i>&nbsp;     * @return the time interval as a MutableInterval object
+<i>239</i>&nbsp;     */
+<i>240</i>&nbsp;    MutableInterval toMutableInterval();
+<i>241</i>&nbsp;
+<i>242</i>&nbsp;    //-----------------------------------------------------------------------
+<i>243</i>&nbsp;    /**
+<i>244</i>&nbsp;     * Gets the millisecond duration of this time interval.
+<i>245</i>&nbsp;     *
+<i>246</i>&nbsp;     * @return the millisecond duration of the time interval
+<i>247</i>&nbsp;     * @throws ArithmeticException if the duration exceeds the capacity of a long
+<i>248</i>&nbsp;     */
+<i>249</i>&nbsp;    Duration toDuration();
+<i>250</i>&nbsp;
+<i>251</i>&nbsp;    /**
+<i>252</i>&nbsp;     * Gets the millisecond duration of this time interval.
+<i>253</i>&nbsp;     *
+<i>254</i>&nbsp;     * @return the millisecond duration of the time interval
+<i>255</i>&nbsp;     * @throws ArithmeticException if the duration exceeds the capacity of a long
+<i>256</i>&nbsp;     */
+<i>257</i>&nbsp;    long toDurationMillis();
+<i>258</i>&nbsp;
+<i>259</i>&nbsp;    /**
+<i>260</i>&nbsp;     * Converts the duration of the interval to a period using the
+<i>261</i>&nbsp;     * standard period type.
+<i>262</i>&nbsp;     * &lt;p&gt;
+<i>263</i>&nbsp;     * This method should be used to extract the field values describing the
+<i>264</i>&nbsp;     * difference between the start and end instants.
+<i>265</i>&nbsp;     *
+<i>266</i>&nbsp;     * @return a time period derived from the interval
+<i>267</i>&nbsp;     */
+<i>268</i>&nbsp;    Period toPeriod();
+<i>269</i>&nbsp;
+<i>270</i>&nbsp;    /**
+<i>271</i>&nbsp;     * Converts the duration of the interval to a period using the
+<i>272</i>&nbsp;     * specified period type.
+<i>273</i>&nbsp;     * &lt;p&gt;
+<i>274</i>&nbsp;     * This method should be used to extract the field values describing the
+<i>275</i>&nbsp;     * difference between the start and end instants.
+<i>276</i>&nbsp;     *
+<i>277</i>&nbsp;     * @param type  the requested type of the duration, null means standard
+<i>278</i>&nbsp;     * @return a time period derived from the interval
+<i>279</i>&nbsp;     */
+<i>280</i>&nbsp;    Period toPeriod(PeriodType type);
+<i>281</i>&nbsp;
+<i>282</i>&nbsp;    //-----------------------------------------------------------------------
+<i>283</i>&nbsp;    /**
+<i>284</i>&nbsp;     * Compares this object with the specified object for equality based
+<i>285</i>&nbsp;     * on start and end millis plus the chronology.
+<i>286</i>&nbsp;     * All ReadableInterval instances are accepted.
+<i>287</i>&nbsp;     * &lt;p&gt;
+<i>288</i>&nbsp;     * To compare the duration of two time intervals, use {@link #toDuration()}
+<i>289</i>&nbsp;     * to get the durations and compare those.
+<i>290</i>&nbsp;     *
+<i>291</i>&nbsp;     * @param readableInterval  a readable interval to check against
+<i>292</i>&nbsp;     * @return true if the start and end millis are equal
+<i>293</i>&nbsp;     */
+<i>294</i>&nbsp;    boolean equals(Object readableInterval);
+<i>295</i>&nbsp;
+<i>296</i>&nbsp;    /**
+<i>297</i>&nbsp;     * Gets a hash code for the time interval that is compatable with the 
+<i>298</i>&nbsp;     * equals method.
+<i>299</i>&nbsp;     * &lt;p&gt;
+<i>300</i>&nbsp;     * The formula used must be as follows:
+<i>301</i>&nbsp;     * &lt;pre&gt;int result = 97;
+<i>302</i>&nbsp;     * result = 31 * result + ((int) (getStartMillis() ^ (getStartMillis() &gt;&gt;&gt; 32)));
+<i>303</i>&nbsp;     * result = 31 * result + ((int) (getEndMillis() ^ (getEndMillis() &gt;&gt;&gt; 32)));
+<i>304</i>&nbsp;     * result = 31 * result + getChronology().hashCode();
+<i>305</i>&nbsp;     * return result;&lt;/pre&gt;
+<i>306</i>&nbsp;     *
+<i>307</i>&nbsp;     * @return a hash code
+<i>308</i>&nbsp;     */
+<i>309</i>&nbsp;    int hashCode();
+<i>310</i>&nbsp;
+<i>311</i>&nbsp;    //-----------------------------------------------------------------------
+<i>312</i>&nbsp;    /**
+<i>313</i>&nbsp;     * Get the value as a String in the ISO8601 interval format.
+<i>314</i>&nbsp;     * &lt;p&gt;
+<i>315</i>&nbsp;     * For example, &quot;2004-06-09T12:30:00.000/2004-07-10T13:30:00.000&quot;.
+<i>316</i>&nbsp;     *
+<i>317</i>&nbsp;     * @return the value as an ISO8601 string
+<i>318</i>&nbsp;     */
+<i>319</i>&nbsp;    String toString();
+<i>320</i>&nbsp;
+<i>321</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

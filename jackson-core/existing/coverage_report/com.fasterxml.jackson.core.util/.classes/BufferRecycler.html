@@ -1,0 +1,240 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: BufferRecycler</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.fasterxml.jackson.core.util</a> ]
+</div>
+
+<h1>Coverage Summary for Class: BufferRecycler (com.fasterxml.jackson.core.util)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">BufferRecycler</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (13/ 13)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (34/ 34)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package com.fasterxml.jackson.core.util;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;/**
+<i>4</i>&nbsp; * This is a small utility class, whose main functionality is to allow
+<i>5</i>&nbsp; * simple reuse of raw byte/char buffers. It is usually used through
+<i>6</i>&nbsp; * &lt;code&gt;ThreadLocal&lt;/code&gt; member of the owning class pointing to
+<i>7</i>&nbsp; * instance of this class through a &lt;code&gt;SoftReference&lt;/code&gt;. The
+<i>8</i>&nbsp; * end result is a low-overhead GC-cleanable recycling: hopefully
+<i>9</i>&nbsp; * ideal for use by stream readers.
+<i>10</i>&nbsp; */
+<i>11</i>&nbsp;public class BufferRecycler
+<i>12</i>&nbsp;{
+<i>13</i>&nbsp;    /**
+<i>14</i>&nbsp;     * Buffer used for reading byte-based input.
+<i>15</i>&nbsp;     */
+<i>16</i>&nbsp;    public final static int BYTE_READ_IO_BUFFER = 0;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;    /**
+<i>19</i>&nbsp;     * Buffer used for temporarily storing encoded content; used
+<i>20</i>&nbsp;     * for example by UTF-8 encoding writer
+<i>21</i>&nbsp;     */
+<i>22</i>&nbsp;    public final static int BYTE_WRITE_ENCODING_BUFFER = 1;
+<i>23</i>&nbsp;
+<i>24</i>&nbsp;    /**
+<i>25</i>&nbsp;     * Buffer used for temporarily concatenating output; used for
+<i>26</i>&nbsp;     * example when requesting output as byte array.
+<i>27</i>&nbsp;     */
+<i>28</i>&nbsp;    public final static int BYTE_WRITE_CONCAT_BUFFER = 2;
+<i>29</i>&nbsp;
+<i>30</i>&nbsp;    /**
+<i>31</i>&nbsp;     * Buffer used for concatenating binary data that is either being
+<i>32</i>&nbsp;     * encoded as base64 output, or decoded from base64 input.
+<i>33</i>&nbsp;     *
+<i>34</i>&nbsp;     * @since 2.1
+<i>35</i>&nbsp;     */
+<i>36</i>&nbsp;    public final static int BYTE_BASE64_CODEC_BUFFER = 3;
+<i>37</i>&nbsp;
+<i>38</i>&nbsp;    public final static int CHAR_TOKEN_BUFFER = 0;  // Tokenizable input
+<i>39</i>&nbsp;    public final static int CHAR_CONCAT_BUFFER = 1; // concatenated output
+<i>40</i>&nbsp;    public final static int CHAR_TEXT_BUFFER = 2; // Text content from input
+<i>41</i>&nbsp;    public final static int CHAR_NAME_COPY_BUFFER = 3; // Temporary buffer for getting name characters
+<i>42</i>&nbsp;
+<i>43</i>&nbsp;    // Buffer lengths, defined in 2.4 (smaller before that)
+<i>44</i>&nbsp;
+<b class="fc"><i>45</i>&nbsp;    private final static int[] BYTE_BUFFER_LENGTHS = new int[] { 8000, 8000, 2000, 2000 };</b>
+<b class="fc"><i>46</i>&nbsp;    private final static int[] CHAR_BUFFER_LENGTHS = new int[] { 4000, 4000, 200, 200 };</b>
+<i>47</i>&nbsp;    
+<i>48</i>&nbsp;    final protected byte[][] _byteBuffers;
+<i>49</i>&nbsp;    final protected char[][] _charBuffers;
+<i>50</i>&nbsp;
+<i>51</i>&nbsp;    /*
+<i>52</i>&nbsp;    /**********************************************************
+<i>53</i>&nbsp;    /* Construction
+<i>54</i>&nbsp;    /**********************************************************
+<i>55</i>&nbsp;     */
+<i>56</i>&nbsp;    
+<i>57</i>&nbsp;    /**
+<i>58</i>&nbsp;     * Default constructor used for creating instances of this default
+<i>59</i>&nbsp;     * implementation.
+<i>60</i>&nbsp;     */
+<i>61</i>&nbsp;    public BufferRecycler() {
+<b class="fc"><i>62</i>&nbsp;        this(4, 4);</b>
+<b class="fc"><i>63</i>&nbsp;    }</b>
+<i>64</i>&nbsp;
+<i>65</i>&nbsp;    /**
+<i>66</i>&nbsp;     * Alternate constructor to be used by sub-classes, to allow customization
+<i>67</i>&nbsp;     * of number of low-level buffers in use.
+<i>68</i>&nbsp;     * 
+<i>69</i>&nbsp;     * @since 2.4
+<i>70</i>&nbsp;     */
+<b class="fc"><i>71</i>&nbsp;    protected BufferRecycler(int bbCount, int cbCount) {</b>
+<b class="fc"><i>72</i>&nbsp;        _byteBuffers = new byte[bbCount][];</b>
+<b class="fc"><i>73</i>&nbsp;        _charBuffers = new char[cbCount][];</b>
+<b class="fc"><i>74</i>&nbsp;    }</b>
+<i>75</i>&nbsp;
+<i>76</i>&nbsp;    /*
+<i>77</i>&nbsp;    /**********************************************************
+<i>78</i>&nbsp;    /* Public API, byte buffers
+<i>79</i>&nbsp;    /**********************************************************
+<i>80</i>&nbsp;     */
+<i>81</i>&nbsp;    
+<i>82</i>&nbsp;    /**
+<i>83</i>&nbsp;     * @param ix One of &lt;code&gt;READ_IO_BUFFER&lt;/code&gt; constants.
+<i>84</i>&nbsp;     */
+<i>85</i>&nbsp;    public final byte[] allocByteBuffer(int ix) {
+<b class="fc"><i>86</i>&nbsp;        return allocByteBuffer(ix, 0);</b>
+<i>87</i>&nbsp;    }
+<i>88</i>&nbsp;
+<i>89</i>&nbsp;    public byte[] allocByteBuffer(int ix, int minSize) {
+<b class="fc"><i>90</i>&nbsp;        final int DEF_SIZE = byteBufferLength(ix);</b>
+<b class="fc"><i>91</i>&nbsp;        if (minSize &lt; DEF_SIZE) {</b>
+<b class="fc"><i>92</i>&nbsp;            minSize = DEF_SIZE;</b>
+<i>93</i>&nbsp;        }
+<b class="fc"><i>94</i>&nbsp;        byte[] buffer = _byteBuffers[ix];</b>
+<b class="fc"><i>95</i>&nbsp;        if (buffer == null || buffer.length &lt; minSize) {</b>
+<b class="fc"><i>96</i>&nbsp;            buffer = balloc(minSize);</b>
+<i>97</i>&nbsp;        } else {
+<b class="fc"><i>98</i>&nbsp;            _byteBuffers[ix] = null;</b>
+<i>99</i>&nbsp;        }
+<b class="fc"><i>100</i>&nbsp;        return buffer;</b>
+<i>101</i>&nbsp;    }
+<i>102</i>&nbsp;
+<i>103</i>&nbsp;    public final void releaseByteBuffer(int ix, byte[] buffer) {
+<b class="fc"><i>104</i>&nbsp;        _byteBuffers[ix] = buffer;</b>
+<b class="fc"><i>105</i>&nbsp;    }</b>
+<i>106</i>&nbsp;
+<i>107</i>&nbsp;    /*
+<i>108</i>&nbsp;    /**********************************************************
+<i>109</i>&nbsp;    /* Public API, char buffers
+<i>110</i>&nbsp;    /**********************************************************
+<i>111</i>&nbsp;     */
+<i>112</i>&nbsp;    
+<i>113</i>&nbsp;    public final char[] allocCharBuffer(int ix) {
+<b class="fc"><i>114</i>&nbsp;        return allocCharBuffer(ix, 0);</b>
+<i>115</i>&nbsp;    }
+<i>116</i>&nbsp;
+<i>117</i>&nbsp;    public char[] allocCharBuffer(int ix, int minSize) {
+<b class="fc"><i>118</i>&nbsp;        final int DEF_SIZE = charBufferLength(ix);</b>
+<b class="fc"><i>119</i>&nbsp;        if (minSize &lt; DEF_SIZE) {</b>
+<b class="fc"><i>120</i>&nbsp;            minSize = DEF_SIZE;</b>
+<i>121</i>&nbsp;        }
+<b class="fc"><i>122</i>&nbsp;        char[] buffer = _charBuffers[ix];</b>
+<b class="fc"><i>123</i>&nbsp;        if (buffer == null || buffer.length &lt; minSize) {</b>
+<b class="fc"><i>124</i>&nbsp;            buffer = calloc(minSize);</b>
+<i>125</i>&nbsp;        } else {
+<b class="fc"><i>126</i>&nbsp;            _charBuffers[ix] = null;</b>
+<i>127</i>&nbsp;        }
+<b class="fc"><i>128</i>&nbsp;        return buffer;</b>
+<i>129</i>&nbsp;    }
+<i>130</i>&nbsp;
+<i>131</i>&nbsp;    public void releaseCharBuffer(int ix, char[] buffer) {
+<b class="fc"><i>132</i>&nbsp;        _charBuffers[ix] = buffer;</b>
+<b class="fc"><i>133</i>&nbsp;    }</b>
+<i>134</i>&nbsp;
+<i>135</i>&nbsp;    /*
+<i>136</i>&nbsp;    /**********************************************************
+<i>137</i>&nbsp;    /* Overridable helper methods
+<i>138</i>&nbsp;    /**********************************************************
+<i>139</i>&nbsp;     */
+<i>140</i>&nbsp;
+<i>141</i>&nbsp;    protected int byteBufferLength(int ix) {
+<b class="fc"><i>142</i>&nbsp;        return BYTE_BUFFER_LENGTHS[ix];</b>
+<i>143</i>&nbsp;    }
+<i>144</i>&nbsp;
+<i>145</i>&nbsp;    protected int charBufferLength(int ix) {
+<b class="fc"><i>146</i>&nbsp;        return CHAR_BUFFER_LENGTHS[ix];</b>
+<i>147</i>&nbsp;    }
+<i>148</i>&nbsp;    
+<i>149</i>&nbsp;    /*
+<i>150</i>&nbsp;    /**********************************************************
+<i>151</i>&nbsp;    /* Actual allocations separated for easier debugging/profiling
+<i>152</i>&nbsp;    /**********************************************************
+<i>153</i>&nbsp;     */
+<i>154</i>&nbsp;
+<b class="fc"><i>155</i>&nbsp;    protected byte[] balloc(int size) { return new byte[size]; }</b>
+<b class="fc"><i>156</i>&nbsp;    protected char[] calloc(int size) { return new char[size]; }</b>
+<i>157</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 04:22</div>
+</div>
+</body>
+</html>

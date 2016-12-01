@@ -1,0 +1,151 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: DateTimePrinter</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time.format</a> ]
+</div>
+
+<h1>Coverage Summary for Class: DateTimePrinter (org.joda.time.format)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+</tr>
+<tr>
+  <td class="name">DateTimePrinter</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2014 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time.format;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;import java.io.IOException;
+<i>19</i>&nbsp;import java.io.Writer;
+<i>20</i>&nbsp;import java.util.Locale;
+<i>21</i>&nbsp;
+<i>22</i>&nbsp;import org.joda.time.Chronology;
+<i>23</i>&nbsp;import org.joda.time.DateTimeZone;
+<i>24</i>&nbsp;import org.joda.time.ReadablePartial;
+<i>25</i>&nbsp;
+<i>26</i>&nbsp;/**
+<i>27</i>&nbsp; * Internal interface for creating textual representations of datetimes.
+<i>28</i>&nbsp; * &lt;p&gt;
+<i>29</i>&nbsp; * Application users will rarely use this class directly. Instead, you
+<i>30</i>&nbsp; * will use one of the factory classes to create a {@link DateTimeFormatter}.
+<i>31</i>&nbsp; * &lt;p&gt;
+<i>32</i>&nbsp; * The factory classes are:&lt;br /&gt;
+<i>33</i>&nbsp; * - {@link DateTimeFormatterBuilder}&lt;br /&gt;
+<i>34</i>&nbsp; * - {@link DateTimeFormat}&lt;br /&gt;
+<i>35</i>&nbsp; * - {@link ISODateTimeFormat}&lt;br /&gt;
+<i>36</i>&nbsp; *
+<i>37</i>&nbsp; * @author Brian S O&#39;Neill
+<i>38</i>&nbsp; * @author Stephen Colebourne
+<i>39</i>&nbsp; * @see DateTimeFormatterBuilder
+<i>40</i>&nbsp; * @see DateTimeFormat
+<i>41</i>&nbsp; * @see ISODateTimeFormat
+<i>42</i>&nbsp; * @since 1.0
+<i>43</i>&nbsp; */
+<i>44</i>&nbsp;public interface DateTimePrinter {
+<i>45</i>&nbsp;
+<i>46</i>&nbsp;    /**
+<i>47</i>&nbsp;     * Returns the expected maximum number of characters produced.
+<i>48</i>&nbsp;     * The actual amount should rarely exceed this estimate.
+<i>49</i>&nbsp;     * 
+<i>50</i>&nbsp;     * @return the estimated length
+<i>51</i>&nbsp;     */
+<i>52</i>&nbsp;    int estimatePrintedLength();
+<i>53</i>&nbsp;
+<i>54</i>&nbsp;    //-----------------------------------------------------------------------
+<i>55</i>&nbsp;    /**
+<i>56</i>&nbsp;     * Prints an instant from milliseconds since 1970-01-01T00:00:00Z,
+<i>57</i>&nbsp;     * using the given Chronology.
+<i>58</i>&nbsp;     *
+<i>59</i>&nbsp;     * @param buf  formatted instant is appended to this buffer, not null
+<i>60</i>&nbsp;     * @param instant  millis since 1970-01-01T00:00:00Z
+<i>61</i>&nbsp;     * @param chrono  the chronology to use, not null
+<i>62</i>&nbsp;     * @param displayOffset  if a time zone offset is printed, force it to use
+<i>63</i>&nbsp;     * this millisecond value
+<i>64</i>&nbsp;     * @param displayZone  the time zone to use, null means local time
+<i>65</i>&nbsp;     * @param locale  the locale to use, null means default locale
+<i>66</i>&nbsp;     */
+<i>67</i>&nbsp;    void printTo(StringBuffer buf, long instant, Chronology chrono,
+<i>68</i>&nbsp;                 int displayOffset, DateTimeZone displayZone, Locale locale);
+<i>69</i>&nbsp;
+<i>70</i>&nbsp;    /**
+<i>71</i>&nbsp;     * Prints an instant from milliseconds since 1970-01-01T00:00:00Z,
+<i>72</i>&nbsp;     * using the given Chronology.
+<i>73</i>&nbsp;     *
+<i>74</i>&nbsp;     * @param out  formatted instant is written out, not null
+<i>75</i>&nbsp;     * @param instant  millis since 1970-01-01T00:00:00Z
+<i>76</i>&nbsp;     * @param chrono  the chronology to use, not null
+<i>77</i>&nbsp;     * @param displayOffset  if a time zone offset is printed, force it to use
+<i>78</i>&nbsp;     * this millisecond value
+<i>79</i>&nbsp;     * @param displayZone  the time zone to use, null means local time
+<i>80</i>&nbsp;     * @param locale  the locale to use, null means default locale
+<i>81</i>&nbsp;     */
+<i>82</i>&nbsp;    void printTo(Writer out, long instant, Chronology chrono,
+<i>83</i>&nbsp;                 int displayOffset, DateTimeZone displayZone, Locale locale) throws IOException;
+<i>84</i>&nbsp;
+<i>85</i>&nbsp;    //-----------------------------------------------------------------------
+<i>86</i>&nbsp;    /**
+<i>87</i>&nbsp;     * Prints a ReadablePartial.
+<i>88</i>&nbsp;     *
+<i>89</i>&nbsp;     * @param buf  formatted partial is appended to this buffer, not null
+<i>90</i>&nbsp;     * @param partial  partial to format, not null
+<i>91</i>&nbsp;     * @param locale  the locale to use, null means default locale
+<i>92</i>&nbsp;     */
+<i>93</i>&nbsp;    void printTo(StringBuffer buf, ReadablePartial partial, Locale locale);
+<i>94</i>&nbsp;
+<i>95</i>&nbsp;    /**
+<i>96</i>&nbsp;     * Prints a ReadablePartial.
+<i>97</i>&nbsp;     *
+<i>98</i>&nbsp;     * @param out  formatted partial is written out, not null
+<i>99</i>&nbsp;     * @param partial  partial to format, not null
+<i>100</i>&nbsp;     * @param locale  the locale to use, null means default locale
+<i>101</i>&nbsp;     */
+<i>102</i>&nbsp;    void printTo(Writer out, ReadablePartial partial, Locale locale) throws IOException;
+<i>103</i>&nbsp;
+<i>104</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

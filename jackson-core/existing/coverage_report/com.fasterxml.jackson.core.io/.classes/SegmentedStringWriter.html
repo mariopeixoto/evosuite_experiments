@@ -1,0 +1,170 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: SegmentedStringWriter</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.fasterxml.jackson.core.io</a> ]
+</div>
+
+<h1>Coverage Summary for Class: SegmentedStringWriter (com.fasterxml.jackson.core.io)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">SegmentedStringWriter</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    83.3%
+  </span>
+  <span class="absValue">
+    (10/ 12)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90.5%
+  </span>
+  <span class="absValue">
+    (19/ 21)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package com.fasterxml.jackson.core.io;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import java.io.*;
+<i>4</i>&nbsp;
+<i>5</i>&nbsp;import com.fasterxml.jackson.core.util.BufferRecycler;
+<i>6</i>&nbsp;import com.fasterxml.jackson.core.util.TextBuffer;
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;/**
+<i>9</i>&nbsp; * Efficient alternative to {@link StringWriter}, based on using segmented
+<i>10</i>&nbsp; * internal buffer. Initial input buffer is also recyclable.
+<i>11</i>&nbsp; *&lt;p&gt;
+<i>12</i>&nbsp; * This class is most useful when serializing JSON content as a String:
+<i>13</i>&nbsp; * if so, instance of this class can be given as the writer to
+<i>14</i>&nbsp; * &lt;code&gt;JsonGenerator&lt;/code&gt;.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;public final class SegmentedStringWriter extends Writer
+<i>17</i>&nbsp;{
+<i>18</i>&nbsp;    final private TextBuffer _buffer;
+<i>19</i>&nbsp;
+<i>20</i>&nbsp;    public SegmentedStringWriter(BufferRecycler br) {
+<b class="fc"><i>21</i>&nbsp;        super();</b>
+<b class="fc"><i>22</i>&nbsp;        _buffer = new TextBuffer(br);</b>
+<b class="fc"><i>23</i>&nbsp;    }</b>
+<i>24</i>&nbsp;
+<i>25</i>&nbsp;    /*
+<i>26</i>&nbsp;    /**********************************************************
+<i>27</i>&nbsp;    /* java.io.Writer implementation
+<i>28</i>&nbsp;    /**********************************************************
+<i>29</i>&nbsp;     */
+<i>30</i>&nbsp;
+<i>31</i>&nbsp;    @Override
+<i>32</i>&nbsp;    public Writer append(char c) {
+<b class="fc"><i>33</i>&nbsp;        write(c);</b>
+<b class="fc"><i>34</i>&nbsp;        return this;</b>
+<i>35</i>&nbsp;    }
+<i>36</i>&nbsp;
+<i>37</i>&nbsp;    @Override
+<i>38</i>&nbsp;    public Writer append(CharSequence csq) {
+<b class="fc"><i>39</i>&nbsp;        String str = csq.toString();</b>
+<b class="fc"><i>40</i>&nbsp;        _buffer.append(str, 0, str.length());</b>
+<b class="fc"><i>41</i>&nbsp;        return this;</b>
+<i>42</i>&nbsp;    }
+<i>43</i>&nbsp;
+<i>44</i>&nbsp;    @Override
+<i>45</i>&nbsp;    public Writer append(CharSequence csq, int start, int end) {
+<b class="fc"><i>46</i>&nbsp;        String str = csq.subSequence(start, end).toString();</b>
+<b class="fc"><i>47</i>&nbsp;        _buffer.append(str, 0, str.length());</b>
+<b class="fc"><i>48</i>&nbsp;        return this;</b>
+<i>49</i>&nbsp;    }
+<i>50</i>&nbsp;
+<b class="fc"><i>51</i>&nbsp;    @Override public void close() { } // NOP</b>
+<b class="fc"><i>52</i>&nbsp;    @Override public void flush() { } // NOP</b>
+<i>53</i>&nbsp;
+<i>54</i>&nbsp;    @Override
+<b class="fc"><i>55</i>&nbsp;    public void write(char[] cbuf) { _buffer.append(cbuf, 0, cbuf.length); }</b>
+<i>56</i>&nbsp;
+<i>57</i>&nbsp;    @Override
+<b class="fc"><i>58</i>&nbsp;    public void write(char[] cbuf, int off, int len) { _buffer.append(cbuf, off, len); }</b>
+<i>59</i>&nbsp;
+<i>60</i>&nbsp;    @Override
+<b class="fc"><i>61</i>&nbsp;    public void write(int c) { _buffer.append((char) c); }</b>
+<i>62</i>&nbsp;
+<i>63</i>&nbsp;    @Override
+<b class="nc"><i>64</i>&nbsp;    public void write(String str) { _buffer.append(str, 0, str.length()); }</b>
+<i>65</i>&nbsp;
+<i>66</i>&nbsp;    @Override
+<b class="nc"><i>67</i>&nbsp;    public void write(String str, int off, int len) { _buffer.append(str, off, len); }</b>
+<i>68</i>&nbsp;
+<i>69</i>&nbsp;    /*
+<i>70</i>&nbsp;    /**********************************************************
+<i>71</i>&nbsp;    /* Extended API
+<i>72</i>&nbsp;    /**********************************************************
+<i>73</i>&nbsp;     */
+<i>74</i>&nbsp;
+<i>75</i>&nbsp;    /**
+<i>76</i>&nbsp;     * Main access method that will construct a String that contains
+<i>77</i>&nbsp;     * all the contents, release all internal buffers we may have,
+<i>78</i>&nbsp;     * and return result String.
+<i>79</i>&nbsp;     * Note that the method is not idempotent -- if called second time,
+<i>80</i>&nbsp;     * will just return an empty String.
+<i>81</i>&nbsp;     */
+<i>82</i>&nbsp;    public String getAndClear() {
+<b class="fc"><i>83</i>&nbsp;        String result = _buffer.contentsAsString();</b>
+<b class="fc"><i>84</i>&nbsp;        _buffer.releaseBuffers();</b>
+<b class="fc"><i>85</i>&nbsp;        return result;</b>
+<i>86</i>&nbsp;    }
+<i>87</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 04:22</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,1866 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: JsonParser</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.fasterxml.jackson.core</a> ]
+</div>
+
+<h1>Coverage Summary for Class: JsonParser (com.fasterxml.jackson.core)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">JsonParser</td>
+<td class="coverageStat">
+  <span class="percent">
+    28.6%
+  </span>
+  <span class="absValue">
+    (18/ 63)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    29.3%
+  </span>
+  <span class="absValue">
+    (29/ 99)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">JsonParser$Feature</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (7/ 7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (26/ 26)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">JsonParser$NumberType</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/ 2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/ 2)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    37.5%
+  </span>
+  <span class="absValue">
+    (27/ 72)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    44.9%
+  </span>
+  <span class="absValue">
+    (57/ 127)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/* Jackson JSON-processor.
+<i>2</i>&nbsp; *
+<i>3</i>&nbsp; * Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
+<i>4</i>&nbsp; */
+<i>5</i>&nbsp;
+<i>6</i>&nbsp;package com.fasterxml.jackson.core;
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;import java.io.*;
+<i>9</i>&nbsp;import java.math.BigDecimal;
+<i>10</i>&nbsp;import java.math.BigInteger;
+<i>11</i>&nbsp;import java.util.Iterator;
+<i>12</i>&nbsp;
+<i>13</i>&nbsp;import com.fasterxml.jackson.core.type.TypeReference;
+<i>14</i>&nbsp;import com.fasterxml.jackson.core.util.RequestPayload;
+<i>15</i>&nbsp;
+<i>16</i>&nbsp;/**
+<i>17</i>&nbsp; * Base class that defines public API for reading JSON content.
+<i>18</i>&nbsp; * Instances are created using factory methods of
+<i>19</i>&nbsp; * a {@link JsonFactory} instance.
+<i>20</i>&nbsp; *
+<i>21</i>&nbsp; * @author Tatu Saloranta
+<i>22</i>&nbsp; */
+<i>23</i>&nbsp;public abstract class JsonParser
+<i>24</i>&nbsp;    implements Closeable, Versioned
+<i>25</i>&nbsp;{
+<i>26</i>&nbsp;    private final static int MIN_BYTE_I = (int) Byte.MIN_VALUE;
+<i>27</i>&nbsp;    // as per [JACKSON-804], allow range up to and including 255
+<i>28</i>&nbsp;    private final static int MAX_BYTE_I = (int) 255;
+<i>29</i>&nbsp;
+<i>30</i>&nbsp;    private final static int MIN_SHORT_I = (int) Short.MIN_VALUE;
+<i>31</i>&nbsp;    private final static int MAX_SHORT_I = (int) Short.MAX_VALUE;
+<i>32</i>&nbsp;
+<i>33</i>&nbsp;    /**
+<i>34</i>&nbsp;     * Enumeration of possible &quot;native&quot; (optimal) types that can be
+<i>35</i>&nbsp;     * used for numbers.
+<i>36</i>&nbsp;     */
+<b class="fc"><i>37</i>&nbsp;    public enum NumberType {</b>
+<b class="fc"><i>38</i>&nbsp;        INT, LONG, BIG_INTEGER, FLOAT, DOUBLE, BIG_DECIMAL</b>
+<i>39</i>&nbsp;    };
+<i>40</i>&nbsp;
+<i>41</i>&nbsp;    /**
+<i>42</i>&nbsp;     * Enumeration that defines all on/off features for parsers.
+<i>43</i>&nbsp;     */
+<b class="fc"><i>44</i>&nbsp;    public enum Feature {</b>
+<i>45</i>&nbsp;        
+<i>46</i>&nbsp;        // // // Low-level I/O handling features:
+<i>47</i>&nbsp;        
+<i>48</i>&nbsp;        /**
+<i>49</i>&nbsp;         * Feature that determines whether parser will automatically
+<i>50</i>&nbsp;         * close underlying input source that is NOT owned by the
+<i>51</i>&nbsp;         * parser. If disabled, calling application has to separately
+<i>52</i>&nbsp;         * close the underlying {@link InputStream} and {@link Reader}
+<i>53</i>&nbsp;         * instances used to create the parser. If enabled, parser
+<i>54</i>&nbsp;         * will handle closing, as long as parser itself gets closed:
+<i>55</i>&nbsp;         * this happens when end-of-input is encountered, or parser
+<i>56</i>&nbsp;         * is closed by a call to {@link JsonParser#close}.
+<i>57</i>&nbsp;         *&lt;p&gt;
+<i>58</i>&nbsp;         * Feature is enabled by default.
+<i>59</i>&nbsp;         */
+<b class="fc"><i>60</i>&nbsp;        AUTO_CLOSE_SOURCE(true),</b>
+<i>61</i>&nbsp;            
+<i>62</i>&nbsp;        // // // Support for non-standard data format constructs
+<i>63</i>&nbsp;
+<i>64</i>&nbsp;        /**
+<i>65</i>&nbsp;         * Feature that determines whether parser will allow use
+<i>66</i>&nbsp;         * of Java/C++ style comments (both &#39;/&#39;+&#39;*&#39; and
+<i>67</i>&nbsp;         * &#39;//&#39; varieties) within parsed content or not.
+<i>68</i>&nbsp;         *&lt;p&gt;
+<i>69</i>&nbsp;         * Since JSON specification does not mention comments as legal
+<i>70</i>&nbsp;         * construct,
+<i>71</i>&nbsp;         * this is a non-standard feature; however, in the wild
+<i>72</i>&nbsp;         * this is extensively used. As such, feature is
+<i>73</i>&nbsp;         * &lt;b&gt;disabled by default&lt;/b&gt; for parsers and must be
+<i>74</i>&nbsp;         * explicitly enabled.
+<i>75</i>&nbsp;         */
+<b class="fc"><i>76</i>&nbsp;        ALLOW_COMMENTS(false),</b>
+<i>77</i>&nbsp;
+<i>78</i>&nbsp;        /**
+<i>79</i>&nbsp;         * Feature that determines whether parser will allow use
+<i>80</i>&nbsp;         * of YAML comments, ones starting with &#39;#&#39; and continuing
+<i>81</i>&nbsp;         * until the end of the line. This commenting style is common
+<i>82</i>&nbsp;         * with scripting languages as well.
+<i>83</i>&nbsp;         *&lt;p&gt;
+<i>84</i>&nbsp;         * Since JSON specification does not mention comments as legal
+<i>85</i>&nbsp;         * construct,
+<i>86</i>&nbsp;         * this is a non-standard feature. As such, feature is
+<i>87</i>&nbsp;         * &lt;b&gt;disabled by default&lt;/b&gt; for parsers and must be
+<i>88</i>&nbsp;         * explicitly enabled.
+<i>89</i>&nbsp;         */
+<b class="fc"><i>90</i>&nbsp;        ALLOW_YAML_COMMENTS(false),</b>
+<i>91</i>&nbsp;        
+<i>92</i>&nbsp;        /**
+<i>93</i>&nbsp;         * Feature that determines whether parser will allow use
+<i>94</i>&nbsp;         * of unquoted field names (which is allowed by Javascript,
+<i>95</i>&nbsp;         * but not by JSON specification).
+<i>96</i>&nbsp;         *&lt;p&gt;
+<i>97</i>&nbsp;         * Since JSON specification requires use of double quotes for
+<i>98</i>&nbsp;         * field names,
+<i>99</i>&nbsp;         * this is a non-standard feature, and as such disabled by default.
+<i>100</i>&nbsp;         */
+<b class="fc"><i>101</i>&nbsp;        ALLOW_UNQUOTED_FIELD_NAMES(false),</b>
+<i>102</i>&nbsp;
+<i>103</i>&nbsp;        /**
+<i>104</i>&nbsp;         * Feature that determines whether parser will allow use
+<i>105</i>&nbsp;         * of single quotes (apostrophe, character &#39;\&#39;&#39;) for
+<i>106</i>&nbsp;         * quoting Strings (names and String values). If so,
+<i>107</i>&nbsp;         * this is in addition to other acceptable markers.
+<i>108</i>&nbsp;         * but not by JSON specification).
+<i>109</i>&nbsp;         *&lt;p&gt;
+<i>110</i>&nbsp;         * Since JSON specification requires use of double quotes for
+<i>111</i>&nbsp;         * field names,
+<i>112</i>&nbsp;         * this is a non-standard feature, and as such disabled by default.
+<i>113</i>&nbsp;         */
+<b class="fc"><i>114</i>&nbsp;        ALLOW_SINGLE_QUOTES(false),</b>
+<i>115</i>&nbsp;
+<i>116</i>&nbsp;        /**
+<i>117</i>&nbsp;         * Feature that determines whether parser will allow
+<i>118</i>&nbsp;         * JSON Strings to contain unquoted control characters
+<i>119</i>&nbsp;         * (ASCII characters with value less than 32, including
+<i>120</i>&nbsp;         * tab and line feed characters) or not.
+<i>121</i>&nbsp;         * If feature is set false, an exception is thrown if such a
+<i>122</i>&nbsp;         * character is encountered.
+<i>123</i>&nbsp;         *&lt;p&gt;
+<i>124</i>&nbsp;         * Since JSON specification requires quoting for all control characters,
+<i>125</i>&nbsp;         * this is a non-standard feature, and as such disabled by default.
+<i>126</i>&nbsp;         */
+<b class="fc"><i>127</i>&nbsp;        ALLOW_UNQUOTED_CONTROL_CHARS(false),</b>
+<i>128</i>&nbsp;
+<i>129</i>&nbsp;        /**
+<i>130</i>&nbsp;         * Feature that can be enabled to accept quoting of all character
+<i>131</i>&nbsp;         * using backslash quoting mechanism: if not enabled, only characters
+<i>132</i>&nbsp;         * that are explicitly listed by JSON specification can be thus
+<i>133</i>&nbsp;         * escaped (see JSON spec for small list of these characters)
+<i>134</i>&nbsp;         *&lt;p&gt;
+<i>135</i>&nbsp;         * Since JSON specification requires quoting for all control characters,
+<i>136</i>&nbsp;         * this is a non-standard feature, and as such disabled by default.
+<i>137</i>&nbsp;         */
+<b class="fc"><i>138</i>&nbsp;        ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER(false),</b>
+<i>139</i>&nbsp;
+<i>140</i>&nbsp;        /**
+<i>141</i>&nbsp;         * Feature that determines whether parser will allow
+<i>142</i>&nbsp;         * JSON integral numbers to start with additional (ignorable) 
+<i>143</i>&nbsp;         * zeroes (like: 000001). If enabled, no exception is thrown, and extra
+<i>144</i>&nbsp;         * nulls are silently ignored (and not included in textual representation
+<i>145</i>&nbsp;         * exposed via {@link JsonParser#getText}).
+<i>146</i>&nbsp;         *&lt;p&gt;
+<i>147</i>&nbsp;         * Since JSON specification does not allow leading zeroes,
+<i>148</i>&nbsp;         * this is a non-standard feature, and as such disabled by default.
+<i>149</i>&nbsp;         */
+<b class="fc"><i>150</i>&nbsp;        ALLOW_NUMERIC_LEADING_ZEROS(false),</b>
+<i>151</i>&nbsp;        
+<i>152</i>&nbsp;        /**
+<i>153</i>&nbsp;         * Feature that allows parser to recognize set of
+<i>154</i>&nbsp;         * &quot;Not-a-Number&quot; (NaN) tokens as legal floating number
+<i>155</i>&nbsp;         * values (similar to how many other data formats and
+<i>156</i>&nbsp;         * programming language source code allows it).
+<i>157</i>&nbsp;         * Specific subset contains values that
+<i>158</i>&nbsp;         * &lt;a href=&quot;http://www.w3.org/TR/xmlschema-2/&quot;&gt;XML Schema&lt;/a&gt;
+<i>159</i>&nbsp;         * (see section 3.2.4.1, Lexical Representation)
+<i>160</i>&nbsp;         * allows (tokens are quoted contents, not including quotes):
+<i>161</i>&nbsp;         *&lt;ul&gt;
+<i>162</i>&nbsp;         *  &lt;li&gt;&quot;INF&quot; (for positive infinity), as well as alias of &quot;Infinity&quot;
+<i>163</i>&nbsp;         *  &lt;li&gt;&quot;-INF&quot; (for negative infinity), alias &quot;-Infinity&quot;
+<i>164</i>&nbsp;         *  &lt;li&gt;&quot;NaN&quot; (for other not-a-numbers, like result of division by zero)
+<i>165</i>&nbsp;         *&lt;/ul&gt;
+<i>166</i>&nbsp;         *&lt;p&gt;
+<i>167</i>&nbsp;         * Since JSON specification does not allow use of such values,
+<i>168</i>&nbsp;         * this is a non-standard feature, and as such disabled by default.
+<i>169</i>&nbsp;         */
+<b class="fc"><i>170</i>&nbsp;         ALLOW_NON_NUMERIC_NUMBERS(false),</b>
+<i>171</i>&nbsp;
+<i>172</i>&nbsp;         /**
+<i>173</i>&nbsp;          * Feature that determines whether {@link JsonParser} will explicitly
+<i>174</i>&nbsp;          * check that no duplicate JSON Object field names are encountered.
+<i>175</i>&nbsp;          * If enabled, parser will check all names within context and report
+<i>176</i>&nbsp;          * duplicates by throwing a {@link JsonParseException}; if disabled,
+<i>177</i>&nbsp;          * parser will not do such checking. Assumption in latter case is
+<i>178</i>&nbsp;          * that caller takes care of handling duplicates at a higher level:
+<i>179</i>&nbsp;          * data-binding, for example, has features to specify detection to
+<i>180</i>&nbsp;          * be done there.
+<i>181</i>&nbsp;          *&lt;p&gt;
+<i>182</i>&nbsp;          * Note that enabling this feature will incur performance overhead
+<i>183</i>&nbsp;          * due to having to store and check additional information: this typically
+<i>184</i>&nbsp;          * adds 20-30% to execution time for basic parsing.
+<i>185</i>&nbsp;          * 
+<i>186</i>&nbsp;          * @since 2.3
+<i>187</i>&nbsp;          */
+<b class="fc"><i>188</i>&nbsp;         STRICT_DUPLICATE_DETECTION(false),</b>
+<i>189</i>&nbsp;
+<i>190</i>&nbsp;         /**
+<i>191</i>&nbsp;          * Feature that determines what to do if the underlying data format requires knowledge
+<i>192</i>&nbsp;          * of all properties to decode (usually via a Schema), and if no definition is
+<i>193</i>&nbsp;          * found for a property that input content contains.
+<i>194</i>&nbsp;          * Typically most textual data formats do NOT require schema information (although
+<i>195</i>&nbsp;          * some do, such as CSV), whereas many binary data formats do require definitions
+<i>196</i>&nbsp;          * (such as Avro, protobuf), although not all (Smile, CBOR, BSON and MessagePack do not).
+<i>197</i>&nbsp;          * Further note that some formats that do require schema information will not be able
+<i>198</i>&nbsp;          * to ignore undefined properties: for example, Avro is fully positional and there is
+<i>199</i>&nbsp;          * no possibility of undefined data. This leaves formats like Protobuf that have identifiers
+<i>200</i>&nbsp;          * that may or may not map; and as such Protobuf format does make use of this feature.
+<i>201</i>&nbsp;          *&lt;p&gt;
+<i>202</i>&nbsp;          * Note that support for this feature is implemented by individual data format
+<i>203</i>&nbsp;          * module, if (and only if) it makes sense for the format in question. For JSON,
+<i>204</i>&nbsp;          * for example, this feature has no effect as properties need not be pre-defined.
+<i>205</i>&nbsp;          *&lt;p&gt;
+<i>206</i>&nbsp;          * Feature is disabled by default, meaning that if the underlying data format
+<i>207</i>&nbsp;          * requires knowledge of all properties to output, attempts to read an unknown
+<i>208</i>&nbsp;          * property will result in a {@link JsonProcessingException}
+<i>209</i>&nbsp;          *
+<i>210</i>&nbsp;          * @since 2.6
+<i>211</i>&nbsp;          */
+<b class="fc"><i>212</i>&nbsp;         IGNORE_UNDEFINED(false),</b>
+<i>213</i>&nbsp;
+<i>214</i>&nbsp;         /**
+<i>215</i>&nbsp;          * Feature allows the support for &quot;missing&quot; values in a JSON array: missing
+<i>216</i>&nbsp;          * value meaning sequence of two commas, without value in-between but only
+<i>217</i>&nbsp;          * optional white space.
+<i>218</i>&nbsp;          * Enabling this feature will expose &quot;missing&quot; values as {@link JsonToken#VALUE_NULL}
+<i>219</i>&nbsp;          * tokens, which typically become Java nulls in arrays and {@link java.util.Collection}
+<i>220</i>&nbsp;          * in data-binding.
+<i>221</i>&nbsp;          * &lt;p&gt;
+<i>222</i>&nbsp;          * For example, enabling this feature will represent a JSON array &lt;code&gt;[&quot;value1&quot;,,&quot;value3&quot;,]&lt;/code&gt;
+<i>223</i>&nbsp;          * as &lt;code&gt;[&quot;value1&quot;, null, &quot;value3&quot;, null]&lt;/code&gt; 
+<i>224</i>&nbsp;          * &lt;p&gt;
+<i>225</i>&nbsp;          * Since the JSON specification does not allow missing values this is a non-compliant JSON
+<i>226</i>&nbsp;          * feature and is disabled by default.
+<i>227</i>&nbsp;          * 
+<i>228</i>&nbsp;          * @since 2.8
+<i>229</i>&nbsp;          */
+<b class="fc"><i>230</i>&nbsp;         ALLOW_MISSING_VALUES(false),</b>
+<i>231</i>&nbsp;
+<i>232</i>&nbsp;         /**
+<i>233</i>&nbsp;          * Feature that determines whether {@link JsonParser} will allow for a single trailing
+<i>234</i>&nbsp;          * comma following the final value (in an Array) or member (in an Object). These commas
+<i>235</i>&nbsp;          * will simply be ignored.
+<i>236</i>&nbsp;          * &lt;p&gt;
+<i>237</i>&nbsp;          * For example, when this feature is enabled, &lt;code&gt;[true,true,]&lt;/code&gt; is equivalent to
+<i>238</i>&nbsp;          * &lt;code&gt;[true, true]&lt;/code&gt; and &lt;code&gt;{&quot;a&quot;: true,}&lt;/code&gt; is equivalent to
+<i>239</i>&nbsp;          * &lt;code&gt;{&quot;a&quot;: true}&lt;/code&gt;.
+<i>240</i>&nbsp;          * &lt;p&gt;
+<i>241</i>&nbsp;          * When combined with &lt;code&gt;ALLOW_MISSING_VALUES&lt;/code&gt;, this feature takes priority, and
+<i>242</i>&nbsp;          * the final trailing comma in an array declaration does not imply a missing
+<i>243</i>&nbsp;          * (&lt;code&gt;null&lt;/code&gt;) value. For example, when both &lt;code&gt;ALLOW_MISSING_VALUES&lt;/code&gt;
+<i>244</i>&nbsp;          * and &lt;code&gt;ALLOW_TRAILING_COMMA&lt;/code&gt; are enabled, &lt;code&gt;[true,true,]&lt;/code&gt; is
+<i>245</i>&nbsp;          * equivalent to &lt;code&gt;[true, true]&lt;/code&gt;, and &lt;code&gt;[true,true,,]&lt;/code&gt; is equivalent to
+<i>246</i>&nbsp;          * &lt;code&gt;[true, true, null]&lt;/code&gt;.
+<i>247</i>&nbsp;          * &lt;p&gt;
+<i>248</i>&nbsp;          * Since the JSON specification does not permit trailing commas, this is a non-standard
+<i>249</i>&nbsp;          * feature, and as such disabled by default.
+<i>250</i>&nbsp;          *
+<i>251</i>&nbsp;          * @since 2.9
+<i>252</i>&nbsp;          */
+<b class="fc"><i>253</i>&nbsp;         ALLOW_TRAILING_COMMA(false)</b>
+<i>254</i>&nbsp;         ;
+<i>255</i>&nbsp;
+<i>256</i>&nbsp;        /**
+<i>257</i>&nbsp;         * Whether feature is enabled or disabled by default.
+<i>258</i>&nbsp;         */
+<i>259</i>&nbsp;        private final boolean _defaultState;
+<i>260</i>&nbsp;
+<i>261</i>&nbsp;        private final int _mask;
+<i>262</i>&nbsp;        
+<i>263</i>&nbsp;        /**
+<i>264</i>&nbsp;         * Method that calculates bit set (flags) of all features that
+<i>265</i>&nbsp;         * are enabled by default.
+<i>266</i>&nbsp;         */
+<i>267</i>&nbsp;        public static int collectDefaults()
+<i>268</i>&nbsp;        {
+<b class="fc"><i>269</i>&nbsp;            int flags = 0;</b>
+<b class="fc"><i>270</i>&nbsp;            for (Feature f : values()) {</b>
+<b class="fc"><i>271</i>&nbsp;                if (f.enabledByDefault()) {</b>
+<b class="fc"><i>272</i>&nbsp;                    flags |= f.getMask();</b>
+<i>273</i>&nbsp;                }
+<i>274</i>&nbsp;            }
+<b class="fc"><i>275</i>&nbsp;            return flags;</b>
+<i>276</i>&nbsp;        }
+<i>277</i>&nbsp;
+<b class="fc"><i>278</i>&nbsp;        private Feature(boolean defaultState) {</b>
+<b class="fc"><i>279</i>&nbsp;            _mask = (1 &lt;&lt; ordinal());</b>
+<b class="fc"><i>280</i>&nbsp;            _defaultState = defaultState;</b>
+<b class="fc"><i>281</i>&nbsp;        }</b>
+<i>282</i>&nbsp;
+<b class="fc"><i>283</i>&nbsp;        public boolean enabledByDefault() { return _defaultState; }</b>
+<i>284</i>&nbsp;
+<i>285</i>&nbsp;        /**
+<i>286</i>&nbsp;         * @since 2.3
+<i>287</i>&nbsp;         */
+<b class="fc"><i>288</i>&nbsp;        public boolean enabledIn(int flags) { return (flags &amp; _mask) != 0; }</b>
+<i>289</i>&nbsp;
+<b class="fc"><i>290</i>&nbsp;        public int getMask() { return _mask; }</b>
+<i>291</i>&nbsp;    }
+<i>292</i>&nbsp;
+<i>293</i>&nbsp;    /*
+<i>294</i>&nbsp;    /**********************************************************
+<i>295</i>&nbsp;    /* Minimal configuration state
+<i>296</i>&nbsp;    /**********************************************************
+<i>297</i>&nbsp;     */
+<i>298</i>&nbsp;
+<i>299</i>&nbsp;    /**
+<i>300</i>&nbsp;     * Bit flag composed of bits that indicate which
+<i>301</i>&nbsp;     * {@link com.fasterxml.jackson.core.JsonParser.Feature}s
+<i>302</i>&nbsp;     * are enabled.
+<i>303</i>&nbsp;     */
+<i>304</i>&nbsp;    protected int _features;
+<i>305</i>&nbsp;    
+<i>306</i>&nbsp;    /**
+<i>307</i>&nbsp;     * Optional container that holds the request payload which will be displayed on JSON parsing error.
+<i>308</i>&nbsp;     *
+<i>309</i>&nbsp;     * @since 2.8
+<i>310</i>&nbsp;     */
+<i>311</i>&nbsp;    protected transient RequestPayload _requestPayload;
+<i>312</i>&nbsp;
+<i>313</i>&nbsp;    /*
+<i>314</i>&nbsp;    /**********************************************************
+<i>315</i>&nbsp;    /* Construction, configuration, initialization
+<i>316</i>&nbsp;    /**********************************************************
+<i>317</i>&nbsp;     */
+<i>318</i>&nbsp;
+<b class="fc"><i>319</i>&nbsp;    protected JsonParser() { }</b>
+<b class="fc"><i>320</i>&nbsp;    protected JsonParser(int features) { _features = features; }</b>
+<i>321</i>&nbsp;
+<i>322</i>&nbsp;    /**
+<i>323</i>&nbsp;     * Accessor for {@link ObjectCodec} associated with this
+<i>324</i>&nbsp;     * parser, if any. Codec is used by {@link #readValueAs(Class)}
+<i>325</i>&nbsp;     * method (and its variants).
+<i>326</i>&nbsp;     */
+<i>327</i>&nbsp;    public abstract ObjectCodec getCodec();
+<i>328</i>&nbsp;
+<i>329</i>&nbsp;    /**
+<i>330</i>&nbsp;     * Setter that allows defining {@link ObjectCodec} associated with this
+<i>331</i>&nbsp;     * parser, if any. Codec is used by {@link #readValueAs(Class)}
+<i>332</i>&nbsp;     * method (and its variants).
+<i>333</i>&nbsp;     */
+<i>334</i>&nbsp;    public abstract void setCodec(ObjectCodec c);
+<i>335</i>&nbsp;
+<i>336</i>&nbsp;    /**
+<i>337</i>&nbsp;     * Method that can be used to get access to object that is used
+<i>338</i>&nbsp;     * to access input being parsed; this is usually either
+<i>339</i>&nbsp;     * {@link InputStream} or {@link Reader}, depending on what
+<i>340</i>&nbsp;     * parser was constructed with.
+<i>341</i>&nbsp;     * Note that returned value may be null in some cases; including
+<i>342</i>&nbsp;     * case where parser implementation does not want to exposed raw
+<i>343</i>&nbsp;     * source to caller.
+<i>344</i>&nbsp;     * In cases where input has been decorated, object returned here
+<i>345</i>&nbsp;     * is the decorated version; this allows some level of interaction
+<i>346</i>&nbsp;     * between users of parser and decorator object.
+<i>347</i>&nbsp;     *&lt;p&gt;
+<i>348</i>&nbsp;     * In general use of this accessor should be considered as
+<i>349</i>&nbsp;     * &quot;last effort&quot;, i.e. only used if no other mechanism is applicable.
+<i>350</i>&nbsp;     */
+<b class="nc"><i>351</i>&nbsp;    public Object getInputSource() { return null; }</b>
+<i>352</i>&nbsp;
+<i>353</i>&nbsp;    /**
+<i>354</i>&nbsp;     * Helper method, usually equivalent to:
+<i>355</i>&nbsp;     *&lt;code&gt;
+<i>356</i>&nbsp;     *   getParsingContext().getCurrentValue();
+<i>357</i>&nbsp;     *&lt;/code&gt;
+<i>358</i>&nbsp;     *&lt;p&gt;
+<i>359</i>&nbsp;     * Note that &quot;current value&quot; is NOT populated (or used) by Streaming parser;
+<i>360</i>&nbsp;     * it is only used by higher-level data-binding functionality.
+<i>361</i>&nbsp;     * The reason it is included here is that it can be stored and accessed hierarchically,
+<i>362</i>&nbsp;     * and gets passed through data-binding.
+<i>363</i>&nbsp;     * 
+<i>364</i>&nbsp;     * @since 2.5
+<i>365</i>&nbsp;     */
+<i>366</i>&nbsp;    public Object getCurrentValue() {
+<b class="nc"><i>367</i>&nbsp;        JsonStreamContext ctxt = getParsingContext();</b>
+<b class="nc"><i>368</i>&nbsp;        return (ctxt == null) ? null : ctxt.getCurrentValue();</b>
+<i>369</i>&nbsp;    }
+<i>370</i>&nbsp;
+<i>371</i>&nbsp;    /**
+<i>372</i>&nbsp;     * Helper method, usually equivalent to:
+<i>373</i>&nbsp;     *&lt;code&gt;
+<i>374</i>&nbsp;     *   getParsingContext().setCurrentValue(v);
+<i>375</i>&nbsp;     *&lt;/code&gt;
+<i>376</i>&nbsp;     * 
+<i>377</i>&nbsp;     * @since 2.5
+<i>378</i>&nbsp;     */
+<i>379</i>&nbsp;    public void setCurrentValue(Object v) {
+<b class="nc"><i>380</i>&nbsp;        JsonStreamContext ctxt = getParsingContext();</b>
+<b class="nc"><i>381</i>&nbsp;        if (ctxt != null) {</b>
+<b class="nc"><i>382</i>&nbsp;            ctxt.setCurrentValue(v);</b>
+<i>383</i>&nbsp;        }
+<b class="nc"><i>384</i>&nbsp;    }</b>
+<i>385</i>&nbsp;
+<i>386</i>&nbsp;    /**
+<i>387</i>&nbsp;     * Sets the payload to be passed if {@link JsonParseException} is thrown.
+<i>388</i>&nbsp;     *
+<i>389</i>&nbsp;     * @since 2.8
+<i>390</i>&nbsp;     */
+<i>391</i>&nbsp;    public void setRequestPayloadOnError(RequestPayload payload) {
+<b class="nc"><i>392</i>&nbsp;        _requestPayload = payload;</b>
+<b class="nc"><i>393</i>&nbsp;    }</b>
+<i>394</i>&nbsp;    
+<i>395</i>&nbsp;    /**
+<i>396</i>&nbsp;     * Sets the byte[] request payload and the charset
+<i>397</i>&nbsp;     *
+<i>398</i>&nbsp;     * @since 2.8
+<i>399</i>&nbsp;     */
+<i>400</i>&nbsp;     public void setRequestPayloadOnError(byte[] payload, String charset) {
+<b class="fc"><i>401</i>&nbsp;         _requestPayload = (payload == null) ? null : new RequestPayload(payload, charset);</b>
+<b class="fc"><i>402</i>&nbsp;     }</b>
+<i>403</i>&nbsp;
+<i>404</i>&nbsp;     /**
+<i>405</i>&nbsp;     * Sets the String request payload
+<i>406</i>&nbsp;     *
+<i>407</i>&nbsp;     * @since 2.8
+<i>408</i>&nbsp;     */
+<i>409</i>&nbsp;    public void setRequestPayloadOnError(String payload) {
+<b class="fc"><i>410</i>&nbsp;        _requestPayload = (payload == null) ? null : new RequestPayload(payload);</b>
+<b class="fc"><i>411</i>&nbsp;    }</b>
+<i>412</i>&nbsp;
+<i>413</i>&nbsp;    /*
+<i>414</i>&nbsp;    /**********************************************************
+<i>415</i>&nbsp;    /* Format support
+<i>416</i>&nbsp;    /**********************************************************
+<i>417</i>&nbsp;     */
+<i>418</i>&nbsp;
+<i>419</i>&nbsp;    /**
+<i>420</i>&nbsp;     * Method to call to make this parser use specified schema. Method must
+<i>421</i>&nbsp;     * be called before trying to parse any content, right after parser instance
+<i>422</i>&nbsp;     * has been created.
+<i>423</i>&nbsp;     * Note that not all parsers support schemas; and those that do usually only
+<i>424</i>&nbsp;     * accept specific types of schemas: ones defined for data format parser can read.
+<i>425</i>&nbsp;     *&lt;p&gt;
+<i>426</i>&nbsp;     * If parser does not support specified schema, {@link UnsupportedOperationException}
+<i>427</i>&nbsp;     * is thrown.
+<i>428</i>&nbsp;     * 
+<i>429</i>&nbsp;     * @param schema Schema to use
+<i>430</i>&nbsp;     * 
+<i>431</i>&nbsp;     * @throws UnsupportedOperationException if parser does not support schema
+<i>432</i>&nbsp;     */
+<i>433</i>&nbsp;    public void setSchema(FormatSchema schema) {
+<b class="nc"><i>434</i>&nbsp;        throw new UnsupportedOperationException(&quot;Parser of type &quot;+getClass().getName()+&quot; does not support schema of type &#39;&quot;</b>
+<b class="nc"><i>435</i>&nbsp;                +schema.getSchemaType()+&quot;&#39;&quot;);</b>
+<i>436</i>&nbsp;    }
+<i>437</i>&nbsp;
+<i>438</i>&nbsp;    /**
+<i>439</i>&nbsp;     * Method for accessing Schema that this parser uses, if any.
+<i>440</i>&nbsp;     * Default implementation returns null.
+<i>441</i>&nbsp;     *
+<i>442</i>&nbsp;     * @since 2.1
+<i>443</i>&nbsp;     */
+<b class="nc"><i>444</i>&nbsp;    public FormatSchema getSchema() { return null; }</b>
+<i>445</i>&nbsp;    
+<i>446</i>&nbsp;    /**
+<i>447</i>&nbsp;     * Method that can be used to verify that given schema can be used with
+<i>448</i>&nbsp;     * this parser (using {@link #setSchema}).
+<i>449</i>&nbsp;     * 
+<i>450</i>&nbsp;     * @param schema Schema to check
+<i>451</i>&nbsp;     * 
+<i>452</i>&nbsp;     * @return True if this parser can use given schema; false if not
+<i>453</i>&nbsp;     */
+<b class="nc"><i>454</i>&nbsp;    public boolean canUseSchema(FormatSchema schema) { return false; }</b>
+<i>455</i>&nbsp;
+<i>456</i>&nbsp;    /*
+<i>457</i>&nbsp;    /**********************************************************
+<i>458</i>&nbsp;    /* Capability introspection
+<i>459</i>&nbsp;    /**********************************************************
+<i>460</i>&nbsp;     */
+<i>461</i>&nbsp;    
+<i>462</i>&nbsp;    /**
+<i>463</i>&nbsp;     * Method that can be called to determine if a custom
+<i>464</i>&nbsp;     * {@link ObjectCodec} is needed for binding data parsed
+<i>465</i>&nbsp;     * using {@link JsonParser} constructed by this factory
+<i>466</i>&nbsp;     * (which typically also implies the same for serialization
+<i>467</i>&nbsp;     * with {@link JsonGenerator}).
+<i>468</i>&nbsp;     * 
+<i>469</i>&nbsp;     * @return True if custom codec is needed with parsers and
+<i>470</i>&nbsp;     *   generators created by this factory; false if a general
+<i>471</i>&nbsp;     *   {@link ObjectCodec} is enough
+<i>472</i>&nbsp;     * 
+<i>473</i>&nbsp;     * @since 2.1
+<i>474</i>&nbsp;     */
+<b class="nc"><i>475</i>&nbsp;    public boolean requiresCustomCodec() { return false;}</b>
+<i>476</i>&nbsp;    
+<i>477</i>&nbsp;    /*
+<i>478</i>&nbsp;    /**********************************************************
+<i>479</i>&nbsp;    /* Versioned
+<i>480</i>&nbsp;    /**********************************************************
+<i>481</i>&nbsp;     */
+<i>482</i>&nbsp;    
+<i>483</i>&nbsp;    /**
+<i>484</i>&nbsp;     * Accessor for getting version of the core package, given a parser instance.
+<i>485</i>&nbsp;     * Left for sub-classes to implement.
+<i>486</i>&nbsp;     */
+<i>487</i>&nbsp;    @Override
+<i>488</i>&nbsp;    public abstract Version version();
+<i>489</i>&nbsp;    
+<i>490</i>&nbsp;    /*
+<i>491</i>&nbsp;    /**********************************************************
+<i>492</i>&nbsp;    /* Closeable implementation
+<i>493</i>&nbsp;    /**********************************************************
+<i>494</i>&nbsp;     */
+<i>495</i>&nbsp;
+<i>496</i>&nbsp;    /**
+<i>497</i>&nbsp;     * Closes the parser so that no further iteration or data access
+<i>498</i>&nbsp;     * can be made; will also close the underlying input source
+<i>499</i>&nbsp;     * if parser either &lt;b&gt;owns&lt;/b&gt; the input source, or feature
+<i>500</i>&nbsp;     * {@link Feature#AUTO_CLOSE_SOURCE} is enabled.
+<i>501</i>&nbsp;     * Whether parser owns the input source depends on factory
+<i>502</i>&nbsp;     * method that was used to construct instance (so check
+<i>503</i>&nbsp;     * {@link com.fasterxml.jackson.core.JsonFactory} for details,
+<i>504</i>&nbsp;     * but the general
+<i>505</i>&nbsp;     * idea is that if caller passes in closable resource (such
+<i>506</i>&nbsp;     * as {@link InputStream} or {@link Reader}) parser does NOT
+<i>507</i>&nbsp;     * own the source; but if it passes a reference (such as
+<i>508</i>&nbsp;     * {@link java.io.File} or {@link java.net.URL} and creates
+<i>509</i>&nbsp;     * stream or reader it does own them.
+<i>510</i>&nbsp;     */
+<i>511</i>&nbsp;    @Override
+<i>512</i>&nbsp;    public abstract void close() throws IOException;
+<i>513</i>&nbsp;
+<i>514</i>&nbsp;    /*
+<i>515</i>&nbsp;    /**********************************************************
+<i>516</i>&nbsp;    /* Buffer handling
+<i>517</i>&nbsp;    /**********************************************************
+<i>518</i>&nbsp;     */
+<i>519</i>&nbsp;
+<i>520</i>&nbsp;    /**
+<i>521</i>&nbsp;     * Method that can be called to push back any content that
+<i>522</i>&nbsp;     * has been read but not consumed by the parser. This is usually
+<i>523</i>&nbsp;     * done after reading all content of interest using parser.
+<i>524</i>&nbsp;     * Content is released by writing it to given stream if possible;
+<i>525</i>&nbsp;     * if underlying input is byte-based it can released, if not (char-based)
+<i>526</i>&nbsp;     * it can not.
+<i>527</i>&nbsp;     * 
+<i>528</i>&nbsp;     * @return -1 if the underlying content source is not byte based
+<i>529</i>&nbsp;     *    (that is, input can not be sent to {@link OutputStream};
+<i>530</i>&nbsp;     *    otherwise number of bytes released (0 if there was nothing to release)
+<i>531</i>&nbsp;     *    
+<i>532</i>&nbsp;     * @throws IOException if write to stream threw exception
+<i>533</i>&nbsp;     */    
+<i>534</i>&nbsp;    public int releaseBuffered(OutputStream out) throws IOException {
+<b class="nc"><i>535</i>&nbsp;        return -1;</b>
+<i>536</i>&nbsp;    }
+<i>537</i>&nbsp;
+<i>538</i>&nbsp;    /**
+<i>539</i>&nbsp;     * Method that can be called to push back any content that
+<i>540</i>&nbsp;     * has been read but not consumed by the parser.
+<i>541</i>&nbsp;     * This is usually
+<i>542</i>&nbsp;     * done after reading all content of interest using parser.
+<i>543</i>&nbsp;     * Content is released by writing it to given writer if possible;
+<i>544</i>&nbsp;     * if underlying input is char-based it can released, if not (byte-based)
+<i>545</i>&nbsp;     * it can not.
+<i>546</i>&nbsp;     * 
+<i>547</i>&nbsp;     * @return -1 if the underlying content source is not char-based
+<i>548</i>&nbsp;     *    (that is, input can not be sent to {@link Writer};
+<i>549</i>&nbsp;     *    otherwise number of chars released (0 if there was nothing to release)
+<i>550</i>&nbsp;     *    
+<i>551</i>&nbsp;     * @throws IOException if write using Writer threw exception
+<i>552</i>&nbsp;     */    
+<b class="nc"><i>553</i>&nbsp;    public int releaseBuffered(Writer w) throws IOException { return -1; }</b>
+<i>554</i>&nbsp;    
+<i>555</i>&nbsp;    /*
+<i>556</i>&nbsp;    /***************************************************
+<i>557</i>&nbsp;    /* Public API, configuration
+<i>558</i>&nbsp;    /***************************************************
+<i>559</i>&nbsp;     */
+<i>560</i>&nbsp;
+<i>561</i>&nbsp;    /**
+<i>562</i>&nbsp;     * Method for enabling specified parser feature
+<i>563</i>&nbsp;     * (check {@link Feature} for list of features)
+<i>564</i>&nbsp;     */
+<i>565</i>&nbsp;    public JsonParser enable(Feature f) {
+<b class="nc"><i>566</i>&nbsp;        _features |= f.getMask();</b>
+<b class="nc"><i>567</i>&nbsp;        return this;</b>
+<i>568</i>&nbsp;    }
+<i>569</i>&nbsp;
+<i>570</i>&nbsp;    /**
+<i>571</i>&nbsp;     * Method for disabling specified  feature
+<i>572</i>&nbsp;     * (check {@link Feature} for list of features)
+<i>573</i>&nbsp;     */
+<i>574</i>&nbsp;    public JsonParser disable(Feature f) {
+<b class="nc"><i>575</i>&nbsp;        _features &amp;= ~f.getMask();</b>
+<b class="nc"><i>576</i>&nbsp;        return this;</b>
+<i>577</i>&nbsp;    }
+<i>578</i>&nbsp;
+<i>579</i>&nbsp;    /**
+<i>580</i>&nbsp;     * Method for enabling or disabling specified feature
+<i>581</i>&nbsp;     * (check {@link Feature} for list of features)
+<i>582</i>&nbsp;     */
+<i>583</i>&nbsp;    public JsonParser configure(Feature f, boolean state) {
+<b class="fc"><i>584</i>&nbsp;        if (state) enable(f); else disable(f);</b>
+<b class="fc"><i>585</i>&nbsp;        return this;</b>
+<i>586</i>&nbsp;    }
+<i>587</i>&nbsp;    
+<i>588</i>&nbsp;    /**
+<i>589</i>&nbsp;     * Method for checking whether specified {@link Feature} is enabled.
+<i>590</i>&nbsp;     */
+<b class="fc"><i>591</i>&nbsp;    public boolean isEnabled(Feature f) { return f.enabledIn(_features); }</b>
+<i>592</i>&nbsp;
+<i>593</i>&nbsp;    /**
+<i>594</i>&nbsp;     * Bulk access method for getting state of all standard {@link Feature}s.
+<i>595</i>&nbsp;     * 
+<i>596</i>&nbsp;     * @return Bit mask that defines current states of all standard {@link Feature}s.
+<i>597</i>&nbsp;     * 
+<i>598</i>&nbsp;     * @since 2.3
+<i>599</i>&nbsp;     */
+<b class="nc"><i>600</i>&nbsp;    public int getFeatureMask() { return _features; }</b>
+<i>601</i>&nbsp;
+<i>602</i>&nbsp;    /**
+<i>603</i>&nbsp;     * Bulk set method for (re)setting states of all standard {@link Feature}s
+<i>604</i>&nbsp;     * 
+<i>605</i>&nbsp;     * @return This parser object, to allow chaining of calls
+<i>606</i>&nbsp;     * 
+<i>607</i>&nbsp;     * @since 2.3
+<i>608</i>&nbsp;     * 
+<i>609</i>&nbsp;     * @deprecated Since 2.7, use {@link #overrideStdFeatures(int, int)} instead
+<i>610</i>&nbsp;     */
+<i>611</i>&nbsp;    @Deprecated
+<i>612</i>&nbsp;    public JsonParser setFeatureMask(int mask) {
+<b class="nc"><i>613</i>&nbsp;        _features = mask;</b>
+<b class="nc"><i>614</i>&nbsp;        return this;</b>
+<i>615</i>&nbsp;    }
+<i>616</i>&nbsp;
+<i>617</i>&nbsp;    /**
+<i>618</i>&nbsp;     * Bulk set method for (re)setting states of features specified by &lt;code&gt;mask&lt;/code&gt;.
+<i>619</i>&nbsp;     * Functionally equivalent to
+<i>620</i>&nbsp;     *&lt;code&gt;
+<i>621</i>&nbsp;     *    int oldState = getFeatureMask();
+<i>622</i>&nbsp;     *    int newState = (oldState &amp;amp; ~mask) | (values &amp;amp; mask);
+<i>623</i>&nbsp;     *    setFeatureMask(newState);
+<i>624</i>&nbsp;     *&lt;/code&gt;
+<i>625</i>&nbsp;     * but preferred as this lets caller more efficiently specify actual changes made.
+<i>626</i>&nbsp;     * 
+<i>627</i>&nbsp;     * @param values Bit mask of set/clear state for features to change
+<i>628</i>&nbsp;     * @param mask Bit mask of features to change
+<i>629</i>&nbsp;     * 
+<i>630</i>&nbsp;     * @since 2.6
+<i>631</i>&nbsp;     */
+<i>632</i>&nbsp;    public JsonParser overrideStdFeatures(int values, int mask) {
+<b class="nc"><i>633</i>&nbsp;        int newState = (_features &amp; ~mask) | (values &amp; mask);</b>
+<b class="nc"><i>634</i>&nbsp;        return setFeatureMask(newState);</b>
+<i>635</i>&nbsp;    }
+<i>636</i>&nbsp;
+<i>637</i>&nbsp;    /**
+<i>638</i>&nbsp;     * Bulk access method for getting state of all {@link FormatFeature}s, format-specific
+<i>639</i>&nbsp;     * on/off configuration settings.
+<i>640</i>&nbsp;     * 
+<i>641</i>&nbsp;     * @return Bit mask that defines current states of all standard {@link FormatFeature}s.
+<i>642</i>&nbsp;     * 
+<i>643</i>&nbsp;     * @since 2.6
+<i>644</i>&nbsp;     */
+<i>645</i>&nbsp;    public int getFormatFeatures() {
+<b class="nc"><i>646</i>&nbsp;        return 0;</b>
+<i>647</i>&nbsp;    }
+<i>648</i>&nbsp;    
+<i>649</i>&nbsp;    /**
+<i>650</i>&nbsp;     * Bulk set method for (re)setting states of {@link FormatFeature}s,
+<i>651</i>&nbsp;     * by specifying values (set / clear) along with a mask, to determine
+<i>652</i>&nbsp;     * which features to change, if any.
+<i>653</i>&nbsp;     *&lt;p&gt;
+<i>654</i>&nbsp;     * Default implementation will simply throw an exception to indicate that
+<i>655</i>&nbsp;     * the generator implementation does not support any {@link FormatFeature}s.
+<i>656</i>&nbsp;     * 
+<i>657</i>&nbsp;     * @param values Bit mask of set/clear state for features to change
+<i>658</i>&nbsp;     * @param mask Bit mask of features to change
+<i>659</i>&nbsp;     * 
+<i>660</i>&nbsp;     * @since 2.6
+<i>661</i>&nbsp;     */
+<i>662</i>&nbsp;    public JsonParser overrideFormatFeatures(int values, int mask) {
+<b class="nc"><i>663</i>&nbsp;        throw new IllegalArgumentException(&quot;No FormatFeatures defined for parser of type &quot;+getClass().getName());</b>
+<i>664</i>&nbsp;        /*
+<i>665</i>&nbsp;        _formatFeatures = (_formatFeatures &amp; ~mask) | (values &amp; mask);
+<i>666</i>&nbsp;        */
+<i>667</i>&nbsp;    }
+<i>668</i>&nbsp;
+<i>669</i>&nbsp;    /*
+<i>670</i>&nbsp;    /**********************************************************
+<i>671</i>&nbsp;    /* Public API, traversal
+<i>672</i>&nbsp;    /**********************************************************
+<i>673</i>&nbsp;     */
+<i>674</i>&nbsp;
+<i>675</i>&nbsp;    /**
+<i>676</i>&nbsp;     * Main iteration method, which will advance stream enough
+<i>677</i>&nbsp;     * to determine type of the next token, if any. If none
+<i>678</i>&nbsp;     * remaining (stream has no content other than possible
+<i>679</i>&nbsp;     * white space before ending), null will be returned.
+<i>680</i>&nbsp;     *
+<i>681</i>&nbsp;     * @return Next token from the stream, if any found, or null
+<i>682</i>&nbsp;     *   to indicate end-of-input
+<i>683</i>&nbsp;     */
+<i>684</i>&nbsp;    public abstract JsonToken nextToken() throws IOException;
+<i>685</i>&nbsp;
+<i>686</i>&nbsp;    /**
+<i>687</i>&nbsp;     * Iteration method that will advance stream enough
+<i>688</i>&nbsp;     * to determine type of the next token that is a value type
+<i>689</i>&nbsp;     * (including JSON Array and Object start/end markers).
+<i>690</i>&nbsp;     * Or put another way, nextToken() will be called once,
+<i>691</i>&nbsp;     * and if {@link JsonToken#FIELD_NAME} is returned, another
+<i>692</i>&nbsp;     * time to get the value for the field.
+<i>693</i>&nbsp;     * Method is most useful for iterating over value entries
+<i>694</i>&nbsp;     * of JSON objects; field name will still be available
+<i>695</i>&nbsp;     * by calling {@link #getCurrentName} when parser points to
+<i>696</i>&nbsp;     * the value.
+<i>697</i>&nbsp;     *
+<i>698</i>&nbsp;     * @return Next non-field-name token from the stream, if any found,
+<i>699</i>&nbsp;     *   or null to indicate end-of-input (or, for non-blocking
+<i>700</i>&nbsp;     *   parsers, {@link JsonToken#NOT_AVAILABLE} if no tokens were
+<i>701</i>&nbsp;     *   available yet)
+<i>702</i>&nbsp;     */
+<i>703</i>&nbsp;    public abstract JsonToken nextValue() throws IOException;
+<i>704</i>&nbsp;
+<i>705</i>&nbsp;    /**
+<i>706</i>&nbsp;     * Method that fetches next token (as if calling {@link #nextToken}) and
+<i>707</i>&nbsp;     * verifies whether it is {@link JsonToken#FIELD_NAME} with specified name
+<i>708</i>&nbsp;     * and returns result of that comparison.
+<i>709</i>&nbsp;     * It is functionally equivalent to:
+<i>710</i>&nbsp;     *&lt;pre&gt;
+<i>711</i>&nbsp;     *  return (nextToken() == JsonToken.FIELD_NAME) &amp;amp;&amp;amp; str.getValue().equals(getCurrentName());
+<i>712</i>&nbsp;     *&lt;/pre&gt;
+<i>713</i>&nbsp;     * but may be faster for parser to verify, and can therefore be used if caller
+<i>714</i>&nbsp;     * expects to get such a property name from input next.
+<i>715</i>&nbsp;     * 
+<i>716</i>&nbsp;     * @param str Property name to compare next token to (if next token is
+<i>717</i>&nbsp;     *   &lt;code&gt;JsonToken.FIELD_NAME&lt;/code&gt;)
+<i>718</i>&nbsp;     */
+<i>719</i>&nbsp;    public boolean nextFieldName(SerializableString str) throws IOException {
+<b class="fc"><i>720</i>&nbsp;        return (nextToken() == JsonToken.FIELD_NAME) &amp;&amp; str.getValue().equals(getCurrentName());</b>
+<i>721</i>&nbsp;    }
+<i>722</i>&nbsp;
+<i>723</i>&nbsp;    /**
+<i>724</i>&nbsp;     * Method that fetches next token (as if calling {@link #nextToken}) and
+<i>725</i>&nbsp;     * verifies whether it is {@link JsonToken#FIELD_NAME}; if it is,
+<i>726</i>&nbsp;     * returns same as {@link #getCurrentName()}, otherwise null.
+<i>727</i>&nbsp;     * 
+<i>728</i>&nbsp;     * @since 2.5
+<i>729</i>&nbsp;     */
+<i>730</i>&nbsp;    public String nextFieldName() throws IOException {
+<b class="nc"><i>731</i>&nbsp;        return (nextToken() == JsonToken.FIELD_NAME) ? getCurrentName() : null;</b>
+<i>732</i>&nbsp;    }
+<i>733</i>&nbsp;
+<i>734</i>&nbsp;    /**
+<i>735</i>&nbsp;     * Method that fetches next token (as if calling {@link #nextToken}) and
+<i>736</i>&nbsp;     * if it is {@link JsonToken#VALUE_STRING} returns contained String value;
+<i>737</i>&nbsp;     * otherwise returns null.
+<i>738</i>&nbsp;     * It is functionally equivalent to:
+<i>739</i>&nbsp;     *&lt;pre&gt;
+<i>740</i>&nbsp;     *  return (nextToken() == JsonToken.VALUE_STRING) ? getText() : null;
+<i>741</i>&nbsp;     *&lt;/pre&gt;
+<i>742</i>&nbsp;     * but may be faster for parser to process, and can therefore be used if caller
+<i>743</i>&nbsp;     * expects to get a String value next from input.
+<i>744</i>&nbsp;     */
+<i>745</i>&nbsp;    public String nextTextValue() throws IOException {
+<b class="nc"><i>746</i>&nbsp;        return (nextToken() == JsonToken.VALUE_STRING) ? getText() : null;</b>
+<i>747</i>&nbsp;    }
+<i>748</i>&nbsp;
+<i>749</i>&nbsp;    /**
+<i>750</i>&nbsp;     * Method that fetches next token (as if calling {@link #nextToken}) and
+<i>751</i>&nbsp;     * if it is {@link JsonToken#VALUE_NUMBER_INT} returns 32-bit int value;
+<i>752</i>&nbsp;     * otherwise returns specified default value
+<i>753</i>&nbsp;     * It is functionally equivalent to:
+<i>754</i>&nbsp;     *&lt;pre&gt;
+<i>755</i>&nbsp;     *  return (nextToken() == JsonToken.VALUE_NUMBER_INT) ? getIntValue() : defaultValue;
+<i>756</i>&nbsp;     *&lt;/pre&gt;
+<i>757</i>&nbsp;     * but may be faster for parser to process, and can therefore be used if caller
+<i>758</i>&nbsp;     * expects to get an int value next from input.
+<i>759</i>&nbsp;     */
+<i>760</i>&nbsp;    public int nextIntValue(int defaultValue) throws IOException {
+<b class="nc"><i>761</i>&nbsp;        return (nextToken() == JsonToken.VALUE_NUMBER_INT) ? getIntValue() : defaultValue;</b>
+<i>762</i>&nbsp;    }
+<i>763</i>&nbsp;
+<i>764</i>&nbsp;    /**
+<i>765</i>&nbsp;     * Method that fetches next token (as if calling {@link #nextToken}) and
+<i>766</i>&nbsp;     * if it is {@link JsonToken#VALUE_NUMBER_INT} returns 64-bit long value;
+<i>767</i>&nbsp;     * otherwise returns specified default value
+<i>768</i>&nbsp;     * It is functionally equivalent to:
+<i>769</i>&nbsp;     *&lt;pre&gt;
+<i>770</i>&nbsp;     *  return (nextToken() == JsonToken.VALUE_NUMBER_INT) ? getLongValue() : defaultValue;
+<i>771</i>&nbsp;     *&lt;/pre&gt;
+<i>772</i>&nbsp;     * but may be faster for parser to process, and can therefore be used if caller
+<i>773</i>&nbsp;     * expects to get a long value next from input.
+<i>774</i>&nbsp;     */
+<i>775</i>&nbsp;    public long nextLongValue(long defaultValue) throws IOException {
+<b class="nc"><i>776</i>&nbsp;        return (nextToken() == JsonToken.VALUE_NUMBER_INT) ? getLongValue() : defaultValue;</b>
+<i>777</i>&nbsp;    }
+<i>778</i>&nbsp;
+<i>779</i>&nbsp;    /**
+<i>780</i>&nbsp;     * Method that fetches next token (as if calling {@link #nextToken}) and
+<i>781</i>&nbsp;     * if it is {@link JsonToken#VALUE_TRUE} or {@link JsonToken#VALUE_FALSE}
+<i>782</i>&nbsp;     * returns matching Boolean value; otherwise return null.
+<i>783</i>&nbsp;     * It is functionally equivalent to:
+<i>784</i>&nbsp;     *&lt;pre&gt;
+<i>785</i>&nbsp;     *  JsonToken t = nextToken();
+<i>786</i>&nbsp;     *  if (t == JsonToken.VALUE_TRUE) return Boolean.TRUE;
+<i>787</i>&nbsp;     *  if (t == JsonToken.VALUE_FALSE) return Boolean.FALSE;
+<i>788</i>&nbsp;     *  return null;
+<i>789</i>&nbsp;     *&lt;/pre&gt;
+<i>790</i>&nbsp;     * but may be faster for parser to process, and can therefore be used if caller
+<i>791</i>&nbsp;     * expects to get a Boolean value next from input.
+<i>792</i>&nbsp;     */
+<i>793</i>&nbsp;    public Boolean nextBooleanValue() throws IOException {
+<b class="nc"><i>794</i>&nbsp;        JsonToken t = nextToken();</b>
+<b class="nc"><i>795</i>&nbsp;        if (t == JsonToken.VALUE_TRUE) { return Boolean.TRUE; }</b>
+<b class="nc"><i>796</i>&nbsp;        if (t == JsonToken.VALUE_FALSE) { return Boolean.FALSE; }</b>
+<b class="nc"><i>797</i>&nbsp;        return null;</b>
+<i>798</i>&nbsp;    }
+<i>799</i>&nbsp;    
+<i>800</i>&nbsp;    /**
+<i>801</i>&nbsp;     * Method that will skip all child tokens of an array or
+<i>802</i>&nbsp;     * object token that the parser currently points to,
+<i>803</i>&nbsp;     * iff stream points to 
+<i>804</i>&nbsp;     * {@link JsonToken#START_OBJECT} or {@link JsonToken#START_ARRAY}.
+<i>805</i>&nbsp;     * If not, it will do nothing.
+<i>806</i>&nbsp;     * After skipping, stream will point to &lt;b&gt;matching&lt;/b&gt;
+<i>807</i>&nbsp;     * {@link JsonToken#END_OBJECT} or {@link JsonToken#END_ARRAY}
+<i>808</i>&nbsp;     * (possibly skipping nested pairs of START/END OBJECT/ARRAY tokens
+<i>809</i>&nbsp;     * as well as value tokens).
+<i>810</i>&nbsp;     * The idea is that after calling this method, application
+<i>811</i>&nbsp;     * will call {@link #nextToken} to point to the next
+<i>812</i>&nbsp;     * available token, if any.
+<i>813</i>&nbsp;     */
+<i>814</i>&nbsp;    public abstract JsonParser skipChildren() throws IOException;
+<i>815</i>&nbsp;
+<i>816</i>&nbsp;    /**
+<i>817</i>&nbsp;     * Method that may be used to force full handling of the current token
+<i>818</i>&nbsp;     * so that even if lazy processing is enabled, the whole contents are
+<i>819</i>&nbsp;     * read for possible retrieval. This is usually used to ensure that
+<i>820</i>&nbsp;     * the token end location is available, as well as token contents
+<i>821</i>&nbsp;     * (similar to what calling, say {@link #getTextCharacters()}, would
+<i>822</i>&nbsp;     * achieve).
+<i>823</i>&nbsp;     *&lt;p&gt;
+<i>824</i>&nbsp;     * Note that for many dataformat implementations this method
+<i>825</i>&nbsp;     * will not do anything; this is the default implementation unless
+<i>826</i>&nbsp;     * overridden by sub-classes.
+<i>827</i>&nbsp;     *
+<i>828</i>&nbsp;     * @since 2.8
+<i>829</i>&nbsp;     */
+<i>830</i>&nbsp;    public void finishToken() throws IOException {
+<i>831</i>&nbsp;        ; // nothing
+<b class="nc"><i>832</i>&nbsp;    }</b>
+<i>833</i>&nbsp;
+<i>834</i>&nbsp;    /**
+<i>835</i>&nbsp;     * Method that can be called to determine whether this parser
+<i>836</i>&nbsp;     * is closed or not. If it is closed, no new tokens can be
+<i>837</i>&nbsp;     * retrieved by calling {@link #nextToken} (and the underlying
+<i>838</i>&nbsp;     * stream may be closed). Closing may be due to an explicit
+<i>839</i>&nbsp;     * call to {@link #close} or because parser has encountered
+<i>840</i>&nbsp;     * end of input.
+<i>841</i>&nbsp;     */
+<i>842</i>&nbsp;    public abstract boolean isClosed();
+<i>843</i>&nbsp;    
+<i>844</i>&nbsp;    /*
+<i>845</i>&nbsp;    /**********************************************************
+<i>846</i>&nbsp;    /* Public API, token accessors
+<i>847</i>&nbsp;    /**********************************************************
+<i>848</i>&nbsp;     */
+<i>849</i>&nbsp;
+<i>850</i>&nbsp;    /**
+<i>851</i>&nbsp;     * Accessor to find which token parser currently points to, if any;
+<i>852</i>&nbsp;     * null will be returned if none.
+<i>853</i>&nbsp;     * If return value is non-null, data associated with the token
+<i>854</i>&nbsp;     * is available via other accessor methods.
+<i>855</i>&nbsp;     *
+<i>856</i>&nbsp;     * @return Type of the token this parser currently points to,
+<i>857</i>&nbsp;     *   if any: null before any tokens have been read, and
+<i>858</i>&nbsp;     *   after end-of-input has been encountered, as well as
+<i>859</i>&nbsp;     *   if the current token has been explicitly cleared.
+<i>860</i>&nbsp;     *
+<i>861</i>&nbsp;     * @since 2.8
+<i>862</i>&nbsp;     */
+<i>863</i>&nbsp;    public JsonToken currentToken() {
+<b class="nc"><i>864</i>&nbsp;        return getCurrentToken();</b>
+<i>865</i>&nbsp;    }
+<i>866</i>&nbsp;
+<i>867</i>&nbsp;    /**
+<i>868</i>&nbsp;     * Method similar to {@link #getCurrentToken()} but that returns an
+<i>869</i>&nbsp;     * &lt;code&gt;int&lt;/code&gt; instead of {@link JsonToken} (enum value).
+<i>870</i>&nbsp;     *&lt;p&gt;
+<i>871</i>&nbsp;     * Use of int directly is typically more efficient on switch statements,
+<i>872</i>&nbsp;     * so this method may be useful when building low-overhead codecs.
+<i>873</i>&nbsp;     * Note, however, that effect may not be big enough to matter: make sure
+<i>874</i>&nbsp;     * to profile performance before deciding to use this method.
+<i>875</i>&nbsp;     * 
+<i>876</i>&nbsp;     * @since 2.8
+<i>877</i>&nbsp;     * 
+<i>878</i>&nbsp;     * @return &lt;code&gt;int&lt;/code&gt; matching one of constants from {@link JsonTokenId}.
+<i>879</i>&nbsp;     */
+<i>880</i>&nbsp;    public int currentTokenId() {
+<b class="nc"><i>881</i>&nbsp;        return getCurrentTokenId();</b>
+<i>882</i>&nbsp;    }
+<i>883</i>&nbsp;
+<i>884</i>&nbsp;    /**
+<i>885</i>&nbsp;     * Alias for {@link #currentToken()}, will be deprecated in Jackson 2.9
+<i>886</i>&nbsp;     */
+<i>887</i>&nbsp;    public abstract JsonToken getCurrentToken();
+<i>888</i>&nbsp;
+<i>889</i>&nbsp;    /**
+<i>890</i>&nbsp;     * Alias for {@link #currentTokenId()}, will be deprecated in Jackson 2.9
+<i>891</i>&nbsp;     */
+<i>892</i>&nbsp;    public abstract int getCurrentTokenId();
+<i>893</i>&nbsp;    
+<i>894</i>&nbsp;    /**
+<i>895</i>&nbsp;     * Method for checking whether parser currently points to
+<i>896</i>&nbsp;     * a token (and data for that token is available).
+<i>897</i>&nbsp;     * Equivalent to check for &lt;code&gt;parser.getCurrentToken() != null&lt;/code&gt;.
+<i>898</i>&nbsp;     *
+<i>899</i>&nbsp;     * @return True if the parser just returned a valid
+<i>900</i>&nbsp;     *   token via {@link #nextToken}; false otherwise (parser
+<i>901</i>&nbsp;     *   was just constructed, encountered end-of-input
+<i>902</i>&nbsp;     *   and returned null from {@link #nextToken}, or the token
+<i>903</i>&nbsp;     *   has been consumed)
+<i>904</i>&nbsp;     */
+<i>905</i>&nbsp;    public abstract boolean hasCurrentToken();
+<i>906</i>&nbsp;
+<i>907</i>&nbsp;    /**
+<i>908</i>&nbsp;     * Method that is functionally equivalent to:
+<i>909</i>&nbsp;     *&lt;code&gt;
+<i>910</i>&nbsp;     *  return currentTokenId() == id
+<i>911</i>&nbsp;     *&lt;/code&gt;
+<i>912</i>&nbsp;     * but may be more efficiently implemented.
+<i>913</i>&nbsp;     *&lt;p&gt;
+<i>914</i>&nbsp;     * Note that no traversal or conversion is performed; so in some
+<i>915</i>&nbsp;     * cases calling method like {@link #isExpectedStartArrayToken()}
+<i>916</i>&nbsp;     * is necessary instead.
+<i>917</i>&nbsp;     *
+<i>918</i>&nbsp;     * @since 2.5
+<i>919</i>&nbsp;     */
+<i>920</i>&nbsp;    public abstract boolean hasTokenId(int id);
+<i>921</i>&nbsp;
+<i>922</i>&nbsp;    /**
+<i>923</i>&nbsp;     * Method that is functionally equivalent to:
+<i>924</i>&nbsp;     *&lt;code&gt;
+<i>925</i>&nbsp;     *  return currentToken() == t
+<i>926</i>&nbsp;     *&lt;/code&gt;
+<i>927</i>&nbsp;     * but may be more efficiently implemented.
+<i>928</i>&nbsp;     *&lt;p&gt;
+<i>929</i>&nbsp;     * Note that no traversal or conversion is performed; so in some
+<i>930</i>&nbsp;     * cases calling method like {@link #isExpectedStartArrayToken()}
+<i>931</i>&nbsp;     * is necessary instead.
+<i>932</i>&nbsp;     *
+<i>933</i>&nbsp;     * @since 2.6
+<i>934</i>&nbsp;     */
+<i>935</i>&nbsp;    public abstract boolean hasToken(JsonToken t);
+<i>936</i>&nbsp;    
+<i>937</i>&nbsp;    /**
+<i>938</i>&nbsp;     * Method that can be called to get the name associated with
+<i>939</i>&nbsp;     * the current token: for {@link JsonToken#FIELD_NAME}s it will
+<i>940</i>&nbsp;     * be the same as what {@link #getText} returns;
+<i>941</i>&nbsp;     * for field values it will be preceding field name;
+<i>942</i>&nbsp;     * and for others (array values, root-level values) null.
+<i>943</i>&nbsp;     */
+<i>944</i>&nbsp;    public abstract String getCurrentName() throws IOException;
+<i>945</i>&nbsp;
+<i>946</i>&nbsp;    /**
+<i>947</i>&nbsp;     * Method that can be used to access current parsing context reader
+<i>948</i>&nbsp;     * is in. There are 3 different types: root, array and object contexts,
+<i>949</i>&nbsp;     * with slightly different available information. Contexts are
+<i>950</i>&nbsp;     * hierarchically nested, and can be used for example for figuring
+<i>951</i>&nbsp;     * out part of the input document that correspond to specific
+<i>952</i>&nbsp;     * array or object (for highlighting purposes, or error reporting).
+<i>953</i>&nbsp;     * Contexts can also be used for simple xpath-like matching of
+<i>954</i>&nbsp;     * input, if so desired.
+<i>955</i>&nbsp;     */
+<i>956</i>&nbsp;    public abstract JsonStreamContext getParsingContext();
+<i>957</i>&nbsp;
+<i>958</i>&nbsp;    /**
+<i>959</i>&nbsp;     * Method that return the &lt;b&gt;starting&lt;/b&gt; location of the current
+<i>960</i>&nbsp;     * token; that is, position of the first character from input
+<i>961</i>&nbsp;     * that starts the current token.
+<i>962</i>&nbsp;     */
+<i>963</i>&nbsp;    public abstract JsonLocation getTokenLocation();
+<i>964</i>&nbsp;
+<i>965</i>&nbsp;    /**
+<i>966</i>&nbsp;     * Method that returns location of the last processed character;
+<i>967</i>&nbsp;     * usually for error reporting purposes.
+<i>968</i>&nbsp;     */
+<i>969</i>&nbsp;    public abstract JsonLocation getCurrentLocation();
+<i>970</i>&nbsp;
+<i>971</i>&nbsp;    /**
+<i>972</i>&nbsp;     * Specialized accessor that can be used to verify that the current
+<i>973</i>&nbsp;     * token indicates start array (usually meaning that current token
+<i>974</i>&nbsp;     * is {@link JsonToken#START_ARRAY}) when start array is expected.
+<i>975</i>&nbsp;     * For some specialized parsers this can return true for other cases
+<i>976</i>&nbsp;     * as well; this is usually done to emulate arrays in cases underlying
+<i>977</i>&nbsp;     * format is ambiguous (XML, for example, has no format-level difference
+<i>978</i>&nbsp;     * between Objects and Arrays; it just has elements).
+<i>979</i>&nbsp;     *&lt;p&gt;
+<i>980</i>&nbsp;     * Default implementation is equivalent to:
+<i>981</i>&nbsp;     *&lt;pre&gt;
+<i>982</i>&nbsp;     *   currentToken() == JsonToken.START_ARRAY
+<i>983</i>&nbsp;     *&lt;/pre&gt;
+<i>984</i>&nbsp;     * but may be overridden by custom parser implementations.
+<i>985</i>&nbsp;     *
+<i>986</i>&nbsp;     * @return True if the current token can be considered as a
+<i>987</i>&nbsp;     *   start-array marker (such {@link JsonToken#START_ARRAY});
+<i>988</i>&nbsp;     *   false if not.
+<i>989</i>&nbsp;     */
+<b class="nc"><i>990</i>&nbsp;    public boolean isExpectedStartArrayToken() { return currentToken() == JsonToken.START_ARRAY; }</b>
+<i>991</i>&nbsp;
+<i>992</i>&nbsp;    /**
+<i>993</i>&nbsp;     * Similar to {@link #isExpectedStartArrayToken()}, but checks whether stream
+<i>994</i>&nbsp;     * currently points to {@link JsonToken#START_OBJECT}.
+<i>995</i>&nbsp;     *
+<i>996</i>&nbsp;     * @since 2.5
+<i>997</i>&nbsp;     */
+<b class="nc"><i>998</i>&nbsp;    public boolean isExpectedStartObjectToken() { return currentToken() == JsonToken.START_OBJECT; }</b>
+<i>999</i>&nbsp;    
+<i>1000</i>&nbsp;    /*
+<i>1001</i>&nbsp;    /**********************************************************
+<i>1002</i>&nbsp;    /* Public API, token state overrides
+<i>1003</i>&nbsp;    /**********************************************************
+<i>1004</i>&nbsp;     */
+<i>1005</i>&nbsp;
+<i>1006</i>&nbsp;    /**
+<i>1007</i>&nbsp;     * Method called to &quot;consume&quot; the current token by effectively
+<i>1008</i>&nbsp;     * removing it so that {@link #hasCurrentToken} returns false, and
+<i>1009</i>&nbsp;     * {@link #getCurrentToken} null).
+<i>1010</i>&nbsp;     * Cleared token value can still be accessed by calling
+<i>1011</i>&nbsp;     * {@link #getLastClearedToken} (if absolutely needed), but
+<i>1012</i>&nbsp;     * usually isn&#39;t.
+<i>1013</i>&nbsp;     *&lt;p&gt;
+<i>1014</i>&nbsp;     * Method was added to be used by the optional data binder, since
+<i>1015</i>&nbsp;     * it has to be able to consume last token used for binding (so that
+<i>1016</i>&nbsp;     * it will not be used again).
+<i>1017</i>&nbsp;     */
+<i>1018</i>&nbsp;    public abstract void clearCurrentToken();
+<i>1019</i>&nbsp;
+<i>1020</i>&nbsp;    /**
+<i>1021</i>&nbsp;     * Method that can be called to get the last token that was
+<i>1022</i>&nbsp;     * cleared using {@link #clearCurrentToken}. This is not necessarily
+<i>1023</i>&nbsp;     * the latest token read.
+<i>1024</i>&nbsp;     * Will return null if no tokens have been cleared,
+<i>1025</i>&nbsp;     * or if parser has been closed.
+<i>1026</i>&nbsp;     */
+<i>1027</i>&nbsp;    public abstract JsonToken getLastClearedToken();
+<i>1028</i>&nbsp;    
+<i>1029</i>&nbsp;    /**
+<i>1030</i>&nbsp;     * Method that can be used to change what is considered to be
+<i>1031</i>&nbsp;     * the current (field) name.
+<i>1032</i>&nbsp;     * May be needed to support non-JSON data formats or unusual binding
+<i>1033</i>&nbsp;     * conventions; not needed for typical processing.
+<i>1034</i>&nbsp;     *&lt;p&gt;
+<i>1035</i>&nbsp;     * Note that use of this method should only be done as sort of last
+<i>1036</i>&nbsp;     * resort, as it is a work-around for regular operation.
+<i>1037</i>&nbsp;     * 
+<i>1038</i>&nbsp;     * @param name Name to use as the current name; may be null.
+<i>1039</i>&nbsp;     */
+<i>1040</i>&nbsp;    public abstract void overrideCurrentName(String name);
+<i>1041</i>&nbsp;    
+<i>1042</i>&nbsp;    /*
+<i>1043</i>&nbsp;    /**********************************************************
+<i>1044</i>&nbsp;    /* Public API, access to token information, text
+<i>1045</i>&nbsp;    /**********************************************************
+<i>1046</i>&nbsp;     */
+<i>1047</i>&nbsp;
+<i>1048</i>&nbsp;    /**
+<i>1049</i>&nbsp;     * Method for accessing textual representation of the current token;
+<i>1050</i>&nbsp;     * if no current token (before first call to {@link #nextToken}, or
+<i>1051</i>&nbsp;     * after encountering end-of-input), returns null.
+<i>1052</i>&nbsp;     * Method can be called for any token type.
+<i>1053</i>&nbsp;     */
+<i>1054</i>&nbsp;    public abstract String getText() throws IOException;
+<i>1055</i>&nbsp;
+<i>1056</i>&nbsp;    /**
+<i>1057</i>&nbsp;     * Method to read the textual representation of the current token in chunks and 
+<i>1058</i>&nbsp;     * pass it to the given Writer.
+<i>1059</i>&nbsp;     * Conceptually same as calling:
+<i>1060</i>&nbsp;     *&lt;pre&gt;
+<i>1061</i>&nbsp;     *  writer.write(parser.getText());
+<i>1062</i>&nbsp;     *&lt;/pre&gt;
+<i>1063</i>&nbsp;     * but should typically be more efficient as longer content does need to
+<i>1064</i>&nbsp;     * be combined into a single &lt;code&gt;String&lt;/code&gt; to return, and write
+<i>1065</i>&nbsp;     * can occur directly from intermediate buffers Jackson uses.
+<i>1066</i>&nbsp;     * 
+<i>1067</i>&nbsp;     * @return The number of characters written to the Writer
+<i>1068</i>&nbsp;     *  
+<i>1069</i>&nbsp;     * @since 2.8
+<i>1070</i>&nbsp;     */
+<i>1071</i>&nbsp;    public int getText(Writer writer) throws IOException, UnsupportedOperationException
+<i>1072</i>&nbsp;    {
+<b class="nc"><i>1073</i>&nbsp;        String str = getText();</b>
+<b class="nc"><i>1074</i>&nbsp;        if (str == null) {</b>
+<b class="nc"><i>1075</i>&nbsp;            return 0;</b>
+<i>1076</i>&nbsp;        }
+<b class="nc"><i>1077</i>&nbsp;        writer.write(str);</b>
+<b class="nc"><i>1078</i>&nbsp;        return str.length();</b>
+<i>1079</i>&nbsp;    }
+<i>1080</i>&nbsp;
+<i>1081</i>&nbsp;    /**
+<i>1082</i>&nbsp;     * Method similar to {@link #getText}, but that will return
+<i>1083</i>&nbsp;     * underlying (unmodifiable) character array that contains
+<i>1084</i>&nbsp;     * textual value, instead of constructing a String object
+<i>1085</i>&nbsp;     * to contain this information.
+<i>1086</i>&nbsp;     * Note, however, that:
+<i>1087</i>&nbsp;     *&lt;ul&gt;
+<i>1088</i>&nbsp;     * &lt;li&gt;Textual contents are not guaranteed to start at
+<i>1089</i>&nbsp;     *   index 0 (rather, call {@link #getTextOffset}) to
+<i>1090</i>&nbsp;     *   know the actual offset
+<i>1091</i>&nbsp;     *  &lt;/li&gt;
+<i>1092</i>&nbsp;     * &lt;li&gt;Length of textual contents may be less than the
+<i>1093</i>&nbsp;     *  length of returned buffer: call {@link #getTextLength}
+<i>1094</i>&nbsp;     *  for actual length of returned content.
+<i>1095</i>&nbsp;     *  &lt;/li&gt;
+<i>1096</i>&nbsp;     * &lt;/ul&gt;
+<i>1097</i>&nbsp;     *&lt;p&gt;
+<i>1098</i>&nbsp;     * Note that caller &lt;b&gt;MUST NOT&lt;/b&gt; modify the returned
+<i>1099</i>&nbsp;     * character array in any way -- doing so may corrupt
+<i>1100</i>&nbsp;     * current parser state and render parser instance useless.
+<i>1101</i>&nbsp;     *&lt;p&gt;
+<i>1102</i>&nbsp;     * The only reason to call this method (over {@link #getText})
+<i>1103</i>&nbsp;     * is to avoid construction of a String object (which
+<i>1104</i>&nbsp;     * will make a copy of contents).
+<i>1105</i>&nbsp;     */
+<i>1106</i>&nbsp;    public abstract char[] getTextCharacters() throws IOException;
+<i>1107</i>&nbsp;
+<i>1108</i>&nbsp;    /**
+<i>1109</i>&nbsp;     * Accessor used with {@link #getTextCharacters}, to know length
+<i>1110</i>&nbsp;     * of String stored in returned buffer.
+<i>1111</i>&nbsp;     *
+<i>1112</i>&nbsp;     * @return Number of characters within buffer returned
+<i>1113</i>&nbsp;     *   by {@link #getTextCharacters} that are part of
+<i>1114</i>&nbsp;     *   textual content of the current token.
+<i>1115</i>&nbsp;     */
+<i>1116</i>&nbsp;    public abstract int getTextLength() throws IOException;
+<i>1117</i>&nbsp;
+<i>1118</i>&nbsp;    /**
+<i>1119</i>&nbsp;     * Accessor used with {@link #getTextCharacters}, to know offset
+<i>1120</i>&nbsp;     * of the first text content character within buffer.
+<i>1121</i>&nbsp;     *
+<i>1122</i>&nbsp;     * @return Offset of the first character within buffer returned
+<i>1123</i>&nbsp;     *   by {@link #getTextCharacters} that is part of
+<i>1124</i>&nbsp;     *   textual content of the current token.
+<i>1125</i>&nbsp;     */
+<i>1126</i>&nbsp;    public abstract int getTextOffset() throws IOException;
+<i>1127</i>&nbsp;
+<i>1128</i>&nbsp;    /**
+<i>1129</i>&nbsp;     * Method that can be used to determine whether calling of
+<i>1130</i>&nbsp;     * {@link #getTextCharacters} would be the most efficient
+<i>1131</i>&nbsp;     * way to access textual content for the event parser currently
+<i>1132</i>&nbsp;     * points to.
+<i>1133</i>&nbsp;     *&lt;p&gt; 
+<i>1134</i>&nbsp;     * Default implementation simply returns false since only actual
+<i>1135</i>&nbsp;     * implementation class has knowledge of its internal buffering
+<i>1136</i>&nbsp;     * state.
+<i>1137</i>&nbsp;     * Implementations are strongly encouraged to properly override
+<i>1138</i>&nbsp;     * this method, to allow efficient copying of content by other
+<i>1139</i>&nbsp;     * code.
+<i>1140</i>&nbsp;     * 
+<i>1141</i>&nbsp;     * @return True if parser currently has character array that can
+<i>1142</i>&nbsp;     *   be efficiently returned via {@link #getTextCharacters}; false
+<i>1143</i>&nbsp;     *   means that it may or may not exist
+<i>1144</i>&nbsp;     */
+<i>1145</i>&nbsp;    public abstract boolean hasTextCharacters();
+<i>1146</i>&nbsp;
+<i>1147</i>&nbsp;    /*
+<i>1148</i>&nbsp;    /**********************************************************
+<i>1149</i>&nbsp;    /* Public API, access to token information, numeric
+<i>1150</i>&nbsp;    /**********************************************************
+<i>1151</i>&nbsp;     */
+<i>1152</i>&nbsp;
+<i>1153</i>&nbsp;    /**
+<i>1154</i>&nbsp;     * Generic number value accessor method that will work for
+<i>1155</i>&nbsp;     * all kinds of numeric values. It will return the optimal
+<i>1156</i>&nbsp;     * (simplest/smallest possible) wrapper object that can
+<i>1157</i>&nbsp;     * express the numeric value just parsed.
+<i>1158</i>&nbsp;     */
+<i>1159</i>&nbsp;    public abstract Number getNumberValue() throws IOException;
+<i>1160</i>&nbsp;
+<i>1161</i>&nbsp;    /**
+<i>1162</i>&nbsp;     * If current token is of type 
+<i>1163</i>&nbsp;     * {@link JsonToken#VALUE_NUMBER_INT} or
+<i>1164</i>&nbsp;     * {@link JsonToken#VALUE_NUMBER_FLOAT}, returns
+<i>1165</i>&nbsp;     * one of {@link NumberType} constants; otherwise returns null.
+<i>1166</i>&nbsp;     */
+<i>1167</i>&nbsp;    public abstract NumberType getNumberType() throws IOException;
+<i>1168</i>&nbsp;
+<i>1169</i>&nbsp;    /**
+<i>1170</i>&nbsp;     * Numeric accessor that can be called when the current
+<i>1171</i>&nbsp;     * token is of type {@link JsonToken#VALUE_NUMBER_INT} and
+<i>1172</i>&nbsp;     * it can be expressed as a value of Java byte primitive type.
+<i>1173</i>&nbsp;     * It can also be called for {@link JsonToken#VALUE_NUMBER_FLOAT};
+<i>1174</i>&nbsp;     * if so, it is equivalent to calling {@link #getDoubleValue}
+<i>1175</i>&nbsp;     * and then casting; except for possible overflow/underflow
+<i>1176</i>&nbsp;     * exception.
+<i>1177</i>&nbsp;     *&lt;p&gt;
+<i>1178</i>&nbsp;     * Note: if the resulting integer value falls outside range of
+<i>1179</i>&nbsp;     * Java byte, a {@link JsonParseException}
+<i>1180</i>&nbsp;     * will be thrown to indicate numeric overflow/underflow.
+<i>1181</i>&nbsp;     */
+<i>1182</i>&nbsp;    public byte getByteValue() throws IOException {
+<b class="nc"><i>1183</i>&nbsp;        int value = getIntValue();</b>
+<i>1184</i>&nbsp;        // So far so good: but does it fit?
+<i>1185</i>&nbsp;        // [JACKSON-804]: Let&#39;s actually allow range of [-128, 255], as those are uniquely mapped
+<i>1186</i>&nbsp;        //  (instead of just signed range of [-128, 127])
+<b class="nc"><i>1187</i>&nbsp;        if (value &lt; MIN_BYTE_I || value &gt; MAX_BYTE_I) {</b>
+<b class="nc"><i>1188</i>&nbsp;            throw _constructError(&quot;Numeric value (&quot;+getText()+&quot;) out of range of Java byte&quot;);</b>
+<i>1189</i>&nbsp;        }
+<b class="nc"><i>1190</i>&nbsp;        return (byte) value;</b>
+<i>1191</i>&nbsp;    }
+<i>1192</i>&nbsp;
+<i>1193</i>&nbsp;    /**
+<i>1194</i>&nbsp;     * Numeric accessor that can be called when the current
+<i>1195</i>&nbsp;     * token is of type {@link JsonToken#VALUE_NUMBER_INT} and
+<i>1196</i>&nbsp;     * it can be expressed as a value of Java short primitive type.
+<i>1197</i>&nbsp;     * It can also be called for {@link JsonToken#VALUE_NUMBER_FLOAT};
+<i>1198</i>&nbsp;     * if so, it is equivalent to calling {@link #getDoubleValue}
+<i>1199</i>&nbsp;     * and then casting; except for possible overflow/underflow
+<i>1200</i>&nbsp;     * exception.
+<i>1201</i>&nbsp;     *&lt;p&gt;
+<i>1202</i>&nbsp;     * Note: if the resulting integer value falls outside range of
+<i>1203</i>&nbsp;     * Java short, a {@link JsonParseException}
+<i>1204</i>&nbsp;     * will be thrown to indicate numeric overflow/underflow.
+<i>1205</i>&nbsp;     */
+<i>1206</i>&nbsp;    public short getShortValue() throws IOException
+<i>1207</i>&nbsp;    {
+<b class="nc"><i>1208</i>&nbsp;        int value = getIntValue();</b>
+<b class="nc"><i>1209</i>&nbsp;        if (value &lt; MIN_SHORT_I || value &gt; MAX_SHORT_I) {</b>
+<b class="nc"><i>1210</i>&nbsp;            throw _constructError(&quot;Numeric value (&quot;+getText()+&quot;) out of range of Java short&quot;);</b>
+<i>1211</i>&nbsp;        }
+<b class="nc"><i>1212</i>&nbsp;        return (short) value;</b>
+<i>1213</i>&nbsp;    }
+<i>1214</i>&nbsp;
+<i>1215</i>&nbsp;    /**
+<i>1216</i>&nbsp;     * Numeric accessor that can be called when the current
+<i>1217</i>&nbsp;     * token is of type {@link JsonToken#VALUE_NUMBER_INT} and
+<i>1218</i>&nbsp;     * it can be expressed as a value of Java int primitive type.
+<i>1219</i>&nbsp;     * It can also be called for {@link JsonToken#VALUE_NUMBER_FLOAT};
+<i>1220</i>&nbsp;     * if so, it is equivalent to calling {@link #getDoubleValue}
+<i>1221</i>&nbsp;     * and then casting; except for possible overflow/underflow
+<i>1222</i>&nbsp;     * exception.
+<i>1223</i>&nbsp;     *&lt;p&gt;
+<i>1224</i>&nbsp;     * Note: if the resulting integer value falls outside range of
+<i>1225</i>&nbsp;     * Java int, a {@link JsonParseException}
+<i>1226</i>&nbsp;     * may be thrown to indicate numeric overflow/underflow.
+<i>1227</i>&nbsp;     */
+<i>1228</i>&nbsp;    public abstract int getIntValue() throws IOException;
+<i>1229</i>&nbsp;
+<i>1230</i>&nbsp;    /**
+<i>1231</i>&nbsp;     * Numeric accessor that can be called when the current
+<i>1232</i>&nbsp;     * token is of type {@link JsonToken#VALUE_NUMBER_INT} and
+<i>1233</i>&nbsp;     * it can be expressed as a Java long primitive type.
+<i>1234</i>&nbsp;     * It can also be called for {@link JsonToken#VALUE_NUMBER_FLOAT};
+<i>1235</i>&nbsp;     * if so, it is equivalent to calling {@link #getDoubleValue}
+<i>1236</i>&nbsp;     * and then casting to int; except for possible overflow/underflow
+<i>1237</i>&nbsp;     * exception.
+<i>1238</i>&nbsp;     *&lt;p&gt;
+<i>1239</i>&nbsp;     * Note: if the token is an integer, but its value falls
+<i>1240</i>&nbsp;     * outside of range of Java long, a {@link JsonParseException}
+<i>1241</i>&nbsp;     * may be thrown to indicate numeric overflow/underflow.
+<i>1242</i>&nbsp;     */
+<i>1243</i>&nbsp;    public abstract long getLongValue() throws IOException;
+<i>1244</i>&nbsp;
+<i>1245</i>&nbsp;    /**
+<i>1246</i>&nbsp;     * Numeric accessor that can be called when the current
+<i>1247</i>&nbsp;     * token is of type {@link JsonToken#VALUE_NUMBER_INT} and
+<i>1248</i>&nbsp;     * it can not be used as a Java long primitive type due to its
+<i>1249</i>&nbsp;     * magnitude.
+<i>1250</i>&nbsp;     * It can also be called for {@link JsonToken#VALUE_NUMBER_FLOAT};
+<i>1251</i>&nbsp;     * if so, it is equivalent to calling {@link #getDecimalValue}
+<i>1252</i>&nbsp;     * and then constructing a {@link BigInteger} from that value.
+<i>1253</i>&nbsp;     */
+<i>1254</i>&nbsp;    public abstract BigInteger getBigIntegerValue() throws IOException;
+<i>1255</i>&nbsp;
+<i>1256</i>&nbsp;    /**
+<i>1257</i>&nbsp;     * Numeric accessor that can be called when the current
+<i>1258</i>&nbsp;     * token is of type {@link JsonToken#VALUE_NUMBER_FLOAT} and
+<i>1259</i>&nbsp;     * it can be expressed as a Java float primitive type.
+<i>1260</i>&nbsp;     * It can also be called for {@link JsonToken#VALUE_NUMBER_INT};
+<i>1261</i>&nbsp;     * if so, it is equivalent to calling {@link #getLongValue}
+<i>1262</i>&nbsp;     * and then casting; except for possible overflow/underflow
+<i>1263</i>&nbsp;     * exception.
+<i>1264</i>&nbsp;     *&lt;p&gt;
+<i>1265</i>&nbsp;     * Note: if the value falls
+<i>1266</i>&nbsp;     * outside of range of Java float, a {@link JsonParseException}
+<i>1267</i>&nbsp;     * will be thrown to indicate numeric overflow/underflow.
+<i>1268</i>&nbsp;     */
+<i>1269</i>&nbsp;    public abstract float getFloatValue() throws IOException;
+<i>1270</i>&nbsp;
+<i>1271</i>&nbsp;    /**
+<i>1272</i>&nbsp;     * Numeric accessor that can be called when the current
+<i>1273</i>&nbsp;     * token is of type {@link JsonToken#VALUE_NUMBER_FLOAT} and
+<i>1274</i>&nbsp;     * it can be expressed as a Java double primitive type.
+<i>1275</i>&nbsp;     * It can also be called for {@link JsonToken#VALUE_NUMBER_INT};
+<i>1276</i>&nbsp;     * if so, it is equivalent to calling {@link #getLongValue}
+<i>1277</i>&nbsp;     * and then casting; except for possible overflow/underflow
+<i>1278</i>&nbsp;     * exception.
+<i>1279</i>&nbsp;     *&lt;p&gt;
+<i>1280</i>&nbsp;     * Note: if the value falls
+<i>1281</i>&nbsp;     * outside of range of Java double, a {@link JsonParseException}
+<i>1282</i>&nbsp;     * will be thrown to indicate numeric overflow/underflow.
+<i>1283</i>&nbsp;     */
+<i>1284</i>&nbsp;    public abstract double getDoubleValue() throws IOException;
+<i>1285</i>&nbsp;
+<i>1286</i>&nbsp;    /**
+<i>1287</i>&nbsp;     * Numeric accessor that can be called when the current
+<i>1288</i>&nbsp;     * token is of type {@link JsonToken#VALUE_NUMBER_FLOAT} or
+<i>1289</i>&nbsp;     * {@link JsonToken#VALUE_NUMBER_INT}. No under/overflow exceptions
+<i>1290</i>&nbsp;     * are ever thrown.
+<i>1291</i>&nbsp;     */
+<i>1292</i>&nbsp;    public abstract BigDecimal getDecimalValue() throws IOException;
+<i>1293</i>&nbsp;
+<i>1294</i>&nbsp;    /*
+<i>1295</i>&nbsp;    /**********************************************************
+<i>1296</i>&nbsp;    /* Public API, access to token information, other
+<i>1297</i>&nbsp;    /**********************************************************
+<i>1298</i>&nbsp;     */
+<i>1299</i>&nbsp;    
+<i>1300</i>&nbsp;    /**
+<i>1301</i>&nbsp;     * Convenience accessor that can be called when the current
+<i>1302</i>&nbsp;     * token is {@link JsonToken#VALUE_TRUE} or
+<i>1303</i>&nbsp;     * {@link JsonToken#VALUE_FALSE}.
+<i>1304</i>&nbsp;     *&lt;p&gt;
+<i>1305</i>&nbsp;     * Note: if the token is not of above-mentioned boolean types,
+<i>1306</i>&nbsp; an integer, but its value falls
+<i>1307</i>&nbsp;     * outside of range of Java long, a {@link JsonParseException}
+<i>1308</i>&nbsp;     * may be thrown to indicate numeric overflow/underflow.
+<i>1309</i>&nbsp;     */
+<i>1310</i>&nbsp;    public boolean getBooleanValue() throws IOException {
+<b class="fc"><i>1311</i>&nbsp;        JsonToken t = currentToken();</b>
+<b class="fc"><i>1312</i>&nbsp;        if (t == JsonToken.VALUE_TRUE) return true;</b>
+<b class="fc"><i>1313</i>&nbsp;        if (t == JsonToken.VALUE_FALSE) return false;</b>
+<b class="fc"><i>1314</i>&nbsp;        throw new JsonParseException(this,</b>
+<b class="fc"><i>1315</i>&nbsp;            String.format(&quot;Current token (%s) not of boolean type&quot;, t))</b>
+<b class="fc"><i>1316</i>&nbsp;                .withRequestPayload(_requestPayload);</b>
+<i>1317</i>&nbsp;    }
+<i>1318</i>&nbsp;
+<i>1319</i>&nbsp;    /**
+<i>1320</i>&nbsp;     * Accessor that can be called if (and only if) the current token
+<i>1321</i>&nbsp;     * is {@link JsonToken#VALUE_EMBEDDED_OBJECT}. For other token types,
+<i>1322</i>&nbsp;     * null is returned.
+<i>1323</i>&nbsp;     *&lt;p&gt;
+<i>1324</i>&nbsp;     * Note: only some specialized parser implementations support
+<i>1325</i>&nbsp;     * embedding of objects (usually ones that are facades on top
+<i>1326</i>&nbsp;     * of non-streaming sources, such as object trees). One exception
+<i>1327</i>&nbsp;     * is access to binary content (whether via base64 encoding or not)
+<i>1328</i>&nbsp;     * which typically is accessible using this method, as well as
+<i>1329</i>&nbsp;     * {@link #getBinaryValue()}.
+<i>1330</i>&nbsp;     */
+<b class="fc"><i>1331</i>&nbsp;    public Object getEmbeddedObject() throws IOException { return null; }</b>
+<i>1332</i>&nbsp;
+<i>1333</i>&nbsp;    /*
+<i>1334</i>&nbsp;    /**********************************************************
+<i>1335</i>&nbsp;    /* Public API, access to token information, binary
+<i>1336</i>&nbsp;    /**********************************************************
+<i>1337</i>&nbsp;     */
+<i>1338</i>&nbsp;
+<i>1339</i>&nbsp;    /**
+<i>1340</i>&nbsp;     * Method that can be used to read (and consume -- results
+<i>1341</i>&nbsp;     * may not be accessible using other methods after the call)
+<i>1342</i>&nbsp;     * base64-encoded binary data
+<i>1343</i>&nbsp;     * included in the current textual JSON value.
+<i>1344</i>&nbsp;     * It works similar to getting String value via {@link #getText}
+<i>1345</i>&nbsp;     * and decoding result (except for decoding part),
+<i>1346</i>&nbsp;     * but should be significantly more performant.
+<i>1347</i>&nbsp;     *&lt;p&gt;
+<i>1348</i>&nbsp;     * Note that non-decoded textual contents of the current token
+<i>1349</i>&nbsp;     * are not guaranteed to be accessible after this method
+<i>1350</i>&nbsp;     * is called. Current implementation, for example, clears up
+<i>1351</i>&nbsp;     * textual content during decoding.
+<i>1352</i>&nbsp;     * Decoded binary content, however, will be retained until
+<i>1353</i>&nbsp;     * parser is advanced to the next event.
+<i>1354</i>&nbsp;     *
+<i>1355</i>&nbsp;     * @param bv Expected variant of base64 encoded
+<i>1356</i>&nbsp;     *   content (see {@link Base64Variants} for definitions
+<i>1357</i>&nbsp;     *   of &quot;standard&quot; variants).
+<i>1358</i>&nbsp;     *
+<i>1359</i>&nbsp;     * @return Decoded binary data
+<i>1360</i>&nbsp;     */
+<i>1361</i>&nbsp;    public abstract byte[] getBinaryValue(Base64Variant bv) throws IOException;
+<i>1362</i>&nbsp;
+<i>1363</i>&nbsp;    /**
+<i>1364</i>&nbsp;     * Convenience alternative to {@link #getBinaryValue(Base64Variant)}
+<i>1365</i>&nbsp;     * that defaults to using
+<i>1366</i>&nbsp;     * {@link Base64Variants#getDefaultVariant} as the default encoding.
+<i>1367</i>&nbsp;     */
+<i>1368</i>&nbsp;    public byte[] getBinaryValue() throws IOException {
+<b class="fc"><i>1369</i>&nbsp;        return getBinaryValue(Base64Variants.getDefaultVariant());</b>
+<i>1370</i>&nbsp;    }
+<i>1371</i>&nbsp;
+<i>1372</i>&nbsp;    /**
+<i>1373</i>&nbsp;     * Method that can be used as an alternative to {@link #getBigIntegerValue()},
+<i>1374</i>&nbsp;     * especially when value can be large. The main difference (beyond method
+<i>1375</i>&nbsp;     * of returning content using {@link OutputStream} instead of as byte array)
+<i>1376</i>&nbsp;     * is that content will NOT remain accessible after method returns: any content
+<i>1377</i>&nbsp;     * processed will be consumed and is not buffered in any way. If caller needs
+<i>1378</i>&nbsp;     * buffering, it has to implement it.
+<i>1379</i>&nbsp;     * 
+<i>1380</i>&nbsp;     * @param out Output stream to use for passing decoded binary data
+<i>1381</i>&nbsp;     * 
+<i>1382</i>&nbsp;     * @return Number of bytes that were decoded and written via {@link OutputStream}
+<i>1383</i>&nbsp;     * 
+<i>1384</i>&nbsp;     * @since 2.1
+<i>1385</i>&nbsp;     */
+<i>1386</i>&nbsp;    public int readBinaryValue(OutputStream out) throws IOException {
+<b class="fc"><i>1387</i>&nbsp;        return readBinaryValue(Base64Variants.getDefaultVariant(), out);</b>
+<i>1388</i>&nbsp;    }
+<i>1389</i>&nbsp;
+<i>1390</i>&nbsp;    /**
+<i>1391</i>&nbsp;     * Similar to {@link #readBinaryValue(OutputStream)} but allows explicitly
+<i>1392</i>&nbsp;     * specifying base64 variant to use.
+<i>1393</i>&nbsp;     * 
+<i>1394</i>&nbsp;     * @param bv base64 variant to use
+<i>1395</i>&nbsp;     * @param out Output stream to use for passing decoded binary data
+<i>1396</i>&nbsp;     * 
+<i>1397</i>&nbsp;     * @return Number of bytes that were decoded and written via {@link OutputStream}
+<i>1398</i>&nbsp;     * 
+<i>1399</i>&nbsp;     * @since 2.1
+<i>1400</i>&nbsp;     */
+<i>1401</i>&nbsp;    public int readBinaryValue(Base64Variant bv, OutputStream out) throws IOException {
+<b class="nc"><i>1402</i>&nbsp;        _reportUnsupportedOperation();</b>
+<b class="nc"><i>1403</i>&nbsp;        return 0; // never gets here</b>
+<i>1404</i>&nbsp;    }
+<i>1405</i>&nbsp;    
+<i>1406</i>&nbsp;    /*
+<i>1407</i>&nbsp;    /**********************************************************
+<i>1408</i>&nbsp;    /* Public API, access to token information, coercion/conversion
+<i>1409</i>&nbsp;    /**********************************************************
+<i>1410</i>&nbsp;     */
+<i>1411</i>&nbsp;    
+<i>1412</i>&nbsp;    /**
+<i>1413</i>&nbsp;     * Method that will try to convert value of current token to a
+<i>1414</i>&nbsp;     * &lt;b&gt;int&lt;/b&gt;.
+<i>1415</i>&nbsp;     * Numbers are coerced using default Java rules; booleans convert to 0 (false)
+<i>1416</i>&nbsp;     * and 1 (true), and Strings are parsed using default Java language integer
+<i>1417</i>&nbsp;     * parsing rules.
+<i>1418</i>&nbsp;     *&lt;p&gt;
+<i>1419</i>&nbsp;     * If representation can not be converted to an int (including structured type
+<i>1420</i>&nbsp;     * markers like start/end Object/Array)
+<i>1421</i>&nbsp;     * default value of &lt;b&gt;0&lt;/b&gt; will be returned; no exceptions are thrown.
+<i>1422</i>&nbsp;     */
+<i>1423</i>&nbsp;    public int getValueAsInt() throws IOException {
+<b class="nc"><i>1424</i>&nbsp;        return getValueAsInt(0);</b>
+<i>1425</i>&nbsp;    }
+<i>1426</i>&nbsp;    
+<i>1427</i>&nbsp;    /**
+<i>1428</i>&nbsp;     * Method that will try to convert value of current token to a
+<i>1429</i>&nbsp;     * &lt;b&gt;int&lt;/b&gt;.
+<i>1430</i>&nbsp;     * Numbers are coerced using default Java rules; booleans convert to 0 (false)
+<i>1431</i>&nbsp;     * and 1 (true), and Strings are parsed using default Java language integer
+<i>1432</i>&nbsp;     * parsing rules.
+<i>1433</i>&nbsp;     *&lt;p&gt;
+<i>1434</i>&nbsp;     * If representation can not be converted to an int (including structured type
+<i>1435</i>&nbsp;     * markers like start/end Object/Array)
+<i>1436</i>&nbsp;     * specified &lt;b&gt;def&lt;/b&gt; will be returned; no exceptions are thrown.
+<i>1437</i>&nbsp;     */
+<b class="nc"><i>1438</i>&nbsp;    public int getValueAsInt(int def) throws IOException { return def; }</b>
+<i>1439</i>&nbsp;
+<i>1440</i>&nbsp;    /**
+<i>1441</i>&nbsp;     * Method that will try to convert value of current token to a
+<i>1442</i>&nbsp;     * &lt;b&gt;long&lt;/b&gt;.
+<i>1443</i>&nbsp;     * Numbers are coerced using default Java rules; booleans convert to 0 (false)
+<i>1444</i>&nbsp;     * and 1 (true), and Strings are parsed using default Java language integer
+<i>1445</i>&nbsp;     * parsing rules.
+<i>1446</i>&nbsp;     *&lt;p&gt;
+<i>1447</i>&nbsp;     * If representation can not be converted to an int (including structured type
+<i>1448</i>&nbsp;     * markers like start/end Object/Array)
+<i>1449</i>&nbsp;     * default value of &lt;b&gt;0&lt;/b&gt; will be returned; no exceptions are thrown.
+<i>1450</i>&nbsp;     */
+<i>1451</i>&nbsp;    public long getValueAsLong() throws IOException {
+<b class="nc"><i>1452</i>&nbsp;        return getValueAsLong(0);</b>
+<i>1453</i>&nbsp;    }
+<i>1454</i>&nbsp;    
+<i>1455</i>&nbsp;    /**
+<i>1456</i>&nbsp;     * Method that will try to convert value of current token to a
+<i>1457</i>&nbsp;     * &lt;b&gt;long&lt;/b&gt;.
+<i>1458</i>&nbsp;     * Numbers are coerced using default Java rules; booleans convert to 0 (false)
+<i>1459</i>&nbsp;     * and 1 (true), and Strings are parsed using default Java language integer
+<i>1460</i>&nbsp;     * parsing rules.
+<i>1461</i>&nbsp;     *&lt;p&gt;
+<i>1462</i>&nbsp;     * If representation can not be converted to an int (including structured type
+<i>1463</i>&nbsp;     * markers like start/end Object/Array)
+<i>1464</i>&nbsp;     * specified &lt;b&gt;def&lt;/b&gt; will be returned; no exceptions are thrown.
+<i>1465</i>&nbsp;     */
+<i>1466</i>&nbsp;    public long getValueAsLong(long def) throws IOException {
+<b class="nc"><i>1467</i>&nbsp;        return def;</b>
+<i>1468</i>&nbsp;    }
+<i>1469</i>&nbsp;    
+<i>1470</i>&nbsp;    /**
+<i>1471</i>&nbsp;     * Method that will try to convert value of current token to a Java
+<i>1472</i>&nbsp;     * &lt;b&gt;double&lt;/b&gt;.
+<i>1473</i>&nbsp;     * Numbers are coerced using default Java rules; booleans convert to 0.0 (false)
+<i>1474</i>&nbsp;     * and 1.0 (true), and Strings are parsed using default Java language integer
+<i>1475</i>&nbsp;     * parsing rules.
+<i>1476</i>&nbsp;     *&lt;p&gt;
+<i>1477</i>&nbsp;     * If representation can not be converted to an int (including structured types
+<i>1478</i>&nbsp;     * like Objects and Arrays),
+<i>1479</i>&nbsp;     * default value of &lt;b&gt;0.0&lt;/b&gt; will be returned; no exceptions are thrown.
+<i>1480</i>&nbsp;     */
+<i>1481</i>&nbsp;    public double getValueAsDouble() throws IOException {
+<b class="fc"><i>1482</i>&nbsp;        return getValueAsDouble(0.0);</b>
+<i>1483</i>&nbsp;    }
+<i>1484</i>&nbsp;    
+<i>1485</i>&nbsp;    /**
+<i>1486</i>&nbsp;     * Method that will try to convert value of current token to a
+<i>1487</i>&nbsp;     * Java &lt;b&gt;double&lt;/b&gt;.
+<i>1488</i>&nbsp;     * Numbers are coerced using default Java rules; booleans convert to 0.0 (false)
+<i>1489</i>&nbsp;     * and 1.0 (true), and Strings are parsed using default Java language integer
+<i>1490</i>&nbsp;     * parsing rules.
+<i>1491</i>&nbsp;     *&lt;p&gt;
+<i>1492</i>&nbsp;     * If representation can not be converted to an int (including structured types
+<i>1493</i>&nbsp;     * like Objects and Arrays),
+<i>1494</i>&nbsp;     * specified &lt;b&gt;def&lt;/b&gt; will be returned; no exceptions are thrown.
+<i>1495</i>&nbsp;     */
+<i>1496</i>&nbsp;    public double getValueAsDouble(double def) throws IOException {
+<b class="nc"><i>1497</i>&nbsp;        return def;</b>
+<i>1498</i>&nbsp;    }
+<i>1499</i>&nbsp;
+<i>1500</i>&nbsp;    /**
+<i>1501</i>&nbsp;     * Method that will try to convert value of current token to a
+<i>1502</i>&nbsp;     * &lt;b&gt;boolean&lt;/b&gt;.
+<i>1503</i>&nbsp;     * JSON booleans map naturally; integer numbers other than 0 map to true, and
+<i>1504</i>&nbsp;     * 0 maps to false
+<i>1505</i>&nbsp;     * and Strings &#39;true&#39; and &#39;false&#39; map to corresponding values.
+<i>1506</i>&nbsp;     *&lt;p&gt;
+<i>1507</i>&nbsp;     * If representation can not be converted to a boolean value (including structured types
+<i>1508</i>&nbsp;     * like Objects and Arrays),
+<i>1509</i>&nbsp;     * default value of &lt;b&gt;false&lt;/b&gt; will be returned; no exceptions are thrown.
+<i>1510</i>&nbsp;     */
+<i>1511</i>&nbsp;    public boolean getValueAsBoolean() throws IOException {
+<b class="fc"><i>1512</i>&nbsp;        return getValueAsBoolean(false);</b>
+<i>1513</i>&nbsp;    }
+<i>1514</i>&nbsp;
+<i>1515</i>&nbsp;    /**
+<i>1516</i>&nbsp;     * Method that will try to convert value of current token to a
+<i>1517</i>&nbsp;     * &lt;b&gt;boolean&lt;/b&gt;.
+<i>1518</i>&nbsp;     * JSON booleans map naturally; integer numbers other than 0 map to true, and
+<i>1519</i>&nbsp;     * 0 maps to false
+<i>1520</i>&nbsp;     * and Strings &#39;true&#39; and &#39;false&#39; map to corresponding values.
+<i>1521</i>&nbsp;     *&lt;p&gt;
+<i>1522</i>&nbsp;     * If representation can not be converted to a boolean value (including structured types
+<i>1523</i>&nbsp;     * like Objects and Arrays),
+<i>1524</i>&nbsp;     * specified &lt;b&gt;def&lt;/b&gt; will be returned; no exceptions are thrown.
+<i>1525</i>&nbsp;     */
+<i>1526</i>&nbsp;    public boolean getValueAsBoolean(boolean def) throws IOException {
+<b class="nc"><i>1527</i>&nbsp;        return def;</b>
+<i>1528</i>&nbsp;    }
+<i>1529</i>&nbsp;
+<i>1530</i>&nbsp;    /**
+<i>1531</i>&nbsp;     * Method that will try to convert value of current token to a
+<i>1532</i>&nbsp;     * {@link java.lang.String}.
+<i>1533</i>&nbsp;     * JSON Strings map naturally; scalar values get converted to
+<i>1534</i>&nbsp;     * their textual representation.
+<i>1535</i>&nbsp;     * If representation can not be converted to a String value (including structured types
+<i>1536</i>&nbsp;     * like Objects and Arrays and null token), default value of
+<i>1537</i>&nbsp;     * &lt;b&gt;null&lt;/b&gt; will be returned; no exceptions are thrown.
+<i>1538</i>&nbsp;     * 
+<i>1539</i>&nbsp;     * @since 2.1
+<i>1540</i>&nbsp;     */
+<i>1541</i>&nbsp;    public String getValueAsString() throws IOException {
+<b class="nc"><i>1542</i>&nbsp;        return getValueAsString(null);</b>
+<i>1543</i>&nbsp;    }
+<i>1544</i>&nbsp;    
+<i>1545</i>&nbsp;    /**
+<i>1546</i>&nbsp;     * Method that will try to convert value of current token to a
+<i>1547</i>&nbsp;     * {@link java.lang.String}.
+<i>1548</i>&nbsp;     * JSON Strings map naturally; scalar values get converted to
+<i>1549</i>&nbsp;     * their textual representation.
+<i>1550</i>&nbsp;     * If representation can not be converted to a String value (including structured types
+<i>1551</i>&nbsp;     * like Objects and Arrays and null token), specified default value
+<i>1552</i>&nbsp;     * will be returned; no exceptions are thrown.
+<i>1553</i>&nbsp;     * 
+<i>1554</i>&nbsp;     * @since 2.1
+<i>1555</i>&nbsp;     */
+<i>1556</i>&nbsp;    public abstract String getValueAsString(String def) throws IOException;
+<i>1557</i>&nbsp;
+<i>1558</i>&nbsp;    /*
+<i>1559</i>&nbsp;    /**********************************************************
+<i>1560</i>&nbsp;    /* Public API, Native Ids (type, object)
+<i>1561</i>&nbsp;    /**********************************************************
+<i>1562</i>&nbsp;     */
+<i>1563</i>&nbsp;
+<i>1564</i>&nbsp;    /**
+<i>1565</i>&nbsp;     * Introspection method that may be called to see if the underlying
+<i>1566</i>&nbsp;     * data format supports some kind of Object Ids natively (many do not;
+<i>1567</i>&nbsp;     * for example, JSON doesn&#39;t).
+<i>1568</i>&nbsp;     *&lt;p&gt;
+<i>1569</i>&nbsp;     * Default implementation returns true; overridden by data formats
+<i>1570</i>&nbsp;     * that do support native Object Ids. Caller is expected to either
+<i>1571</i>&nbsp;     * use a non-native notation (explicit property or such), or fail,
+<i>1572</i>&nbsp;     * in case it can not use native object ids.
+<i>1573</i>&nbsp;     * 
+<i>1574</i>&nbsp;     * @since 2.3
+<i>1575</i>&nbsp;     */
+<b class="fc"><i>1576</i>&nbsp;    public boolean canReadObjectId() { return false; }</b>
+<i>1577</i>&nbsp;
+<i>1578</i>&nbsp;    /**
+<i>1579</i>&nbsp;     * Introspection method that may be called to see if the underlying
+<i>1580</i>&nbsp;     * data format supports some kind of Type Ids natively (many do not;
+<i>1581</i>&nbsp;     * for example, JSON doesn&#39;t).
+<i>1582</i>&nbsp;     *&lt;p&gt;
+<i>1583</i>&nbsp;     * Default implementation returns true; overridden by data formats
+<i>1584</i>&nbsp;     * that do support native Type Ids. Caller is expected to either
+<i>1585</i>&nbsp;     * use a non-native notation (explicit property or such), or fail,
+<i>1586</i>&nbsp;     * in case it can not use native type ids.
+<i>1587</i>&nbsp;     * 
+<i>1588</i>&nbsp;     * @since 2.3
+<i>1589</i>&nbsp;     */
+<b class="fc"><i>1590</i>&nbsp;    public boolean canReadTypeId() { return false; }</b>
+<i>1591</i>&nbsp;
+<i>1592</i>&nbsp;    /**
+<i>1593</i>&nbsp;     * Method that can be called to check whether current token
+<i>1594</i>&nbsp;     * (one that was just read) has an associated Object id, and if
+<i>1595</i>&nbsp;     * so, return it.
+<i>1596</i>&nbsp;     * Note that while typically caller should check with {@link #canReadObjectId}
+<i>1597</i>&nbsp;     * first, it is not illegal to call this method even if that method returns
+<i>1598</i>&nbsp;     * true; but if so, it will return null. This may be used to simplify calling
+<i>1599</i>&nbsp;     * code.
+<i>1600</i>&nbsp;     *&lt;p&gt;
+<i>1601</i>&nbsp;     * Default implementation will simply return null.
+<i>1602</i>&nbsp;     * 
+<i>1603</i>&nbsp;     * @since 2.3
+<i>1604</i>&nbsp;     */
+<b class="nc"><i>1605</i>&nbsp;    public Object getObjectId() throws IOException { return null; }</b>
+<i>1606</i>&nbsp;
+<i>1607</i>&nbsp;    /**
+<i>1608</i>&nbsp;     * Method that can be called to check whether current token
+<i>1609</i>&nbsp;     * (one that was just read) has an associated type id, and if
+<i>1610</i>&nbsp;     * so, return it.
+<i>1611</i>&nbsp;     * Note that while typically caller should check with {@link #canReadTypeId}
+<i>1612</i>&nbsp;     * first, it is not illegal to call this method even if that method returns
+<i>1613</i>&nbsp;     * true; but if so, it will return null. This may be used to simplify calling
+<i>1614</i>&nbsp;     * code.
+<i>1615</i>&nbsp;     *&lt;p&gt;
+<i>1616</i>&nbsp;     * Default implementation will simply return null.
+<i>1617</i>&nbsp;     * 
+<i>1618</i>&nbsp;     * @since 2.3
+<i>1619</i>&nbsp;     */
+<b class="nc"><i>1620</i>&nbsp;    public Object getTypeId() throws IOException { return null; }</b>
+<i>1621</i>&nbsp;
+<i>1622</i>&nbsp;    /*
+<i>1623</i>&nbsp;    /**********************************************************
+<i>1624</i>&nbsp;    /* Public API, optional data binding functionality
+<i>1625</i>&nbsp;    /**********************************************************
+<i>1626</i>&nbsp;     */
+<i>1627</i>&nbsp;
+<i>1628</i>&nbsp;    /**
+<i>1629</i>&nbsp;     * Method to deserialize JSON content into a non-container
+<i>1630</i>&nbsp;     * type (it can be an array type, however): typically a bean, array
+<i>1631</i>&nbsp;     * or a wrapper type (like {@link java.lang.Boolean}).
+<i>1632</i>&nbsp;     * &lt;b&gt;Note&lt;/b&gt;: method can only be called if the parser has
+<i>1633</i>&nbsp;     * an object codec assigned; this is true for parsers constructed
+<i>1634</i>&nbsp;     * by &lt;code&gt;MappingJsonFactory&lt;/code&gt; (from &quot;jackson-databind&quot; jar)
+<i>1635</i>&nbsp;     * but not for {@link JsonFactory} (unless its &lt;code&gt;setCodec&lt;/code&gt;
+<i>1636</i>&nbsp;     * method has been explicitly called).
+<i>1637</i>&nbsp;     *&lt;p&gt;
+<i>1638</i>&nbsp;     * This method may advance the event stream, for structured types
+<i>1639</i>&nbsp;     * the current token will be the closing end marker (END_ARRAY,
+<i>1640</i>&nbsp;     * END_OBJECT) of the bound structure. For non-structured Json types
+<i>1641</i>&nbsp;     * (and for {@link JsonToken#VALUE_EMBEDDED_OBJECT})
+<i>1642</i>&nbsp;     * stream is not advanced.
+<i>1643</i>&nbsp;     *&lt;p&gt;
+<i>1644</i>&nbsp;     * Note: this method should NOT be used if the result type is a
+<i>1645</i>&nbsp;     * container ({@link java.util.Collection} or {@link java.util.Map}.
+<i>1646</i>&nbsp;     * The reason is that due to type erasure, key and value types
+<i>1647</i>&nbsp;     * can not be introspected when using this method.
+<i>1648</i>&nbsp;     */
+<i>1649</i>&nbsp;    public &lt;T&gt; T readValueAs(Class&lt;T&gt; valueType) throws IOException {
+<b class="nc"><i>1650</i>&nbsp;        return _codec().readValue(this, valueType);</b>
+<i>1651</i>&nbsp;    }
+<i>1652</i>&nbsp;
+<i>1653</i>&nbsp;    /**
+<i>1654</i>&nbsp;     * Method to deserialize JSON content into a Java type, reference
+<i>1655</i>&nbsp;     * to which is passed as argument. Type is passed using so-called
+<i>1656</i>&nbsp;     * &quot;super type token&quot;
+<i>1657</i>&nbsp;     * and specifically needs to be used if the root type is a 
+<i>1658</i>&nbsp;     * parameterized (generic) container type.
+<i>1659</i>&nbsp;     * &lt;b&gt;Note&lt;/b&gt;: method can only be called if the parser has
+<i>1660</i>&nbsp;     * an object codec assigned; this is true for parsers constructed
+<i>1661</i>&nbsp;     * by &lt;code&gt;MappingJsonFactory&lt;/code&gt; (defined in &#39;jackson-databind&#39; bundle)
+<i>1662</i>&nbsp;     * but not for {@link JsonFactory} (unless its &lt;code&gt;setCodec&lt;/code&gt;
+<i>1663</i>&nbsp;     * method has been explicitly called).
+<i>1664</i>&nbsp;     *&lt;p&gt;
+<i>1665</i>&nbsp;     * This method may advance the event stream, for structured types
+<i>1666</i>&nbsp;     * the current token will be the closing end marker (END_ARRAY,
+<i>1667</i>&nbsp;     * END_OBJECT) of the bound structure. For non-structured Json types
+<i>1668</i>&nbsp;     * (and for {@link JsonToken#VALUE_EMBEDDED_OBJECT})
+<i>1669</i>&nbsp;     * stream is not advanced.
+<i>1670</i>&nbsp;     */
+<i>1671</i>&nbsp;    @SuppressWarnings(&quot;unchecked&quot;)
+<i>1672</i>&nbsp;    public &lt;T&gt; T readValueAs(TypeReference&lt;?&gt; valueTypeRef) throws IOException {
+<b class="nc"><i>1673</i>&nbsp;        return (T) _codec().readValue(this, valueTypeRef);</b>
+<i>1674</i>&nbsp;    }
+<i>1675</i>&nbsp;
+<i>1676</i>&nbsp;    /**
+<i>1677</i>&nbsp;     * Method for reading sequence of Objects from parser stream,
+<i>1678</i>&nbsp;     * all with same specified value type.
+<i>1679</i>&nbsp;     */
+<i>1680</i>&nbsp;    public &lt;T&gt; Iterator&lt;T&gt; readValuesAs(Class&lt;T&gt; valueType) throws IOException {
+<b class="nc"><i>1681</i>&nbsp;        return _codec().readValues(this, valueType);</b>
+<i>1682</i>&nbsp;    }
+<i>1683</i>&nbsp;
+<i>1684</i>&nbsp;    /**
+<i>1685</i>&nbsp;     * Method for reading sequence of Objects from parser stream,
+<i>1686</i>&nbsp;     * all with same specified value type.
+<i>1687</i>&nbsp;     */
+<i>1688</i>&nbsp;    public &lt;T&gt; Iterator&lt;T&gt; readValuesAs(TypeReference&lt;?&gt; valueTypeRef) throws IOException {
+<b class="nc"><i>1689</i>&nbsp;        return _codec().readValues(this, valueTypeRef);</b>
+<i>1690</i>&nbsp;    }
+<i>1691</i>&nbsp;    
+<i>1692</i>&nbsp;    /**
+<i>1693</i>&nbsp;     * Method to deserialize JSON content into equivalent &quot;tree model&quot;,
+<i>1694</i>&nbsp;     * represented by root {@link TreeNode} of resulting model.
+<i>1695</i>&nbsp;     * For JSON Arrays it will an array node (with child nodes),
+<i>1696</i>&nbsp;     * for objects object node (with child nodes), and for other types
+<i>1697</i>&nbsp;     * matching leaf node type. Empty or whitespace documents are null.
+<i>1698</i>&nbsp;     *
+<i>1699</i>&nbsp;     * @return root of the document, or null if empty or whitespace.
+<i>1700</i>&nbsp;     */
+<i>1701</i>&nbsp;    @SuppressWarnings(&quot;unchecked&quot;)
+<i>1702</i>&nbsp;    public &lt;T extends TreeNode&gt; T readValueAsTree() throws IOException {
+<b class="fc"><i>1703</i>&nbsp;        return (T) _codec().readTree(this);</b>
+<i>1704</i>&nbsp;    }
+<i>1705</i>&nbsp;
+<i>1706</i>&nbsp;    protected ObjectCodec _codec() {
+<b class="fc"><i>1707</i>&nbsp;        ObjectCodec c = getCodec();</b>
+<b class="fc"><i>1708</i>&nbsp;        if (c == null) {</b>
+<b class="fc"><i>1709</i>&nbsp;            throw new IllegalStateException(&quot;No ObjectCodec defined for parser, needed for deserialization&quot;);</b>
+<i>1710</i>&nbsp;        }
+<b class="nc"><i>1711</i>&nbsp;        return c;</b>
+<i>1712</i>&nbsp;    }
+<i>1713</i>&nbsp;    
+<i>1714</i>&nbsp;    /*
+<i>1715</i>&nbsp;    /**********************************************************
+<i>1716</i>&nbsp;    /* Internal methods
+<i>1717</i>&nbsp;    /**********************************************************
+<i>1718</i>&nbsp;     */
+<i>1719</i>&nbsp;
+<i>1720</i>&nbsp;    /**
+<i>1721</i>&nbsp;     * Helper method for constructing {@link JsonParseException}s
+<i>1722</i>&nbsp;     * based on current state of the parser
+<i>1723</i>&nbsp;     */
+<i>1724</i>&nbsp;    protected JsonParseException _constructError(String msg) {
+<b class="fc"><i>1725</i>&nbsp;        return new JsonParseException(this, msg)</b>
+<b class="fc"><i>1726</i>&nbsp;            .withRequestPayload(_requestPayload);</b>
+<i>1727</i>&nbsp;    }
+<i>1728</i>&nbsp;
+<i>1729</i>&nbsp;    /**
+<i>1730</i>&nbsp;     * Helper method to call for operations that are not supported by
+<i>1731</i>&nbsp;     * parser implementation.
+<i>1732</i>&nbsp;     *
+<i>1733</i>&nbsp;     * @since 2.1
+<i>1734</i>&nbsp;     */
+<i>1735</i>&nbsp;    protected void _reportUnsupportedOperation() {
+<b class="nc"><i>1736</i>&nbsp;        throw new UnsupportedOperationException(&quot;Operation not supported by parser of type &quot;+getClass().getName());</b>
+<i>1737</i>&nbsp;    }
+<i>1738</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 04:22</div>
+</div>
+</body>
+</html>

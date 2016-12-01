@@ -1,0 +1,949 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: BasicChronology</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time.chrono</a> ]
+</div>
+
+<h1>Coverage Summary for Class: BasicChronology (org.joda.time.chrono)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">BasicChronology</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (39/ 39)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.2%
+  </span>
+  <span class="absValue">
+    (221/ 225)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">BasicChronology$HalfdayField</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/ 4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/ 5)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">BasicChronology$YearInfo</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/ 4)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (44/ 44)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    98.3%
+  </span>
+  <span class="absValue">
+    (230/ 234)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2015 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time.chrono;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;import java.util.Locale;
+<i>19</i>&nbsp;
+<i>20</i>&nbsp;import org.joda.time.Chronology;
+<i>21</i>&nbsp;import org.joda.time.DateTimeConstants;
+<i>22</i>&nbsp;import org.joda.time.DateTimeField;
+<i>23</i>&nbsp;import org.joda.time.DateTimeFieldType;
+<i>24</i>&nbsp;import org.joda.time.DateTimeZone;
+<i>25</i>&nbsp;import org.joda.time.DurationField;
+<i>26</i>&nbsp;import org.joda.time.DurationFieldType;
+<i>27</i>&nbsp;import org.joda.time.field.DividedDateTimeField;
+<i>28</i>&nbsp;import org.joda.time.field.FieldUtils;
+<i>29</i>&nbsp;import org.joda.time.field.MillisDurationField;
+<i>30</i>&nbsp;import org.joda.time.field.OffsetDateTimeField;
+<i>31</i>&nbsp;import org.joda.time.field.PreciseDateTimeField;
+<i>32</i>&nbsp;import org.joda.time.field.PreciseDurationField;
+<i>33</i>&nbsp;import org.joda.time.field.RemainderDateTimeField;
+<i>34</i>&nbsp;import org.joda.time.field.ZeroIsMaxDateTimeField;
+<i>35</i>&nbsp;
+<i>36</i>&nbsp;/**
+<i>37</i>&nbsp; * Abstract implementation for calendar systems that use a typical
+<i>38</i>&nbsp; * day/month/year/leapYear model.
+<i>39</i>&nbsp; * Most of the utility methods required by subclasses are package-private,
+<i>40</i>&nbsp; * reflecting the intention that they be defined in the same package.
+<i>41</i>&nbsp; * &lt;p&gt;
+<i>42</i>&nbsp; * BasicChronology is thread-safe and immutable, and all subclasses must
+<i>43</i>&nbsp; * be as well.
+<i>44</i>&nbsp; *
+<i>45</i>&nbsp; * @author Stephen Colebourne
+<i>46</i>&nbsp; * @author Brian S O&#39;Neill
+<i>47</i>&nbsp; * @author Guy Allard
+<i>48</i>&nbsp; * @since 1.2, renamed from BaseGJChronology
+<i>49</i>&nbsp; */
+<b class="fc"><i>50</i>&nbsp;abstract class BasicChronology extends AssembledChronology {</b>
+<i>51</i>&nbsp;
+<i>52</i>&nbsp;    /** Serialization lock */
+<i>53</i>&nbsp;    private static final long serialVersionUID = 8283225332206808863L;
+<i>54</i>&nbsp;
+<i>55</i>&nbsp;    private static final DurationField cMillisField;
+<i>56</i>&nbsp;    private static final DurationField cSecondsField;
+<i>57</i>&nbsp;    private static final DurationField cMinutesField;
+<i>58</i>&nbsp;    private static final DurationField cHoursField;
+<i>59</i>&nbsp;    private static final DurationField cHalfdaysField;
+<i>60</i>&nbsp;    private static final DurationField cDaysField;
+<i>61</i>&nbsp;    private static final DurationField cWeeksField;
+<i>62</i>&nbsp;
+<i>63</i>&nbsp;    private static final DateTimeField cMillisOfSecondField;
+<i>64</i>&nbsp;    private static final DateTimeField cMillisOfDayField;
+<i>65</i>&nbsp;    private static final DateTimeField cSecondOfMinuteField;
+<i>66</i>&nbsp;    private static final DateTimeField cSecondOfDayField;
+<i>67</i>&nbsp;    private static final DateTimeField cMinuteOfHourField;
+<i>68</i>&nbsp;    private static final DateTimeField cMinuteOfDayField;
+<i>69</i>&nbsp;    private static final DateTimeField cHourOfDayField;
+<i>70</i>&nbsp;    private static final DateTimeField cHourOfHalfdayField;
+<i>71</i>&nbsp;    private static final DateTimeField cClockhourOfDayField;
+<i>72</i>&nbsp;    private static final DateTimeField cClockhourOfHalfdayField;
+<i>73</i>&nbsp;    private static final DateTimeField cHalfdayOfDayField;
+<i>74</i>&nbsp;
+<i>75</i>&nbsp;    static {
+<b class="fc"><i>76</i>&nbsp;        cMillisField = MillisDurationField.INSTANCE;</b>
+<b class="fc"><i>77</i>&nbsp;        cSecondsField = new PreciseDurationField</b>
+<b class="fc"><i>78</i>&nbsp;            (DurationFieldType.seconds(), DateTimeConstants.MILLIS_PER_SECOND);</b>
+<b class="fc"><i>79</i>&nbsp;        cMinutesField = new PreciseDurationField</b>
+<b class="fc"><i>80</i>&nbsp;            (DurationFieldType.minutes(), DateTimeConstants.MILLIS_PER_MINUTE);</b>
+<b class="fc"><i>81</i>&nbsp;        cHoursField = new PreciseDurationField</b>
+<b class="fc"><i>82</i>&nbsp;            (DurationFieldType.hours(), DateTimeConstants.MILLIS_PER_HOUR);</b>
+<b class="fc"><i>83</i>&nbsp;        cHalfdaysField = new PreciseDurationField</b>
+<b class="fc"><i>84</i>&nbsp;            (DurationFieldType.halfdays(), DateTimeConstants.MILLIS_PER_DAY / 2);</b>
+<b class="fc"><i>85</i>&nbsp;        cDaysField = new PreciseDurationField</b>
+<b class="fc"><i>86</i>&nbsp;            (DurationFieldType.days(), DateTimeConstants.MILLIS_PER_DAY);</b>
+<b class="fc"><i>87</i>&nbsp;        cWeeksField = new PreciseDurationField</b>
+<b class="fc"><i>88</i>&nbsp;            (DurationFieldType.weeks(), DateTimeConstants.MILLIS_PER_WEEK);</b>
+<i>89</i>&nbsp;
+<b class="fc"><i>90</i>&nbsp;        cMillisOfSecondField = new PreciseDateTimeField</b>
+<b class="fc"><i>91</i>&nbsp;            (DateTimeFieldType.millisOfSecond(), cMillisField, cSecondsField);</b>
+<i>92</i>&nbsp;
+<b class="fc"><i>93</i>&nbsp;        cMillisOfDayField = new PreciseDateTimeField</b>
+<b class="fc"><i>94</i>&nbsp;            (DateTimeFieldType.millisOfDay(), cMillisField, cDaysField);</b>
+<i>95</i>&nbsp;             
+<b class="fc"><i>96</i>&nbsp;        cSecondOfMinuteField = new PreciseDateTimeField</b>
+<b class="fc"><i>97</i>&nbsp;            (DateTimeFieldType.secondOfMinute(), cSecondsField, cMinutesField);</b>
+<i>98</i>&nbsp;
+<b class="fc"><i>99</i>&nbsp;        cSecondOfDayField = new PreciseDateTimeField</b>
+<b class="fc"><i>100</i>&nbsp;            (DateTimeFieldType.secondOfDay(), cSecondsField, cDaysField);</b>
+<i>101</i>&nbsp;
+<b class="fc"><i>102</i>&nbsp;        cMinuteOfHourField = new PreciseDateTimeField</b>
+<b class="fc"><i>103</i>&nbsp;            (DateTimeFieldType.minuteOfHour(), cMinutesField, cHoursField);</b>
+<i>104</i>&nbsp;
+<b class="fc"><i>105</i>&nbsp;        cMinuteOfDayField = new PreciseDateTimeField</b>
+<b class="fc"><i>106</i>&nbsp;            (DateTimeFieldType.minuteOfDay(), cMinutesField, cDaysField);</b>
+<i>107</i>&nbsp;
+<b class="fc"><i>108</i>&nbsp;        cHourOfDayField = new PreciseDateTimeField</b>
+<b class="fc"><i>109</i>&nbsp;            (DateTimeFieldType.hourOfDay(), cHoursField, cDaysField);</b>
+<i>110</i>&nbsp;
+<b class="fc"><i>111</i>&nbsp;        cHourOfHalfdayField = new PreciseDateTimeField</b>
+<b class="fc"><i>112</i>&nbsp;            (DateTimeFieldType.hourOfHalfday(), cHoursField, cHalfdaysField);</b>
+<i>113</i>&nbsp;
+<b class="fc"><i>114</i>&nbsp;        cClockhourOfDayField = new ZeroIsMaxDateTimeField</b>
+<b class="fc"><i>115</i>&nbsp;            (cHourOfDayField, DateTimeFieldType.clockhourOfDay());</b>
+<i>116</i>&nbsp;
+<b class="fc"><i>117</i>&nbsp;        cClockhourOfHalfdayField = new ZeroIsMaxDateTimeField</b>
+<b class="fc"><i>118</i>&nbsp;            (cHourOfHalfdayField, DateTimeFieldType.clockhourOfHalfday());</b>
+<i>119</i>&nbsp;
+<b class="fc"><i>120</i>&nbsp;        cHalfdayOfDayField = new HalfdayField();</b>
+<b class="fc"><i>121</i>&nbsp;    }</b>
+<i>122</i>&nbsp;
+<i>123</i>&nbsp;    private static final int CACHE_SIZE = 1 &lt;&lt; 10;
+<i>124</i>&nbsp;    private static final int CACHE_MASK = CACHE_SIZE - 1;
+<i>125</i>&nbsp;
+<b class="fc"><i>126</i>&nbsp;    private transient final YearInfo[] iYearInfoCache = new YearInfo[CACHE_SIZE];</b>
+<i>127</i>&nbsp;
+<i>128</i>&nbsp;    private final int iMinDaysInFirstWeek;
+<i>129</i>&nbsp;
+<i>130</i>&nbsp;    BasicChronology(Chronology base, Object param, int minDaysInFirstWeek) {
+<b class="fc"><i>131</i>&nbsp;        super(base, param);</b>
+<i>132</i>&nbsp;
+<b class="fc"><i>133</i>&nbsp;        if (minDaysInFirstWeek &lt; 1 || minDaysInFirstWeek &gt; 7) {</b>
+<b class="nc"><i>134</i>&nbsp;            throw new IllegalArgumentException</b>
+<i>135</i>&nbsp;                (&quot;Invalid min days in first week: &quot; + minDaysInFirstWeek);
+<i>136</i>&nbsp;        }
+<i>137</i>&nbsp;
+<b class="fc"><i>138</i>&nbsp;        iMinDaysInFirstWeek = minDaysInFirstWeek;</b>
+<b class="fc"><i>139</i>&nbsp;    }</b>
+<i>140</i>&nbsp;
+<i>141</i>&nbsp;    public DateTimeZone getZone() {
+<i>142</i>&nbsp;        Chronology base;
+<b class="fc"><i>143</i>&nbsp;        if ((base = getBase()) != null) {</b>
+<b class="fc"><i>144</i>&nbsp;            return base.getZone();</b>
+<i>145</i>&nbsp;        }
+<b class="fc"><i>146</i>&nbsp;        return DateTimeZone.UTC;</b>
+<i>147</i>&nbsp;    }
+<i>148</i>&nbsp;
+<i>149</i>&nbsp;    @Override
+<i>150</i>&nbsp;    public long getDateTimeMillis(
+<i>151</i>&nbsp;            int year, int monthOfYear, int dayOfMonth, int millisOfDay)
+<i>152</i>&nbsp;            throws IllegalArgumentException {
+<i>153</i>&nbsp;        Chronology base;
+<b class="fc"><i>154</i>&nbsp;        if ((base = getBase()) != null) {</b>
+<b class="fc"><i>155</i>&nbsp;            return base.getDateTimeMillis(year, monthOfYear, dayOfMonth, millisOfDay);</b>
+<i>156</i>&nbsp;        }
+<i>157</i>&nbsp;
+<i>158</i>&nbsp;        FieldUtils.verifyValueBounds
+<b class="fc"><i>159</i>&nbsp;            (DateTimeFieldType.millisOfDay(), millisOfDay, 0, DateTimeConstants.MILLIS_PER_DAY - 1);</b>
+<b class="fc"><i>160</i>&nbsp;        return getDateTimeMillis0(year, monthOfYear, dayOfMonth, millisOfDay);</b>
+<i>161</i>&nbsp;    }
+<i>162</i>&nbsp;
+<i>163</i>&nbsp;    @Override
+<i>164</i>&nbsp;    public long getDateTimeMillis(
+<i>165</i>&nbsp;            int year, int monthOfYear, int dayOfMonth,
+<i>166</i>&nbsp;            int hourOfDay, int minuteOfHour, int secondOfMinute, int millisOfSecond)
+<i>167</i>&nbsp;            throws IllegalArgumentException {
+<i>168</i>&nbsp;        Chronology base;
+<b class="fc"><i>169</i>&nbsp;        if ((base = getBase()) != null) {</b>
+<b class="fc"><i>170</i>&nbsp;            return base.getDateTimeMillis(year, monthOfYear, dayOfMonth,</b>
+<i>171</i>&nbsp;                                          hourOfDay, minuteOfHour, secondOfMinute, millisOfSecond);
+<i>172</i>&nbsp;        }
+<i>173</i>&nbsp;
+<b class="fc"><i>174</i>&nbsp;        FieldUtils.verifyValueBounds(DateTimeFieldType.hourOfDay(), hourOfDay, 0, 23);</b>
+<b class="fc"><i>175</i>&nbsp;        FieldUtils.verifyValueBounds(DateTimeFieldType.minuteOfHour(), minuteOfHour, 0, 59);</b>
+<b class="fc"><i>176</i>&nbsp;        FieldUtils.verifyValueBounds(DateTimeFieldType.secondOfMinute(), secondOfMinute, 0, 59);</b>
+<b class="fc"><i>177</i>&nbsp;        FieldUtils.verifyValueBounds(DateTimeFieldType.millisOfSecond(), millisOfSecond, 0, 999);</b>
+<b class="fc"><i>178</i>&nbsp;        long millisOfDay = hourOfDay * DateTimeConstants.MILLIS_PER_HOUR</b>
+<i>179</i>&nbsp;                        + minuteOfHour * DateTimeConstants.MILLIS_PER_MINUTE
+<i>180</i>&nbsp;                        + secondOfMinute * DateTimeConstants.MILLIS_PER_SECOND
+<i>181</i>&nbsp;                        + millisOfSecond;
+<b class="fc"><i>182</i>&nbsp;        return getDateTimeMillis0(year, monthOfYear, dayOfMonth, (int) millisOfDay);</b>
+<i>183</i>&nbsp;    }
+<i>184</i>&nbsp;
+<i>185</i>&nbsp;    private long getDateTimeMillis0(int year, int monthOfYear, int dayOfMonth, int millisOfDay) {
+<b class="fc"><i>186</i>&nbsp;        long dayInstant = getDateMidnightMillis(year, monthOfYear, dayOfMonth);</b>
+<i>187</i>&nbsp;        // try reversed calculation from next day for MIN
+<b class="fc"><i>188</i>&nbsp;        if (dayInstant == Long.MIN_VALUE) {</b>
+<b class="fc"><i>189</i>&nbsp;            dayInstant = getDateMidnightMillis(year, monthOfYear, dayOfMonth + 1);</b>
+<b class="fc"><i>190</i>&nbsp;            millisOfDay  = millisOfDay - 86400000;</b>
+<i>191</i>&nbsp;        }
+<i>192</i>&nbsp;        // check for limit caused by millisOfDay addition
+<i>193</i>&nbsp;        // even if dayInstant already MIN or MAX, this still works fine with int math
+<b class="fc"><i>194</i>&nbsp;        long result = dayInstant + millisOfDay;</b>
+<b class="fc"><i>195</i>&nbsp;        if (result  &lt; 0 &amp;&amp; dayInstant &gt; 0) {</b>
+<b class="fc"><i>196</i>&nbsp;            return Long.MAX_VALUE;</b>
+<b class="fc"><i>197</i>&nbsp;        } else if (result  &gt; 0 &amp;&amp; dayInstant &lt; 0) {</b>
+<b class="fc"><i>198</i>&nbsp;            return Long.MIN_VALUE;</b>
+<i>199</i>&nbsp;        }
+<b class="fc"><i>200</i>&nbsp;        return result;</b>
+<i>201</i>&nbsp;    }
+<i>202</i>&nbsp;
+<i>203</i>&nbsp;    public int getMinimumDaysInFirstWeek() {
+<b class="fc"><i>204</i>&nbsp;        return iMinDaysInFirstWeek;</b>
+<i>205</i>&nbsp;    }
+<i>206</i>&nbsp;
+<i>207</i>&nbsp;    //-----------------------------------------------------------------------
+<i>208</i>&nbsp;    /**
+<i>209</i>&nbsp;     * Checks if this chronology instance equals another.
+<i>210</i>&nbsp;     * 
+<i>211</i>&nbsp;     * @param obj  the object to compare to
+<i>212</i>&nbsp;     * @return true if equal
+<i>213</i>&nbsp;     * @since 1.6
+<i>214</i>&nbsp;     */
+<i>215</i>&nbsp;    public boolean equals(Object obj) {
+<b class="fc"><i>216</i>&nbsp;        if (this == obj) {</b>
+<b class="fc"><i>217</i>&nbsp;            return true;</b>
+<i>218</i>&nbsp;        }
+<b class="fc"><i>219</i>&nbsp;        if (obj != null &amp;&amp; getClass() == obj.getClass()) {</b>
+<b class="nc"><i>220</i>&nbsp;            BasicChronology chrono = (BasicChronology) obj;</b>
+<b class="nc"><i>221</i>&nbsp;            return getMinimumDaysInFirstWeek() == chrono.getMinimumDaysInFirstWeek() &amp;&amp;</b>
+<b class="nc"><i>222</i>&nbsp;                    getZone().equals(chrono.getZone());</b>
+<i>223</i>&nbsp;        }
+<b class="fc"><i>224</i>&nbsp;        return false;</b>
+<i>225</i>&nbsp;    }
+<i>226</i>&nbsp;
+<i>227</i>&nbsp;    /**
+<i>228</i>&nbsp;     * A suitable hash code for the chronology.
+<i>229</i>&nbsp;     * 
+<i>230</i>&nbsp;     * @return the hash code
+<i>231</i>&nbsp;     * @since 1.6
+<i>232</i>&nbsp;     */
+<i>233</i>&nbsp;    public int hashCode() {
+<b class="fc"><i>234</i>&nbsp;        return getClass().getName().hashCode() * 11 + getZone().hashCode() + getMinimumDaysInFirstWeek();</b>
+<i>235</i>&nbsp;    }
+<i>236</i>&nbsp;
+<i>237</i>&nbsp;    // Output
+<i>238</i>&nbsp;    //-----------------------------------------------------------------------
+<i>239</i>&nbsp;    /**
+<i>240</i>&nbsp;     * Gets a debugging toString.
+<i>241</i>&nbsp;     * 
+<i>242</i>&nbsp;     * @return a debugging string
+<i>243</i>&nbsp;     */
+<i>244</i>&nbsp;    public String toString() {
+<b class="fc"><i>245</i>&nbsp;        StringBuilder sb = new StringBuilder(60);</b>
+<b class="fc"><i>246</i>&nbsp;        String name = getClass().getName();</b>
+<b class="fc"><i>247</i>&nbsp;        int index = name.lastIndexOf(&#39;.&#39;);</b>
+<b class="fc"><i>248</i>&nbsp;        if (index &gt;= 0) {</b>
+<b class="fc"><i>249</i>&nbsp;            name = name.substring(index + 1);</b>
+<i>250</i>&nbsp;        }
+<b class="fc"><i>251</i>&nbsp;        sb.append(name);</b>
+<b class="fc"><i>252</i>&nbsp;        sb.append(&#39;[&#39;);</b>
+<b class="fc"><i>253</i>&nbsp;        DateTimeZone zone = getZone();</b>
+<b class="fc"><i>254</i>&nbsp;        if (zone != null) {</b>
+<b class="fc"><i>255</i>&nbsp;            sb.append(zone.getID());</b>
+<i>256</i>&nbsp;        }
+<b class="fc"><i>257</i>&nbsp;        if (getMinimumDaysInFirstWeek() != 4) {</b>
+<b class="fc"><i>258</i>&nbsp;            sb.append(&quot;,mdfw=&quot;);</b>
+<b class="fc"><i>259</i>&nbsp;            sb.append(getMinimumDaysInFirstWeek());</b>
+<i>260</i>&nbsp;        }
+<b class="fc"><i>261</i>&nbsp;        sb.append(&#39;]&#39;);</b>
+<b class="fc"><i>262</i>&nbsp;        return sb.toString();</b>
+<i>263</i>&nbsp;    }
+<i>264</i>&nbsp;
+<i>265</i>&nbsp;    protected void assemble(Fields fields) {
+<i>266</i>&nbsp;        // First copy fields that are the same for all Gregorian and Julian
+<i>267</i>&nbsp;        // chronologies.
+<i>268</i>&nbsp;
+<b class="fc"><i>269</i>&nbsp;        fields.millis = cMillisField;</b>
+<b class="fc"><i>270</i>&nbsp;        fields.seconds = cSecondsField;</b>
+<b class="fc"><i>271</i>&nbsp;        fields.minutes = cMinutesField;</b>
+<b class="fc"><i>272</i>&nbsp;        fields.hours = cHoursField;</b>
+<b class="fc"><i>273</i>&nbsp;        fields.halfdays = cHalfdaysField;</b>
+<b class="fc"><i>274</i>&nbsp;        fields.days = cDaysField;</b>
+<b class="fc"><i>275</i>&nbsp;        fields.weeks = cWeeksField;</b>
+<i>276</i>&nbsp;
+<b class="fc"><i>277</i>&nbsp;        fields.millisOfSecond = cMillisOfSecondField;</b>
+<b class="fc"><i>278</i>&nbsp;        fields.millisOfDay = cMillisOfDayField;</b>
+<b class="fc"><i>279</i>&nbsp;        fields.secondOfMinute = cSecondOfMinuteField;</b>
+<b class="fc"><i>280</i>&nbsp;        fields.secondOfDay = cSecondOfDayField;</b>
+<b class="fc"><i>281</i>&nbsp;        fields.minuteOfHour = cMinuteOfHourField;</b>
+<b class="fc"><i>282</i>&nbsp;        fields.minuteOfDay = cMinuteOfDayField;</b>
+<b class="fc"><i>283</i>&nbsp;        fields.hourOfDay = cHourOfDayField;</b>
+<b class="fc"><i>284</i>&nbsp;        fields.hourOfHalfday = cHourOfHalfdayField;</b>
+<b class="fc"><i>285</i>&nbsp;        fields.clockhourOfDay = cClockhourOfDayField;</b>
+<b class="fc"><i>286</i>&nbsp;        fields.clockhourOfHalfday = cClockhourOfHalfdayField;</b>
+<b class="fc"><i>287</i>&nbsp;        fields.halfdayOfDay = cHalfdayOfDayField;</b>
+<i>288</i>&nbsp;
+<i>289</i>&nbsp;        // Now create fields that have unique behavior for Gregorian and Julian
+<i>290</i>&nbsp;        // chronologies.
+<i>291</i>&nbsp;
+<b class="fc"><i>292</i>&nbsp;        fields.year = new BasicYearDateTimeField(this);</b>
+<b class="fc"><i>293</i>&nbsp;        fields.yearOfEra = new GJYearOfEraDateTimeField(fields.year, this);</b>
+<i>294</i>&nbsp;
+<i>295</i>&nbsp;        // Define one-based centuryOfEra and yearOfCentury.
+<b class="fc"><i>296</i>&nbsp;        DateTimeField field = new OffsetDateTimeField(</b>
+<i>297</i>&nbsp;            fields.yearOfEra, 99);
+<b class="fc"><i>298</i>&nbsp;        fields.centuryOfEra = new DividedDateTimeField(</b>
+<b class="fc"><i>299</i>&nbsp;            field, DateTimeFieldType.centuryOfEra(), 100);</b>
+<b class="fc"><i>300</i>&nbsp;        fields.centuries = fields.centuryOfEra.getDurationField();</b>
+<i>301</i>&nbsp;        
+<b class="fc"><i>302</i>&nbsp;        field = new RemainderDateTimeField(</b>
+<i>303</i>&nbsp;            (DividedDateTimeField) fields.centuryOfEra);
+<b class="fc"><i>304</i>&nbsp;        fields.yearOfCentury = new OffsetDateTimeField(</b>
+<b class="fc"><i>305</i>&nbsp;            field, DateTimeFieldType.yearOfCentury(), 1);</b>
+<i>306</i>&nbsp;
+<b class="fc"><i>307</i>&nbsp;        fields.era = new GJEraDateTimeField(this);</b>
+<b class="fc"><i>308</i>&nbsp;        fields.dayOfWeek = new GJDayOfWeekDateTimeField(this, fields.days);</b>
+<b class="fc"><i>309</i>&nbsp;        fields.dayOfMonth = new BasicDayOfMonthDateTimeField(this, fields.days);</b>
+<b class="fc"><i>310</i>&nbsp;        fields.dayOfYear = new BasicDayOfYearDateTimeField(this, fields.days);</b>
+<b class="fc"><i>311</i>&nbsp;        fields.monthOfYear = new GJMonthOfYearDateTimeField(this);</b>
+<b class="fc"><i>312</i>&nbsp;        fields.weekyear = new BasicWeekyearDateTimeField(this);</b>
+<b class="fc"><i>313</i>&nbsp;        fields.weekOfWeekyear = new BasicWeekOfWeekyearDateTimeField(this, fields.weeks);</b>
+<i>314</i>&nbsp;        
+<b class="fc"><i>315</i>&nbsp;        field = new RemainderDateTimeField(</b>
+<b class="fc"><i>316</i>&nbsp;            fields.weekyear, fields.centuries, DateTimeFieldType.weekyearOfCentury(), 100);</b>
+<b class="fc"><i>317</i>&nbsp;        fields.weekyearOfCentury = new OffsetDateTimeField(</b>
+<b class="fc"><i>318</i>&nbsp;            field, DateTimeFieldType.weekyearOfCentury(), 1);</b>
+<i>319</i>&nbsp;        
+<i>320</i>&nbsp;        // The remaining (imprecise) durations are available from the newly
+<i>321</i>&nbsp;        // created datetime fields.
+<b class="fc"><i>322</i>&nbsp;        fields.years = fields.year.getDurationField();</b>
+<b class="fc"><i>323</i>&nbsp;        fields.months = fields.monthOfYear.getDurationField();</b>
+<b class="fc"><i>324</i>&nbsp;        fields.weekyears = fields.weekyear.getDurationField();</b>
+<b class="fc"><i>325</i>&nbsp;    }</b>
+<i>326</i>&nbsp;
+<i>327</i>&nbsp;    //-----------------------------------------------------------------------
+<i>328</i>&nbsp;    /**
+<i>329</i>&nbsp;     * Get the number of days in the year.
+<i>330</i>&nbsp;     *
+<i>331</i>&nbsp;     * @return 366
+<i>332</i>&nbsp;     */
+<i>333</i>&nbsp;    int getDaysInYearMax() {
+<b class="fc"><i>334</i>&nbsp;        return 366;</b>
+<i>335</i>&nbsp;    }
+<i>336</i>&nbsp;
+<i>337</i>&nbsp;    /**
+<i>338</i>&nbsp;     * Get the number of days in the year.
+<i>339</i>&nbsp;     *
+<i>340</i>&nbsp;     * @param year  the year to use
+<i>341</i>&nbsp;     * @return 366 if a leap year, otherwise 365
+<i>342</i>&nbsp;     */
+<i>343</i>&nbsp;    int getDaysInYear(int year) {
+<b class="fc"><i>344</i>&nbsp;        return isLeapYear(year) ? 366 : 365;</b>
+<i>345</i>&nbsp;    }
+<i>346</i>&nbsp;
+<i>347</i>&nbsp;    /**
+<i>348</i>&nbsp;     * Get the number of weeks in the year.
+<i>349</i>&nbsp;     *
+<i>350</i>&nbsp;     * @param year  the year to use
+<i>351</i>&nbsp;     * @return number of weeks in the year
+<i>352</i>&nbsp;     */
+<i>353</i>&nbsp;    int getWeeksInYear(int year) {
+<b class="fc"><i>354</i>&nbsp;        long firstWeekMillis1 = getFirstWeekOfYearMillis(year);</b>
+<b class="fc"><i>355</i>&nbsp;        long firstWeekMillis2 = getFirstWeekOfYearMillis(year + 1);</b>
+<b class="fc"><i>356</i>&nbsp;        return (int) ((firstWeekMillis2 - firstWeekMillis1) / DateTimeConstants.MILLIS_PER_WEEK);</b>
+<i>357</i>&nbsp;    }
+<i>358</i>&nbsp;
+<i>359</i>&nbsp;    /**
+<i>360</i>&nbsp;     * Get the millis for the first week of a year.
+<i>361</i>&nbsp;     *
+<i>362</i>&nbsp;     * @param year  the year to use
+<i>363</i>&nbsp;     * @return millis
+<i>364</i>&nbsp;     */
+<i>365</i>&nbsp;    long getFirstWeekOfYearMillis(int year) {
+<b class="fc"><i>366</i>&nbsp;        long jan1millis = getYearMillis(year);</b>
+<b class="fc"><i>367</i>&nbsp;        int jan1dayOfWeek = getDayOfWeek(jan1millis);</b>
+<i>368</i>&nbsp;        
+<b class="fc"><i>369</i>&nbsp;        if (jan1dayOfWeek &gt; (8 - iMinDaysInFirstWeek)) {</b>
+<i>370</i>&nbsp;            // First week is end of previous year because it doesn&#39;t have enough days.
+<b class="fc"><i>371</i>&nbsp;            return jan1millis + (8 - jan1dayOfWeek)</b>
+<i>372</i>&nbsp;                * (long)DateTimeConstants.MILLIS_PER_DAY;
+<i>373</i>&nbsp;        } else {
+<i>374</i>&nbsp;            // First week is start of this year because it has enough days.
+<b class="fc"><i>375</i>&nbsp;            return jan1millis - (jan1dayOfWeek - 1)</b>
+<i>376</i>&nbsp;                * (long)DateTimeConstants.MILLIS_PER_DAY;
+<i>377</i>&nbsp;        }
+<i>378</i>&nbsp;    }
+<i>379</i>&nbsp;
+<i>380</i>&nbsp;    /**
+<i>381</i>&nbsp;     * Get the milliseconds for the start of a year.
+<i>382</i>&nbsp;     *
+<i>383</i>&nbsp;     * @param year The year to use.
+<i>384</i>&nbsp;     * @return millis from 1970-01-01T00:00:00Z
+<i>385</i>&nbsp;     */
+<i>386</i>&nbsp;    long getYearMillis(int year) {
+<b class="fc"><i>387</i>&nbsp;        return getYearInfo(year).iFirstDayMillis;</b>
+<i>388</i>&nbsp;    }
+<i>389</i>&nbsp;
+<i>390</i>&nbsp;    /**
+<i>391</i>&nbsp;     * Get the milliseconds for the start of a month.
+<i>392</i>&nbsp;     *
+<i>393</i>&nbsp;     * @param year The year to use.
+<i>394</i>&nbsp;     * @param month The month to use
+<i>395</i>&nbsp;     * @return millis from 1970-01-01T00:00:00Z
+<i>396</i>&nbsp;     */
+<i>397</i>&nbsp;    long getYearMonthMillis(int year, int month) {
+<b class="fc"><i>398</i>&nbsp;        long millis = getYearMillis(year);</b>
+<b class="fc"><i>399</i>&nbsp;        millis += getTotalMillisByYearMonth(year, month);</b>
+<b class="fc"><i>400</i>&nbsp;        return millis;</b>
+<i>401</i>&nbsp;    }
+<i>402</i>&nbsp;
+<i>403</i>&nbsp;    /**
+<i>404</i>&nbsp;     * Get the milliseconds for a particular date.
+<i>405</i>&nbsp;     *
+<i>406</i>&nbsp;     * @param year The year to use.
+<i>407</i>&nbsp;     * @param month The month to use
+<i>408</i>&nbsp;     * @param dayOfMonth The day of the month to use
+<i>409</i>&nbsp;     * @return millis from 1970-01-01T00:00:00Z
+<i>410</i>&nbsp;     */
+<i>411</i>&nbsp;    long getYearMonthDayMillis(int year, int month, int dayOfMonth) {
+<b class="fc"><i>412</i>&nbsp;        long millis = getYearMillis(year);</b>
+<b class="fc"><i>413</i>&nbsp;        millis += getTotalMillisByYearMonth(year, month);</b>
+<b class="fc"><i>414</i>&nbsp;        return millis + (dayOfMonth - 1) * (long)DateTimeConstants.MILLIS_PER_DAY;</b>
+<i>415</i>&nbsp;    }
+<i>416</i>&nbsp;    
+<i>417</i>&nbsp;    /**
+<i>418</i>&nbsp;     * @param instant millis from 1970-01-01T00:00:00Z
+<i>419</i>&nbsp;     */
+<i>420</i>&nbsp;    int getYear(long instant) {
+<i>421</i>&nbsp;        // Get an initial estimate of the year, and the millis value that
+<i>422</i>&nbsp;        // represents the start of that year. Then verify estimate and fix if
+<i>423</i>&nbsp;        // necessary.
+<i>424</i>&nbsp;
+<i>425</i>&nbsp;        // Initial estimate uses values divided by two to avoid overflow.
+<b class="fc"><i>426</i>&nbsp;        long unitMillis = getAverageMillisPerYearDividedByTwo();</b>
+<b class="fc"><i>427</i>&nbsp;        long i2 = (instant &gt;&gt; 1) + getApproxMillisAtEpochDividedByTwo();</b>
+<b class="fc"><i>428</i>&nbsp;        if (i2 &lt; 0) {</b>
+<b class="fc"><i>429</i>&nbsp;            i2 = i2 - unitMillis + 1;</b>
+<i>430</i>&nbsp;        }
+<b class="fc"><i>431</i>&nbsp;        int year = (int) (i2 / unitMillis);</b>
+<i>432</i>&nbsp;
+<b class="fc"><i>433</i>&nbsp;        long yearStart = getYearMillis(year);</b>
+<b class="fc"><i>434</i>&nbsp;        long diff = instant - yearStart;</b>
+<i>435</i>&nbsp;
+<b class="fc"><i>436</i>&nbsp;        if (diff &lt; 0) {</b>
+<b class="fc"><i>437</i>&nbsp;            year--;</b>
+<b class="fc"><i>438</i>&nbsp;        } else if (diff &gt;= DateTimeConstants.MILLIS_PER_DAY * 365L) {</b>
+<i>439</i>&nbsp;            // One year may need to be added to fix estimate.
+<i>440</i>&nbsp;            long oneYear;
+<b class="fc"><i>441</i>&nbsp;            if (isLeapYear(year)) {</b>
+<b class="fc"><i>442</i>&nbsp;                oneYear = DateTimeConstants.MILLIS_PER_DAY * 366L;</b>
+<i>443</i>&nbsp;            } else {
+<b class="fc"><i>444</i>&nbsp;                oneYear = DateTimeConstants.MILLIS_PER_DAY * 365L;</b>
+<i>445</i>&nbsp;            }
+<i>446</i>&nbsp;
+<b class="fc"><i>447</i>&nbsp;            yearStart += oneYear;</b>
+<i>448</i>&nbsp;
+<b class="fc"><i>449</i>&nbsp;            if (yearStart &lt;= instant) {</b>
+<i>450</i>&nbsp;                // Didn&#39;t go too far, so actually add one year.
+<b class="fc"><i>451</i>&nbsp;                year++;</b>
+<i>452</i>&nbsp;            }
+<i>453</i>&nbsp;        }
+<i>454</i>&nbsp;
+<b class="fc"><i>455</i>&nbsp;        return year;</b>
+<i>456</i>&nbsp;    }
+<i>457</i>&nbsp;
+<i>458</i>&nbsp;    /**
+<i>459</i>&nbsp;     * @param millis from 1970-01-01T00:00:00Z
+<i>460</i>&nbsp;     */
+<i>461</i>&nbsp;    int getMonthOfYear(long millis) {
+<b class="fc"><i>462</i>&nbsp;        return getMonthOfYear(millis, getYear(millis));</b>
+<i>463</i>&nbsp;    }
+<i>464</i>&nbsp;
+<i>465</i>&nbsp;    /**
+<i>466</i>&nbsp;     * @param millis from 1970-01-01T00:00:00Z
+<i>467</i>&nbsp;     * @param year precalculated year of millis
+<i>468</i>&nbsp;     */
+<i>469</i>&nbsp;    abstract int getMonthOfYear(long millis, int year);
+<i>470</i>&nbsp;
+<i>471</i>&nbsp;    /**
+<i>472</i>&nbsp;     * @param millis from 1970-01-01T00:00:00Z
+<i>473</i>&nbsp;     */
+<i>474</i>&nbsp;    int getDayOfMonth(long millis) {
+<b class="fc"><i>475</i>&nbsp;        int year = getYear(millis);</b>
+<b class="fc"><i>476</i>&nbsp;        int month = getMonthOfYear(millis, year);</b>
+<b class="fc"><i>477</i>&nbsp;        return getDayOfMonth(millis, year, month);</b>
+<i>478</i>&nbsp;    }
+<i>479</i>&nbsp;
+<i>480</i>&nbsp;    /**
+<i>481</i>&nbsp;     * @param millis from 1970-01-01T00:00:00Z
+<i>482</i>&nbsp;     * @param year precalculated year of millis
+<i>483</i>&nbsp;     */
+<i>484</i>&nbsp;    int getDayOfMonth(long millis, int year) {
+<b class="fc"><i>485</i>&nbsp;        int month = getMonthOfYear(millis, year);</b>
+<b class="fc"><i>486</i>&nbsp;        return getDayOfMonth(millis, year, month);</b>
+<i>487</i>&nbsp;    }
+<i>488</i>&nbsp;
+<i>489</i>&nbsp;    /**
+<i>490</i>&nbsp;     * @param millis from 1970-01-01T00:00:00Z
+<i>491</i>&nbsp;     * @param year precalculated year of millis
+<i>492</i>&nbsp;     * @param month precalculated month of millis
+<i>493</i>&nbsp;     */
+<i>494</i>&nbsp;    int getDayOfMonth(long millis, int year, int month) {
+<b class="fc"><i>495</i>&nbsp;        long dateMillis = getYearMillis(year);</b>
+<b class="fc"><i>496</i>&nbsp;        dateMillis += getTotalMillisByYearMonth(year, month);</b>
+<b class="fc"><i>497</i>&nbsp;        return (int) ((millis - dateMillis) / DateTimeConstants.MILLIS_PER_DAY) + 1;</b>
+<i>498</i>&nbsp;    }
+<i>499</i>&nbsp;
+<i>500</i>&nbsp;    /**
+<i>501</i>&nbsp;     * @param instant millis from 1970-01-01T00:00:00Z
+<i>502</i>&nbsp;     */
+<i>503</i>&nbsp;    int getDayOfYear(long instant) {
+<b class="fc"><i>504</i>&nbsp;        return getDayOfYear(instant, getYear(instant));</b>
+<i>505</i>&nbsp;    }
+<i>506</i>&nbsp;
+<i>507</i>&nbsp;    /**
+<i>508</i>&nbsp;     * @param instant millis from 1970-01-01T00:00:00Z
+<i>509</i>&nbsp;     * @param year precalculated year of millis
+<i>510</i>&nbsp;     */
+<i>511</i>&nbsp;    int getDayOfYear(long instant, int year) {
+<b class="fc"><i>512</i>&nbsp;        long yearStart = getYearMillis(year);</b>
+<b class="fc"><i>513</i>&nbsp;        return (int) ((instant - yearStart) / DateTimeConstants.MILLIS_PER_DAY) + 1;</b>
+<i>514</i>&nbsp;    }
+<i>515</i>&nbsp;
+<i>516</i>&nbsp;    /**
+<i>517</i>&nbsp;     * @param instant millis from 1970-01-01T00:00:00Z
+<i>518</i>&nbsp;     */
+<i>519</i>&nbsp;    int getWeekyear(long instant) {
+<b class="fc"><i>520</i>&nbsp;        int year = getYear(instant);</b>
+<b class="fc"><i>521</i>&nbsp;        int week = getWeekOfWeekyear(instant, year);</b>
+<b class="fc"><i>522</i>&nbsp;        if (week == 1) {</b>
+<b class="fc"><i>523</i>&nbsp;            return getYear(instant + DateTimeConstants.MILLIS_PER_WEEK);</b>
+<b class="fc"><i>524</i>&nbsp;        } else if (week &gt; 51) {</b>
+<b class="fc"><i>525</i>&nbsp;            return getYear(instant - (2 * DateTimeConstants.MILLIS_PER_WEEK));</b>
+<i>526</i>&nbsp;        } else {
+<b class="fc"><i>527</i>&nbsp;            return year;</b>
+<i>528</i>&nbsp;        }
+<i>529</i>&nbsp;    }
+<i>530</i>&nbsp;
+<i>531</i>&nbsp;    /**
+<i>532</i>&nbsp;     * @param instant millis from 1970-01-01T00:00:00Z
+<i>533</i>&nbsp;     */
+<i>534</i>&nbsp;    int getWeekOfWeekyear(long instant) {
+<b class="fc"><i>535</i>&nbsp;        return getWeekOfWeekyear(instant, getYear(instant));</b>
+<i>536</i>&nbsp;    }
+<i>537</i>&nbsp;
+<i>538</i>&nbsp;    /**
+<i>539</i>&nbsp;     * @param instant millis from 1970-01-01T00:00:00Z
+<i>540</i>&nbsp;     * @param year precalculated year of millis
+<i>541</i>&nbsp;     */
+<i>542</i>&nbsp;    int getWeekOfWeekyear(long instant, int year) {
+<b class="fc"><i>543</i>&nbsp;        long firstWeekMillis1 = getFirstWeekOfYearMillis(year);</b>
+<b class="fc"><i>544</i>&nbsp;        if (instant &lt; firstWeekMillis1) {</b>
+<b class="fc"><i>545</i>&nbsp;            return getWeeksInYear(year - 1);</b>
+<i>546</i>&nbsp;        }
+<b class="fc"><i>547</i>&nbsp;        long firstWeekMillis2 = getFirstWeekOfYearMillis(year + 1);</b>
+<b class="fc"><i>548</i>&nbsp;        if (instant &gt;= firstWeekMillis2) {</b>
+<b class="fc"><i>549</i>&nbsp;            return 1;</b>
+<i>550</i>&nbsp;        }
+<b class="fc"><i>551</i>&nbsp;        return (int) ((instant - firstWeekMillis1) / DateTimeConstants.MILLIS_PER_WEEK) + 1;</b>
+<i>552</i>&nbsp;    }
+<i>553</i>&nbsp;
+<i>554</i>&nbsp;    /**
+<i>555</i>&nbsp;     * @param instant millis from 1970-01-01T00:00:00Z
+<i>556</i>&nbsp;     */
+<i>557</i>&nbsp;    int getDayOfWeek(long instant) {
+<i>558</i>&nbsp;        // 1970-01-01 is day of week 4, Thursday.
+<i>559</i>&nbsp;
+<i>560</i>&nbsp;        long daysSince19700101;
+<b class="fc"><i>561</i>&nbsp;        if (instant &gt;= 0) {</b>
+<b class="fc"><i>562</i>&nbsp;            daysSince19700101 = instant / DateTimeConstants.MILLIS_PER_DAY;</b>
+<i>563</i>&nbsp;        } else {
+<b class="fc"><i>564</i>&nbsp;            daysSince19700101 = (instant - (DateTimeConstants.MILLIS_PER_DAY - 1))</b>
+<i>565</i>&nbsp;                / DateTimeConstants.MILLIS_PER_DAY;
+<b class="fc"><i>566</i>&nbsp;            if (daysSince19700101 &lt; -3) {</b>
+<b class="fc"><i>567</i>&nbsp;                return 7 + (int) ((daysSince19700101 + 4) % 7);</b>
+<i>568</i>&nbsp;            }
+<i>569</i>&nbsp;        }
+<i>570</i>&nbsp;
+<b class="fc"><i>571</i>&nbsp;        return 1 + (int) ((daysSince19700101 + 3) % 7);</b>
+<i>572</i>&nbsp;    }
+<i>573</i>&nbsp;
+<i>574</i>&nbsp;    /**
+<i>575</i>&nbsp;     * @param instant millis from 1970-01-01T00:00:00Z
+<i>576</i>&nbsp;     */
+<i>577</i>&nbsp;    int getMillisOfDay(long instant) {
+<b class="fc"><i>578</i>&nbsp;        if (instant &gt;= 0) {</b>
+<b class="fc"><i>579</i>&nbsp;            return (int) (instant % DateTimeConstants.MILLIS_PER_DAY);</b>
+<i>580</i>&nbsp;        } else {
+<b class="fc"><i>581</i>&nbsp;            return (DateTimeConstants.MILLIS_PER_DAY - 1)</b>
+<i>582</i>&nbsp;                + (int) ((instant + 1) % DateTimeConstants.MILLIS_PER_DAY);
+<i>583</i>&nbsp;        }
+<i>584</i>&nbsp;    }
+<i>585</i>&nbsp;
+<i>586</i>&nbsp;    /**
+<i>587</i>&nbsp;     * Gets the maximum number of days in any month.
+<i>588</i>&nbsp;     * 
+<i>589</i>&nbsp;     * @return 31
+<i>590</i>&nbsp;     */
+<i>591</i>&nbsp;    int getDaysInMonthMax() {
+<b class="fc"><i>592</i>&nbsp;        return 31;</b>
+<i>593</i>&nbsp;    }
+<i>594</i>&nbsp;
+<i>595</i>&nbsp;    /**
+<i>596</i>&nbsp;     * Gets the maximum number of days in the month specified by the instant.
+<i>597</i>&nbsp;     * 
+<i>598</i>&nbsp;     * @param instant  millis from 1970-01-01T00:00:00Z
+<i>599</i>&nbsp;     * @return the maximum number of days in the month
+<i>600</i>&nbsp;     */
+<i>601</i>&nbsp;    int getDaysInMonthMax(long instant) {
+<b class="fc"><i>602</i>&nbsp;        int thisYear = getYear(instant);</b>
+<b class="fc"><i>603</i>&nbsp;        int thisMonth = getMonthOfYear(instant, thisYear);</b>
+<b class="fc"><i>604</i>&nbsp;        return getDaysInYearMonth(thisYear, thisMonth);</b>
+<i>605</i>&nbsp;    }
+<i>606</i>&nbsp;
+<i>607</i>&nbsp;    /**
+<i>608</i>&nbsp;     * Gets the maximum number of days in the month specified by the instant.
+<i>609</i>&nbsp;     * The value represents what the user is trying to set, and can be
+<i>610</i>&nbsp;     * used to optimise this method.
+<i>611</i>&nbsp;     * 
+<i>612</i>&nbsp;     * @param instant  millis from 1970-01-01T00:00:00Z
+<i>613</i>&nbsp;     * @param value  the value being set
+<i>614</i>&nbsp;     * @return the maximum number of days in the month
+<i>615</i>&nbsp;     */
+<i>616</i>&nbsp;    int getDaysInMonthMaxForSet(long instant, int value) {
+<b class="fc"><i>617</i>&nbsp;        return getDaysInMonthMax(instant);</b>
+<i>618</i>&nbsp;    }
+<i>619</i>&nbsp;
+<i>620</i>&nbsp;    //-----------------------------------------------------------------------
+<i>621</i>&nbsp;    /**
+<i>622</i>&nbsp;     * Gets the milliseconds for a date at midnight.
+<i>623</i>&nbsp;     * 
+<i>624</i>&nbsp;     * @param year  the year
+<i>625</i>&nbsp;     * @param monthOfYear  the month
+<i>626</i>&nbsp;     * @param dayOfMonth  the day
+<i>627</i>&nbsp;     * @return the milliseconds
+<i>628</i>&nbsp;     */
+<i>629</i>&nbsp;    long getDateMidnightMillis(int year, int monthOfYear, int dayOfMonth) {
+<b class="fc"><i>630</i>&nbsp;        FieldUtils.verifyValueBounds(DateTimeFieldType.year(), year, getMinYear() - 1, getMaxYear() + 1);</b>
+<b class="fc"><i>631</i>&nbsp;        FieldUtils.verifyValueBounds(DateTimeFieldType.monthOfYear(), monthOfYear, 1, getMaxMonth(year));</b>
+<b class="fc"><i>632</i>&nbsp;        FieldUtils.verifyValueBounds(DateTimeFieldType.dayOfMonth(), dayOfMonth, 1, getDaysInYearMonth(year, monthOfYear));</b>
+<b class="fc"><i>633</i>&nbsp;        long instant = getYearMonthDayMillis(year, monthOfYear, dayOfMonth);</b>
+<i>634</i>&nbsp;        // check for limit caused by min/max year +1/-1
+<b class="fc"><i>635</i>&nbsp;        if (instant &lt; 0 &amp;&amp; year == getMaxYear() + 1) {</b>
+<b class="fc"><i>636</i>&nbsp;            return Long.MAX_VALUE;</b>
+<b class="fc"><i>637</i>&nbsp;        } else if (instant &gt; 0 &amp;&amp; year == getMinYear() - 1) {</b>
+<b class="fc"><i>638</i>&nbsp;            return Long.MIN_VALUE;</b>
+<i>639</i>&nbsp;        }
+<b class="fc"><i>640</i>&nbsp;        return instant;</b>
+<i>641</i>&nbsp;    }
+<i>642</i>&nbsp;
+<i>643</i>&nbsp;    /**
+<i>644</i>&nbsp;     * Gets the difference between the two instants in years.
+<i>645</i>&nbsp;     * 
+<i>646</i>&nbsp;     * @param minuendInstant  the first instant
+<i>647</i>&nbsp;     * @param subtrahendInstant  the second instant
+<i>648</i>&nbsp;     * @return the difference
+<i>649</i>&nbsp;     */
+<i>650</i>&nbsp;    abstract long getYearDifference(long minuendInstant, long subtrahendInstant);
+<i>651</i>&nbsp;
+<i>652</i>&nbsp;    /**
+<i>653</i>&nbsp;     * Is the specified year a leap year?
+<i>654</i>&nbsp;     * 
+<i>655</i>&nbsp;     * @param year  the year to test
+<i>656</i>&nbsp;     * @return true if leap
+<i>657</i>&nbsp;     */
+<i>658</i>&nbsp;    abstract boolean isLeapYear(int year);
+<i>659</i>&nbsp;
+<i>660</i>&nbsp;    /**
+<i>661</i>&nbsp;     * Is the specified instant a leap day?
+<i>662</i>&nbsp;     * 
+<i>663</i>&nbsp;     * @param instant  the instant to test
+<i>664</i>&nbsp;     * @return true if leap, default is false
+<i>665</i>&nbsp;     */
+<i>666</i>&nbsp;    boolean isLeapDay(long instant) {
+<b class="fc"><i>667</i>&nbsp;        return false;</b>
+<i>668</i>&nbsp;    }
+<i>669</i>&nbsp;
+<i>670</i>&nbsp;    /**
+<i>671</i>&nbsp;     * Gets the number of days in the specified month and year.
+<i>672</i>&nbsp;     * 
+<i>673</i>&nbsp;     * @param year  the year
+<i>674</i>&nbsp;     * @param month  the month
+<i>675</i>&nbsp;     * @return the number of days
+<i>676</i>&nbsp;     */
+<i>677</i>&nbsp;    abstract int getDaysInYearMonth(int year, int month);
+<i>678</i>&nbsp;
+<i>679</i>&nbsp;    /**
+<i>680</i>&nbsp;     * Gets the maximum days in the specified month.
+<i>681</i>&nbsp;     * 
+<i>682</i>&nbsp;     * @param month  the month
+<i>683</i>&nbsp;     * @return the max days
+<i>684</i>&nbsp;     */
+<i>685</i>&nbsp;    abstract int getDaysInMonthMax(int month);
+<i>686</i>&nbsp;
+<i>687</i>&nbsp;    /**
+<i>688</i>&nbsp;     * Gets the total number of millis elapsed in this year at the start
+<i>689</i>&nbsp;     * of the specified month, such as zero for month 1.
+<i>690</i>&nbsp;     * 
+<i>691</i>&nbsp;     * @param year  the year
+<i>692</i>&nbsp;     * @param month  the month
+<i>693</i>&nbsp;     * @return the elapsed millis at the start of the month
+<i>694</i>&nbsp;     */
+<i>695</i>&nbsp;    abstract long getTotalMillisByYearMonth(int year, int month);
+<i>696</i>&nbsp;
+<i>697</i>&nbsp;    /**
+<i>698</i>&nbsp;     * Gets the millisecond value of the first day of the year.
+<i>699</i>&nbsp;     * 
+<i>700</i>&nbsp;     * @return the milliseconds for the first of the year
+<i>701</i>&nbsp;     */
+<i>702</i>&nbsp;    abstract long calculateFirstDayOfYearMillis(int year);
+<i>703</i>&nbsp;
+<i>704</i>&nbsp;    /**
+<i>705</i>&nbsp;     * Gets the minimum supported year.
+<i>706</i>&nbsp;     * 
+<i>707</i>&nbsp;     * @return the year
+<i>708</i>&nbsp;     */
+<i>709</i>&nbsp;    abstract int getMinYear();
+<i>710</i>&nbsp;
+<i>711</i>&nbsp;    /**
+<i>712</i>&nbsp;     * Gets the maximum supported year.
+<i>713</i>&nbsp;     * 
+<i>714</i>&nbsp;     * @return the year
+<i>715</i>&nbsp;     */
+<i>716</i>&nbsp;    abstract int getMaxYear();
+<i>717</i>&nbsp;
+<i>718</i>&nbsp;    /**
+<i>719</i>&nbsp;     * Gets the maximum month for the specified year.
+<i>720</i>&nbsp;     * This implementation calls getMaxMonth().
+<i>721</i>&nbsp;     * 
+<i>722</i>&nbsp;     * @param year  the year
+<i>723</i>&nbsp;     * @return the maximum month value
+<i>724</i>&nbsp;     */
+<i>725</i>&nbsp;    int getMaxMonth(int year) {
+<b class="fc"><i>726</i>&nbsp;        return getMaxMonth();</b>
+<i>727</i>&nbsp;    }
+<i>728</i>&nbsp;
+<i>729</i>&nbsp;    /**
+<i>730</i>&nbsp;     * Gets the maximum number of months.
+<i>731</i>&nbsp;     * 
+<i>732</i>&nbsp;     * @return 12
+<i>733</i>&nbsp;     */
+<i>734</i>&nbsp;    int getMaxMonth() {
+<b class="fc"><i>735</i>&nbsp;        return 12;</b>
+<i>736</i>&nbsp;    }
+<i>737</i>&nbsp;
+<i>738</i>&nbsp;    /**
+<i>739</i>&nbsp;     * Gets an average value for the milliseconds per year.
+<i>740</i>&nbsp;     * 
+<i>741</i>&nbsp;     * @return the millis per year
+<i>742</i>&nbsp;     */
+<i>743</i>&nbsp;    abstract long getAverageMillisPerYear();
+<i>744</i>&nbsp;
+<i>745</i>&nbsp;    /**
+<i>746</i>&nbsp;     * Gets an average value for the milliseconds per year, divided by two.
+<i>747</i>&nbsp;     * 
+<i>748</i>&nbsp;     * @return the millis per year divided by two
+<i>749</i>&nbsp;     */
+<i>750</i>&nbsp;    abstract long getAverageMillisPerYearDividedByTwo();
+<i>751</i>&nbsp;
+<i>752</i>&nbsp;    /**
+<i>753</i>&nbsp;     * Gets an average value for the milliseconds per month.
+<i>754</i>&nbsp;     * 
+<i>755</i>&nbsp;     * @return the millis per month
+<i>756</i>&nbsp;     */
+<i>757</i>&nbsp;    abstract long getAverageMillisPerMonth();
+<i>758</i>&nbsp;
+<i>759</i>&nbsp;    /**
+<i>760</i>&nbsp;     * Returns a constant representing the approximate number of milliseconds
+<i>761</i>&nbsp;     * elapsed from year 0 of this chronology, divided by two. This constant
+<i>762</i>&nbsp;     * &lt;em&gt;must&lt;/em&gt; be defined as:
+<i>763</i>&nbsp;     * &lt;pre&gt;
+<i>764</i>&nbsp;     *    (yearAtEpoch * averageMillisPerYear + millisOfYearAtEpoch) / 2
+<i>765</i>&nbsp;     * &lt;/pre&gt;
+<i>766</i>&nbsp;     * where epoch is 1970-01-01 (Gregorian).
+<i>767</i>&nbsp;     */
+<i>768</i>&nbsp;    abstract long getApproxMillisAtEpochDividedByTwo();
+<i>769</i>&nbsp;
+<i>770</i>&nbsp;    /**
+<i>771</i>&nbsp;     * Sets the year from an instant and year.
+<i>772</i>&nbsp;     * 
+<i>773</i>&nbsp;     * @param instant  millis from 1970-01-01T00:00:00Z
+<i>774</i>&nbsp;     * @param year  the year to set
+<i>775</i>&nbsp;     * @return the updated millis
+<i>776</i>&nbsp;     */
+<i>777</i>&nbsp;    abstract long setYear(long instant, int year);
+<i>778</i>&nbsp;
+<i>779</i>&nbsp;    //-----------------------------------------------------------------------
+<i>780</i>&nbsp;    // Although accessed by multiple threads, this method doesn&#39;t need to be synchronized.
+<i>781</i>&nbsp;    private YearInfo getYearInfo(int year) {
+<b class="fc"><i>782</i>&nbsp;        YearInfo info = iYearInfoCache[year &amp; CACHE_MASK];</b>
+<b class="fc"><i>783</i>&nbsp;        if (info == null || info.iYear != year) {</b>
+<b class="fc"><i>784</i>&nbsp;            info = new YearInfo(year, calculateFirstDayOfYearMillis(year));</b>
+<b class="fc"><i>785</i>&nbsp;            iYearInfoCache[year &amp; CACHE_MASK] = info;</b>
+<i>786</i>&nbsp;        }
+<b class="fc"><i>787</i>&nbsp;        return info;</b>
+<i>788</i>&nbsp;    }
+<i>789</i>&nbsp;
+<i>790</i>&nbsp;    private static class HalfdayField extends PreciseDateTimeField {
+<i>791</i>&nbsp;        @SuppressWarnings(&quot;unused&quot;)
+<i>792</i>&nbsp;        private static final long serialVersionUID = 581601443656929254L;
+<i>793</i>&nbsp;
+<i>794</i>&nbsp;        HalfdayField() {
+<b class="fc"><i>795</i>&nbsp;            super(DateTimeFieldType.halfdayOfDay(), cHalfdaysField, cDaysField);</b>
+<b class="fc"><i>796</i>&nbsp;        }</b>
+<i>797</i>&nbsp;
+<i>798</i>&nbsp;        public String getAsText(int fieldValue, Locale locale) {
+<b class="fc"><i>799</i>&nbsp;            return GJLocaleSymbols.forLocale(locale).halfdayValueToText(fieldValue);</b>
+<i>800</i>&nbsp;        }
+<i>801</i>&nbsp;
+<i>802</i>&nbsp;        public long set(long millis, String text, Locale locale) {
+<b class="fc"><i>803</i>&nbsp;            return set(millis, GJLocaleSymbols.forLocale(locale).halfdayTextToValue(text));</b>
+<i>804</i>&nbsp;        }
+<i>805</i>&nbsp;
+<i>806</i>&nbsp;        public int getMaximumTextLength(Locale locale) {
+<b class="fc"><i>807</i>&nbsp;            return GJLocaleSymbols.forLocale(locale).getHalfdayMaxTextLength();</b>
+<i>808</i>&nbsp;        }
+<i>809</i>&nbsp;    }
+<i>810</i>&nbsp;
+<i>811</i>&nbsp;    private static class YearInfo {
+<i>812</i>&nbsp;        public final int iYear;
+<i>813</i>&nbsp;        public final long iFirstDayMillis;
+<i>814</i>&nbsp;
+<b class="fc"><i>815</i>&nbsp;        YearInfo(int year, long firstDayMillis) {</b>
+<b class="fc"><i>816</i>&nbsp;            iYear = year;</b>
+<b class="fc"><i>817</i>&nbsp;            iFirstDayMillis = firstDayMillis;</b>
+<b class="fc"><i>818</i>&nbsp;        }</b>
+<i>819</i>&nbsp;    }
+<i>820</i>&nbsp;
+<i>821</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,332 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: GJLocaleSymbols</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time.chrono</a> ]
+</div>
+
+<h1>Coverage Summary for Class: GJLocaleSymbols (org.joda.time.chrono)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">GJLocaleSymbols</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (24/ 24)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    99%
+  </span>
+  <span class="absValue">
+    (95/ 96)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2014 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time.chrono;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;import java.text.DateFormatSymbols;
+<i>19</i>&nbsp;import java.util.Locale;
+<i>20</i>&nbsp;import java.util.TreeMap;
+<i>21</i>&nbsp;import java.util.concurrent.ConcurrentHashMap;
+<i>22</i>&nbsp;import java.util.concurrent.ConcurrentMap;
+<i>23</i>&nbsp;
+<i>24</i>&nbsp;import org.joda.time.DateTimeFieldType;
+<i>25</i>&nbsp;import org.joda.time.DateTimeUtils;
+<i>26</i>&nbsp;import org.joda.time.IllegalFieldValueException;
+<i>27</i>&nbsp;
+<i>28</i>&nbsp;/**
+<i>29</i>&nbsp; * Utility class used by a few of the GJDateTimeFields.
+<i>30</i>&nbsp; *
+<i>31</i>&nbsp; * @author Brian S O&#39;Neill
+<i>32</i>&nbsp; * @since 1.0
+<i>33</i>&nbsp; */
+<i>34</i>&nbsp;class GJLocaleSymbols {
+<i>35</i>&nbsp;
+<b class="fc"><i>36</i>&nbsp;    private static ConcurrentMap&lt;Locale, GJLocaleSymbols&gt; cCache = new ConcurrentHashMap&lt;Locale, GJLocaleSymbols&gt;();</b>
+<i>37</i>&nbsp;
+<i>38</i>&nbsp;    /**
+<i>39</i>&nbsp;     * Obtains the symbols for a locale.
+<i>40</i>&nbsp;     * 
+<i>41</i>&nbsp;     * @param locale  the locale, null returns default
+<i>42</i>&nbsp;     * @return the symbols, not null
+<i>43</i>&nbsp;     */
+<i>44</i>&nbsp;    static GJLocaleSymbols forLocale(Locale locale) {
+<b class="fc"><i>45</i>&nbsp;        if (locale == null) {</b>
+<b class="fc"><i>46</i>&nbsp;            locale = Locale.getDefault();</b>
+<i>47</i>&nbsp;        }
+<b class="fc"><i>48</i>&nbsp;        GJLocaleSymbols symbols = cCache.get(locale);</b>
+<b class="fc"><i>49</i>&nbsp;        if (symbols == null) {</b>
+<b class="fc"><i>50</i>&nbsp;            symbols = new GJLocaleSymbols(locale);</b>
+<b class="fc"><i>51</i>&nbsp;            GJLocaleSymbols oldSymbols = cCache.putIfAbsent(locale, symbols);</b>
+<b class="fc"><i>52</i>&nbsp;            if (oldSymbols != null) {</b>
+<b class="nc"><i>53</i>&nbsp;                symbols = oldSymbols;</b>
+<i>54</i>&nbsp;            }
+<i>55</i>&nbsp;        }
+<b class="fc"><i>56</i>&nbsp;        return symbols;</b>
+<i>57</i>&nbsp;    }
+<i>58</i>&nbsp;
+<i>59</i>&nbsp;    private static String[] realignMonths(String[] months) {
+<b class="fc"><i>60</i>&nbsp;        String[] a = new String[13];</b>
+<b class="fc"><i>61</i>&nbsp;        for (int i=1; i&lt;13; i++) {</b>
+<b class="fc"><i>62</i>&nbsp;            a[i] = months[i - 1];</b>
+<i>63</i>&nbsp;        }
+<b class="fc"><i>64</i>&nbsp;        return a;</b>
+<i>65</i>&nbsp;    }
+<i>66</i>&nbsp;
+<i>67</i>&nbsp;    private static String[] realignDaysOfWeek(String[] daysOfWeek) {
+<b class="fc"><i>68</i>&nbsp;        String[] a = new String[8];</b>
+<b class="fc"><i>69</i>&nbsp;        for (int i=1; i&lt;8; i++) {</b>
+<b class="fc"><i>70</i>&nbsp;            a[i] = daysOfWeek[(i &lt; 7) ? i + 1 : 1];</b>
+<i>71</i>&nbsp;        }
+<b class="fc"><i>72</i>&nbsp;        return a;</b>
+<i>73</i>&nbsp;    }
+<i>74</i>&nbsp;
+<i>75</i>&nbsp;    private static void addSymbols(TreeMap&lt;String, Integer&gt; map, String[] symbols, Integer[] integers) {
+<b class="fc"><i>76</i>&nbsp;        for (int i=symbols.length; --i&gt;=0; ) {</b>
+<b class="fc"><i>77</i>&nbsp;            String symbol = symbols[i];</b>
+<b class="fc"><i>78</i>&nbsp;            if (symbol != null) {</b>
+<b class="fc"><i>79</i>&nbsp;                map.put(symbol, integers[i]);</b>
+<i>80</i>&nbsp;            }
+<b class="fc"><i>81</i>&nbsp;        }</b>
+<b class="fc"><i>82</i>&nbsp;    }</b>
+<i>83</i>&nbsp;
+<i>84</i>&nbsp;    private static void addNumerals(TreeMap&lt;String, Integer&gt; map, int start, int end, Integer[] integers) {
+<b class="fc"><i>85</i>&nbsp;        for (int i=start; i&lt;=end; i++) {</b>
+<b class="fc"><i>86</i>&nbsp;            map.put(String.valueOf(i).intern(), integers[i]);</b>
+<i>87</i>&nbsp;        }
+<b class="fc"><i>88</i>&nbsp;    }</b>
+<i>89</i>&nbsp;
+<i>90</i>&nbsp;    private static int maxLength(String[] a) {
+<b class="fc"><i>91</i>&nbsp;        int max = 0;</b>
+<b class="fc"><i>92</i>&nbsp;        for (int i=a.length; --i&gt;=0; ) {</b>
+<b class="fc"><i>93</i>&nbsp;            String s = a[i];</b>
+<b class="fc"><i>94</i>&nbsp;            if (s != null) {</b>
+<b class="fc"><i>95</i>&nbsp;                int len = s.length();</b>
+<b class="fc"><i>96</i>&nbsp;                if (len &gt; max) {</b>
+<b class="fc"><i>97</i>&nbsp;                    max = len;</b>
+<i>98</i>&nbsp;                }
+<i>99</i>&nbsp;            }
+<b class="fc"><i>100</i>&nbsp;        }</b>
+<b class="fc"><i>101</i>&nbsp;        return max;</b>
+<i>102</i>&nbsp;    }
+<i>103</i>&nbsp;
+<i>104</i>&nbsp;    private final String[] iEras;
+<i>105</i>&nbsp;    private final String[] iDaysOfWeek;
+<i>106</i>&nbsp;    private final String[] iShortDaysOfWeek;
+<i>107</i>&nbsp;    private final String[] iMonths;
+<i>108</i>&nbsp;    private final String[] iShortMonths;
+<i>109</i>&nbsp;    private final String[] iHalfday;
+<i>110</i>&nbsp;
+<i>111</i>&nbsp;    private final TreeMap&lt;String, Integer&gt; iParseEras;
+<i>112</i>&nbsp;    private final TreeMap&lt;String, Integer&gt; iParseDaysOfWeek;
+<i>113</i>&nbsp;    private final TreeMap&lt;String, Integer&gt; iParseMonths;
+<i>114</i>&nbsp;
+<i>115</i>&nbsp;    private final int iMaxEraLength;
+<i>116</i>&nbsp;    private final int iMaxDayOfWeekLength;
+<i>117</i>&nbsp;    private final int iMaxShortDayOfWeekLength;
+<i>118</i>&nbsp;    private final int iMaxMonthLength;
+<i>119</i>&nbsp;    private final int iMaxShortMonthLength;
+<i>120</i>&nbsp;    private final int iMaxHalfdayLength;
+<i>121</i>&nbsp;
+<i>122</i>&nbsp;    /**
+<i>123</i>&nbsp;     * @param locale must not be null
+<i>124</i>&nbsp;     */
+<b class="fc"><i>125</i>&nbsp;    private GJLocaleSymbols(Locale locale) {</b>
+<b class="fc"><i>126</i>&nbsp;        DateFormatSymbols dfs = DateTimeUtils.getDateFormatSymbols(locale);</b>
+<i>127</i>&nbsp;        
+<b class="fc"><i>128</i>&nbsp;        iEras = dfs.getEras();</b>
+<b class="fc"><i>129</i>&nbsp;        iDaysOfWeek = realignDaysOfWeek(dfs.getWeekdays());</b>
+<b class="fc"><i>130</i>&nbsp;        iShortDaysOfWeek = realignDaysOfWeek(dfs.getShortWeekdays());</b>
+<b class="fc"><i>131</i>&nbsp;        iMonths = realignMonths(dfs.getMonths());</b>
+<b class="fc"><i>132</i>&nbsp;        iShortMonths = realignMonths(dfs.getShortMonths());</b>
+<b class="fc"><i>133</i>&nbsp;        iHalfday = dfs.getAmPmStrings();</b>
+<i>134</i>&nbsp;
+<b class="fc"><i>135</i>&nbsp;        Integer[] integers = new Integer[13];</b>
+<b class="fc"><i>136</i>&nbsp;        for (int i=0; i&lt;13; i++) {</b>
+<b class="fc"><i>137</i>&nbsp;            integers[i] = Integer.valueOf(i);</b>
+<i>138</i>&nbsp;        }
+<i>139</i>&nbsp;
+<b class="fc"><i>140</i>&nbsp;        iParseEras = new TreeMap&lt;String, Integer&gt;(String.CASE_INSENSITIVE_ORDER);</b>
+<b class="fc"><i>141</i>&nbsp;        addSymbols(iParseEras, iEras, integers);</b>
+<b class="fc"><i>142</i>&nbsp;        if (&quot;en&quot;.equals(locale.getLanguage())) {</b>
+<i>143</i>&nbsp;            // Include support for parsing &quot;BCE&quot; and &quot;CE&quot; if the language is
+<i>144</i>&nbsp;            // English. At some point Joda-Time will need an independent set of
+<i>145</i>&nbsp;            // localized symbols and not depend on java.text.DateFormatSymbols.
+<b class="fc"><i>146</i>&nbsp;            iParseEras.put(&quot;BCE&quot;, integers[0]);</b>
+<b class="fc"><i>147</i>&nbsp;            iParseEras.put(&quot;CE&quot;, integers[1]);</b>
+<i>148</i>&nbsp;        }
+<i>149</i>&nbsp;
+<b class="fc"><i>150</i>&nbsp;        iParseDaysOfWeek = new TreeMap&lt;String, Integer&gt;(String.CASE_INSENSITIVE_ORDER);</b>
+<b class="fc"><i>151</i>&nbsp;        addSymbols(iParseDaysOfWeek, iDaysOfWeek, integers);</b>
+<b class="fc"><i>152</i>&nbsp;        addSymbols(iParseDaysOfWeek, iShortDaysOfWeek, integers);</b>
+<b class="fc"><i>153</i>&nbsp;        addNumerals(iParseDaysOfWeek, 1, 7, integers);</b>
+<i>154</i>&nbsp;
+<b class="fc"><i>155</i>&nbsp;        iParseMonths = new TreeMap&lt;String, Integer&gt;(String.CASE_INSENSITIVE_ORDER);</b>
+<b class="fc"><i>156</i>&nbsp;        addSymbols(iParseMonths, iMonths, integers);</b>
+<b class="fc"><i>157</i>&nbsp;        addSymbols(iParseMonths, iShortMonths, integers);</b>
+<b class="fc"><i>158</i>&nbsp;        addNumerals(iParseMonths, 1, 12, integers);</b>
+<i>159</i>&nbsp;
+<b class="fc"><i>160</i>&nbsp;        iMaxEraLength = maxLength(iEras);</b>
+<b class="fc"><i>161</i>&nbsp;        iMaxDayOfWeekLength = maxLength(iDaysOfWeek);</b>
+<b class="fc"><i>162</i>&nbsp;        iMaxShortDayOfWeekLength = maxLength(iShortDaysOfWeek);</b>
+<b class="fc"><i>163</i>&nbsp;        iMaxMonthLength = maxLength(iMonths);</b>
+<b class="fc"><i>164</i>&nbsp;        iMaxShortMonthLength = maxLength(iShortMonths);</b>
+<b class="fc"><i>165</i>&nbsp;        iMaxHalfdayLength = maxLength(iHalfday);</b>
+<b class="fc"><i>166</i>&nbsp;    }</b>
+<i>167</i>&nbsp;
+<i>168</i>&nbsp;    public String eraValueToText(int value) {
+<b class="fc"><i>169</i>&nbsp;        return iEras[value];</b>
+<i>170</i>&nbsp;    }
+<i>171</i>&nbsp;
+<i>172</i>&nbsp;    public int eraTextToValue(String text) {
+<b class="fc"><i>173</i>&nbsp;        Integer era = iParseEras.get(text);</b>
+<b class="fc"><i>174</i>&nbsp;        if (era != null) {</b>
+<b class="fc"><i>175</i>&nbsp;            return era.intValue();</b>
+<i>176</i>&nbsp;        }
+<b class="fc"><i>177</i>&nbsp;        throw new IllegalFieldValueException(DateTimeFieldType.era(), text);</b>
+<i>178</i>&nbsp;    }
+<i>179</i>&nbsp;
+<i>180</i>&nbsp;    public int getEraMaxTextLength() {
+<b class="fc"><i>181</i>&nbsp;        return iMaxEraLength;</b>
+<i>182</i>&nbsp;    }
+<i>183</i>&nbsp;
+<i>184</i>&nbsp;    public String monthOfYearValueToText(int value) {
+<b class="fc"><i>185</i>&nbsp;        return iMonths[value];</b>
+<i>186</i>&nbsp;    }
+<i>187</i>&nbsp;
+<i>188</i>&nbsp;    public String monthOfYearValueToShortText(int value) {
+<b class="fc"><i>189</i>&nbsp;        return iShortMonths[value];</b>
+<i>190</i>&nbsp;    }
+<i>191</i>&nbsp;
+<i>192</i>&nbsp;    public int monthOfYearTextToValue(String text) {
+<b class="fc"><i>193</i>&nbsp;        Integer month = iParseMonths.get(text);</b>
+<b class="fc"><i>194</i>&nbsp;        if (month != null) {</b>
+<b class="fc"><i>195</i>&nbsp;            return month.intValue();</b>
+<i>196</i>&nbsp;        }
+<b class="fc"><i>197</i>&nbsp;        throw new IllegalFieldValueException(DateTimeFieldType.monthOfYear(), text);</b>
+<i>198</i>&nbsp;    }
+<i>199</i>&nbsp;
+<i>200</i>&nbsp;    public int getMonthMaxTextLength() {
+<b class="fc"><i>201</i>&nbsp;        return iMaxMonthLength;</b>
+<i>202</i>&nbsp;    }
+<i>203</i>&nbsp;
+<i>204</i>&nbsp;    public int getMonthMaxShortTextLength() {
+<b class="fc"><i>205</i>&nbsp;        return iMaxShortMonthLength;</b>
+<i>206</i>&nbsp;    }
+<i>207</i>&nbsp;
+<i>208</i>&nbsp;    public String dayOfWeekValueToText(int value) {
+<b class="fc"><i>209</i>&nbsp;        return iDaysOfWeek[value];</b>
+<i>210</i>&nbsp;    }
+<i>211</i>&nbsp;
+<i>212</i>&nbsp;    public String dayOfWeekValueToShortText(int value) {
+<b class="fc"><i>213</i>&nbsp;        return iShortDaysOfWeek[value];</b>
+<i>214</i>&nbsp;    }
+<i>215</i>&nbsp;
+<i>216</i>&nbsp;    public int dayOfWeekTextToValue(String text) {
+<b class="fc"><i>217</i>&nbsp;        Integer day = iParseDaysOfWeek.get(text);</b>
+<b class="fc"><i>218</i>&nbsp;        if (day != null) {</b>
+<b class="fc"><i>219</i>&nbsp;            return day.intValue();</b>
+<i>220</i>&nbsp;        }
+<b class="fc"><i>221</i>&nbsp;        throw new IllegalFieldValueException(DateTimeFieldType.dayOfWeek(), text);</b>
+<i>222</i>&nbsp;    }
+<i>223</i>&nbsp;
+<i>224</i>&nbsp;    public int getDayOfWeekMaxTextLength() {
+<b class="fc"><i>225</i>&nbsp;        return iMaxDayOfWeekLength;</b>
+<i>226</i>&nbsp;    }
+<i>227</i>&nbsp;
+<i>228</i>&nbsp;    public int getDayOfWeekMaxShortTextLength() {
+<b class="fc"><i>229</i>&nbsp;        return iMaxShortDayOfWeekLength;</b>
+<i>230</i>&nbsp;    }
+<i>231</i>&nbsp;
+<i>232</i>&nbsp;    public String halfdayValueToText(int value) {
+<b class="fc"><i>233</i>&nbsp;        return iHalfday[value];</b>
+<i>234</i>&nbsp;    }
+<i>235</i>&nbsp;
+<i>236</i>&nbsp;    public int halfdayTextToValue(String text) {
+<b class="fc"><i>237</i>&nbsp;        String[] halfday = iHalfday;</b>
+<b class="fc"><i>238</i>&nbsp;        for (int i = halfday.length; --i&gt;=0; ) {</b>
+<b class="fc"><i>239</i>&nbsp;            if (halfday[i].equalsIgnoreCase(text)) {</b>
+<b class="fc"><i>240</i>&nbsp;                return i;</b>
+<i>241</i>&nbsp;            }
+<i>242</i>&nbsp;        }
+<b class="fc"><i>243</i>&nbsp;        throw new IllegalFieldValueException(DateTimeFieldType.halfdayOfDay(), text);</b>
+<i>244</i>&nbsp;    }
+<i>245</i>&nbsp;
+<i>246</i>&nbsp;    public int getHalfdayMaxTextLength() {
+<b class="fc"><i>247</i>&nbsp;        return iMaxHalfdayLength;</b>
+<i>248</i>&nbsp;    }
+<i>249</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

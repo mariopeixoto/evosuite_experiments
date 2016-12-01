@@ -1,0 +1,446 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: TokenFilter</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.fasterxml.jackson.core.filter</a> ]
+</div>
+
+<h1>Coverage Summary for Class: TokenFilter (com.fasterxml.jackson.core.filter)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">TokenFilter</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    54.2%
+  </span>
+  <span class="absValue">
+    (13/ 24)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (13/ 26)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package com.fasterxml.jackson.core.filter;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import java.io.IOException;
+<i>4</i>&nbsp;import java.math.BigDecimal;
+<i>5</i>&nbsp;import java.math.BigInteger;
+<i>6</i>&nbsp;
+<i>7</i>&nbsp;import com.fasterxml.jackson.core.JsonGenerator;
+<i>8</i>&nbsp;import com.fasterxml.jackson.core.JsonParser;
+<i>9</i>&nbsp;
+<i>10</i>&nbsp;/**
+<i>11</i>&nbsp; * Strategy class that can be implemented to specify actual inclusion/exclusion
+<i>12</i>&nbsp; * criteria for filtering, used by {@link FilteringGeneratorDelegate}.
+<i>13</i>&nbsp; *
+<i>14</i>&nbsp; * @since 2.6
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;public class TokenFilter
+<i>17</i>&nbsp;{
+<i>18</i>&nbsp;
+<i>19</i>&nbsp;    // // Marker values
+<i>20</i>&nbsp;
+<i>21</i>&nbsp;    /**
+<i>22</i>&nbsp;     * Marker value that should be used to indicate inclusion of a structured
+<i>23</i>&nbsp;     * value (sub-tree representing Object or Array), or value of a named
+<i>24</i>&nbsp;     * property (regardless of type).
+<i>25</i>&nbsp;     * Note that if this instance is returned, it will used as a marker, and 
+<i>26</i>&nbsp;     * no actual callbacks need to be made. For this reason, it is more efficient
+<i>27</i>&nbsp;     * to return this instance if the whole sub-tree is to be included, instead
+<i>28</i>&nbsp;     * of implementing similar filter functionality explicitly.
+<i>29</i>&nbsp;     */
+<b class="fc"><i>30</i>&nbsp;    public final static TokenFilter INCLUDE_ALL = new TokenFilter();</b>
+<i>31</i>&nbsp;
+<i>32</i>&nbsp;    // Life-cycle
+<i>33</i>&nbsp;
+<b class="fc"><i>34</i>&nbsp;    protected TokenFilter() { }</b>
+<i>35</i>&nbsp;
+<i>36</i>&nbsp;    /*
+<i>37</i>&nbsp;    /**********************************************************
+<i>38</i>&nbsp;    /* API, structured values
+<i>39</i>&nbsp;    /**********************************************************
+<i>40</i>&nbsp;     */
+<i>41</i>&nbsp;
+<i>42</i>&nbsp;    /**
+<i>43</i>&nbsp;     * Method called to check whether Object value at current output
+<i>44</i>&nbsp;     * location should be included in output.
+<i>45</i>&nbsp;     * Three kinds of return values may be used as follows:
+<i>46</i>&nbsp;     *&lt;ul&gt;
+<i>47</i>&nbsp;     * &lt;li&gt;&lt;code&gt;null&lt;/code&gt; to indicate that the Object should be skipped
+<i>48</i>&nbsp;     *   &lt;/li&gt;
+<i>49</i>&nbsp;     * &lt;li&gt;{@link #INCLUDE_ALL} to indicate that the Object should be included
+<i>50</i>&nbsp;     * completely in output
+<i>51</i>&nbsp;     *   &lt;/li&gt;
+<i>52</i>&nbsp;     * &lt;li&gt;Any other {@link TokenFilter} implementation (possibly this one) to mean
+<i>53</i>&nbsp;     *  that further inclusion calls on return filter object need to be made
+<i>54</i>&nbsp;     *  on contained properties, as necessary. {@link #filterFinishObject()} will
+<i>55</i>&nbsp;     *  also be called on returned filter object
+<i>56</i>&nbsp;     *   &lt;/li&gt;
+<i>57</i>&nbsp;     * &lt;/ul&gt;
+<i>58</i>&nbsp;     *&lt;p&gt;
+<i>59</i>&nbsp;     * Default implementation returns &lt;code&gt;this&lt;/code&gt;, which means that checks
+<i>60</i>&nbsp;     * are made recursively for properties of the Object to determine possible inclusion.
+<i>61</i>&nbsp;     * 
+<i>62</i>&nbsp;     * @return TokenFilter to use for further calls within Array, unless return value
+<i>63</i>&nbsp;     *   is &lt;code&gt;null&lt;/code&gt; or {@link #INCLUDE_ALL} (which have simpler semantics)
+<i>64</i>&nbsp;     */
+<i>65</i>&nbsp;    public TokenFilter filterStartObject() {
+<b class="fc"><i>66</i>&nbsp;        return this;</b>
+<i>67</i>&nbsp;    }
+<i>68</i>&nbsp;
+<i>69</i>&nbsp;    /**
+<i>70</i>&nbsp;     * Method called to check whether Array value at current output
+<i>71</i>&nbsp;     * location should be included in output.
+<i>72</i>&nbsp;     * Three kinds of return values may be used as follows:
+<i>73</i>&nbsp;     *&lt;ul&gt;
+<i>74</i>&nbsp;     * &lt;li&gt;&lt;code&gt;null&lt;/code&gt; to indicate that the Array should be skipped
+<i>75</i>&nbsp;     *   &lt;/li&gt;
+<i>76</i>&nbsp;     * &lt;li&gt;{@link #INCLUDE_ALL} to indicate that the Array should be included
+<i>77</i>&nbsp;     * completely in output
+<i>78</i>&nbsp;     *   &lt;/li&gt;
+<i>79</i>&nbsp;     * &lt;li&gt;Any other {@link TokenFilter} implementation (possibly this one) to mean
+<i>80</i>&nbsp;     *  that further inclusion calls on return filter object need to be made
+<i>81</i>&nbsp;     *  on contained element values, as necessary. {@link #filterFinishArray()} will
+<i>82</i>&nbsp;     *  also be called on returned filter object
+<i>83</i>&nbsp;     *   &lt;/li&gt;
+<i>84</i>&nbsp;     * &lt;/ul&gt;
+<i>85</i>&nbsp;     *&lt;p&gt;
+<i>86</i>&nbsp;     * Default implementation returns &lt;code&gt;this&lt;/code&gt;, which means that checks
+<i>87</i>&nbsp;     * are made recursively for elements of the array to determine possible inclusion.
+<i>88</i>&nbsp;     * 
+<i>89</i>&nbsp;     * @return TokenFilter to use for further calls within Array, unless return value
+<i>90</i>&nbsp;     *   is &lt;code&gt;null&lt;/code&gt; or {@link #INCLUDE_ALL} (which have simpler semantics)
+<i>91</i>&nbsp;     */
+<i>92</i>&nbsp;    public TokenFilter filterStartArray() {
+<b class="fc"><i>93</i>&nbsp;        return this;</b>
+<i>94</i>&nbsp;    }
+<i>95</i>&nbsp;
+<i>96</i>&nbsp;    /**
+<i>97</i>&nbsp;     * Method called to indicate that output of non-filtered Object (one that may
+<i>98</i>&nbsp;     * have been included either completely, or in part) is completed,
+<i>99</i>&nbsp;     * in cases where filter other that {@link #INCLUDE_ALL} was returned.
+<i>100</i>&nbsp;     * This occurs when {@link JsonGenerator#writeEndObject()} is called.
+<i>101</i>&nbsp;     */
+<b class="fc"><i>102</i>&nbsp;    public void filterFinishObject() { }</b>
+<i>103</i>&nbsp;
+<i>104</i>&nbsp;    /**
+<i>105</i>&nbsp;     * Method called to indicate that output of non-filtered Array (one that may
+<i>106</i>&nbsp;     * have been included either completely, or in part) is completed,
+<i>107</i>&nbsp;     * in cases where filter other that {@link #INCLUDE_ALL} was returned.
+<i>108</i>&nbsp;     * This occurs when {@link JsonGenerator#writeEndArray()} is called.
+<i>109</i>&nbsp;     */
+<b class="fc"><i>110</i>&nbsp;    public void filterFinishArray() { }</b>
+<i>111</i>&nbsp;
+<i>112</i>&nbsp;    /*
+<i>113</i>&nbsp;    /**********************************************************
+<i>114</i>&nbsp;    /* API, properties/elements
+<i>115</i>&nbsp;    /**********************************************************
+<i>116</i>&nbsp;     */
+<i>117</i>&nbsp;
+<i>118</i>&nbsp;    /**
+<i>119</i>&nbsp;     * Method called to check whether property value with specified name,
+<i>120</i>&nbsp;     * at current output location, should be included in output.
+<i>121</i>&nbsp;     * Three kinds of return values may be used as follows:
+<i>122</i>&nbsp;     *&lt;ul&gt;
+<i>123</i>&nbsp;     * &lt;li&gt;&lt;code&gt;null&lt;/code&gt; to indicate that the property and its value should be skipped
+<i>124</i>&nbsp;     *   &lt;/li&gt;
+<i>125</i>&nbsp;     * &lt;li&gt;{@link #INCLUDE_ALL} to indicate that the property and its value should be included
+<i>126</i>&nbsp;     * completely in output
+<i>127</i>&nbsp;     *   &lt;/li&gt;
+<i>128</i>&nbsp;     * &lt;li&gt;Any other {@link TokenFilter} implementation (possibly this one) to mean
+<i>129</i>&nbsp;     *  that further inclusion calls on returned filter object need to be made
+<i>130</i>&nbsp;     *  as necessary, to determine inclusion.
+<i>131</i>&nbsp;     *   &lt;/li&gt;
+<i>132</i>&nbsp;     * &lt;/ul&gt;
+<i>133</i>&nbsp;     *&lt;p&gt;
+<i>134</i>&nbsp;     * The default implementation simply returns &lt;code&gt;this&lt;/code&gt; to continue calling
+<i>135</i>&nbsp;     * methods on this filter object, without full inclusion or exclusion.
+<i>136</i>&nbsp;     * 
+<i>137</i>&nbsp;     * @return TokenFilter to use for further calls within property value, unless return value
+<i>138</i>&nbsp;     *   is &lt;code&gt;null&lt;/code&gt; or {@link #INCLUDE_ALL} (which have simpler semantics)
+<i>139</i>&nbsp;     */
+<i>140</i>&nbsp;    public TokenFilter includeProperty(String name) {
+<b class="nc"><i>141</i>&nbsp;        return this;</b>
+<i>142</i>&nbsp;    }
+<i>143</i>&nbsp;
+<i>144</i>&nbsp;    /**
+<i>145</i>&nbsp;     * Method called to check whether array element with specified index (zero-based),
+<i>146</i>&nbsp;     * at current output location, should be included in output.
+<i>147</i>&nbsp;     * Three kinds of return values may be used as follows:
+<i>148</i>&nbsp;     *&lt;ul&gt;
+<i>149</i>&nbsp;     * &lt;li&gt;&lt;code&gt;null&lt;/code&gt; to indicate that the Array element should be skipped
+<i>150</i>&nbsp;     *   &lt;/li&gt;
+<i>151</i>&nbsp;     * &lt;li&gt;{@link #INCLUDE_ALL} to indicate that the Array element should be included
+<i>152</i>&nbsp;     * completely in output
+<i>153</i>&nbsp;     *   &lt;/li&gt;
+<i>154</i>&nbsp;     * &lt;li&gt;Any other {@link TokenFilter} implementation (possibly this one) to mean
+<i>155</i>&nbsp;     *  that further inclusion calls on returned filter object need to be made
+<i>156</i>&nbsp;     *  as necessary, to determine inclusion.
+<i>157</i>&nbsp;     *   &lt;/li&gt;
+<i>158</i>&nbsp;     * &lt;/ul&gt;
+<i>159</i>&nbsp;     *&lt;p&gt;
+<i>160</i>&nbsp;     * The default implementation simply returns &lt;code&gt;this&lt;/code&gt; to continue calling
+<i>161</i>&nbsp;     * methods on this filter object, without full inclusion or exclusion.
+<i>162</i>&nbsp;     * 
+<i>163</i>&nbsp;     * @return TokenFilter to use for further calls within element value, unless return value
+<i>164</i>&nbsp;     *   is &lt;code&gt;null&lt;/code&gt; or {@link #INCLUDE_ALL} (which have simpler semantics)
+<i>165</i>&nbsp;     */
+<i>166</i>&nbsp;    public TokenFilter includeElement(int index) {
+<b class="nc"><i>167</i>&nbsp;        return this;</b>
+<i>168</i>&nbsp;    }
+<i>169</i>&nbsp;
+<i>170</i>&nbsp;    /**
+<i>171</i>&nbsp;     * Method called to check whether root-level value,
+<i>172</i>&nbsp;     * at current output location, should be included in output.
+<i>173</i>&nbsp;     * Three kinds of return values may be used as follows:
+<i>174</i>&nbsp;     *&lt;ul&gt;
+<i>175</i>&nbsp;     * &lt;li&gt;&lt;code&gt;null&lt;/code&gt; to indicate that the root value should be skipped
+<i>176</i>&nbsp;     *   &lt;/li&gt;
+<i>177</i>&nbsp;     * &lt;li&gt;{@link #INCLUDE_ALL} to indicate that the root value should be included
+<i>178</i>&nbsp;     * completely in output
+<i>179</i>&nbsp;     *   &lt;/li&gt;
+<i>180</i>&nbsp;     * &lt;li&gt;Any other {@link TokenFilter} implementation (possibly this one) to mean
+<i>181</i>&nbsp;     *  that further inclusion calls on returned filter object need to be made
+<i>182</i>&nbsp;     *  as necessary, to determine inclusion.
+<i>183</i>&nbsp;     *   &lt;/li&gt;
+<i>184</i>&nbsp;     * &lt;/ul&gt;
+<i>185</i>&nbsp;     *&lt;p&gt;
+<i>186</i>&nbsp;     * The default implementation simply returns &lt;code&gt;this&lt;/code&gt; to continue calling
+<i>187</i>&nbsp;     * methods on this filter object, without full inclusion or exclusion.
+<i>188</i>&nbsp;     * 
+<i>189</i>&nbsp;     * @return TokenFilter to use for further calls within root value, unless return value
+<i>190</i>&nbsp;     *   is &lt;code&gt;null&lt;/code&gt; or {@link #INCLUDE_ALL} (which have simpler semantics)
+<i>191</i>&nbsp;     */
+<i>192</i>&nbsp;    public TokenFilter includeRootValue(int index) {
+<b class="fc"><i>193</i>&nbsp;        return this;</b>
+<i>194</i>&nbsp;    }
+<i>195</i>&nbsp;
+<i>196</i>&nbsp;    /*
+<i>197</i>&nbsp;    /**********************************************************
+<i>198</i>&nbsp;    /* API, scalar values (being read)
+<i>199</i>&nbsp;    /**********************************************************
+<i>200</i>&nbsp;     */
+<i>201</i>&nbsp;
+<i>202</i>&nbsp;    /**
+<i>203</i>&nbsp;     * Call made when verifying whether a scaler value is being
+<i>204</i>&nbsp;     * read from a parser.
+<i>205</i>&nbsp;     *&lt;p&gt;
+<i>206</i>&nbsp;     * Default action is to call &lt;code&gt;_includeScalar()&lt;/code&gt; and return
+<i>207</i>&nbsp;     * whatever it indicates.
+<i>208</i>&nbsp;     */
+<i>209</i>&nbsp;    public boolean includeValue(JsonParser p) throws IOException {
+<b class="fc"><i>210</i>&nbsp;        return _includeScalar();</b>
+<i>211</i>&nbsp;    }
+<i>212</i>&nbsp;
+<i>213</i>&nbsp;    /*
+<i>214</i>&nbsp;    /**********************************************************
+<i>215</i>&nbsp;    /* API, scalar values (being written)
+<i>216</i>&nbsp;    /**********************************************************
+<i>217</i>&nbsp;     */
+<i>218</i>&nbsp;
+<i>219</i>&nbsp;    /**
+<i>220</i>&nbsp;     * Call made to verify whether leaf-level
+<i>221</i>&nbsp;     * boolean value
+<i>222</i>&nbsp;     * should be included in output or not.
+<i>223</i>&nbsp;     */
+<i>224</i>&nbsp;    public boolean includeBoolean(boolean value) {
+<b class="fc"><i>225</i>&nbsp;        return _includeScalar();</b>
+<i>226</i>&nbsp;    }
+<i>227</i>&nbsp;
+<i>228</i>&nbsp;    /**
+<i>229</i>&nbsp;     * Call made to verify whether leaf-level
+<i>230</i>&nbsp;     * null value
+<i>231</i>&nbsp;     * should be included in output or not.
+<i>232</i>&nbsp;     */
+<i>233</i>&nbsp;    public boolean includeNull() {
+<b class="nc"><i>234</i>&nbsp;        return _includeScalar();</b>
+<i>235</i>&nbsp;    }
+<i>236</i>&nbsp;
+<i>237</i>&nbsp;    /**
+<i>238</i>&nbsp;     * Call made to verify whether leaf-level
+<i>239</i>&nbsp;     * String value
+<i>240</i>&nbsp;     * should be included in output or not.
+<i>241</i>&nbsp;     */
+<i>242</i>&nbsp;    public boolean includeString(String value) {
+<b class="fc"><i>243</i>&nbsp;        return _includeScalar();</b>
+<i>244</i>&nbsp;    }
+<i>245</i>&nbsp;
+<i>246</i>&nbsp;    /**
+<i>247</i>&nbsp;     * Call made to verify whether leaf-level
+<i>248</i>&nbsp;     * &lt;code&gt;int&lt;/code&gt; value
+<i>249</i>&nbsp;     * should be included in output or not.
+<i>250</i>&nbsp;     * 
+<i>251</i>&nbsp;     * NOTE: also called for `short`, `byte`
+<i>252</i>&nbsp;     */
+<i>253</i>&nbsp;    public boolean includeNumber(int v) {
+<b class="fc"><i>254</i>&nbsp;        return _includeScalar();</b>
+<i>255</i>&nbsp;    }
+<i>256</i>&nbsp;
+<i>257</i>&nbsp;    /**
+<i>258</i>&nbsp;     * Call made to verify whether leaf-level
+<i>259</i>&nbsp;     * &lt;code&gt;long&lt;/code&gt; value
+<i>260</i>&nbsp;     * should be included in output or not.
+<i>261</i>&nbsp;     */
+<i>262</i>&nbsp;    public boolean includeNumber(long v) {
+<b class="nc"><i>263</i>&nbsp;        return _includeScalar();</b>
+<i>264</i>&nbsp;    }
+<i>265</i>&nbsp;
+<i>266</i>&nbsp;    /**
+<i>267</i>&nbsp;     * Call made to verify whether leaf-level
+<i>268</i>&nbsp;     * &lt;code&gt;float&lt;/code&gt; value
+<i>269</i>&nbsp;     * should be included in output or not.
+<i>270</i>&nbsp;     */
+<i>271</i>&nbsp;    public boolean includeNumber(float v) {
+<b class="nc"><i>272</i>&nbsp;        return _includeScalar();</b>
+<i>273</i>&nbsp;    }
+<i>274</i>&nbsp;
+<i>275</i>&nbsp;    /**
+<i>276</i>&nbsp;     * Call made to verify whether leaf-level
+<i>277</i>&nbsp;     * &lt;code&gt;double&lt;/code&gt; value
+<i>278</i>&nbsp;     * should be included in output or not.
+<i>279</i>&nbsp;     */
+<i>280</i>&nbsp;    public boolean includeNumber(double v) {
+<b class="nc"><i>281</i>&nbsp;        return _includeScalar();</b>
+<i>282</i>&nbsp;    }
+<i>283</i>&nbsp;    
+<i>284</i>&nbsp;    /**
+<i>285</i>&nbsp;     * Call made to verify whether leaf-level
+<i>286</i>&nbsp;     * {@link BigDecimal} value
+<i>287</i>&nbsp;     * should be included in output or not.
+<i>288</i>&nbsp;     */
+<i>289</i>&nbsp;    public boolean includeNumber(BigDecimal v) {
+<b class="nc"><i>290</i>&nbsp;        return _includeScalar();</b>
+<i>291</i>&nbsp;    }
+<i>292</i>&nbsp;
+<i>293</i>&nbsp;    /**
+<i>294</i>&nbsp;     * Call made to verify whether leaf-level
+<i>295</i>&nbsp;     * {@link BigInteger} value
+<i>296</i>&nbsp;     * should be included in output or not.
+<i>297</i>&nbsp;     */
+<i>298</i>&nbsp;    public boolean includeNumber(BigInteger v) {
+<b class="nc"><i>299</i>&nbsp;        return _includeScalar();</b>
+<i>300</i>&nbsp;    }
+<i>301</i>&nbsp;
+<i>302</i>&nbsp;    /**
+<i>303</i>&nbsp;     * Call made to verify whether leaf-level
+<i>304</i>&nbsp;     * Binary value
+<i>305</i>&nbsp;     * should be included in output or not.
+<i>306</i>&nbsp;     *&lt;p&gt;
+<i>307</i>&nbsp;     * NOTE: no binary payload passed; assumption is this won&#39;t be of much use.
+<i>308</i>&nbsp;     */
+<i>309</i>&nbsp;    public boolean includeBinary() {
+<b class="fc"><i>310</i>&nbsp;        return _includeScalar();</b>
+<i>311</i>&nbsp;    }
+<i>312</i>&nbsp;
+<i>313</i>&nbsp;    /**
+<i>314</i>&nbsp;     * Call made to verify whether leaf-level
+<i>315</i>&nbsp;     * raw (pre-encoded, not quoted by generator) value
+<i>316</i>&nbsp;     * should be included in output or not.
+<i>317</i>&nbsp;     *&lt;p&gt;
+<i>318</i>&nbsp;     * NOTE: value itself not passed since it may come on multiple forms
+<i>319</i>&nbsp;     * and is unlikely to be of much use in determining inclusion
+<i>320</i>&nbsp;     * criteria.
+<i>321</i>&nbsp;     */
+<i>322</i>&nbsp;    public boolean includeRawValue() {
+<b class="fc"><i>323</i>&nbsp;        return _includeScalar();</b>
+<i>324</i>&nbsp;    }
+<i>325</i>&nbsp;    
+<i>326</i>&nbsp;    /**
+<i>327</i>&nbsp;     * Call made to verify whether leaf-level
+<i>328</i>&nbsp;     * embedded (Opaque) value
+<i>329</i>&nbsp;     * should be included in output or not.
+<i>330</i>&nbsp;     */
+<i>331</i>&nbsp;    public boolean includeEmbeddedValue(Object ob) {
+<b class="nc"><i>332</i>&nbsp;        return _includeScalar();</b>
+<i>333</i>&nbsp;    }
+<i>334</i>&nbsp;
+<i>335</i>&nbsp;    /*
+<i>336</i>&nbsp;    /**********************************************************
+<i>337</i>&nbsp;    /* Overrides
+<i>338</i>&nbsp;    /**********************************************************
+<i>339</i>&nbsp;     */
+<i>340</i>&nbsp;
+<i>341</i>&nbsp;    @Override
+<i>342</i>&nbsp;    public String toString() {
+<b class="nc"><i>343</i>&nbsp;        if (this == INCLUDE_ALL) {</b>
+<b class="nc"><i>344</i>&nbsp;            return &quot;TokenFilter.INCLUDE_ALL&quot;;</b>
+<i>345</i>&nbsp;        }
+<b class="nc"><i>346</i>&nbsp;        return super.toString();</b>
+<i>347</i>&nbsp;    }
+<i>348</i>&nbsp;
+<i>349</i>&nbsp;    /*
+<i>350</i>&nbsp;    /**********************************************************
+<i>351</i>&nbsp;    /* Other methods
+<i>352</i>&nbsp;    /**********************************************************
+<i>353</i>&nbsp;     */
+<i>354</i>&nbsp;    
+<i>355</i>&nbsp;    /**
+<i>356</i>&nbsp;     * Overridable default implementation delegated to all scalar value
+<i>357</i>&nbsp;     * inclusion check methods.
+<i>358</i>&nbsp;     * The default implementation simply includes all leaf values.
+<i>359</i>&nbsp;     */
+<i>360</i>&nbsp;    protected boolean _includeScalar() {
+<b class="nc"><i>361</i>&nbsp;        return true;</b>
+<i>362</i>&nbsp;    }
+<i>363</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 04:22</div>
+</div>
+</body>
+</html>

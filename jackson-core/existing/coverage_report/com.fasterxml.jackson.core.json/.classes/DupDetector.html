@@ -1,0 +1,180 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: DupDetector</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.fasterxml.jackson.core.json</a> ]
+</div>
+
+<h1>Coverage Summary for Class: DupDetector (com.fasterxml.jackson.core.json)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">DupDetector</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    87.5%
+  </span>
+  <span class="absValue">
+    (7/ 8)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    86.2%
+  </span>
+  <span class="absValue">
+    (25/ 29)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package com.fasterxml.jackson.core.json;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import java.util.*;
+<i>4</i>&nbsp;
+<i>5</i>&nbsp;import com.fasterxml.jackson.core.*;
+<i>6</i>&nbsp;
+<i>7</i>&nbsp;/**
+<i>8</i>&nbsp; * Helper class used if
+<i>9</i>&nbsp; * {@link com.fasterxml.jackson.core.JsonParser.Feature#STRICT_DUPLICATE_DETECTION}
+<i>10</i>&nbsp; * is enabled.
+<i>11</i>&nbsp; * Optimized to try to limit memory usage and processing overhead for smallest
+<i>12</i>&nbsp; * entries, but without adding trashing (immutable objects would achieve optimal
+<i>13</i>&nbsp; * memory usage but lead to significant number of discarded temp objects for
+<i>14</i>&nbsp; * scopes with large number of entries). Another consideration is trying to limit
+<i>15</i>&nbsp; * actual number of compiled classes as it contributes significantly to overall
+<i>16</i>&nbsp; * jar size (due to linkage etc).
+<i>17</i>&nbsp; * 
+<i>18</i>&nbsp; * @since 2.3
+<i>19</i>&nbsp; */
+<i>20</i>&nbsp;public class DupDetector
+<i>21</i>&nbsp;{
+<i>22</i>&nbsp;    /**
+<i>23</i>&nbsp;     * We need to store a back-reference here to parser/generator.
+<i>24</i>&nbsp;     */
+<i>25</i>&nbsp;    protected final Object _source;
+<i>26</i>&nbsp;
+<i>27</i>&nbsp;    protected String _firstName;
+<i>28</i>&nbsp;
+<i>29</i>&nbsp;    protected String _secondName;
+<i>30</i>&nbsp;    
+<i>31</i>&nbsp;    /**
+<i>32</i>&nbsp;     * Lazily constructed set of names already seen within this context.
+<i>33</i>&nbsp;     */
+<i>34</i>&nbsp;    protected HashSet&lt;String&gt; _seen;
+<i>35</i>&nbsp;
+<b class="fc"><i>36</i>&nbsp;    private DupDetector(Object src) {</b>
+<b class="fc"><i>37</i>&nbsp;        _source = src;</b>
+<b class="fc"><i>38</i>&nbsp;    }</b>
+<i>39</i>&nbsp;
+<i>40</i>&nbsp;    public static DupDetector rootDetector(JsonParser p) {
+<b class="fc"><i>41</i>&nbsp;        return new DupDetector(p);</b>
+<i>42</i>&nbsp;    }
+<i>43</i>&nbsp;
+<i>44</i>&nbsp;    public static DupDetector rootDetector(JsonGenerator g) {
+<b class="fc"><i>45</i>&nbsp;        return new DupDetector(g);</b>
+<i>46</i>&nbsp;    }
+<i>47</i>&nbsp;    
+<i>48</i>&nbsp;    public DupDetector child() {
+<b class="fc"><i>49</i>&nbsp;        return new DupDetector(_source);</b>
+<i>50</i>&nbsp;    }
+<i>51</i>&nbsp;
+<i>52</i>&nbsp;    public void reset() {
+<b class="fc"><i>53</i>&nbsp;        _firstName = null;</b>
+<b class="fc"><i>54</i>&nbsp;        _secondName = null;</b>
+<b class="fc"><i>55</i>&nbsp;        _seen = null;</b>
+<b class="fc"><i>56</i>&nbsp;    }</b>
+<i>57</i>&nbsp;
+<i>58</i>&nbsp;    public JsonLocation findLocation() {
+<i>59</i>&nbsp;        // ugly but:
+<b class="nc"><i>60</i>&nbsp;        if (_source instanceof JsonParser) {</b>
+<b class="nc"><i>61</i>&nbsp;            return ((JsonParser)_source).getCurrentLocation();</b>
+<i>62</i>&nbsp;        }
+<i>63</i>&nbsp;        // do generators have a way to provide Location? Apparently not...
+<b class="nc"><i>64</i>&nbsp;        return null;</b>
+<i>65</i>&nbsp;    }
+<i>66</i>&nbsp;
+<i>67</i>&nbsp;    /**
+<i>68</i>&nbsp;     * @since 2.7
+<i>69</i>&nbsp;     */
+<i>70</i>&nbsp;    public Object getSource() {
+<b class="fc"><i>71</i>&nbsp;        return _source;</b>
+<i>72</i>&nbsp;    }
+<i>73</i>&nbsp;
+<i>74</i>&nbsp;    public boolean isDup(String name) throws JsonParseException
+<i>75</i>&nbsp;    {
+<b class="fc"><i>76</i>&nbsp;        if (_firstName == null) {</b>
+<b class="fc"><i>77</i>&nbsp;            _firstName = name;</b>
+<b class="fc"><i>78</i>&nbsp;            return false;</b>
+<i>79</i>&nbsp;        }
+<b class="fc"><i>80</i>&nbsp;        if (name.equals(_firstName)) {</b>
+<b class="fc"><i>81</i>&nbsp;            return true;</b>
+<i>82</i>&nbsp;        }
+<b class="fc"><i>83</i>&nbsp;        if (_secondName == null) {</b>
+<b class="fc"><i>84</i>&nbsp;            _secondName = name;</b>
+<b class="fc"><i>85</i>&nbsp;            return false;</b>
+<i>86</i>&nbsp;        }
+<b class="fc"><i>87</i>&nbsp;        if (name.equals(_secondName)) {</b>
+<b class="nc"><i>88</i>&nbsp;            return true;</b>
+<i>89</i>&nbsp;        }
+<b class="fc"><i>90</i>&nbsp;        if (_seen == null) {</b>
+<b class="fc"><i>91</i>&nbsp;            _seen = new HashSet&lt;String&gt;(16); // 16 is default, seems reasonable</b>
+<b class="fc"><i>92</i>&nbsp;            _seen.add(_firstName);</b>
+<b class="fc"><i>93</i>&nbsp;            _seen.add(_secondName);</b>
+<i>94</i>&nbsp;        }
+<b class="fc"><i>95</i>&nbsp;        return !_seen.add(name);</b>
+<i>96</i>&nbsp;    }
+<i>97</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 04:22</div>
+</div>
+</body>
+</html>

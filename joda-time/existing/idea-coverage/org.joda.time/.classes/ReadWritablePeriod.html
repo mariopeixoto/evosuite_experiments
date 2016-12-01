@@ -1,0 +1,327 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: ReadWritablePeriod</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time</a> ]
+</div>
+
+<h1>Coverage Summary for Class: ReadWritablePeriod (org.joda.time)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+</tr>
+<tr>
+  <td class="name">ReadWritablePeriod</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2005 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;/**
+<i>19</i>&nbsp; * Defines a duration of time that can be queried and modified using datetime fields.
+<i>20</i>&nbsp; * &lt;p&gt;
+<i>21</i>&nbsp; * The implementation of this interface will be mutable.
+<i>22</i>&nbsp; * It may provide more advanced methods than those in the interface.
+<i>23</i>&nbsp; *
+<i>24</i>&nbsp; * @author Brian S O&#39;Neill
+<i>25</i>&nbsp; * @author Stephen Colebourne
+<i>26</i>&nbsp; * @since 1.0
+<i>27</i>&nbsp; */
+<i>28</i>&nbsp;public interface ReadWritablePeriod extends ReadablePeriod {
+<i>29</i>&nbsp;
+<i>30</i>&nbsp;    /**
+<i>31</i>&nbsp;     * Clears the period, setting all values back to zero.
+<i>32</i>&nbsp;     */
+<i>33</i>&nbsp;    void clear();
+<i>34</i>&nbsp;
+<i>35</i>&nbsp;    /**
+<i>36</i>&nbsp;     * Sets the value of one of the fields by index.
+<i>37</i>&nbsp;     *
+<i>38</i>&nbsp;     * @param index  the field index
+<i>39</i>&nbsp;     * @param value  the new value for the field
+<i>40</i>&nbsp;     * @throws IndexOutOfBoundsException if the index is invalid
+<i>41</i>&nbsp;     */
+<i>42</i>&nbsp;    void setValue(int index, int value);
+<i>43</i>&nbsp;
+<i>44</i>&nbsp;    /**
+<i>45</i>&nbsp;     * Sets the value of one of the fields.
+<i>46</i>&nbsp;     * &lt;p&gt;
+<i>47</i>&nbsp;     * The field type specified must be one of those that is supported by the period.
+<i>48</i>&nbsp;     *
+<i>49</i>&nbsp;     * @param field  a DurationFieldType instance that is supported by this period
+<i>50</i>&nbsp;     * @param value  the new value for the field
+<i>51</i>&nbsp;     * @throws IllegalArgumentException if the field is null or not supported
+<i>52</i>&nbsp;     */
+<i>53</i>&nbsp;    void set(DurationFieldType field, int value);
+<i>54</i>&nbsp;
+<i>55</i>&nbsp;    /**
+<i>56</i>&nbsp;     * Sets all the fields in one go from another ReadablePeriod.
+<i>57</i>&nbsp;     * 
+<i>58</i>&nbsp;     * @param period  the period to set, null means zero length period
+<i>59</i>&nbsp;     * @throws IllegalArgumentException if an unsupported field&#39;s value is non-zero
+<i>60</i>&nbsp;     */
+<i>61</i>&nbsp;    void setPeriod(ReadablePeriod period);
+<i>62</i>&nbsp;
+<i>63</i>&nbsp;    /**
+<i>64</i>&nbsp;     * Sets all the fields in one go.
+<i>65</i>&nbsp;     * 
+<i>66</i>&nbsp;     * @param years  amount of years in this period, which must be zero if unsupported
+<i>67</i>&nbsp;     * @param months  amount of months in this period, which must be zero if unsupported
+<i>68</i>&nbsp;     * @param weeks  amount of weeks in this period, which must be zero if unsupported
+<i>69</i>&nbsp;     * @param days  amount of days in this period, which must be zero if unsupported
+<i>70</i>&nbsp;     * @param hours  amount of hours in this period, which must be zero if unsupported
+<i>71</i>&nbsp;     * @param minutes  amount of minutes in this period, which must be zero if unsupported
+<i>72</i>&nbsp;     * @param seconds  amount of seconds in this period, which must be zero if unsupported
+<i>73</i>&nbsp;     * @param millis  amount of milliseconds in this period, which must be zero if unsupported
+<i>74</i>&nbsp;     * @throws IllegalArgumentException if an unsupported field&#39;s value is non-zero
+<i>75</i>&nbsp;     */
+<i>76</i>&nbsp;    void setPeriod(int years, int months, int weeks, int days,
+<i>77</i>&nbsp;                       int hours, int minutes, int seconds, int millis);
+<i>78</i>&nbsp;
+<i>79</i>&nbsp;    /**
+<i>80</i>&nbsp;     * Sets all the fields in one go from an interval dividing the
+<i>81</i>&nbsp;     * fields using the period type.
+<i>82</i>&nbsp;     * 
+<i>83</i>&nbsp;     * @param interval  the interval to set, null means zero length
+<i>84</i>&nbsp;     */
+<i>85</i>&nbsp;    void setPeriod(ReadableInterval interval);
+<i>86</i>&nbsp;
+<i>87</i>&nbsp;    //-----------------------------------------------------------------------
+<i>88</i>&nbsp;    /**
+<i>89</i>&nbsp;     * Adds to the value of one of the fields.
+<i>90</i>&nbsp;     * &lt;p&gt;
+<i>91</i>&nbsp;     * The field type specified must be one of those that is supported by the period.
+<i>92</i>&nbsp;     *
+<i>93</i>&nbsp;     * @param field  a DurationFieldType instance that is supported by this period
+<i>94</i>&nbsp;     * @param value  the value to add to the field
+<i>95</i>&nbsp;     * @throws IllegalArgumentException if the field is null or not supported
+<i>96</i>&nbsp;     */
+<i>97</i>&nbsp;    void add(DurationFieldType field, int value);
+<i>98</i>&nbsp;
+<i>99</i>&nbsp;    /**
+<i>100</i>&nbsp;     * Adds a period to this one by adding each field in turn.
+<i>101</i>&nbsp;     * 
+<i>102</i>&nbsp;     * @param period  the period to add, null means add nothing
+<i>103</i>&nbsp;     * @throws IllegalArgumentException if the period being added contains a field
+<i>104</i>&nbsp;     * not supported by this period
+<i>105</i>&nbsp;     * @throws ArithmeticException if the addition exceeds the capacity of the period
+<i>106</i>&nbsp;     */
+<i>107</i>&nbsp;    void add(ReadablePeriod period);
+<i>108</i>&nbsp;
+<i>109</i>&nbsp;    /**
+<i>110</i>&nbsp;     * Adds to each field of this period.
+<i>111</i>&nbsp;     * 
+<i>112</i>&nbsp;     * @param years  amount of years to add to this period, which must be zero if unsupported
+<i>113</i>&nbsp;     * @param months  amount of months to add to this period, which must be zero if unsupported
+<i>114</i>&nbsp;     * @param weeks  amount of weeks to add to this period, which must be zero if unsupported
+<i>115</i>&nbsp;     * @param days  amount of days to add to this period, which must be zero if unsupported
+<i>116</i>&nbsp;     * @param hours  amount of hours to add to this period, which must be zero if unsupported
+<i>117</i>&nbsp;     * @param minutes  amount of minutes to add to this period, which must be zero if unsupported
+<i>118</i>&nbsp;     * @param seconds  amount of seconds to add to this period, which must be zero if unsupported
+<i>119</i>&nbsp;     * @param millis  amount of milliseconds to add to this period, which must be zero if unsupported
+<i>120</i>&nbsp;     * @throws IllegalArgumentException if the period being added contains a field
+<i>121</i>&nbsp;     * not supported by this period
+<i>122</i>&nbsp;     * @throws ArithmeticException if the addition exceeds the capacity of the period
+<i>123</i>&nbsp;     */
+<i>124</i>&nbsp;    void add(int years, int months, int weeks, int days,
+<i>125</i>&nbsp;                    int hours, int minutes, int seconds, int millis);
+<i>126</i>&nbsp;
+<i>127</i>&nbsp;    /**
+<i>128</i>&nbsp;     * Adds an interval to this one by dividing the interval into
+<i>129</i>&nbsp;     * fields and then adding each field in turn.
+<i>130</i>&nbsp;     * 
+<i>131</i>&nbsp;     * @param interval  the interval to add, null means add nothing
+<i>132</i>&nbsp;     * @throws ArithmeticException if the addition exceeds the capacity of the period
+<i>133</i>&nbsp;     */
+<i>134</i>&nbsp;    void add(ReadableInterval interval);
+<i>135</i>&nbsp;
+<i>136</i>&nbsp;    //-----------------------------------------------------------------------
+<i>137</i>&nbsp;    /**
+<i>138</i>&nbsp;     * Sets the number of years of the period.
+<i>139</i>&nbsp;     * 
+<i>140</i>&nbsp;     * @param years  the number of years
+<i>141</i>&nbsp;     * @throws IllegalArgumentException if field is not supported and the value is non-zero
+<i>142</i>&nbsp;     */
+<i>143</i>&nbsp;    void setYears(int years);
+<i>144</i>&nbsp;
+<i>145</i>&nbsp;    /**
+<i>146</i>&nbsp;     * Adds the specified years to the number of years in the period.
+<i>147</i>&nbsp;     * 
+<i>148</i>&nbsp;     * @param years  the number of years
+<i>149</i>&nbsp;     * @throws IllegalArgumentException if field is not supported and the value is non-zero
+<i>150</i>&nbsp;     * @throws ArithmeticException if the addition exceeds the capacity of the period
+<i>151</i>&nbsp;     */
+<i>152</i>&nbsp;    void addYears(int years);
+<i>153</i>&nbsp;
+<i>154</i>&nbsp;    //-----------------------------------------------------------------------
+<i>155</i>&nbsp;    /**
+<i>156</i>&nbsp;     * Sets the number of months of the period.
+<i>157</i>&nbsp;     * 
+<i>158</i>&nbsp;     * @param months  the number of months
+<i>159</i>&nbsp;     * @throws IllegalArgumentException if field is not supported and the value is non-zero
+<i>160</i>&nbsp;     */
+<i>161</i>&nbsp;    void setMonths(int months);
+<i>162</i>&nbsp;
+<i>163</i>&nbsp;    /**
+<i>164</i>&nbsp;     * Adds the specified months to the number of months in the period.
+<i>165</i>&nbsp;     * 
+<i>166</i>&nbsp;     * @param months  the number of months
+<i>167</i>&nbsp;     * @throws IllegalArgumentException if field is not supported and the value is non-zero
+<i>168</i>&nbsp;     * @throws ArithmeticException if the addition exceeds the capacity of the period
+<i>169</i>&nbsp;     */
+<i>170</i>&nbsp;    void addMonths(int months);
+<i>171</i>&nbsp;
+<i>172</i>&nbsp;    //-----------------------------------------------------------------------
+<i>173</i>&nbsp;    /**
+<i>174</i>&nbsp;     * Sets the number of weeks of the period.
+<i>175</i>&nbsp;     * 
+<i>176</i>&nbsp;     * @param weeks  the number of weeks
+<i>177</i>&nbsp;     * @throws IllegalArgumentException if field is not supported and the value is non-zero
+<i>178</i>&nbsp;     */
+<i>179</i>&nbsp;    void setWeeks(int weeks);
+<i>180</i>&nbsp;
+<i>181</i>&nbsp;    /**
+<i>182</i>&nbsp;     * Adds the specified weeks to the number of weeks in the period.
+<i>183</i>&nbsp;     * 
+<i>184</i>&nbsp;     * @param weeks  the number of weeks
+<i>185</i>&nbsp;     * @throws IllegalArgumentException if field is not supported and the value is non-zero
+<i>186</i>&nbsp;     * @throws ArithmeticException if the addition exceeds the capacity of the period
+<i>187</i>&nbsp;     */
+<i>188</i>&nbsp;    void addWeeks(int weeks);
+<i>189</i>&nbsp;
+<i>190</i>&nbsp;    //-----------------------------------------------------------------------
+<i>191</i>&nbsp;    /**
+<i>192</i>&nbsp;     * Sets the number of days of the period.
+<i>193</i>&nbsp;     * 
+<i>194</i>&nbsp;     * @param days  the number of days
+<i>195</i>&nbsp;     * @throws IllegalArgumentException if field is not supported and the value is non-zero
+<i>196</i>&nbsp;     */
+<i>197</i>&nbsp;    void setDays(int days);
+<i>198</i>&nbsp;
+<i>199</i>&nbsp;    /**
+<i>200</i>&nbsp;     * Adds the specified days to the number of days in the period.
+<i>201</i>&nbsp;     * 
+<i>202</i>&nbsp;     * @param days  the number of days
+<i>203</i>&nbsp;     * @throws IllegalArgumentException if field is not supported and the value is non-zero
+<i>204</i>&nbsp;     * @throws ArithmeticException if the addition exceeds the capacity of the period
+<i>205</i>&nbsp;     */
+<i>206</i>&nbsp;    void addDays(int days);
+<i>207</i>&nbsp;
+<i>208</i>&nbsp;    //-----------------------------------------------------------------------
+<i>209</i>&nbsp;    /**
+<i>210</i>&nbsp;     * Sets the number of hours of the period.
+<i>211</i>&nbsp;     * 
+<i>212</i>&nbsp;     * @param hours  the number of hours
+<i>213</i>&nbsp;     * @throws IllegalArgumentException if field is not supported and the value is non-zero
+<i>214</i>&nbsp;     */
+<i>215</i>&nbsp;    void setHours(int hours);
+<i>216</i>&nbsp;
+<i>217</i>&nbsp;    /**
+<i>218</i>&nbsp;     * Adds the specified hours to the number of hours in the period.
+<i>219</i>&nbsp;     * 
+<i>220</i>&nbsp;     * @param hours  the number of hours
+<i>221</i>&nbsp;     * @throws IllegalArgumentException if field is not supported and the value is non-zero
+<i>222</i>&nbsp;     * @throws ArithmeticException if the addition exceeds the capacity of the period
+<i>223</i>&nbsp;     */
+<i>224</i>&nbsp;    void addHours(int hours);
+<i>225</i>&nbsp;
+<i>226</i>&nbsp;    //-----------------------------------------------------------------------
+<i>227</i>&nbsp;    /**
+<i>228</i>&nbsp;     * Sets the number of minutes of the period.
+<i>229</i>&nbsp;     * 
+<i>230</i>&nbsp;     * @param minutes  the number of minutes
+<i>231</i>&nbsp;     * @throws IllegalArgumentException if field is not supported and the value is non-zero
+<i>232</i>&nbsp;     */
+<i>233</i>&nbsp;    void setMinutes(int minutes);
+<i>234</i>&nbsp;
+<i>235</i>&nbsp;    /**
+<i>236</i>&nbsp;     * Adds the specified minutes to the number of minutes in the period.
+<i>237</i>&nbsp;     * 
+<i>238</i>&nbsp;     * @param minutes  the number of minutes
+<i>239</i>&nbsp;     * @throws IllegalArgumentException if field is not supported and the value is non-zero
+<i>240</i>&nbsp;     * @throws ArithmeticException if the addition exceeds the capacity of the period
+<i>241</i>&nbsp;     */
+<i>242</i>&nbsp;    void addMinutes(int minutes);
+<i>243</i>&nbsp;
+<i>244</i>&nbsp;    //-----------------------------------------------------------------------
+<i>245</i>&nbsp;    /**
+<i>246</i>&nbsp;     * Sets the number of seconds of the period.
+<i>247</i>&nbsp;     * 
+<i>248</i>&nbsp;     * @param seconds  the number of seconds
+<i>249</i>&nbsp;     * @throws IllegalArgumentException if field is not supported and the value is non-zero
+<i>250</i>&nbsp;     */
+<i>251</i>&nbsp;    void setSeconds(int seconds);
+<i>252</i>&nbsp;
+<i>253</i>&nbsp;    /**
+<i>254</i>&nbsp;     * Adds the specified seconds to the number of seconds in the period.
+<i>255</i>&nbsp;     * 
+<i>256</i>&nbsp;     * @param seconds  the number of seconds
+<i>257</i>&nbsp;     * @throws IllegalArgumentException if field is not supported and the value is non-zero
+<i>258</i>&nbsp;     * @throws ArithmeticException if the addition exceeds the capacity of the period
+<i>259</i>&nbsp;     */
+<i>260</i>&nbsp;    void addSeconds(int seconds);
+<i>261</i>&nbsp;
+<i>262</i>&nbsp;    //-----------------------------------------------------------------------
+<i>263</i>&nbsp;    /**
+<i>264</i>&nbsp;     * Sets the number of millis of the period.
+<i>265</i>&nbsp;     * 
+<i>266</i>&nbsp;     * @param millis  the number of millis
+<i>267</i>&nbsp;     * @throws IllegalArgumentException if field is not supported and the value is non-zero
+<i>268</i>&nbsp;     */
+<i>269</i>&nbsp;    void setMillis(int millis);
+<i>270</i>&nbsp;
+<i>271</i>&nbsp;    /**
+<i>272</i>&nbsp;     * Adds the specified millis to the number of millis in the period.
+<i>273</i>&nbsp;     * 
+<i>274</i>&nbsp;     * @param millis  the number of millis
+<i>275</i>&nbsp;     * @throws IllegalArgumentException if field is not supported and the value is non-zero
+<i>276</i>&nbsp;     * @throws ArithmeticException if the addition exceeds the capacity of the period
+<i>277</i>&nbsp;     */
+<i>278</i>&nbsp;    void addMillis(int millis);
+<i>279</i>&nbsp;
+<i>280</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

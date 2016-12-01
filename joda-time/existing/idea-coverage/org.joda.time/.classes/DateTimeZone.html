@@ -1,0 +1,1540 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: DateTimeZone</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time</a> ]
+</div>
+
+<h1>Coverage Summary for Class: DateTimeZone (org.joda.time)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">DateTimeZone</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (40/ 40)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90.2%
+  </span>
+  <span class="absValue">
+    (286/ 317)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">DateTimeZone$LazyInit</td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (3/ 4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    97.7%
+  </span>
+  <span class="absValue">
+    (42/ 43)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">DateTimeZone$LazyInit$1</td>
+<td class="coverageStat">
+  <span class="percent">
+    60%
+  </span>
+  <span class="absValue">
+    (3/ 5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    60%
+  </span>
+  <span class="absValue">
+    (3/ 5)
+  </span>
+</td>
+  </tr>
+  <tr>
+    <td class="name">DateTimeZone$Stub</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/ 4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (8/ 8)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    94.3%
+  </span>
+  <span class="absValue">
+    (50/ 53)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90.9%
+  </span>
+  <span class="absValue">
+    (339/ 373)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2014 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;import java.io.File;
+<i>19</i>&nbsp;import java.io.IOException;
+<i>20</i>&nbsp;import java.io.ObjectInputStream;
+<i>21</i>&nbsp;import java.io.ObjectOutputStream;
+<i>22</i>&nbsp;import java.io.ObjectStreamException;
+<i>23</i>&nbsp;import java.io.Serializable;
+<i>24</i>&nbsp;import java.util.Collections;
+<i>25</i>&nbsp;import java.util.HashMap;
+<i>26</i>&nbsp;import java.util.Locale;
+<i>27</i>&nbsp;import java.util.Map;
+<i>28</i>&nbsp;import java.util.Set;
+<i>29</i>&nbsp;import java.util.TimeZone;
+<i>30</i>&nbsp;import java.util.concurrent.atomic.AtomicReference;
+<i>31</i>&nbsp;
+<i>32</i>&nbsp;import org.joda.convert.FromString;
+<i>33</i>&nbsp;import org.joda.convert.ToString;
+<i>34</i>&nbsp;import org.joda.time.chrono.BaseChronology;
+<i>35</i>&nbsp;import org.joda.time.field.FieldUtils;
+<i>36</i>&nbsp;import org.joda.time.format.DateTimeFormatter;
+<i>37</i>&nbsp;import org.joda.time.format.DateTimeFormatterBuilder;
+<i>38</i>&nbsp;import org.joda.time.format.FormatUtils;
+<i>39</i>&nbsp;import org.joda.time.tz.DefaultNameProvider;
+<i>40</i>&nbsp;import org.joda.time.tz.FixedDateTimeZone;
+<i>41</i>&nbsp;import org.joda.time.tz.NameProvider;
+<i>42</i>&nbsp;import org.joda.time.tz.Provider;
+<i>43</i>&nbsp;import org.joda.time.tz.UTCProvider;
+<i>44</i>&nbsp;import org.joda.time.tz.ZoneInfoProvider;
+<i>45</i>&nbsp;
+<i>46</i>&nbsp;/**
+<i>47</i>&nbsp; * DateTimeZone represents a time zone.
+<i>48</i>&nbsp; * &lt;p&gt;
+<i>49</i>&nbsp; * A time zone is a system of rules to convert time from one geographic 
+<i>50</i>&nbsp; * location to another. For example, Paris, France is one hour ahead of
+<i>51</i>&nbsp; * London, England. Thus when it is 10:00 in London, it is 11:00 in Paris.
+<i>52</i>&nbsp; * &lt;p&gt;
+<i>53</i>&nbsp; * All time zone rules are expressed, for historical reasons, relative to
+<i>54</i>&nbsp; * Greenwich, London. Local time in Greenwich is referred to as Greenwich Mean
+<i>55</i>&nbsp; * Time (GMT).  This is similar, but not precisely identical, to Universal 
+<i>56</i>&nbsp; * Coordinated Time, or UTC. This library only uses the term UTC.
+<i>57</i>&nbsp; * &lt;p&gt;
+<i>58</i>&nbsp; * Using this system, America/Los_Angeles is expressed as UTC-08:00, or UTC-07:00
+<i>59</i>&nbsp; * in the summer. The offset -08:00 indicates that America/Los_Angeles time is
+<i>60</i>&nbsp; * obtained from UTC by adding -08:00, that is, by subtracting 8 hours.
+<i>61</i>&nbsp; * &lt;p&gt;
+<i>62</i>&nbsp; * The offset differs in the summer because of daylight saving time, or DST.
+<i>63</i>&nbsp; * The following definitions of time are generally used:
+<i>64</i>&nbsp; * &lt;ul&gt;
+<i>65</i>&nbsp; * &lt;li&gt;UTC - The reference time.
+<i>66</i>&nbsp; * &lt;li&gt;Standard Time - The local time without a daylight saving time offset.
+<i>67</i>&nbsp; * For example, in Paris, standard time is UTC+01:00.
+<i>68</i>&nbsp; * &lt;li&gt;Daylight Saving Time - The local time with a daylight saving time 
+<i>69</i>&nbsp; * offset. This offset is typically one hour, but not always. It is typically
+<i>70</i>&nbsp; * used in most countries away from the equator.  In Paris, daylight saving 
+<i>71</i>&nbsp; * time is UTC+02:00.
+<i>72</i>&nbsp; * &lt;li&gt;Wall Time - This is what a local clock on the wall reads. This will be
+<i>73</i>&nbsp; * either Standard Time or Daylight Saving Time depending on the time of year
+<i>74</i>&nbsp; * and whether the location uses Daylight Saving Time.
+<i>75</i>&nbsp; * &lt;/ul&gt;
+<i>76</i>&nbsp; * &lt;p&gt;
+<i>77</i>&nbsp; * Unlike the Java TimeZone class, DateTimeZone is immutable. It also only
+<i>78</i>&nbsp; * supports long format time zone ids. Thus EST and ECT are not accepted.
+<i>79</i>&nbsp; * However, the factory that accepts a TimeZone will attempt to convert from
+<i>80</i>&nbsp; * the old short id to a suitable long id.
+<i>81</i>&nbsp; * &lt;p&gt;
+<i>82</i>&nbsp; * There are four approaches to loading time-zone data, which are tried in this order:
+<i>83</i>&nbsp; * &lt;ol&gt;
+<i>84</i>&nbsp; * &lt;li&gt;load the specific {@link Provider} specified by the system property
+<i>85</i>&nbsp; *   {@code org.joda.time.DateTimeZone.Provider}.
+<i>86</i>&nbsp; * &lt;li&gt;load {@link ZoneInfoProvider} using the data in the filing system folder
+<i>87</i>&nbsp; *   pointed to by system property {@code org.joda.time.DateTimeZone.Folder}.
+<i>88</i>&nbsp; * &lt;li&gt;load {@link ZoneInfoProvider} using the data in the classpath location
+<i>89</i>&nbsp; *   {@code org/joda/time/tz/data}.
+<i>90</i>&nbsp; * &lt;li&gt;load {@link UTCProvider}
+<i>91</i>&nbsp; * &lt;/ol&gt;
+<i>92</i>&nbsp; * &lt;p&gt;
+<i>93</i>&nbsp; * Unless you override the standard behaviour, the default if the third approach.
+<i>94</i>&nbsp; * &lt;p&gt;
+<i>95</i>&nbsp; * DateTimeZone is thread-safe and immutable, and all subclasses must be as
+<i>96</i>&nbsp; * well.
+<i>97</i>&nbsp; * 
+<i>98</i>&nbsp; * @author Brian S O&#39;Neill
+<i>99</i>&nbsp; * @author Stephen Colebourne
+<i>100</i>&nbsp; * @since 1.0
+<i>101</i>&nbsp; */
+<i>102</i>&nbsp;public abstract class DateTimeZone implements Serializable {
+<i>103</i>&nbsp;    
+<i>104</i>&nbsp;    /** Serialization version. */
+<i>105</i>&nbsp;    private static final long serialVersionUID = 5546345482340108586L;
+<i>106</i>&nbsp;
+<i>107</i>&nbsp;    /** The time zone for Universal Coordinated Time */
+<b class="fc"><i>108</i>&nbsp;    public static final DateTimeZone UTC = UTCDateTimeZone.INSTANCE;</b>
+<i>109</i>&nbsp;    /** Maximum offset. */
+<i>110</i>&nbsp;    private static final int MAX_MILLIS = (86400 * 1000) - 1;
+<i>111</i>&nbsp;
+<i>112</i>&nbsp;    /**
+<i>113</i>&nbsp;     * The instance that is providing time zones.
+<i>114</i>&nbsp;     * This is lazily initialized to reduce risks of race conditions at startup.
+<i>115</i>&nbsp;     */
+<b class="fc"><i>116</i>&nbsp;    private static final AtomicReference&lt;Provider&gt; cProvider =</b>
+<i>117</i>&nbsp;                    new AtomicReference&lt;Provider&gt;();
+<i>118</i>&nbsp;    /**
+<i>119</i>&nbsp;     * The instance that is providing time zone names.
+<i>120</i>&nbsp;     * This is lazily initialized to reduce risks of race conditions at startup.
+<i>121</i>&nbsp;     */
+<b class="fc"><i>122</i>&nbsp;    private static final AtomicReference&lt;NameProvider&gt; cNameProvider =</b>
+<i>123</i>&nbsp;                    new AtomicReference&lt;NameProvider&gt;();
+<i>124</i>&nbsp;    /**
+<i>125</i>&nbsp;     * The default time zone.
+<i>126</i>&nbsp;     * This is lazily initialized to reduce risks of race conditions at startup.
+<i>127</i>&nbsp;     */
+<b class="fc"><i>128</i>&nbsp;    private static final AtomicReference&lt;DateTimeZone&gt; cDefault =</b>
+<i>129</i>&nbsp;                    new AtomicReference&lt;DateTimeZone&gt;();
+<i>130</i>&nbsp;
+<i>131</i>&nbsp;    //-----------------------------------------------------------------------
+<i>132</i>&nbsp;    /**
+<i>133</i>&nbsp;     * Gets the default time zone.
+<i>134</i>&nbsp;     * &lt;p&gt;
+<i>135</i>&nbsp;     * The default time zone is derived from the system property {@code user.timezone}.
+<i>136</i>&nbsp;     * If that is {@code null} or is not a valid identifier, then the value of the
+<i>137</i>&nbsp;     * JDK {@code TimeZone} default is converted. If that fails, {@code UTC} is used.
+<i>138</i>&nbsp;     * &lt;p&gt;
+<i>139</i>&nbsp;     * NOTE: If the {@code java.util.TimeZone} default is updated &lt;i&gt;after&lt;/i&gt; calling this
+<i>140</i>&nbsp;     * method, then the change will not be picked up here.
+<i>141</i>&nbsp;     * 
+<i>142</i>&nbsp;     * @return the default datetime zone object
+<i>143</i>&nbsp;     */
+<i>144</i>&nbsp;    public static DateTimeZone getDefault() {
+<b class="fc"><i>145</i>&nbsp;        DateTimeZone zone = cDefault.get();</b>
+<b class="fc"><i>146</i>&nbsp;        if (zone == null) {</b>
+<i>147</i>&nbsp;            try {
+<i>148</i>&nbsp;                try {
+<b class="fc"><i>149</i>&nbsp;                    String id = System.getProperty(&quot;user.timezone&quot;);</b>
+<b class="fc"><i>150</i>&nbsp;                    if (id != null) {  // null check avoids stack overflow</b>
+<b class="fc"><i>151</i>&nbsp;                        zone = forID(id);</b>
+<i>152</i>&nbsp;                    }
+<b class="nc"><i>153</i>&nbsp;                } catch (RuntimeException ex) {</b>
+<i>154</i>&nbsp;                    // ignored
+<b class="fc"><i>155</i>&nbsp;                }</b>
+<b class="fc"><i>156</i>&nbsp;                if (zone == null) {</b>
+<b class="nc"><i>157</i>&nbsp;                    zone = forTimeZone(TimeZone.getDefault());</b>
+<i>158</i>&nbsp;                }
+<b class="nc"><i>159</i>&nbsp;            } catch (IllegalArgumentException ex) {</b>
+<i>160</i>&nbsp;                // ignored
+<b class="fc"><i>161</i>&nbsp;            }</b>
+<b class="fc"><i>162</i>&nbsp;            if (zone == null) {</b>
+<b class="nc"><i>163</i>&nbsp;                zone = UTC;</b>
+<i>164</i>&nbsp;            }
+<b class="fc"><i>165</i>&nbsp;            if (!cDefault.compareAndSet(null, zone)) {</b>
+<b class="nc"><i>166</i>&nbsp;                zone = cDefault.get();</b>
+<i>167</i>&nbsp;            }
+<i>168</i>&nbsp;        }
+<b class="fc"><i>169</i>&nbsp;        return zone;</b>
+<i>170</i>&nbsp;    }
+<i>171</i>&nbsp;
+<i>172</i>&nbsp;    /**
+<i>173</i>&nbsp;     * Sets the default time zone.
+<i>174</i>&nbsp;     * &lt;p&gt;
+<i>175</i>&nbsp;     * NOTE: Calling this method does &lt;i&gt;not&lt;/i&gt; set the {@code java.util.TimeZone} default.
+<i>176</i>&nbsp;     * 
+<i>177</i>&nbsp;     * @param zone  the default datetime zone object, must not be null
+<i>178</i>&nbsp;     * @throws IllegalArgumentException if the zone is null
+<i>179</i>&nbsp;     * @throws SecurityException if the application has insufficient security rights
+<i>180</i>&nbsp;     */
+<i>181</i>&nbsp;    public static void setDefault(DateTimeZone zone) throws SecurityException {
+<b class="fc"><i>182</i>&nbsp;        SecurityManager sm = System.getSecurityManager();</b>
+<b class="fc"><i>183</i>&nbsp;        if (sm != null) {</b>
+<b class="nc"><i>184</i>&nbsp;            sm.checkPermission(new JodaTimePermission(&quot;DateTimeZone.setDefault&quot;));</b>
+<i>185</i>&nbsp;        }
+<b class="fc"><i>186</i>&nbsp;        if (zone == null) {</b>
+<b class="fc"><i>187</i>&nbsp;            throw new IllegalArgumentException(&quot;The datetime zone must not be null&quot;);</b>
+<i>188</i>&nbsp;        }
+<b class="fc"><i>189</i>&nbsp;        cDefault.set(zone);</b>
+<b class="fc"><i>190</i>&nbsp;    }</b>
+<i>191</i>&nbsp;
+<i>192</i>&nbsp;    //-----------------------------------------------------------------------
+<i>193</i>&nbsp;    /**
+<i>194</i>&nbsp;     * Gets a time zone instance for the specified time zone id.
+<i>195</i>&nbsp;     * &lt;p&gt;
+<i>196</i>&nbsp;     * The time zone id may be one of those returned by getAvailableIDs.
+<i>197</i>&nbsp;     * Short ids, as accepted by {@link java.util.TimeZone}, are not accepted.
+<i>198</i>&nbsp;     * All IDs must be specified in the long format.
+<i>199</i>&nbsp;     * The exception is UTC, which is an acceptable id.
+<i>200</i>&nbsp;     * &lt;p&gt;
+<i>201</i>&nbsp;     * Alternatively a locale independent, fixed offset, datetime zone can
+<i>202</i>&nbsp;     * be specified. The form &lt;code&gt;[+-]hh:mm&lt;/code&gt; can be used.
+<i>203</i>&nbsp;     * 
+<i>204</i>&nbsp;     * @param id  the ID of the datetime zone, null means default
+<i>205</i>&nbsp;     * @return the DateTimeZone object for the ID
+<i>206</i>&nbsp;     * @throws IllegalArgumentException if the ID is not recognised
+<i>207</i>&nbsp;     */
+<i>208</i>&nbsp;    @FromString
+<i>209</i>&nbsp;    public static DateTimeZone forID(String id) {
+<b class="fc"><i>210</i>&nbsp;        if (id == null) {</b>
+<b class="fc"><i>211</i>&nbsp;            return getDefault();</b>
+<i>212</i>&nbsp;        }
+<b class="fc"><i>213</i>&nbsp;        if (id.equals(&quot;UTC&quot;)) {</b>
+<b class="fc"><i>214</i>&nbsp;            return DateTimeZone.UTC;</b>
+<i>215</i>&nbsp;        }
+<b class="fc"><i>216</i>&nbsp;        DateTimeZone zone = getProvider().getZone(id);</b>
+<b class="fc"><i>217</i>&nbsp;        if (zone != null) {</b>
+<b class="fc"><i>218</i>&nbsp;            return zone;</b>
+<i>219</i>&nbsp;        }
+<b class="fc"><i>220</i>&nbsp;        if (id.startsWith(&quot;+&quot;) || id.startsWith(&quot;-&quot;)) {</b>
+<b class="fc"><i>221</i>&nbsp;            int offset = parseOffset(id);</b>
+<b class="fc"><i>222</i>&nbsp;            if (offset == 0L) {</b>
+<b class="fc"><i>223</i>&nbsp;                return DateTimeZone.UTC;</b>
+<i>224</i>&nbsp;            } else {
+<b class="fc"><i>225</i>&nbsp;                id = printOffset(offset);</b>
+<b class="fc"><i>226</i>&nbsp;                return fixedOffsetZone(id, offset);</b>
+<i>227</i>&nbsp;            }
+<i>228</i>&nbsp;        }
+<b class="fc"><i>229</i>&nbsp;        throw new IllegalArgumentException(&quot;The datetime zone id &#39;&quot; + id + &quot;&#39; is not recognised&quot;);</b>
+<i>230</i>&nbsp;    }
+<i>231</i>&nbsp;
+<i>232</i>&nbsp;    /**
+<i>233</i>&nbsp;     * Gets a time zone instance for the specified offset to UTC in hours.
+<i>234</i>&nbsp;     * This method assumes standard length hours.
+<i>235</i>&nbsp;     * &lt;p&gt;
+<i>236</i>&nbsp;     * This factory is a convenient way of constructing zones with a fixed offset.
+<i>237</i>&nbsp;     * 
+<i>238</i>&nbsp;     * @param hoursOffset  the offset in hours from UTC, from -23 to +23
+<i>239</i>&nbsp;     * @return the DateTimeZone object for the offset
+<i>240</i>&nbsp;     * @throws IllegalArgumentException if the offset is too large or too small
+<i>241</i>&nbsp;     */
+<i>242</i>&nbsp;    public static DateTimeZone forOffsetHours(int hoursOffset) throws IllegalArgumentException {
+<b class="fc"><i>243</i>&nbsp;        return forOffsetHoursMinutes(hoursOffset, 0);</b>
+<i>244</i>&nbsp;    }
+<i>245</i>&nbsp;
+<i>246</i>&nbsp;    /**
+<i>247</i>&nbsp;     * Gets a time zone instance for the specified offset to UTC in hours and minutes.
+<i>248</i>&nbsp;     * This method assumes 60 minutes in an hour, and standard length minutes.
+<i>249</i>&nbsp;     * &lt;p&gt;
+<i>250</i>&nbsp;     * This factory is a convenient way of constructing zones with a fixed offset.
+<i>251</i>&nbsp;     * The hours value must be in the range -23 to +23.
+<i>252</i>&nbsp;     * The minutes value must be in the range -59 to +59.
+<i>253</i>&nbsp;     * The following combinations of sign for the hour and minute are possible:
+<i>254</i>&nbsp;     * &lt;pre&gt;
+<i>255</i>&nbsp;     *  Hour    Minute    Example    Result
+<i>256</i>&nbsp;     * 
+<i>257</i>&nbsp;     *  +ve     +ve       (2, 15)    +02:15
+<i>258</i>&nbsp;     *  +ve     zero      (2, 0)     +02:00
+<i>259</i>&nbsp;     *  +ve     -ve       (2, -15)   IllegalArgumentException
+<i>260</i>&nbsp;     * 
+<i>261</i>&nbsp;     *  zero    +ve       (0, 15)    +00:15
+<i>262</i>&nbsp;     *  zero    zero      (0, 0)     +00:00
+<i>263</i>&nbsp;     *  zero    -ve       (0, -15)   -00:15
+<i>264</i>&nbsp;     * 
+<i>265</i>&nbsp;     *  -ve     +ve       (-2, 15)   -02:15
+<i>266</i>&nbsp;     *  -ve     zero      (-2, 0)    -02:00
+<i>267</i>&nbsp;     *  -ve     -ve       (-2, -15)  -02:15
+<i>268</i>&nbsp;     * &lt;/pre&gt;
+<i>269</i>&nbsp;     * Note that in versions before 2.3, the minutes had to be zero or positive.
+<i>270</i>&nbsp;     * 
+<i>271</i>&nbsp;     * @param hoursOffset  the offset in hours from UTC, from -23 to +23
+<i>272</i>&nbsp;     * @param minutesOffset  the offset in minutes from UTC, from -59 to +59
+<i>273</i>&nbsp;     * @return the DateTimeZone object for the offset
+<i>274</i>&nbsp;     * @throws IllegalArgumentException if any value is out of range, the minutes are negative
+<i>275</i>&nbsp;     *  when the hours are positive, or the resulting offset exceeds +/- 23:59:59.000
+<i>276</i>&nbsp;     */
+<i>277</i>&nbsp;    public static DateTimeZone forOffsetHoursMinutes(int hoursOffset, int minutesOffset) throws IllegalArgumentException {
+<b class="fc"><i>278</i>&nbsp;        if (hoursOffset == 0 &amp;&amp; minutesOffset == 0) {</b>
+<b class="fc"><i>279</i>&nbsp;            return DateTimeZone.UTC;</b>
+<i>280</i>&nbsp;        }
+<b class="fc"><i>281</i>&nbsp;        if (hoursOffset &lt; -23 || hoursOffset &gt; 23) {</b>
+<b class="fc"><i>282</i>&nbsp;            throw new IllegalArgumentException(&quot;Hours out of range: &quot; + hoursOffset);</b>
+<i>283</i>&nbsp;        }
+<b class="fc"><i>284</i>&nbsp;        if (minutesOffset &lt; -59 || minutesOffset &gt; 59) {</b>
+<b class="fc"><i>285</i>&nbsp;            throw new IllegalArgumentException(&quot;Minutes out of range: &quot; + minutesOffset);</b>
+<i>286</i>&nbsp;        }
+<b class="fc"><i>287</i>&nbsp;        if (hoursOffset &gt; 0 &amp;&amp; minutesOffset &lt; 0) {</b>
+<b class="fc"><i>288</i>&nbsp;            throw new IllegalArgumentException(&quot;Positive hours must not have negative minutes: &quot; + minutesOffset);</b>
+<i>289</i>&nbsp;        }
+<b class="fc"><i>290</i>&nbsp;        int offset = 0;</b>
+<i>291</i>&nbsp;        try {
+<b class="fc"><i>292</i>&nbsp;            int hoursInMinutes = hoursOffset * 60;</b>
+<b class="fc"><i>293</i>&nbsp;            if (hoursInMinutes &lt; 0) {</b>
+<b class="fc"><i>294</i>&nbsp;                minutesOffset = hoursInMinutes - Math.abs(minutesOffset);</b>
+<i>295</i>&nbsp;            } else {
+<b class="fc"><i>296</i>&nbsp;                minutesOffset = hoursInMinutes + minutesOffset;</b>
+<i>297</i>&nbsp;            }
+<b class="fc"><i>298</i>&nbsp;            offset = FieldUtils.safeMultiply(minutesOffset, DateTimeConstants.MILLIS_PER_MINUTE);</b>
+<b class="nc"><i>299</i>&nbsp;        } catch (ArithmeticException ex) {</b>
+<b class="nc"><i>300</i>&nbsp;            throw new IllegalArgumentException(&quot;Offset is too large&quot;);</b>
+<b class="fc"><i>301</i>&nbsp;        }</b>
+<b class="fc"><i>302</i>&nbsp;        return forOffsetMillis(offset);</b>
+<i>303</i>&nbsp;    }
+<i>304</i>&nbsp;
+<i>305</i>&nbsp;    /**
+<i>306</i>&nbsp;     * Gets a time zone instance for the specified offset to UTC in milliseconds.
+<i>307</i>&nbsp;     *
+<i>308</i>&nbsp;     * @param millisOffset  the offset in millis from UTC, from -23:59:59.999 to +23:59:59.999
+<i>309</i>&nbsp;     * @return the DateTimeZone object for the offset
+<i>310</i>&nbsp;     */
+<i>311</i>&nbsp;    public static DateTimeZone forOffsetMillis(int millisOffset) {
+<b class="fc"><i>312</i>&nbsp;        if (millisOffset &lt; -MAX_MILLIS || millisOffset &gt; MAX_MILLIS) {</b>
+<b class="nc"><i>313</i>&nbsp;            throw new IllegalArgumentException(&quot;Millis out of range: &quot; + millisOffset);</b>
+<i>314</i>&nbsp;        }
+<b class="fc"><i>315</i>&nbsp;        String id = printOffset(millisOffset);</b>
+<b class="fc"><i>316</i>&nbsp;        return fixedOffsetZone(id, millisOffset);</b>
+<i>317</i>&nbsp;    }
+<i>318</i>&nbsp;
+<i>319</i>&nbsp;    /**
+<i>320</i>&nbsp;     * Gets a time zone instance for a JDK TimeZone.
+<i>321</i>&nbsp;     * &lt;p&gt;
+<i>322</i>&nbsp;     * DateTimeZone only accepts a subset of the IDs from TimeZone. The
+<i>323</i>&nbsp;     * excluded IDs are the short three letter form (except UTC). This 
+<i>324</i>&nbsp;     * method will attempt to convert between time zones created using the
+<i>325</i>&nbsp;     * short IDs and the full version.
+<i>326</i>&nbsp;     * &lt;p&gt;
+<i>327</i>&nbsp;     * This method is not designed to parse time zones with rules created by
+<i>328</i>&nbsp;     * applications using &lt;code&gt;SimpleTimeZone&lt;/code&gt; directly.
+<i>329</i>&nbsp;     * 
+<i>330</i>&nbsp;     * @param zone  the zone to convert, null means default
+<i>331</i>&nbsp;     * @return the DateTimeZone object for the zone
+<i>332</i>&nbsp;     * @throws IllegalArgumentException if the zone is not recognised
+<i>333</i>&nbsp;     */
+<i>334</i>&nbsp;    public static DateTimeZone forTimeZone(TimeZone zone) {
+<b class="fc"><i>335</i>&nbsp;        if (zone == null) {</b>
+<b class="fc"><i>336</i>&nbsp;            return getDefault();</b>
+<i>337</i>&nbsp;        }
+<b class="fc"><i>338</i>&nbsp;        final String id = zone.getID();</b>
+<b class="fc"><i>339</i>&nbsp;        if (id == null) {</b>
+<b class="fc"><i>340</i>&nbsp;            throw new IllegalArgumentException(&quot;The TimeZone id must not be null&quot;);</b>
+<i>341</i>&nbsp;        }
+<b class="fc"><i>342</i>&nbsp;        if (id.equals(&quot;UTC&quot;)) {</b>
+<b class="fc"><i>343</i>&nbsp;            return DateTimeZone.UTC;</b>
+<i>344</i>&nbsp;        }
+<i>345</i>&nbsp;
+<i>346</i>&nbsp;        // Convert from old alias before consulting provider since they may differ.
+<b class="fc"><i>347</i>&nbsp;        DateTimeZone dtz = null;</b>
+<b class="fc"><i>348</i>&nbsp;        String convId = getConvertedId(id);</b>
+<b class="fc"><i>349</i>&nbsp;        Provider provider = getProvider();</b>
+<b class="fc"><i>350</i>&nbsp;        if (convId != null) {</b>
+<b class="fc"><i>351</i>&nbsp;            dtz = provider.getZone(convId);</b>
+<i>352</i>&nbsp;        }
+<b class="fc"><i>353</i>&nbsp;        if (dtz == null) {</b>
+<b class="fc"><i>354</i>&nbsp;            dtz = provider.getZone(id);</b>
+<i>355</i>&nbsp;        }
+<b class="fc"><i>356</i>&nbsp;        if (dtz != null) {</b>
+<b class="fc"><i>357</i>&nbsp;            return dtz;</b>
+<i>358</i>&nbsp;        }
+<i>359</i>&nbsp;
+<i>360</i>&nbsp;        // Support GMT+/-hh:mm formats
+<b class="fc"><i>361</i>&nbsp;        if (convId == null) {</b>
+<b class="fc"><i>362</i>&nbsp;            convId = id;</b>
+<b class="fc"><i>363</i>&nbsp;            if (convId.startsWith(&quot;GMT+&quot;) || convId.startsWith(&quot;GMT-&quot;)) {</b>
+<b class="fc"><i>364</i>&nbsp;                convId = convId.substring(3);</b>
+<b class="fc"><i>365</i>&nbsp;                if (convId.length() &gt; 2) {</b>
+<b class="fc"><i>366</i>&nbsp;                    char firstDigit = convId.charAt(1);</b>
+<b class="fc"><i>367</i>&nbsp;                    if (firstDigit &gt; &#39;9&#39; &amp;&amp; Character.isDigit(firstDigit)) {</b>
+<b class="fc"><i>368</i>&nbsp;                        convId = convertToAsciiNumber(convId);</b>
+<i>369</i>&nbsp;                    }
+<i>370</i>&nbsp;                }
+<b class="fc"><i>371</i>&nbsp;                int offset = parseOffset(convId);</b>
+<b class="fc"><i>372</i>&nbsp;                if (offset == 0L) {</b>
+<b class="fc"><i>373</i>&nbsp;                    return DateTimeZone.UTC;</b>
+<i>374</i>&nbsp;                } else {
+<b class="fc"><i>375</i>&nbsp;                    convId = printOffset(offset);</b>
+<b class="fc"><i>376</i>&nbsp;                    return fixedOffsetZone(convId, offset);</b>
+<i>377</i>&nbsp;                }
+<i>378</i>&nbsp;            }
+<i>379</i>&nbsp;        }
+<b class="fc"><i>380</i>&nbsp;        throw new IllegalArgumentException(&quot;The datetime zone id &#39;&quot; + id + &quot;&#39; is not recognised&quot;);</b>
+<i>381</i>&nbsp;    }
+<i>382</i>&nbsp;
+<i>383</i>&nbsp;    private static String convertToAsciiNumber(String convId) {
+<b class="fc"><i>384</i>&nbsp;        StringBuilder buf = new StringBuilder(convId);</b>
+<b class="fc"><i>385</i>&nbsp;        for (int i = 0; i &lt; buf.length(); i++) {</b>
+<b class="fc"><i>386</i>&nbsp;            char ch = buf.charAt(i);</b>
+<b class="fc"><i>387</i>&nbsp;            int digit = Character.digit(ch, 10);</b>
+<b class="fc"><i>388</i>&nbsp;            if (digit &gt;= 0) {</b>
+<b class="fc"><i>389</i>&nbsp;                buf.setCharAt(i, (char) (&#39;0&#39; + digit));</b>
+<i>390</i>&nbsp;            }
+<i>391</i>&nbsp;        }
+<b class="fc"><i>392</i>&nbsp;        return buf.toString();</b>
+<i>393</i>&nbsp;    }
+<i>394</i>&nbsp;
+<i>395</i>&nbsp;    //-----------------------------------------------------------------------
+<i>396</i>&nbsp;    /**
+<i>397</i>&nbsp;     * Gets the zone using a fixed offset amount.
+<i>398</i>&nbsp;     * 
+<i>399</i>&nbsp;     * @param id  the zone id
+<i>400</i>&nbsp;     * @param offset  the offset in millis
+<i>401</i>&nbsp;     * @return the zone
+<i>402</i>&nbsp;     */
+<i>403</i>&nbsp;    private static DateTimeZone fixedOffsetZone(String id, int offset) {
+<b class="fc"><i>404</i>&nbsp;        if (offset == 0) {</b>
+<b class="fc"><i>405</i>&nbsp;            return DateTimeZone.UTC;</b>
+<i>406</i>&nbsp;        }
+<b class="fc"><i>407</i>&nbsp;        return new FixedDateTimeZone(id, null, offset, offset);</b>
+<i>408</i>&nbsp;    }
+<i>409</i>&nbsp;
+<i>410</i>&nbsp;    /**
+<i>411</i>&nbsp;     * Gets all the available IDs supported.
+<i>412</i>&nbsp;     * 
+<i>413</i>&nbsp;     * @return an unmodifiable Set of String IDs
+<i>414</i>&nbsp;     */
+<i>415</i>&nbsp;    public static Set&lt;String&gt; getAvailableIDs() {
+<b class="fc"><i>416</i>&nbsp;        return getProvider().getAvailableIDs();</b>
+<i>417</i>&nbsp;    }
+<i>418</i>&nbsp;
+<i>419</i>&nbsp;    //-----------------------------------------------------------------------
+<i>420</i>&nbsp;    /**
+<i>421</i>&nbsp;     * Gets the zone provider factory.
+<i>422</i>&nbsp;     * &lt;p&gt;
+<i>423</i>&nbsp;     * The zone provider is a pluggable instance factory that supplies the
+<i>424</i>&nbsp;     * actual instances of DateTimeZone.
+<i>425</i>&nbsp;     * 
+<i>426</i>&nbsp;     * @return the provider
+<i>427</i>&nbsp;     */
+<i>428</i>&nbsp;    public static Provider getProvider() {
+<b class="fc"><i>429</i>&nbsp;        Provider provider = cProvider.get();</b>
+<b class="fc"><i>430</i>&nbsp;        if (provider == null) {</b>
+<b class="fc"><i>431</i>&nbsp;            provider = getDefaultProvider();</b>
+<b class="fc"><i>432</i>&nbsp;            if (!cProvider.compareAndSet(null, provider)) {</b>
+<b class="nc"><i>433</i>&nbsp;                provider = cProvider.get();</b>
+<i>434</i>&nbsp;            }
+<i>435</i>&nbsp;        }
+<b class="fc"><i>436</i>&nbsp;        return provider;</b>
+<i>437</i>&nbsp;    }
+<i>438</i>&nbsp;
+<i>439</i>&nbsp;    /**
+<i>440</i>&nbsp;     * Sets the zone provider factory.
+<i>441</i>&nbsp;     * &lt;p&gt;
+<i>442</i>&nbsp;     * The zone provider is a pluggable instance factory that supplies the
+<i>443</i>&nbsp;     * actual instances of DateTimeZone.
+<i>444</i>&nbsp;     * 
+<i>445</i>&nbsp;     * @param provider  provider to use, or null for default
+<i>446</i>&nbsp;     * @throws SecurityException if you do not have the permission DateTimeZone.setProvider
+<i>447</i>&nbsp;     * @throws IllegalArgumentException if the provider is invalid
+<i>448</i>&nbsp;     */
+<i>449</i>&nbsp;    public static void setProvider(Provider provider) throws SecurityException {
+<b class="fc"><i>450</i>&nbsp;        SecurityManager sm = System.getSecurityManager();</b>
+<b class="fc"><i>451</i>&nbsp;        if (sm != null) {</b>
+<b class="nc"><i>452</i>&nbsp;            sm.checkPermission(new JodaTimePermission(&quot;DateTimeZone.setProvider&quot;));</b>
+<i>453</i>&nbsp;        }
+<b class="fc"><i>454</i>&nbsp;        if (provider == null) {</b>
+<b class="fc"><i>455</i>&nbsp;            provider = getDefaultProvider();</b>
+<i>456</i>&nbsp;        } else {
+<b class="fc"><i>457</i>&nbsp;            validateProvider(provider);</b>
+<i>458</i>&nbsp;        }
+<b class="fc"><i>459</i>&nbsp;        cProvider.set(provider);</b>
+<b class="fc"><i>460</i>&nbsp;    }</b>
+<i>461</i>&nbsp;
+<i>462</i>&nbsp;    /**
+<i>463</i>&nbsp;     * Sets the zone provider factory without performing the security check.
+<i>464</i>&nbsp;     * 
+<i>465</i>&nbsp;     * @param provider  provider to use, or null for default
+<i>466</i>&nbsp;     * @return the provider
+<i>467</i>&nbsp;     * @throws IllegalArgumentException if the provider is invalid
+<i>468</i>&nbsp;     */
+<i>469</i>&nbsp;    private static Provider validateProvider(Provider provider) {
+<b class="fc"><i>470</i>&nbsp;        Set&lt;String&gt; ids = provider.getAvailableIDs();</b>
+<b class="fc"><i>471</i>&nbsp;        if (ids == null || ids.size() == 0) {</b>
+<b class="fc"><i>472</i>&nbsp;            throw new IllegalArgumentException(&quot;The provider doesn&#39;t have any available ids&quot;);</b>
+<i>473</i>&nbsp;        }
+<b class="fc"><i>474</i>&nbsp;        if (!ids.contains(&quot;UTC&quot;)) {</b>
+<b class="fc"><i>475</i>&nbsp;            throw new IllegalArgumentException(&quot;The provider doesn&#39;t support UTC&quot;);</b>
+<i>476</i>&nbsp;        }
+<b class="fc"><i>477</i>&nbsp;        if (!UTC.equals(provider.getZone(&quot;UTC&quot;))) {</b>
+<b class="fc"><i>478</i>&nbsp;            throw new IllegalArgumentException(&quot;Invalid UTC zone provided&quot;);</b>
+<i>479</i>&nbsp;        }
+<b class="fc"><i>480</i>&nbsp;        return provider;</b>
+<i>481</i>&nbsp;    }
+<i>482</i>&nbsp;
+<i>483</i>&nbsp;    /**
+<i>484</i>&nbsp;     * Gets the default zone provider.
+<i>485</i>&nbsp;     * &lt;p&gt;
+<i>486</i>&nbsp;     * This tries four approaches to loading data:
+<i>487</i>&nbsp;     * &lt;ol&gt;
+<i>488</i>&nbsp;     * &lt;li&gt;loads the provider identifier by the system property
+<i>489</i>&nbsp;     *   &lt;code&gt;org.joda.time.DateTimeZone.Provider&lt;/code&gt;.
+<i>490</i>&nbsp;     * &lt;li&gt;load &lt;code&gt;ZoneInfoProvider&lt;/code&gt; using the data in the filing system folder
+<i>491</i>&nbsp;     *   pointed to by system property &lt;code&gt;org.joda.time.DateTimeZone.Folder&lt;/code&gt;.
+<i>492</i>&nbsp;     * &lt;li&gt;loads &lt;code&gt;ZoneInfoProvider&lt;/code&gt; using the data in the classpath location
+<i>493</i>&nbsp;     *   &lt;code&gt;org/joda/time/tz/data&lt;/code&gt;.
+<i>494</i>&nbsp;     * &lt;li&gt;loads &lt;code&gt;UTCProvider&lt;/code&gt;.
+<i>495</i>&nbsp;     * &lt;/ol&gt;
+<i>496</i>&nbsp;     * &lt;p&gt;
+<i>497</i>&nbsp;     * Unless you override the standard behaviour, the default if the third approach.
+<i>498</i>&nbsp;     * 
+<i>499</i>&nbsp;     * @return the default name provider
+<i>500</i>&nbsp;     */
+<i>501</i>&nbsp;    private static Provider getDefaultProvider() {
+<i>502</i>&nbsp;        // approach 1
+<i>503</i>&nbsp;        try {
+<b class="fc"><i>504</i>&nbsp;            String providerClass = System.getProperty(&quot;org.joda.time.DateTimeZone.Provider&quot;);</b>
+<b class="fc"><i>505</i>&nbsp;            if (providerClass != null) {</b>
+<i>506</i>&nbsp;                try {
+<b class="fc"><i>507</i>&nbsp;                    Provider provider = (Provider) Class.forName(providerClass).newInstance();</b>
+<b class="fc"><i>508</i>&nbsp;                    return validateProvider(provider);</b>
+<b class="fc"><i>509</i>&nbsp;                } catch (Exception ex) {</b>
+<b class="fc"><i>510</i>&nbsp;                    throw new RuntimeException(ex);</b>
+<i>511</i>&nbsp;                }
+<i>512</i>&nbsp;            }
+<b class="nc"><i>513</i>&nbsp;        } catch (SecurityException ex) {</b>
+<i>514</i>&nbsp;            // ignored
+<b class="fc"><i>515</i>&nbsp;        }</b>
+<i>516</i>&nbsp;        // approach 2
+<i>517</i>&nbsp;        try {
+<b class="fc"><i>518</i>&nbsp;            String dataFolder = System.getProperty(&quot;org.joda.time.DateTimeZone.Folder&quot;);</b>
+<b class="fc"><i>519</i>&nbsp;            if (dataFolder != null) {</b>
+<i>520</i>&nbsp;                try {
+<b class="fc"><i>521</i>&nbsp;                    Provider provider = new ZoneInfoProvider(new File(dataFolder));</b>
+<b class="fc"><i>522</i>&nbsp;                    return validateProvider(provider);</b>
+<b class="nc"><i>523</i>&nbsp;                } catch (Exception ex) {</b>
+<b class="nc"><i>524</i>&nbsp;                    throw new RuntimeException(ex);</b>
+<i>525</i>&nbsp;                }
+<i>526</i>&nbsp;            }
+<b class="nc"><i>527</i>&nbsp;        } catch (SecurityException ex) {</b>
+<i>528</i>&nbsp;            // ignored
+<b class="fc"><i>529</i>&nbsp;        }</b>
+<i>530</i>&nbsp;        // approach 3
+<i>531</i>&nbsp;        try {
+<b class="fc"><i>532</i>&nbsp;            Provider provider = new ZoneInfoProvider(&quot;org/joda/time/tz/data&quot;);</b>
+<b class="fc"><i>533</i>&nbsp;            return validateProvider(provider);</b>
+<b class="nc"><i>534</i>&nbsp;        } catch (Exception ex) {</b>
+<b class="nc"><i>535</i>&nbsp;            ex.printStackTrace();</b>
+<i>536</i>&nbsp;        }
+<i>537</i>&nbsp;        // approach 4
+<b class="nc"><i>538</i>&nbsp;        return new UTCProvider();</b>
+<i>539</i>&nbsp;    }
+<i>540</i>&nbsp;
+<i>541</i>&nbsp;    //-----------------------------------------------------------------------
+<i>542</i>&nbsp;    /**
+<i>543</i>&nbsp;     * Gets the name provider factory.
+<i>544</i>&nbsp;     * &lt;p&gt;
+<i>545</i>&nbsp;     * The name provider is a pluggable instance factory that supplies the
+<i>546</i>&nbsp;     * names of each DateTimeZone.
+<i>547</i>&nbsp;     * 
+<i>548</i>&nbsp;     * @return the provider
+<i>549</i>&nbsp;     */
+<i>550</i>&nbsp;    public static NameProvider getNameProvider() {
+<b class="fc"><i>551</i>&nbsp;        NameProvider nameProvider = cNameProvider.get();</b>
+<b class="fc"><i>552</i>&nbsp;        if (nameProvider == null) {</b>
+<b class="fc"><i>553</i>&nbsp;            nameProvider = getDefaultNameProvider();</b>
+<b class="fc"><i>554</i>&nbsp;            if (!cNameProvider.compareAndSet(null, nameProvider)) {</b>
+<b class="nc"><i>555</i>&nbsp;                nameProvider = cNameProvider.get();</b>
+<i>556</i>&nbsp;            }
+<i>557</i>&nbsp;        }
+<b class="fc"><i>558</i>&nbsp;        return nameProvider;</b>
+<i>559</i>&nbsp;    }
+<i>560</i>&nbsp;
+<i>561</i>&nbsp;    /**
+<i>562</i>&nbsp;     * Sets the name provider factory.
+<i>563</i>&nbsp;     * &lt;p&gt;
+<i>564</i>&nbsp;     * The name provider is a pluggable instance factory that supplies the
+<i>565</i>&nbsp;     * names of each DateTimeZone.
+<i>566</i>&nbsp;     * 
+<i>567</i>&nbsp;     * @param nameProvider  provider to use, or null for default
+<i>568</i>&nbsp;     * @throws SecurityException if you do not have the permission DateTimeZone.setNameProvider
+<i>569</i>&nbsp;     * @throws IllegalArgumentException if the provider is invalid
+<i>570</i>&nbsp;     */
+<i>571</i>&nbsp;    public static void setNameProvider(NameProvider nameProvider) throws SecurityException {
+<b class="fc"><i>572</i>&nbsp;        SecurityManager sm = System.getSecurityManager();</b>
+<b class="fc"><i>573</i>&nbsp;        if (sm != null) {</b>
+<b class="nc"><i>574</i>&nbsp;            sm.checkPermission(new JodaTimePermission(&quot;DateTimeZone.setNameProvider&quot;));</b>
+<i>575</i>&nbsp;        }
+<b class="fc"><i>576</i>&nbsp;        if (nameProvider == null) {</b>
+<b class="fc"><i>577</i>&nbsp;            nameProvider = getDefaultNameProvider();</b>
+<i>578</i>&nbsp;        }
+<b class="fc"><i>579</i>&nbsp;        cNameProvider.set(nameProvider);</b>
+<b class="fc"><i>580</i>&nbsp;    }</b>
+<i>581</i>&nbsp;
+<i>582</i>&nbsp;    /**
+<i>583</i>&nbsp;     * Gets the default name provider.
+<i>584</i>&nbsp;     * &lt;p&gt;
+<i>585</i>&nbsp;     * Tries the system property &lt;code&gt;org.joda.time.DateTimeZone.NameProvider&lt;/code&gt;.
+<i>586</i>&nbsp;     * Then uses &lt;code&gt;DefaultNameProvider&lt;/code&gt;.
+<i>587</i>&nbsp;     * 
+<i>588</i>&nbsp;     * @return the default name provider
+<i>589</i>&nbsp;     */
+<i>590</i>&nbsp;    private static NameProvider getDefaultNameProvider() {
+<b class="fc"><i>591</i>&nbsp;        NameProvider nameProvider = null;</b>
+<i>592</i>&nbsp;        try {
+<b class="fc"><i>593</i>&nbsp;            String providerClass = System.getProperty(&quot;org.joda.time.DateTimeZone.NameProvider&quot;);</b>
+<b class="fc"><i>594</i>&nbsp;            if (providerClass != null) {</b>
+<i>595</i>&nbsp;                try {
+<b class="fc"><i>596</i>&nbsp;                    nameProvider = (NameProvider) Class.forName(providerClass).newInstance();</b>
+<b class="nc"><i>597</i>&nbsp;                } catch (Exception ex) {</b>
+<b class="nc"><i>598</i>&nbsp;                    throw new RuntimeException(ex);</b>
+<b class="fc"><i>599</i>&nbsp;                }</b>
+<i>600</i>&nbsp;            }
+<b class="nc"><i>601</i>&nbsp;        } catch (SecurityException ex) {</b>
+<i>602</i>&nbsp;            // ignore
+<b class="fc"><i>603</i>&nbsp;        }</b>
+<i>604</i>&nbsp;
+<b class="fc"><i>605</i>&nbsp;        if (nameProvider == null) {</b>
+<b class="fc"><i>606</i>&nbsp;            nameProvider = new DefaultNameProvider();</b>
+<i>607</i>&nbsp;        }
+<i>608</i>&nbsp;
+<b class="fc"><i>609</i>&nbsp;        return nameProvider;</b>
+<i>610</i>&nbsp;    }
+<i>611</i>&nbsp;
+<i>612</i>&nbsp;    //-----------------------------------------------------------------------
+<i>613</i>&nbsp;    /**
+<i>614</i>&nbsp;     * Converts an old style id to a new style id.
+<i>615</i>&nbsp;     * 
+<i>616</i>&nbsp;     * @param id  the old style id
+<i>617</i>&nbsp;     * @return the new style id, null if not found
+<i>618</i>&nbsp;     */
+<i>619</i>&nbsp;    private static String getConvertedId(String id) {
+<b class="fc"><i>620</i>&nbsp;        return LazyInit.CONVERSION_MAP.get(id);</b>
+<i>621</i>&nbsp;    }
+<i>622</i>&nbsp;
+<i>623</i>&nbsp;    /**
+<i>624</i>&nbsp;     * Parses an offset from the string.
+<i>625</i>&nbsp;     * 
+<i>626</i>&nbsp;     * @param str  the string
+<i>627</i>&nbsp;     * @return the offset millis
+<i>628</i>&nbsp;     */
+<i>629</i>&nbsp;    private static int parseOffset(String str) {
+<b class="fc"><i>630</i>&nbsp;        return -(int) LazyInit.OFFSET_FORMATTER.parseMillis(str);</b>
+<i>631</i>&nbsp;    }
+<i>632</i>&nbsp;
+<i>633</i>&nbsp;    /**
+<i>634</i>&nbsp;     * Formats a timezone offset string.
+<i>635</i>&nbsp;     * &lt;p&gt;
+<i>636</i>&nbsp;     * This method is kept separate from the formatting classes to speed and
+<i>637</i>&nbsp;     * simplify startup and classloading.
+<i>638</i>&nbsp;     * 
+<i>639</i>&nbsp;     * @param offset  the offset in milliseconds
+<i>640</i>&nbsp;     * @return the time zone string
+<i>641</i>&nbsp;     */
+<i>642</i>&nbsp;    private static String printOffset(int offset) {
+<b class="fc"><i>643</i>&nbsp;        StringBuffer buf = new StringBuffer();</b>
+<b class="fc"><i>644</i>&nbsp;        if (offset &gt;= 0) {</b>
+<b class="fc"><i>645</i>&nbsp;            buf.append(&#39;+&#39;);</b>
+<i>646</i>&nbsp;        } else {
+<b class="fc"><i>647</i>&nbsp;            buf.append(&#39;-&#39;);</b>
+<b class="fc"><i>648</i>&nbsp;            offset = -offset;</b>
+<i>649</i>&nbsp;        }
+<i>650</i>&nbsp;
+<b class="fc"><i>651</i>&nbsp;        int hours = offset / DateTimeConstants.MILLIS_PER_HOUR;</b>
+<b class="fc"><i>652</i>&nbsp;        FormatUtils.appendPaddedInteger(buf, hours, 2);</b>
+<b class="fc"><i>653</i>&nbsp;        offset -= hours * (int) DateTimeConstants.MILLIS_PER_HOUR;</b>
+<i>654</i>&nbsp;
+<b class="fc"><i>655</i>&nbsp;        int minutes = offset / DateTimeConstants.MILLIS_PER_MINUTE;</b>
+<b class="fc"><i>656</i>&nbsp;        buf.append(&#39;:&#39;);</b>
+<b class="fc"><i>657</i>&nbsp;        FormatUtils.appendPaddedInteger(buf, minutes, 2);</b>
+<b class="fc"><i>658</i>&nbsp;        offset -= minutes * DateTimeConstants.MILLIS_PER_MINUTE;</b>
+<b class="fc"><i>659</i>&nbsp;        if (offset == 0) {</b>
+<b class="fc"><i>660</i>&nbsp;            return buf.toString();</b>
+<i>661</i>&nbsp;        }
+<i>662</i>&nbsp;
+<b class="fc"><i>663</i>&nbsp;        int seconds = offset / DateTimeConstants.MILLIS_PER_SECOND;</b>
+<b class="fc"><i>664</i>&nbsp;        buf.append(&#39;:&#39;);</b>
+<b class="fc"><i>665</i>&nbsp;        FormatUtils.appendPaddedInteger(buf, seconds, 2);</b>
+<b class="fc"><i>666</i>&nbsp;        offset -= seconds * DateTimeConstants.MILLIS_PER_SECOND;</b>
+<b class="fc"><i>667</i>&nbsp;        if (offset == 0) {</b>
+<b class="fc"><i>668</i>&nbsp;            return buf.toString();</b>
+<i>669</i>&nbsp;        }
+<i>670</i>&nbsp;
+<b class="fc"><i>671</i>&nbsp;        buf.append(&#39;.&#39;);</b>
+<b class="fc"><i>672</i>&nbsp;        FormatUtils.appendPaddedInteger(buf, offset, 3);</b>
+<b class="fc"><i>673</i>&nbsp;        return buf.toString();</b>
+<i>674</i>&nbsp;    }
+<i>675</i>&nbsp;
+<i>676</i>&nbsp;    // Instance fields and methods
+<i>677</i>&nbsp;    //--------------------------------------------------------------------
+<i>678</i>&nbsp;
+<i>679</i>&nbsp;    private final String iID;
+<i>680</i>&nbsp;
+<i>681</i>&nbsp;    /**
+<i>682</i>&nbsp;     * Constructor.
+<i>683</i>&nbsp;     * 
+<i>684</i>&nbsp;     * @param id  the id to use
+<i>685</i>&nbsp;     * @throws IllegalArgumentException if the id is null
+<i>686</i>&nbsp;     */
+<b class="fc"><i>687</i>&nbsp;    protected DateTimeZone(String id) {</b>
+<b class="fc"><i>688</i>&nbsp;        if (id == null) {</b>
+<b class="fc"><i>689</i>&nbsp;            throw new IllegalArgumentException(&quot;Id must not be null&quot;);</b>
+<i>690</i>&nbsp;        }
+<b class="fc"><i>691</i>&nbsp;        iID = id;</b>
+<b class="fc"><i>692</i>&nbsp;    }</b>
+<i>693</i>&nbsp;
+<i>694</i>&nbsp;    // Principal methods
+<i>695</i>&nbsp;    //--------------------------------------------------------------------
+<i>696</i>&nbsp;
+<i>697</i>&nbsp;    /**
+<i>698</i>&nbsp;     * Gets the ID of this datetime zone.
+<i>699</i>&nbsp;     * 
+<i>700</i>&nbsp;     * @return the ID of this datetime zone
+<i>701</i>&nbsp;     */
+<i>702</i>&nbsp;    @ToString
+<i>703</i>&nbsp;    public final String getID() {
+<b class="fc"><i>704</i>&nbsp;        return iID;</b>
+<i>705</i>&nbsp;    }
+<i>706</i>&nbsp;
+<i>707</i>&nbsp;    /**
+<i>708</i>&nbsp;     * Returns a non-localized name that is unique to this time zone. It can be
+<i>709</i>&nbsp;     * combined with id to form a unique key for fetching localized names.
+<i>710</i>&nbsp;     *
+<i>711</i>&nbsp;     * @param instant  milliseconds from 1970-01-01T00:00:00Z to get the name for
+<i>712</i>&nbsp;     * @return name key or null if id should be used for names
+<i>713</i>&nbsp;     */
+<i>714</i>&nbsp;    public abstract String getNameKey(long instant);
+<i>715</i>&nbsp;
+<i>716</i>&nbsp;    /**
+<i>717</i>&nbsp;     * Gets the short name of this datetime zone suitable for display using
+<i>718</i>&nbsp;     * the default locale.
+<i>719</i>&nbsp;     * &lt;p&gt;
+<i>720</i>&nbsp;     * If the name is not available for the locale, then this method returns a
+<i>721</i>&nbsp;     * string in the format &lt;code&gt;[+-]hh:mm&lt;/code&gt;.
+<i>722</i>&nbsp;     * 
+<i>723</i>&nbsp;     * @param instant  milliseconds from 1970-01-01T00:00:00Z to get the name for
+<i>724</i>&nbsp;     * @return the human-readable short name in the default locale
+<i>725</i>&nbsp;     */
+<i>726</i>&nbsp;    public final String getShortName(long instant) {
+<b class="fc"><i>727</i>&nbsp;        return getShortName(instant, null);</b>
+<i>728</i>&nbsp;    }
+<i>729</i>&nbsp;
+<i>730</i>&nbsp;    /**
+<i>731</i>&nbsp;     * Gets the short name of this datetime zone suitable for display using
+<i>732</i>&nbsp;     * the specified locale.
+<i>733</i>&nbsp;     * &lt;p&gt;
+<i>734</i>&nbsp;     * If the name is not available for the locale, then this method returns a
+<i>735</i>&nbsp;     * string in the format &lt;code&gt;[+-]hh:mm&lt;/code&gt;.
+<i>736</i>&nbsp;     * 
+<i>737</i>&nbsp;     * @param instant  milliseconds from 1970-01-01T00:00:00Z to get the name for
+<i>738</i>&nbsp;     * @param locale  the locale to get the name for
+<i>739</i>&nbsp;     * @return the human-readable short name in the specified locale
+<i>740</i>&nbsp;     */
+<i>741</i>&nbsp;    public String getShortName(long instant, Locale locale) {
+<b class="fc"><i>742</i>&nbsp;        if (locale == null) {</b>
+<b class="fc"><i>743</i>&nbsp;            locale = Locale.getDefault();</b>
+<i>744</i>&nbsp;        }
+<b class="fc"><i>745</i>&nbsp;        String nameKey = getNameKey(instant);</b>
+<b class="fc"><i>746</i>&nbsp;        if (nameKey == null) {</b>
+<b class="fc"><i>747</i>&nbsp;            return iID;</b>
+<i>748</i>&nbsp;        }
+<i>749</i>&nbsp;        String name;
+<b class="fc"><i>750</i>&nbsp;        NameProvider np = getNameProvider();</b>
+<b class="fc"><i>751</i>&nbsp;        if (np instanceof DefaultNameProvider) {</b>
+<b class="fc"><i>752</i>&nbsp;            name = ((DefaultNameProvider) np).getShortName(locale, iID, nameKey, isStandardOffset(instant));</b>
+<i>753</i>&nbsp;        } else {
+<b class="fc"><i>754</i>&nbsp;            name = np.getShortName(locale, iID, nameKey);</b>
+<i>755</i>&nbsp;        }
+<b class="fc"><i>756</i>&nbsp;        if (name != null) {</b>
+<b class="fc"><i>757</i>&nbsp;            return name;</b>
+<i>758</i>&nbsp;        }
+<b class="fc"><i>759</i>&nbsp;        return printOffset(getOffset(instant));</b>
+<i>760</i>&nbsp;    }
+<i>761</i>&nbsp;
+<i>762</i>&nbsp;    /**
+<i>763</i>&nbsp;     * Gets the long name of this datetime zone suitable for display using
+<i>764</i>&nbsp;     * the default locale.
+<i>765</i>&nbsp;     * &lt;p&gt;
+<i>766</i>&nbsp;     * If the name is not available for the locale, then this method returns a
+<i>767</i>&nbsp;     * string in the format &lt;code&gt;[+-]hh:mm&lt;/code&gt;.
+<i>768</i>&nbsp;     * 
+<i>769</i>&nbsp;     * @param instant  milliseconds from 1970-01-01T00:00:00Z to get the name for
+<i>770</i>&nbsp;     * @return the human-readable long name in the default locale
+<i>771</i>&nbsp;     */
+<i>772</i>&nbsp;    public final String getName(long instant) {
+<b class="fc"><i>773</i>&nbsp;        return getName(instant, null);</b>
+<i>774</i>&nbsp;    }
+<i>775</i>&nbsp;
+<i>776</i>&nbsp;    /**
+<i>777</i>&nbsp;     * Gets the long name of this datetime zone suitable for display using
+<i>778</i>&nbsp;     * the specified locale.
+<i>779</i>&nbsp;     * &lt;p&gt;
+<i>780</i>&nbsp;     * If the name is not available for the locale, then this method returns a
+<i>781</i>&nbsp;     * string in the format &lt;code&gt;[+-]hh:mm&lt;/code&gt;.
+<i>782</i>&nbsp;     * 
+<i>783</i>&nbsp;     * @param instant  milliseconds from 1970-01-01T00:00:00Z to get the name for
+<i>784</i>&nbsp;     * @param locale  the locale to get the name for
+<i>785</i>&nbsp;     * @return the human-readable long name in the specified locale
+<i>786</i>&nbsp;     */
+<i>787</i>&nbsp;    public String getName(long instant, Locale locale) {
+<b class="fc"><i>788</i>&nbsp;        if (locale == null) {</b>
+<b class="fc"><i>789</i>&nbsp;            locale = Locale.getDefault();</b>
+<i>790</i>&nbsp;        }
+<b class="fc"><i>791</i>&nbsp;        String nameKey = getNameKey(instant);</b>
+<b class="fc"><i>792</i>&nbsp;        if (nameKey == null) {</b>
+<b class="fc"><i>793</i>&nbsp;            return iID;</b>
+<i>794</i>&nbsp;        }
+<i>795</i>&nbsp;        String name;
+<b class="fc"><i>796</i>&nbsp;        NameProvider np = getNameProvider();</b>
+<b class="fc"><i>797</i>&nbsp;        if (np instanceof DefaultNameProvider) {</b>
+<b class="fc"><i>798</i>&nbsp;            name = ((DefaultNameProvider) np).getName(locale, iID, nameKey, isStandardOffset(instant));</b>
+<i>799</i>&nbsp;        } else {
+<b class="fc"><i>800</i>&nbsp;            name = np.getName(locale, iID, nameKey);</b>
+<i>801</i>&nbsp;        }
+<b class="fc"><i>802</i>&nbsp;        if (name != null) {</b>
+<b class="fc"><i>803</i>&nbsp;            return name;</b>
+<i>804</i>&nbsp;        }
+<b class="fc"><i>805</i>&nbsp;        return printOffset(getOffset(instant));</b>
+<i>806</i>&nbsp;    }
+<i>807</i>&nbsp;
+<i>808</i>&nbsp;    /**
+<i>809</i>&nbsp;     * Gets the millisecond offset to add to UTC to get local time.
+<i>810</i>&nbsp;     * 
+<i>811</i>&nbsp;     * @param instant  milliseconds from 1970-01-01T00:00:00Z to get the offset for
+<i>812</i>&nbsp;     * @return the millisecond offset to add to UTC to get local time
+<i>813</i>&nbsp;     */
+<i>814</i>&nbsp;    public abstract int getOffset(long instant);
+<i>815</i>&nbsp;
+<i>816</i>&nbsp;    /**
+<i>817</i>&nbsp;     * Gets the millisecond offset to add to UTC to get local time.
+<i>818</i>&nbsp;     * 
+<i>819</i>&nbsp;     * @param instant  instant to get the offset for, null means now
+<i>820</i>&nbsp;     * @return the millisecond offset to add to UTC to get local time
+<i>821</i>&nbsp;     */
+<i>822</i>&nbsp;    public final int getOffset(ReadableInstant instant) {
+<b class="fc"><i>823</i>&nbsp;        if (instant == null) {</b>
+<b class="fc"><i>824</i>&nbsp;            return getOffset(DateTimeUtils.currentTimeMillis());</b>
+<i>825</i>&nbsp;        }
+<b class="fc"><i>826</i>&nbsp;        return getOffset(instant.getMillis());</b>
+<i>827</i>&nbsp;    }
+<i>828</i>&nbsp;
+<i>829</i>&nbsp;    /**
+<i>830</i>&nbsp;     * Gets the standard millisecond offset to add to UTC to get local time,
+<i>831</i>&nbsp;     * when standard time is in effect.
+<i>832</i>&nbsp;     * 
+<i>833</i>&nbsp;     * @param instant  milliseconds from 1970-01-01T00:00:00Z to get the offset for
+<i>834</i>&nbsp;     * @return the millisecond offset to add to UTC to get local time
+<i>835</i>&nbsp;     */
+<i>836</i>&nbsp;    public abstract int getStandardOffset(long instant);
+<i>837</i>&nbsp;
+<i>838</i>&nbsp;    /**
+<i>839</i>&nbsp;     * Checks whether, at a particular instant, the offset is standard or not.
+<i>840</i>&nbsp;     * &lt;p&gt;
+<i>841</i>&nbsp;     * This method can be used to determine whether Summer Time (DST) applies.
+<i>842</i>&nbsp;     * As a general rule, if the offset at the specified instant is standard,
+<i>843</i>&nbsp;     * then either Winter time applies, or there is no Summer Time. If the
+<i>844</i>&nbsp;     * instant is not standard, then Summer Time applies.
+<i>845</i>&nbsp;     * &lt;p&gt;
+<i>846</i>&nbsp;     * The implementation of the method is simply whether {@link #getOffset(long)}
+<i>847</i>&nbsp;     * equals {@link #getStandardOffset(long)} at the specified instant.
+<i>848</i>&nbsp;     * 
+<i>849</i>&nbsp;     * @param instant  milliseconds from 1970-01-01T00:00:00Z to get the offset for
+<i>850</i>&nbsp;     * @return true if the offset at the given instant is the standard offset
+<i>851</i>&nbsp;     * @since 1.5
+<i>852</i>&nbsp;     */
+<i>853</i>&nbsp;    public boolean isStandardOffset(long instant) {
+<b class="fc"><i>854</i>&nbsp;        return getOffset(instant) == getStandardOffset(instant);</b>
+<i>855</i>&nbsp;    }
+<i>856</i>&nbsp;
+<i>857</i>&nbsp;    /**
+<i>858</i>&nbsp;     * Gets the millisecond offset to subtract from local time to get UTC time.
+<i>859</i>&nbsp;     * This offset can be used to undo adding the offset obtained by getOffset.
+<i>860</i>&nbsp;     *
+<i>861</i>&nbsp;     * &lt;pre&gt;
+<i>862</i>&nbsp;     * millisLocal == millisUTC   + getOffset(millisUTC)
+<i>863</i>&nbsp;     * millisUTC   == millisLocal - getOffsetFromLocal(millisLocal)
+<i>864</i>&nbsp;     * &lt;/pre&gt;
+<i>865</i>&nbsp;     *
+<i>866</i>&nbsp;     * NOTE: After calculating millisLocal, some error may be introduced. At
+<i>867</i>&nbsp;     * offset transitions (due to DST or other historical changes), ranges of
+<i>868</i>&nbsp;     * local times may map to different UTC times.
+<i>869</i>&nbsp;     * &lt;p&gt;
+<i>870</i>&nbsp;     * For overlaps (where the local time is ambiguous), this method returns the
+<i>871</i>&nbsp;     * offset applicable before the gap. The effect of this is that any instant
+<i>872</i>&nbsp;     * calculated using the offset from an overlap will be in &quot;summer&quot; time.
+<i>873</i>&nbsp;     * &lt;p&gt;
+<i>874</i>&nbsp;     * For gaps, this method returns the offset applicable before the gap, ie &quot;winter&quot; offset.
+<i>875</i>&nbsp;     * However, the effect of this is that any instant calculated using the offset
+<i>876</i>&nbsp;     * from a gap will be after the gap, in &quot;summer&quot; time.
+<i>877</i>&nbsp;     * &lt;p&gt;
+<i>878</i>&nbsp;     * For example, consider a zone with a gap from 01:00 to 01:59:&lt;br /&gt;
+<i>879</i>&nbsp;     * Input: 00:00 (before gap) Output: Offset applicable before gap  DateTime: 00:00&lt;br /&gt;
+<i>880</i>&nbsp;     * Input: 00:30 (before gap) Output: Offset applicable before gap  DateTime: 00:30&lt;br /&gt;
+<i>881</i>&nbsp;     * Input: 01:00 (in gap)     Output: Offset applicable before gap  DateTime: 02:00&lt;br /&gt;
+<i>882</i>&nbsp;     * Input: 01:30 (in gap)     Output: Offset applicable before gap  DateTime: 02:30&lt;br /&gt;
+<i>883</i>&nbsp;     * Input: 02:00 (after gap)  Output: Offset applicable after gap   DateTime: 02:00&lt;br /&gt;
+<i>884</i>&nbsp;     * Input: 02:30 (after gap)  Output: Offset applicable after gap   DateTime: 02:30&lt;br /&gt;
+<i>885</i>&nbsp;     * &lt;p&gt;
+<i>886</i>&nbsp;     * NOTE: Prior to v2.0, the DST overlap behaviour was not defined and varied by hemisphere.
+<i>887</i>&nbsp;     * Prior to v1.5, the DST gap behaviour was also not defined.
+<i>888</i>&nbsp;     * In v2.4, the documentation was clarified again.
+<i>889</i>&nbsp;     *
+<i>890</i>&nbsp;     * @param instantLocal  the millisecond instant, relative to this time zone, to get the offset for
+<i>891</i>&nbsp;     * @return the millisecond offset to subtract from local time to get UTC time
+<i>892</i>&nbsp;     */
+<i>893</i>&nbsp;    public int getOffsetFromLocal(long instantLocal) {
+<i>894</i>&nbsp;        // get the offset at instantLocal (first estimate)
+<b class="fc"><i>895</i>&nbsp;        final int offsetLocal = getOffset(instantLocal);</b>
+<i>896</i>&nbsp;        // adjust instantLocal using the estimate and recalc the offset
+<b class="fc"><i>897</i>&nbsp;        final long instantAdjusted = instantLocal - offsetLocal;</b>
+<b class="fc"><i>898</i>&nbsp;        final int offsetAdjusted = getOffset(instantAdjusted);</b>
+<i>899</i>&nbsp;        // if the offsets differ, we must be near a DST boundary
+<b class="fc"><i>900</i>&nbsp;        if (offsetLocal != offsetAdjusted) {</b>
+<i>901</i>&nbsp;            // we need to ensure that time is always after the DST gap
+<i>902</i>&nbsp;            // this happens naturally for positive offsets, but not for negative
+<b class="fc"><i>903</i>&nbsp;            if ((offsetLocal - offsetAdjusted) &lt; 0) {</b>
+<i>904</i>&nbsp;                // if we just return offsetAdjusted then the time is pushed
+<i>905</i>&nbsp;                // back before the transition, whereas it should be
+<i>906</i>&nbsp;                // on or after the transition
+<b class="fc"><i>907</i>&nbsp;                long nextLocal = nextTransition(instantAdjusted);</b>
+<b class="fc"><i>908</i>&nbsp;                if (nextLocal == (instantLocal - offsetLocal)) {</b>
+<b class="nc"><i>909</i>&nbsp;                    nextLocal = Long.MAX_VALUE;</b>
+<i>910</i>&nbsp;                }
+<b class="fc"><i>911</i>&nbsp;                long nextAdjusted = nextTransition(instantLocal - offsetAdjusted);</b>
+<b class="fc"><i>912</i>&nbsp;                if (nextAdjusted == (instantLocal - offsetAdjusted)) {</b>
+<b class="nc"><i>913</i>&nbsp;                    nextAdjusted = Long.MAX_VALUE;</b>
+<i>914</i>&nbsp;                }
+<b class="fc"><i>915</i>&nbsp;                if (nextLocal != nextAdjusted) {</b>
+<b class="fc"><i>916</i>&nbsp;                    return offsetLocal;</b>
+<i>917</i>&nbsp;                }
+<b class="fc"><i>918</i>&nbsp;            }</b>
+<b class="fc"><i>919</i>&nbsp;        } else if (offsetLocal &gt;= 0) {</b>
+<b class="fc"><i>920</i>&nbsp;            long prev = previousTransition(instantAdjusted);</b>
+<b class="fc"><i>921</i>&nbsp;            if (prev &lt; instantAdjusted) {</b>
+<b class="fc"><i>922</i>&nbsp;                int offsetPrev = getOffset(prev);</b>
+<b class="fc"><i>923</i>&nbsp;                int diff = offsetPrev - offsetLocal;</b>
+<b class="fc"><i>924</i>&nbsp;                if (instantAdjusted - prev &lt;= diff) {</b>
+<b class="fc"><i>925</i>&nbsp;                    return offsetPrev;</b>
+<i>926</i>&nbsp;                }
+<i>927</i>&nbsp;            }
+<i>928</i>&nbsp;        }
+<b class="fc"><i>929</i>&nbsp;        return offsetAdjusted;</b>
+<i>930</i>&nbsp;    }
+<i>931</i>&nbsp;
+<i>932</i>&nbsp;    /**
+<i>933</i>&nbsp;     * Converts a standard UTC instant to a local instant with the same
+<i>934</i>&nbsp;     * local time. This conversion is used before performing a calculation
+<i>935</i>&nbsp;     * so that the calculation can be done using a simple local zone.
+<i>936</i>&nbsp;     *
+<i>937</i>&nbsp;     * @param instantUTC  the UTC instant to convert to local
+<i>938</i>&nbsp;     * @return the local instant with the same local time
+<i>939</i>&nbsp;     * @throws ArithmeticException if the result overflows a long
+<i>940</i>&nbsp;     * @since 1.5
+<i>941</i>&nbsp;     */
+<i>942</i>&nbsp;    public long convertUTCToLocal(long instantUTC) {
+<b class="fc"><i>943</i>&nbsp;        int offset = getOffset(instantUTC);</b>
+<b class="fc"><i>944</i>&nbsp;        long instantLocal = instantUTC + offset;</b>
+<i>945</i>&nbsp;        // If there is a sign change, but the two values have the same sign...
+<b class="fc"><i>946</i>&nbsp;        if ((instantUTC ^ instantLocal) &lt; 0 &amp;&amp; (instantUTC ^ offset) &gt;= 0) {</b>
+<b class="nc"><i>947</i>&nbsp;            throw new ArithmeticException(&quot;Adding time zone offset caused overflow&quot;);</b>
+<i>948</i>&nbsp;        }
+<b class="fc"><i>949</i>&nbsp;        return instantLocal;</b>
+<i>950</i>&nbsp;    }
+<i>951</i>&nbsp;
+<i>952</i>&nbsp;    /**
+<i>953</i>&nbsp;     * Converts a local instant to a standard UTC instant with the same
+<i>954</i>&nbsp;     * local time attempting to use the same offset as the original.
+<i>955</i>&nbsp;     * &lt;p&gt;
+<i>956</i>&nbsp;     * This conversion is used after performing a calculation
+<i>957</i>&nbsp;     * where the calculation was done using a simple local zone.
+<i>958</i>&nbsp;     * Whenever possible, the same offset as the original offset will be used.
+<i>959</i>&nbsp;     * This is most significant during a daylight savings overlap.
+<i>960</i>&nbsp;     *
+<i>961</i>&nbsp;     * @param instantLocal  the local instant to convert to UTC
+<i>962</i>&nbsp;     * @param strict  whether the conversion should reject non-existent local times
+<i>963</i>&nbsp;     * @param originalInstantUTC  the original instant that the calculation is based on
+<i>964</i>&nbsp;     * @return the UTC instant with the same local time, 
+<i>965</i>&nbsp;     * @throws ArithmeticException if the result overflows a long
+<i>966</i>&nbsp;     * @throws IllegalArgumentException if the zone has no equivalent local time
+<i>967</i>&nbsp;     * @since 2.0
+<i>968</i>&nbsp;     */
+<i>969</i>&nbsp;    public long convertLocalToUTC(long instantLocal, boolean strict, long originalInstantUTC) {
+<b class="fc"><i>970</i>&nbsp;        int offsetOriginal = getOffset(originalInstantUTC);</b>
+<b class="fc"><i>971</i>&nbsp;        long instantUTC = instantLocal - offsetOriginal;</b>
+<b class="fc"><i>972</i>&nbsp;        int offsetLocalFromOriginal = getOffset(instantUTC);</b>
+<b class="fc"><i>973</i>&nbsp;        if (offsetLocalFromOriginal == offsetOriginal) {</b>
+<b class="fc"><i>974</i>&nbsp;            return instantUTC;</b>
+<i>975</i>&nbsp;        }
+<b class="fc"><i>976</i>&nbsp;        return convertLocalToUTC(instantLocal, strict);</b>
+<i>977</i>&nbsp;    }
+<i>978</i>&nbsp;
+<i>979</i>&nbsp;    /**
+<i>980</i>&nbsp;     * Converts a local instant to a standard UTC instant with the same
+<i>981</i>&nbsp;     * local time. This conversion is used after performing a calculation
+<i>982</i>&nbsp;     * where the calculation was done using a simple local zone.
+<i>983</i>&nbsp;     *
+<i>984</i>&nbsp;     * @param instantLocal  the local instant to convert to UTC
+<i>985</i>&nbsp;     * @param strict  whether the conversion should reject non-existent local times
+<i>986</i>&nbsp;     * @return the UTC instant with the same local time, 
+<i>987</i>&nbsp;     * @throws ArithmeticException if the result overflows a long
+<i>988</i>&nbsp;     * @throws IllegalInstantException if the zone has no equivalent local time
+<i>989</i>&nbsp;     * @since 1.5
+<i>990</i>&nbsp;     */
+<i>991</i>&nbsp;    public long convertLocalToUTC(long instantLocal, boolean strict) {
+<i>992</i>&nbsp;        // get the offset at instantLocal (first estimate)
+<b class="fc"><i>993</i>&nbsp;        int offsetLocal = getOffset(instantLocal);</b>
+<i>994</i>&nbsp;        // adjust instantLocal using the estimate and recalc the offset
+<b class="fc"><i>995</i>&nbsp;        int offset = getOffset(instantLocal - offsetLocal);</b>
+<i>996</i>&nbsp;        // if the offsets differ, we must be near a DST boundary
+<b class="fc"><i>997</i>&nbsp;        if (offsetLocal != offset) {</b>
+<i>998</i>&nbsp;            // if strict then always check if in DST gap
+<i>999</i>&nbsp;            // otherwise only check if zone in Western hemisphere (as the
+<i>1000</i>&nbsp;            // value of offset is already correct for Eastern hemisphere)
+<b class="fc"><i>1001</i>&nbsp;            if (strict || offsetLocal &lt; 0) {</b>
+<i>1002</i>&nbsp;                // determine if we are in the DST gap
+<b class="fc"><i>1003</i>&nbsp;                long nextLocal = nextTransition(instantLocal - offsetLocal);</b>
+<b class="fc"><i>1004</i>&nbsp;                if (nextLocal == (instantLocal - offsetLocal)) {</b>
+<b class="nc"><i>1005</i>&nbsp;                    nextLocal = Long.MAX_VALUE;</b>
+<i>1006</i>&nbsp;                }
+<b class="fc"><i>1007</i>&nbsp;                long nextAdjusted = nextTransition(instantLocal - offset);</b>
+<b class="fc"><i>1008</i>&nbsp;                if (nextAdjusted == (instantLocal - offset)) {</b>
+<b class="nc"><i>1009</i>&nbsp;                    nextAdjusted = Long.MAX_VALUE;</b>
+<i>1010</i>&nbsp;                }
+<b class="fc"><i>1011</i>&nbsp;                if (nextLocal != nextAdjusted) {</b>
+<i>1012</i>&nbsp;                    // yes we are in the DST gap
+<b class="fc"><i>1013</i>&nbsp;                    if (strict) {</b>
+<i>1014</i>&nbsp;                        // DST gap is not acceptable
+<b class="nc"><i>1015</i>&nbsp;                        throw new IllegalInstantException(instantLocal, getID());</b>
+<i>1016</i>&nbsp;                    } else {
+<i>1017</i>&nbsp;                        // DST gap is acceptable, but for the Western hemisphere
+<i>1018</i>&nbsp;                        // the offset is wrong and will result in local times
+<i>1019</i>&nbsp;                        // before the cutover so use the offsetLocal instead
+<b class="fc"><i>1020</i>&nbsp;                        offset = offsetLocal;</b>
+<i>1021</i>&nbsp;                    }
+<i>1022</i>&nbsp;                }
+<i>1023</i>&nbsp;            }
+<i>1024</i>&nbsp;        }
+<i>1025</i>&nbsp;        // check for overflow
+<b class="fc"><i>1026</i>&nbsp;        long instantUTC = instantLocal - offset;</b>
+<i>1027</i>&nbsp;        // If there is a sign change, but the two values have different signs...
+<b class="fc"><i>1028</i>&nbsp;        if ((instantLocal ^ instantUTC) &lt; 0 &amp;&amp; (instantLocal ^ offset) &lt; 0) {</b>
+<b class="nc"><i>1029</i>&nbsp;            throw new ArithmeticException(&quot;Subtracting time zone offset caused overflow&quot;);</b>
+<i>1030</i>&nbsp;        }
+<b class="fc"><i>1031</i>&nbsp;        return instantUTC;</b>
+<i>1032</i>&nbsp;    }
+<i>1033</i>&nbsp;
+<i>1034</i>&nbsp;    /**
+<i>1035</i>&nbsp;     * Gets the millisecond instant in another zone keeping the same local time.
+<i>1036</i>&nbsp;     * &lt;p&gt;
+<i>1037</i>&nbsp;     * The conversion is performed by converting the specified UTC millis to local
+<i>1038</i>&nbsp;     * millis in this zone, then converting back to UTC millis in the new zone.
+<i>1039</i>&nbsp;     *
+<i>1040</i>&nbsp;     * @param newZone  the new zone, null means default
+<i>1041</i>&nbsp;     * @param oldInstant  the UTC millisecond instant to convert
+<i>1042</i>&nbsp;     * @return the UTC millisecond instant with the same local time in the new zone
+<i>1043</i>&nbsp;     */
+<i>1044</i>&nbsp;    public long getMillisKeepLocal(DateTimeZone newZone, long oldInstant) {
+<b class="fc"><i>1045</i>&nbsp;        if (newZone == null) {</b>
+<b class="fc"><i>1046</i>&nbsp;            newZone = DateTimeZone.getDefault();</b>
+<i>1047</i>&nbsp;        }
+<b class="fc"><i>1048</i>&nbsp;        if (newZone == this) {</b>
+<b class="fc"><i>1049</i>&nbsp;            return oldInstant;</b>
+<i>1050</i>&nbsp;        }
+<b class="fc"><i>1051</i>&nbsp;        long instantLocal = convertUTCToLocal(oldInstant);</b>
+<b class="fc"><i>1052</i>&nbsp;        return newZone.convertLocalToUTC(instantLocal, false, oldInstant);</b>
+<i>1053</i>&nbsp;    }
+<i>1054</i>&nbsp;
+<i>1055</i>&nbsp;//    //-----------------------------------------------------------------------
+<i>1056</i>&nbsp;//    /**
+<i>1057</i>&nbsp;//     * Checks if the given {@link LocalDateTime} is within an overlap.
+<i>1058</i>&nbsp;//     * &lt;p&gt;
+<i>1059</i>&nbsp;//     * When switching from Daylight Savings Time to standard time there is
+<i>1060</i>&nbsp;//     * typically an overlap where the same clock hour occurs twice. This
+<i>1061</i>&nbsp;//     * method identifies whether the local datetime refers to such an overlap.
+<i>1062</i>&nbsp;//     * 
+<i>1063</i>&nbsp;//     * @param localDateTime  the time to check, not null
+<i>1064</i>&nbsp;//     * @return true if the given datetime refers to an overlap
+<i>1065</i>&nbsp;//     */
+<i>1066</i>&nbsp;//    public boolean isLocalDateTimeOverlap(LocalDateTime localDateTime) {
+<i>1067</i>&nbsp;//        if (isFixed()) {
+<i>1068</i>&nbsp;//            return false;
+<i>1069</i>&nbsp;//        }
+<i>1070</i>&nbsp;//        long instantLocal = localDateTime.toDateTime(DateTimeZone.UTC).getMillis();
+<i>1071</i>&nbsp;//        // get the offset at instantLocal (first estimate)
+<i>1072</i>&nbsp;//        int offsetLocal = getOffset(instantLocal);
+<i>1073</i>&nbsp;//        // adjust instantLocal using the estimate and recalc the offset
+<i>1074</i>&nbsp;//        int offset = getOffset(instantLocal - offsetLocal);
+<i>1075</i>&nbsp;//        // if the offsets differ, we must be near a DST boundary
+<i>1076</i>&nbsp;//        if (offsetLocal != offset) {
+<i>1077</i>&nbsp;//            long nextLocal = nextTransition(instantLocal - offsetLocal);
+<i>1078</i>&nbsp;//            long nextAdjusted = nextTransition(instantLocal - offset);
+<i>1079</i>&nbsp;//            if (nextLocal != nextAdjusted) {
+<i>1080</i>&nbsp;//                // in DST gap
+<i>1081</i>&nbsp;//                return false;
+<i>1082</i>&nbsp;//            }
+<i>1083</i>&nbsp;//            long diff = Math.abs(offset - offsetLocal);
+<i>1084</i>&nbsp;//            DateTime dateTime = localDateTime.toDateTime(this);
+<i>1085</i>&nbsp;//            DateTime adjusted = dateTime.plus(diff);
+<i>1086</i>&nbsp;//            if (dateTime.getHourOfDay() == adjusted.getHourOfDay() &amp;&amp;
+<i>1087</i>&nbsp;//                    dateTime.getMinuteOfHour() == adjusted.getMinuteOfHour() &amp;&amp;
+<i>1088</i>&nbsp;//                    dateTime.getSecondOfMinute() == adjusted.getSecondOfMinute()) {
+<i>1089</i>&nbsp;//                return true;
+<i>1090</i>&nbsp;//            }
+<i>1091</i>&nbsp;//            adjusted = dateTime.minus(diff);
+<i>1092</i>&nbsp;//            if (dateTime.getHourOfDay() == adjusted.getHourOfDay() &amp;&amp;
+<i>1093</i>&nbsp;//                    dateTime.getMinuteOfHour() == adjusted.getMinuteOfHour() &amp;&amp;
+<i>1094</i>&nbsp;//                    dateTime.getSecondOfMinute() == adjusted.getSecondOfMinute()) {
+<i>1095</i>&nbsp;//                return true;
+<i>1096</i>&nbsp;//            }
+<i>1097</i>&nbsp;//            return false;
+<i>1098</i>&nbsp;//        }
+<i>1099</i>&nbsp;//        return false;
+<i>1100</i>&nbsp;//    }
+<i>1101</i>&nbsp;//        
+<i>1102</i>&nbsp;//        
+<i>1103</i>&nbsp;//        DateTime dateTime = null;
+<i>1104</i>&nbsp;//        try {
+<i>1105</i>&nbsp;//            dateTime = localDateTime.toDateTime(this);
+<i>1106</i>&nbsp;//        } catch (IllegalArgumentException ex) {
+<i>1107</i>&nbsp;//            return false;  // it is a gap, not an overlap
+<i>1108</i>&nbsp;//        }
+<i>1109</i>&nbsp;//        long offset1 = Math.abs(getOffset(dateTime.getMillis() + 1) - getStandardOffset(dateTime.getMillis() + 1));
+<i>1110</i>&nbsp;//        long offset2 = Math.abs(getOffset(dateTime.getMillis() - 1) - getStandardOffset(dateTime.getMillis() - 1));
+<i>1111</i>&nbsp;//        long offset = Math.max(offset1, offset2);
+<i>1112</i>&nbsp;//        if (offset == 0) {
+<i>1113</i>&nbsp;//            return false;
+<i>1114</i>&nbsp;//        }
+<i>1115</i>&nbsp;//        DateTime adjusted = dateTime.plus(offset);
+<i>1116</i>&nbsp;//        if (dateTime.getHourOfDay() == adjusted.getHourOfDay() &amp;&amp;
+<i>1117</i>&nbsp;//                dateTime.getMinuteOfHour() == adjusted.getMinuteOfHour() &amp;&amp;
+<i>1118</i>&nbsp;//                dateTime.getSecondOfMinute() == adjusted.getSecondOfMinute()) {
+<i>1119</i>&nbsp;//            return true;
+<i>1120</i>&nbsp;//        }
+<i>1121</i>&nbsp;//        adjusted = dateTime.minus(offset);
+<i>1122</i>&nbsp;//        if (dateTime.getHourOfDay() == adjusted.getHourOfDay() &amp;&amp;
+<i>1123</i>&nbsp;//                dateTime.getMinuteOfHour() == adjusted.getMinuteOfHour() &amp;&amp;
+<i>1124</i>&nbsp;//                dateTime.getSecondOfMinute() == adjusted.getSecondOfMinute()) {
+<i>1125</i>&nbsp;//            return true;
+<i>1126</i>&nbsp;//        }
+<i>1127</i>&nbsp;//        return false;
+<i>1128</i>&nbsp;        
+<i>1129</i>&nbsp;//        long millis = dateTime.getMillis();
+<i>1130</i>&nbsp;//        long nextTransition = nextTransition(millis);
+<i>1131</i>&nbsp;//        long previousTransition = previousTransition(millis);
+<i>1132</i>&nbsp;//        long deltaToPreviousTransition = millis - previousTransition;
+<i>1133</i>&nbsp;//        long deltaToNextTransition = nextTransition - millis;
+<i>1134</i>&nbsp;//        if (deltaToNextTransition &lt; deltaToPreviousTransition) {
+<i>1135</i>&nbsp;//            int offset = getOffset(nextTransition);
+<i>1136</i>&nbsp;//            int standardOffset = getStandardOffset(nextTransition);
+<i>1137</i>&nbsp;//            if (Math.abs(offset - standardOffset) &gt;= deltaToNextTransition) {
+<i>1138</i>&nbsp;//                return true;
+<i>1139</i>&nbsp;//            }
+<i>1140</i>&nbsp;//        } else  {
+<i>1141</i>&nbsp;//            int offset = getOffset(previousTransition);
+<i>1142</i>&nbsp;//            int standardOffset = getStandardOffset(previousTransition);
+<i>1143</i>&nbsp;//            if (Math.abs(offset - standardOffset) &gt;= deltaToPreviousTransition) {
+<i>1144</i>&nbsp;//                return true;
+<i>1145</i>&nbsp;//            }
+<i>1146</i>&nbsp;//        }
+<i>1147</i>&nbsp;//        return false;
+<i>1148</i>&nbsp;//    }
+<i>1149</i>&nbsp;
+<i>1150</i>&nbsp;    /**
+<i>1151</i>&nbsp;     * Checks if the given {@link LocalDateTime} is within a gap.
+<i>1152</i>&nbsp;     * &lt;p&gt;
+<i>1153</i>&nbsp;     * When switching from standard time to Daylight Savings Time there is
+<i>1154</i>&nbsp;     * typically a gap where a clock hour is missing. This method identifies
+<i>1155</i>&nbsp;     * whether the local datetime refers to such a gap.
+<i>1156</i>&nbsp;     * 
+<i>1157</i>&nbsp;     * @param localDateTime  the time to check, not null
+<i>1158</i>&nbsp;     * @return true if the given datetime refers to a gap
+<i>1159</i>&nbsp;     * @since 1.6
+<i>1160</i>&nbsp;     */
+<i>1161</i>&nbsp;    public boolean isLocalDateTimeGap(LocalDateTime localDateTime) {
+<b class="fc"><i>1162</i>&nbsp;        if (isFixed()) {</b>
+<b class="nc"><i>1163</i>&nbsp;            return false;</b>
+<i>1164</i>&nbsp;        }
+<i>1165</i>&nbsp;        try {
+<b class="fc"><i>1166</i>&nbsp;            localDateTime.toDateTime(this);</b>
+<b class="fc"><i>1167</i>&nbsp;            return false;</b>
+<b class="fc"><i>1168</i>&nbsp;        } catch (IllegalInstantException ex) {</b>
+<b class="fc"><i>1169</i>&nbsp;            return true;</b>
+<i>1170</i>&nbsp;        }
+<i>1171</i>&nbsp;    }
+<i>1172</i>&nbsp;
+<i>1173</i>&nbsp;    /**
+<i>1174</i>&nbsp;     * Adjusts the offset to be the earlier or later one during an overlap.
+<i>1175</i>&nbsp;     * 
+<i>1176</i>&nbsp;     * @param instant  the instant to adjust
+<i>1177</i>&nbsp;     * @param earlierOrLater  false for earlier, true for later
+<i>1178</i>&nbsp;     * @return the adjusted instant millis
+<i>1179</i>&nbsp;     */
+<i>1180</i>&nbsp;    public long adjustOffset(long instant, boolean earlierOrLater) {
+<i>1181</i>&nbsp;        // a bit messy, but will work in all non-pathological cases
+<i>1182</i>&nbsp;        
+<i>1183</i>&nbsp;        // evaluate 3 hours before and after to work out if anything is happening
+<b class="fc"><i>1184</i>&nbsp;        long instantBefore = instant - 3 * DateTimeConstants.MILLIS_PER_HOUR;</b>
+<b class="fc"><i>1185</i>&nbsp;        long instantAfter = instant + 3 * DateTimeConstants.MILLIS_PER_HOUR;</b>
+<b class="fc"><i>1186</i>&nbsp;        long offsetBefore = getOffset(instantBefore);</b>
+<b class="fc"><i>1187</i>&nbsp;        long offsetAfter = getOffset(instantAfter);</b>
+<b class="fc"><i>1188</i>&nbsp;        if (offsetBefore &lt;= offsetAfter) {</b>
+<b class="fc"><i>1189</i>&nbsp;            return instant;  // not an overlap (less than is a gap, equal is normal case)</b>
+<i>1190</i>&nbsp;        }
+<i>1191</i>&nbsp;        
+<i>1192</i>&nbsp;        // work out range of instants that have duplicate local times
+<b class="fc"><i>1193</i>&nbsp;        long diff = offsetBefore - offsetAfter;</b>
+<b class="fc"><i>1194</i>&nbsp;        long transition = nextTransition(instantBefore);</b>
+<b class="fc"><i>1195</i>&nbsp;        long overlapStart = transition - diff;</b>
+<b class="fc"><i>1196</i>&nbsp;        long overlapEnd = transition + diff;</b>
+<b class="fc"><i>1197</i>&nbsp;        if (instant &lt; overlapStart || instant &gt;= overlapEnd) {</b>
+<b class="fc"><i>1198</i>&nbsp;          return instant;  // not an overlap</b>
+<i>1199</i>&nbsp;        }
+<i>1200</i>&nbsp;        
+<i>1201</i>&nbsp;        // calculate result
+<b class="fc"><i>1202</i>&nbsp;        long afterStart = instant - overlapStart;</b>
+<b class="fc"><i>1203</i>&nbsp;        if (afterStart &gt;= diff) {</b>
+<i>1204</i>&nbsp;          // currently in later offset
+<b class="fc"><i>1205</i>&nbsp;          return earlierOrLater ? instant : instant - diff;</b>
+<i>1206</i>&nbsp;        } else {
+<i>1207</i>&nbsp;          // currently in earlier offset
+<b class="fc"><i>1208</i>&nbsp;          return earlierOrLater ? instant + diff : instant;</b>
+<i>1209</i>&nbsp;        }
+<i>1210</i>&nbsp;    }
+<i>1211</i>&nbsp;//    System.out.println(new DateTime(transitionStart, DateTimeZone.UTC) + &quot; &quot; + new DateTime(transitionStart, this));
+<i>1212</i>&nbsp;
+<i>1213</i>&nbsp;    //-----------------------------------------------------------------------
+<i>1214</i>&nbsp;    /**
+<i>1215</i>&nbsp;     * Returns true if this time zone has no transitions.
+<i>1216</i>&nbsp;     *
+<i>1217</i>&nbsp;     * @return true if no transitions
+<i>1218</i>&nbsp;     */
+<i>1219</i>&nbsp;    public abstract boolean isFixed();
+<i>1220</i>&nbsp;
+<i>1221</i>&nbsp;    /**
+<i>1222</i>&nbsp;     * Advances the given instant to where the time zone offset or name changes.
+<i>1223</i>&nbsp;     * If the instant returned is exactly the same as passed in, then
+<i>1224</i>&nbsp;     * no changes occur after the given instant.
+<i>1225</i>&nbsp;     *
+<i>1226</i>&nbsp;     * @param instant  milliseconds from 1970-01-01T00:00:00Z
+<i>1227</i>&nbsp;     * @return milliseconds from 1970-01-01T00:00:00Z
+<i>1228</i>&nbsp;     */
+<i>1229</i>&nbsp;    public abstract long nextTransition(long instant);
+<i>1230</i>&nbsp;
+<i>1231</i>&nbsp;    /**
+<i>1232</i>&nbsp;     * Retreats the given instant to where the time zone offset or name changes.
+<i>1233</i>&nbsp;     * If the instant returned is exactly the same as passed in, then
+<i>1234</i>&nbsp;     * no changes occur before the given instant.
+<i>1235</i>&nbsp;     *
+<i>1236</i>&nbsp;     * @param instant  milliseconds from 1970-01-01T00:00:00Z
+<i>1237</i>&nbsp;     * @return milliseconds from 1970-01-01T00:00:00Z
+<i>1238</i>&nbsp;     */
+<i>1239</i>&nbsp;    public abstract long previousTransition(long instant);
+<i>1240</i>&nbsp;
+<i>1241</i>&nbsp;    // Basic methods
+<i>1242</i>&nbsp;    //--------------------------------------------------------------------
+<i>1243</i>&nbsp;
+<i>1244</i>&nbsp;    /**
+<i>1245</i>&nbsp;     * Get the datetime zone as a {@link java.util.TimeZone}.
+<i>1246</i>&nbsp;     * 
+<i>1247</i>&nbsp;     * @return the closest matching TimeZone object
+<i>1248</i>&nbsp;     */
+<i>1249</i>&nbsp;    public java.util.TimeZone toTimeZone() {
+<b class="fc"><i>1250</i>&nbsp;        return java.util.TimeZone.getTimeZone(iID);</b>
+<i>1251</i>&nbsp;    }
+<i>1252</i>&nbsp;
+<i>1253</i>&nbsp;    /**
+<i>1254</i>&nbsp;     * Compare this datetime zone with another.
+<i>1255</i>&nbsp;     * 
+<i>1256</i>&nbsp;     * @param object the object to compare with
+<i>1257</i>&nbsp;     * @return true if equal, based on the ID and all internal rules
+<i>1258</i>&nbsp;     */
+<i>1259</i>&nbsp;    public abstract boolean equals(Object object);
+<i>1260</i>&nbsp;
+<i>1261</i>&nbsp;    /**
+<i>1262</i>&nbsp;     * Gets a hash code compatable with equals.
+<i>1263</i>&nbsp;     * 
+<i>1264</i>&nbsp;     * @return suitable hashcode
+<i>1265</i>&nbsp;     */
+<i>1266</i>&nbsp;    public int hashCode() {
+<b class="fc"><i>1267</i>&nbsp;        return 57 + getID().hashCode();</b>
+<i>1268</i>&nbsp;    }
+<i>1269</i>&nbsp;
+<i>1270</i>&nbsp;    /**
+<i>1271</i>&nbsp;     * Gets the datetime zone as a string, which is simply its ID.
+<i>1272</i>&nbsp;     * @return the id of the zone
+<i>1273</i>&nbsp;     */
+<i>1274</i>&nbsp;    public String toString() {
+<b class="fc"><i>1275</i>&nbsp;        return getID();</b>
+<i>1276</i>&nbsp;    }
+<i>1277</i>&nbsp;
+<i>1278</i>&nbsp;    /**
+<i>1279</i>&nbsp;     * By default, when DateTimeZones are serialized, only a &quot;stub&quot; object
+<i>1280</i>&nbsp;     * referring to the id is written out. When the stub is read in, it
+<i>1281</i>&nbsp;     * replaces itself with a DateTimeZone object.
+<i>1282</i>&nbsp;     * @return a stub object to go in the stream
+<i>1283</i>&nbsp;     */
+<i>1284</i>&nbsp;    protected Object writeReplace() throws ObjectStreamException {
+<b class="fc"><i>1285</i>&nbsp;        return new Stub(iID);</b>
+<i>1286</i>&nbsp;    }
+<i>1287</i>&nbsp;
+<i>1288</i>&nbsp;    /**
+<i>1289</i>&nbsp;     * Used to serialize DateTimeZones by id.
+<i>1290</i>&nbsp;     */
+<i>1291</i>&nbsp;    private static final class Stub implements Serializable {
+<i>1292</i>&nbsp;        /** Serialization lock. */
+<i>1293</i>&nbsp;        private static final long serialVersionUID = -6471952376487863581L;
+<i>1294</i>&nbsp;        /** The ID of the zone. */
+<i>1295</i>&nbsp;        private transient String iID;
+<i>1296</i>&nbsp;
+<i>1297</i>&nbsp;        /**
+<i>1298</i>&nbsp;         * Constructor.
+<i>1299</i>&nbsp;         * @param id  the id of the zone
+<i>1300</i>&nbsp;         */
+<b class="fc"><i>1301</i>&nbsp;        Stub(String id) {</b>
+<b class="fc"><i>1302</i>&nbsp;            iID = id;</b>
+<b class="fc"><i>1303</i>&nbsp;        }</b>
+<i>1304</i>&nbsp;
+<i>1305</i>&nbsp;        private void writeObject(ObjectOutputStream out) throws IOException {
+<b class="fc"><i>1306</i>&nbsp;            out.writeUTF(iID);</b>
+<b class="fc"><i>1307</i>&nbsp;        }</b>
+<i>1308</i>&nbsp;
+<i>1309</i>&nbsp;        private void readObject(ObjectInputStream in) throws IOException {
+<b class="fc"><i>1310</i>&nbsp;            iID = in.readUTF();</b>
+<b class="fc"><i>1311</i>&nbsp;        }</b>
+<i>1312</i>&nbsp;
+<i>1313</i>&nbsp;        private Object readResolve() throws ObjectStreamException {
+<b class="fc"><i>1314</i>&nbsp;            return forID(iID);</b>
+<i>1315</i>&nbsp;        }
+<i>1316</i>&nbsp;    }
+<i>1317</i>&nbsp;
+<i>1318</i>&nbsp;    //-------------------------------------------------------------------------
+<i>1319</i>&nbsp;    /**
+<i>1320</i>&nbsp;     * Lazy initialization to avoid a synchronization lock.
+<i>1321</i>&nbsp;     */
+<b class="nc"><i>1322</i>&nbsp;    static final class LazyInit {</b>
+<i>1323</i>&nbsp;
+<i>1324</i>&nbsp;        /** Cache of old zone IDs to new zone IDs */
+<b class="fc"><i>1325</i>&nbsp;        static final Map&lt;String, String&gt; CONVERSION_MAP = buildMap();</b>
+<i>1326</i>&nbsp;        /** Time zone offset formatter. */
+<b class="fc"><i>1327</i>&nbsp;        static final DateTimeFormatter OFFSET_FORMATTER = buildFormatter();</b>
+<i>1328</i>&nbsp;
+<i>1329</i>&nbsp;        private static DateTimeFormatter buildFormatter() {
+<i>1330</i>&nbsp;            // Can&#39;t use a real chronology if called during class
+<i>1331</i>&nbsp;            // initialization. Offset parser doesn&#39;t need it anyhow.
+<b class="fc"><i>1332</i>&nbsp;            Chronology chrono = new BaseChronology() {</b>
+<i>1333</i>&nbsp;                private static final long serialVersionUID = -3128740902654445468L;
+<i>1334</i>&nbsp;                public DateTimeZone getZone() {
+<b class="fc"><i>1335</i>&nbsp;                    return null;</b>
+<i>1336</i>&nbsp;                }
+<i>1337</i>&nbsp;                public Chronology withUTC() {
+<b class="fc"><i>1338</i>&nbsp;                    return this;</b>
+<i>1339</i>&nbsp;                }
+<i>1340</i>&nbsp;                public Chronology withZone(DateTimeZone zone) {
+<b class="nc"><i>1341</i>&nbsp;                    return this;</b>
+<i>1342</i>&nbsp;                }
+<i>1343</i>&nbsp;                public String toString() {
+<b class="nc"><i>1344</i>&nbsp;                    return getClass().getName();</b>
+<i>1345</i>&nbsp;                }
+<i>1346</i>&nbsp;            };
+<b class="fc"><i>1347</i>&nbsp;            return new DateTimeFormatterBuilder()</b>
+<b class="fc"><i>1348</i>&nbsp;                .appendTimeZoneOffset(null, true, 2, 4)</b>
+<b class="fc"><i>1349</i>&nbsp;                .toFormatter()</b>
+<b class="fc"><i>1350</i>&nbsp;                .withChronology(chrono);</b>
+<i>1351</i>&nbsp;        }
+<i>1352</i>&nbsp;
+<i>1353</i>&nbsp;        private static Map&lt;String, String&gt; buildMap() {
+<i>1354</i>&nbsp;            // Backwards compatibility with TimeZone.
+<b class="fc"><i>1355</i>&nbsp;            Map&lt;String, String&gt; map = new HashMap&lt;String, String&gt;();</b>
+<b class="fc"><i>1356</i>&nbsp;            map.put(&quot;GMT&quot;, &quot;UTC&quot;);</b>
+<b class="fc"><i>1357</i>&nbsp;            map.put(&quot;WET&quot;, &quot;WET&quot;);</b>
+<b class="fc"><i>1358</i>&nbsp;            map.put(&quot;CET&quot;, &quot;CET&quot;);</b>
+<b class="fc"><i>1359</i>&nbsp;            map.put(&quot;MET&quot;, &quot;CET&quot;);</b>
+<b class="fc"><i>1360</i>&nbsp;            map.put(&quot;ECT&quot;, &quot;CET&quot;);</b>
+<b class="fc"><i>1361</i>&nbsp;            map.put(&quot;EET&quot;, &quot;EET&quot;);</b>
+<b class="fc"><i>1362</i>&nbsp;            map.put(&quot;MIT&quot;, &quot;Pacific/Apia&quot;);</b>
+<b class="fc"><i>1363</i>&nbsp;            map.put(&quot;HST&quot;, &quot;Pacific/Honolulu&quot;);  // JDK 1.1 compatible</b>
+<b class="fc"><i>1364</i>&nbsp;            map.put(&quot;AST&quot;, &quot;America/Anchorage&quot;);</b>
+<b class="fc"><i>1365</i>&nbsp;            map.put(&quot;PST&quot;, &quot;America/Los_Angeles&quot;);</b>
+<b class="fc"><i>1366</i>&nbsp;            map.put(&quot;MST&quot;, &quot;America/Denver&quot;);  // JDK 1.1 compatible</b>
+<b class="fc"><i>1367</i>&nbsp;            map.put(&quot;PNT&quot;, &quot;America/Phoenix&quot;);</b>
+<b class="fc"><i>1368</i>&nbsp;            map.put(&quot;CST&quot;, &quot;America/Chicago&quot;);</b>
+<b class="fc"><i>1369</i>&nbsp;            map.put(&quot;EST&quot;, &quot;America/New_York&quot;);  // JDK 1.1 compatible</b>
+<b class="fc"><i>1370</i>&nbsp;            map.put(&quot;IET&quot;, &quot;America/Indiana/Indianapolis&quot;);</b>
+<b class="fc"><i>1371</i>&nbsp;            map.put(&quot;PRT&quot;, &quot;America/Puerto_Rico&quot;);</b>
+<b class="fc"><i>1372</i>&nbsp;            map.put(&quot;CNT&quot;, &quot;America/St_Johns&quot;);</b>
+<b class="fc"><i>1373</i>&nbsp;            map.put(&quot;AGT&quot;, &quot;America/Argentina/Buenos_Aires&quot;);</b>
+<b class="fc"><i>1374</i>&nbsp;            map.put(&quot;BET&quot;, &quot;America/Sao_Paulo&quot;);</b>
+<b class="fc"><i>1375</i>&nbsp;            map.put(&quot;ART&quot;, &quot;Africa/Cairo&quot;);</b>
+<b class="fc"><i>1376</i>&nbsp;            map.put(&quot;CAT&quot;, &quot;Africa/Harare&quot;);</b>
+<b class="fc"><i>1377</i>&nbsp;            map.put(&quot;EAT&quot;, &quot;Africa/Addis_Ababa&quot;);</b>
+<b class="fc"><i>1378</i>&nbsp;            map.put(&quot;NET&quot;, &quot;Asia/Yerevan&quot;);</b>
+<b class="fc"><i>1379</i>&nbsp;            map.put(&quot;PLT&quot;, &quot;Asia/Karachi&quot;);</b>
+<b class="fc"><i>1380</i>&nbsp;            map.put(&quot;IST&quot;, &quot;Asia/Kolkata&quot;);</b>
+<b class="fc"><i>1381</i>&nbsp;            map.put(&quot;BST&quot;, &quot;Asia/Dhaka&quot;);</b>
+<b class="fc"><i>1382</i>&nbsp;            map.put(&quot;VST&quot;, &quot;Asia/Ho_Chi_Minh&quot;);</b>
+<b class="fc"><i>1383</i>&nbsp;            map.put(&quot;CTT&quot;, &quot;Asia/Shanghai&quot;);</b>
+<b class="fc"><i>1384</i>&nbsp;            map.put(&quot;JST&quot;, &quot;Asia/Tokyo&quot;);</b>
+<b class="fc"><i>1385</i>&nbsp;            map.put(&quot;ACT&quot;, &quot;Australia/Darwin&quot;);</b>
+<b class="fc"><i>1386</i>&nbsp;            map.put(&quot;AET&quot;, &quot;Australia/Sydney&quot;);</b>
+<b class="fc"><i>1387</i>&nbsp;            map.put(&quot;SST&quot;, &quot;Pacific/Guadalcanal&quot;);</b>
+<b class="fc"><i>1388</i>&nbsp;            map.put(&quot;NST&quot;, &quot;Pacific/Auckland&quot;);</b>
+<b class="fc"><i>1389</i>&nbsp;            return Collections.unmodifiableMap(map);</b>
+<i>1390</i>&nbsp;        }
+<i>1391</i>&nbsp;    }
+<i>1392</i>&nbsp;
+<i>1393</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

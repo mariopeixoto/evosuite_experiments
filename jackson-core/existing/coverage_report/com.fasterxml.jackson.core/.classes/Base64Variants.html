@@ -1,0 +1,194 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: Base64Variants</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.fasterxml.jackson.core</a> ]
+</div>
+
+<h1>Coverage Summary for Class: Base64Variants (com.fasterxml.jackson.core)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">Base64Variants</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    75%
+  </span>
+  <span class="absValue">
+    (3/ 4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    90.9%
+  </span>
+  <span class="absValue">
+    (20/ 22)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/* Jackson JSON-processor.
+<i>2</i>&nbsp; *
+<i>3</i>&nbsp; * Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
+<i>4</i>&nbsp; */
+<i>5</i>&nbsp;package com.fasterxml.jackson.core;
+<i>6</i>&nbsp;
+<i>7</i>&nbsp;/**
+<i>8</i>&nbsp; * Container for commonly used Base64 variants:
+<i>9</i>&nbsp; *&lt;ul&gt;
+<i>10</i>&nbsp; * &lt;li&gt; {@link #MIME}
+<i>11</i>&nbsp; * &lt;li&gt; {@link #MIME_NO_LINEFEEDS}
+<i>12</i>&nbsp; * &lt;li&gt; {@link #PEM}
+<i>13</i>&nbsp; * &lt;li&gt; {@link #MODIFIED_FOR_URL}
+<i>14</i>&nbsp; * &lt;/ul&gt;
+<i>15</i>&nbsp; * 
+<i>16</i>&nbsp; * @author Tatu Saloranta
+<i>17</i>&nbsp; */
+<b class="nc"><i>18</i>&nbsp;public final class Base64Variants</b>
+<i>19</i>&nbsp;{
+<i>20</i>&nbsp;    final static String STD_BASE64_ALPHABET = &quot;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/&quot;;
+<i>21</i>&nbsp;
+<i>22</i>&nbsp;    /**
+<i>23</i>&nbsp;     * This variant is what most people would think of &quot;the standard&quot;
+<i>24</i>&nbsp;     * Base64 encoding.
+<i>25</i>&nbsp;     *&lt;p&gt;
+<i>26</i>&nbsp;     * See &lt;a href=&quot;http://en.wikipedia.org/wiki/Base64&quot;&gt;wikipedia Base64 entry&lt;/a&gt; for details.
+<i>27</i>&nbsp;     *&lt;p&gt;
+<i>28</i>&nbsp;     * Note that although this can be thought of as the standard variant,
+<i>29</i>&nbsp;     * it is &lt;b&gt;not&lt;/b&gt; the default for Jackson: no-linefeeds alternative
+<i>30</i>&nbsp;     * is because of JSON requirement of escaping all linefeeds.
+<i>31</i>&nbsp;     */
+<i>32</i>&nbsp;    public final static Base64Variant MIME;
+<i>33</i>&nbsp;    static {
+<b class="fc"><i>34</i>&nbsp;        MIME = new Base64Variant(&quot;MIME&quot;, STD_BASE64_ALPHABET, true, &#39;=&#39;, 76);</b>
+<i>35</i>&nbsp;    }
+<i>36</i>&nbsp;
+<i>37</i>&nbsp;    /**
+<i>38</i>&nbsp;     * Slightly non-standard modification of {@link #MIME} which does not
+<i>39</i>&nbsp;     * use linefeeds (max line length set to infinite). Useful when linefeeds
+<i>40</i>&nbsp;     * wouldn&#39;t work well (possibly in attributes), or for minor space savings
+<i>41</i>&nbsp;     * (save 1 linefeed per 76 data chars, ie. ~1.4% savings).
+<i>42</i>&nbsp;     */
+<i>43</i>&nbsp;    public final static Base64Variant MIME_NO_LINEFEEDS;
+<i>44</i>&nbsp;    static {
+<b class="fc"><i>45</i>&nbsp;        MIME_NO_LINEFEEDS = new Base64Variant(MIME, &quot;MIME-NO-LINEFEEDS&quot;, Integer.MAX_VALUE);</b>
+<i>46</i>&nbsp;    }
+<i>47</i>&nbsp;
+<i>48</i>&nbsp;    /**
+<i>49</i>&nbsp;     * This variant is the one that predates {@link #MIME}: it is otherwise
+<i>50</i>&nbsp;     * identical, except that it mandates shorter line length.
+<i>51</i>&nbsp;     */
+<b class="fc"><i>52</i>&nbsp;    public final static Base64Variant PEM = new Base64Variant(MIME, &quot;PEM&quot;, true, &#39;=&#39;, 64);</b>
+<i>53</i>&nbsp;
+<i>54</i>&nbsp;    /**
+<i>55</i>&nbsp;     * This non-standard variant is usually used when encoded data needs to be
+<i>56</i>&nbsp;     * passed via URLs (such as part of GET request). It differs from the
+<i>57</i>&nbsp;     * base {@link #MIME} variant in multiple ways.
+<i>58</i>&nbsp;     * First, no padding is used: this also means that it generally can not
+<i>59</i>&nbsp;     * be written in multiple separate but adjacent chunks (which would not
+<i>60</i>&nbsp;     * be the usual use case in any case). Also, no linefeeds are used (max
+<i>61</i>&nbsp;     * line length set to infinite). And finally, two characters (plus and
+<i>62</i>&nbsp;     * slash) that would need quoting in URLs are replaced with more
+<i>63</i>&nbsp;     * optimal alternatives (hyphen and underscore, respectively).
+<i>64</i>&nbsp;     */
+<i>65</i>&nbsp;    public final static Base64Variant MODIFIED_FOR_URL;
+<i>66</i>&nbsp;    static {
+<b class="fc"><i>67</i>&nbsp;        StringBuilder sb = new StringBuilder(STD_BASE64_ALPHABET);</b>
+<i>68</i>&nbsp;        // Replace plus with hyphen, slash with underscore (and no padding)
+<b class="fc"><i>69</i>&nbsp;        sb.setCharAt(sb.indexOf(&quot;+&quot;), &#39;-&#39;);</b>
+<b class="fc"><i>70</i>&nbsp;        sb.setCharAt(sb.indexOf(&quot;/&quot;), &#39;_&#39;);</b>
+<i>71</i>&nbsp;        /* And finally, let&#39;s not split lines either, wouldn&#39;t work too
+<i>72</i>&nbsp;         * well with URLs
+<i>73</i>&nbsp;         */
+<b class="fc"><i>74</i>&nbsp;        MODIFIED_FOR_URL = new Base64Variant(&quot;MODIFIED-FOR-URL&quot;, sb.toString(), false, Base64Variant.PADDING_CHAR_NONE, Integer.MAX_VALUE);</b>
+<b class="fc"><i>75</i>&nbsp;    }</b>
+<i>76</i>&nbsp;
+<i>77</i>&nbsp;    /**
+<i>78</i>&nbsp;     * Method used to get the default variant (&quot;MIME_NO_LINEFEEDS&quot;) for cases
+<i>79</i>&nbsp;     * where caller does not explicitly specify the variant.
+<i>80</i>&nbsp;     * We will prefer no-linefeed version because linefeeds in JSON values
+<i>81</i>&nbsp;     * must be escaped, making linefeed-containing variants sub-optimal.
+<i>82</i>&nbsp;     */
+<i>83</i>&nbsp;    public static Base64Variant getDefaultVariant() {
+<b class="fc"><i>84</i>&nbsp;        return MIME_NO_LINEFEEDS;</b>
+<i>85</i>&nbsp;    }
+<i>86</i>&nbsp;
+<i>87</i>&nbsp;    /**
+<i>88</i>&nbsp;     * @since 2.1
+<i>89</i>&nbsp;     */
+<i>90</i>&nbsp;    public static Base64Variant valueOf(String name) throws IllegalArgumentException
+<i>91</i>&nbsp;    {
+<b class="fc"><i>92</i>&nbsp;        if (MIME._name.equals(name)) {</b>
+<b class="fc"><i>93</i>&nbsp;            return MIME;</b>
+<i>94</i>&nbsp;        }
+<b class="fc"><i>95</i>&nbsp;        if (MIME_NO_LINEFEEDS._name.equals(name)) {</b>
+<b class="fc"><i>96</i>&nbsp;            return MIME_NO_LINEFEEDS;</b>
+<i>97</i>&nbsp;        }
+<b class="fc"><i>98</i>&nbsp;        if (PEM._name.equals(name)) {</b>
+<b class="fc"><i>99</i>&nbsp;            return PEM;</b>
+<i>100</i>&nbsp;        }
+<b class="fc"><i>101</i>&nbsp;        if (MODIFIED_FOR_URL._name.equals(name)) {</b>
+<b class="fc"><i>102</i>&nbsp;            return MODIFIED_FOR_URL;</b>
+<i>103</i>&nbsp;        }
+<b class="fc"><i>104</i>&nbsp;        if (name == null) {</b>
+<b class="nc"><i>105</i>&nbsp;            name = &quot;&lt;null&gt;&quot;;</b>
+<i>106</i>&nbsp;        } else {
+<b class="fc"><i>107</i>&nbsp;            name = &quot;&#39;&quot;+name+&quot;&#39;&quot;;</b>
+<i>108</i>&nbsp;        }
+<b class="fc"><i>109</i>&nbsp;        throw new IllegalArgumentException(&quot;No Base64Variant with name &quot;+name);</b>
+<i>110</i>&nbsp;    }
+<i>111</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 04:22</div>
+</div>
+</body>
+</html>

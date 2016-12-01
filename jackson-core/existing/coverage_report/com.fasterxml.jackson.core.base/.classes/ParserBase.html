@@ -1,0 +1,1257 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: ParserBase</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.fasterxml.jackson.core.base</a> ]
+</div>
+
+<h1>Coverage Summary for Class: ParserBase (com.fasterxml.jackson.core.base)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">ParserBase</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    76.7%
+  </span>
+  <span class="absValue">
+    (46/ 60)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    75.9%
+  </span>
+  <span class="absValue">
+    (290/ 382)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package com.fasterxml.jackson.core.base;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import java.io.*;
+<i>4</i>&nbsp;import java.math.BigDecimal;
+<i>5</i>&nbsp;import java.math.BigInteger;
+<i>6</i>&nbsp;
+<i>7</i>&nbsp;import com.fasterxml.jackson.core.*;
+<i>8</i>&nbsp;import com.fasterxml.jackson.core.io.IOContext;
+<i>9</i>&nbsp;import com.fasterxml.jackson.core.io.NumberInput;
+<i>10</i>&nbsp;import com.fasterxml.jackson.core.json.DupDetector;
+<i>11</i>&nbsp;import com.fasterxml.jackson.core.json.JsonReadContext;
+<i>12</i>&nbsp;import com.fasterxml.jackson.core.json.PackageVersion;
+<i>13</i>&nbsp;import com.fasterxml.jackson.core.util.ByteArrayBuilder;
+<i>14</i>&nbsp;import com.fasterxml.jackson.core.util.TextBuffer;
+<i>15</i>&nbsp;
+<i>16</i>&nbsp;/**
+<i>17</i>&nbsp; * Intermediate base class used by all Jackson {@link JsonParser}
+<i>18</i>&nbsp; * implementations. Contains most common things that are independent
+<i>19</i>&nbsp; * of actual underlying input source.
+<i>20</i>&nbsp; */
+<i>21</i>&nbsp;public abstract class ParserBase extends ParserMinimalBase
+<i>22</i>&nbsp;{
+<i>23</i>&nbsp;    /*
+<i>24</i>&nbsp;    /**********************************************************
+<i>25</i>&nbsp;    /* Generic I/O state
+<i>26</i>&nbsp;    /**********************************************************
+<i>27</i>&nbsp;     */
+<i>28</i>&nbsp;
+<i>29</i>&nbsp;    /**
+<i>30</i>&nbsp;     * I/O context for this reader. It handles buffer allocation
+<i>31</i>&nbsp;     * for the reader.
+<i>32</i>&nbsp;     */
+<i>33</i>&nbsp;    final protected IOContext _ioContext;
+<i>34</i>&nbsp;
+<i>35</i>&nbsp;    /**
+<i>36</i>&nbsp;     * Flag that indicates whether parser is closed or not. Gets
+<i>37</i>&nbsp;     * set when parser is either closed by explicit call
+<i>38</i>&nbsp;     * ({@link #close}) or when end-of-input is reached.
+<i>39</i>&nbsp;     */
+<i>40</i>&nbsp;    protected boolean _closed;
+<i>41</i>&nbsp;
+<i>42</i>&nbsp;    /*
+<i>43</i>&nbsp;    /**********************************************************
+<i>44</i>&nbsp;    /* Current input data
+<i>45</i>&nbsp;    /**********************************************************
+<i>46</i>&nbsp;     */
+<i>47</i>&nbsp;
+<i>48</i>&nbsp;    // Note: type of actual buffer depends on sub-class, can&#39;t include
+<i>49</i>&nbsp;
+<i>50</i>&nbsp;    /**
+<i>51</i>&nbsp;     * Pointer to next available character in buffer
+<i>52</i>&nbsp;     */
+<i>53</i>&nbsp;    protected int _inputPtr;
+<i>54</i>&nbsp;
+<i>55</i>&nbsp;    /**
+<i>56</i>&nbsp;     * Index of character after last available one in the buffer.
+<i>57</i>&nbsp;     */
+<i>58</i>&nbsp;    protected int _inputEnd;
+<i>59</i>&nbsp;
+<i>60</i>&nbsp;    /*
+<i>61</i>&nbsp;    /**********************************************************
+<i>62</i>&nbsp;    /* Current input location information
+<i>63</i>&nbsp;    /**********************************************************
+<i>64</i>&nbsp;     */
+<i>65</i>&nbsp;
+<i>66</i>&nbsp;    /**
+<i>67</i>&nbsp;     * Number of characters/bytes that were contained in previous blocks
+<i>68</i>&nbsp;     * (blocks that were already processed prior to the current buffer).
+<i>69</i>&nbsp;     */
+<i>70</i>&nbsp;    protected long _currInputProcessed;
+<i>71</i>&nbsp;
+<i>72</i>&nbsp;    /**
+<i>73</i>&nbsp;     * Current row location of current point in input buffer, starting
+<i>74</i>&nbsp;     * from 1, if available.
+<i>75</i>&nbsp;     */
+<b class="fc"><i>76</i>&nbsp;    protected int _currInputRow = 1;</b>
+<i>77</i>&nbsp;
+<i>78</i>&nbsp;    /**
+<i>79</i>&nbsp;     * Current index of the first character of the current row in input
+<i>80</i>&nbsp;     * buffer. Needed to calculate column position, if necessary; benefit
+<i>81</i>&nbsp;     * of not having column itself is that this only has to be updated
+<i>82</i>&nbsp;     * once per line.
+<i>83</i>&nbsp;     */
+<i>84</i>&nbsp;    protected int _currInputRowStart;
+<i>85</i>&nbsp;
+<i>86</i>&nbsp;    /*
+<i>87</i>&nbsp;    /**********************************************************
+<i>88</i>&nbsp;    /* Information about starting location of event
+<i>89</i>&nbsp;    /* Reader is pointing to; updated on-demand
+<i>90</i>&nbsp;    /**********************************************************
+<i>91</i>&nbsp;     */
+<i>92</i>&nbsp;
+<i>93</i>&nbsp;    // // // Location info at point when current token was started
+<i>94</i>&nbsp;
+<i>95</i>&nbsp;    /**
+<i>96</i>&nbsp;     * Total number of bytes/characters read before start of current token.
+<i>97</i>&nbsp;     * For big (gigabyte-sized) sizes are possible, needs to be long,
+<i>98</i>&nbsp;     * unlike pointers and sizes related to in-memory buffers.
+<i>99</i>&nbsp;     */
+<i>100</i>&nbsp;    protected long _tokenInputTotal;
+<i>101</i>&nbsp;
+<i>102</i>&nbsp;    /**
+<i>103</i>&nbsp;     * Input row on which current token starts, 1-based
+<i>104</i>&nbsp;     */
+<b class="fc"><i>105</i>&nbsp;    protected int _tokenInputRow = 1;</b>
+<i>106</i>&nbsp;
+<i>107</i>&nbsp;    /**
+<i>108</i>&nbsp;     * Column on input row that current token starts; 0-based (although
+<i>109</i>&nbsp;     * in the end it&#39;ll be converted to 1-based)
+<i>110</i>&nbsp;     */
+<i>111</i>&nbsp;    protected int _tokenInputCol;
+<i>112</i>&nbsp;
+<i>113</i>&nbsp;    /*
+<i>114</i>&nbsp;    /**********************************************************
+<i>115</i>&nbsp;    /* Parsing state
+<i>116</i>&nbsp;    /**********************************************************
+<i>117</i>&nbsp;     */
+<i>118</i>&nbsp;
+<i>119</i>&nbsp;    /**
+<i>120</i>&nbsp;     * Information about parser context, context in which
+<i>121</i>&nbsp;     * the next token is to be parsed (root, array, object).
+<i>122</i>&nbsp;     */
+<i>123</i>&nbsp;    protected JsonReadContext _parsingContext;
+<i>124</i>&nbsp;    
+<i>125</i>&nbsp;    /**
+<i>126</i>&nbsp;     * Secondary token related to the next token after current one;
+<i>127</i>&nbsp;     * used if its type is known. This may be value token that
+<i>128</i>&nbsp;     * follows FIELD_NAME, for example.
+<i>129</i>&nbsp;     */
+<i>130</i>&nbsp;    protected JsonToken _nextToken;
+<i>131</i>&nbsp;
+<i>132</i>&nbsp;    /*
+<i>133</i>&nbsp;    /**********************************************************
+<i>134</i>&nbsp;    /* Buffer(s) for local name(s) and text content
+<i>135</i>&nbsp;    /**********************************************************
+<i>136</i>&nbsp;     */
+<i>137</i>&nbsp;
+<i>138</i>&nbsp;    /**
+<i>139</i>&nbsp;     * Buffer that contains contents of String values, including
+<i>140</i>&nbsp;     * field names if necessary (name split across boundary,
+<i>141</i>&nbsp;     * contains escape sequence, or access needed to char array)
+<i>142</i>&nbsp;     */
+<i>143</i>&nbsp;    protected final TextBuffer _textBuffer;
+<i>144</i>&nbsp;
+<i>145</i>&nbsp;    /**
+<i>146</i>&nbsp;     * Temporary buffer that is needed if field name is accessed
+<i>147</i>&nbsp;     * using {@link #getTextCharacters} method (instead of String
+<i>148</i>&nbsp;     * returning alternatives)
+<i>149</i>&nbsp;     */
+<i>150</i>&nbsp;    protected char[] _nameCopyBuffer;
+<i>151</i>&nbsp;
+<i>152</i>&nbsp;    /**
+<i>153</i>&nbsp;     * Flag set to indicate whether the field name is available
+<i>154</i>&nbsp;     * from the name copy buffer or not (in addition to its String
+<i>155</i>&nbsp;     * representation  being available via read context)
+<i>156</i>&nbsp;     */
+<i>157</i>&nbsp;    protected boolean _nameCopied;
+<i>158</i>&nbsp;
+<i>159</i>&nbsp;    /**
+<i>160</i>&nbsp;     * ByteArrayBuilder is needed if &#39;getBinaryValue&#39; is called. If so,
+<i>161</i>&nbsp;     * we better reuse it for remainder of content.
+<i>162</i>&nbsp;     */
+<i>163</i>&nbsp;    protected ByteArrayBuilder _byteArrayBuilder;
+<i>164</i>&nbsp;
+<i>165</i>&nbsp;    /**
+<i>166</i>&nbsp;     * We will hold on to decoded binary data, for duration of
+<i>167</i>&nbsp;     * current event, so that multiple calls to
+<i>168</i>&nbsp;     * {@link #getBinaryValue} will not need to decode data more
+<i>169</i>&nbsp;     * than once.
+<i>170</i>&nbsp;     */
+<i>171</i>&nbsp;    protected byte[] _binaryValue;
+<i>172</i>&nbsp;
+<i>173</i>&nbsp;    /*
+<i>174</i>&nbsp;    /**********************************************************
+<i>175</i>&nbsp;    /* Constants and fields of former &#39;JsonNumericParserBase&#39;
+<i>176</i>&nbsp;    /**********************************************************
+<i>177</i>&nbsp;     */
+<i>178</i>&nbsp;
+<i>179</i>&nbsp;    final protected static int NR_UNKNOWN = 0;
+<i>180</i>&nbsp;
+<i>181</i>&nbsp;    // First, integer types
+<i>182</i>&nbsp;
+<i>183</i>&nbsp;    final protected static int NR_INT = 0x0001;
+<i>184</i>&nbsp;    final protected static int NR_LONG = 0x0002;
+<i>185</i>&nbsp;    final protected static int NR_BIGINT = 0x0004;
+<i>186</i>&nbsp;
+<i>187</i>&nbsp;    // And then floating point types
+<i>188</i>&nbsp;
+<i>189</i>&nbsp;    final protected static int NR_DOUBLE = 0x008;
+<i>190</i>&nbsp;    final protected static int NR_BIGDECIMAL = 0x0010;
+<i>191</i>&nbsp;
+<i>192</i>&nbsp;    // Also, we need some numeric constants
+<i>193</i>&nbsp;
+<b class="fc"><i>194</i>&nbsp;    final static BigInteger BI_MIN_INT = BigInteger.valueOf(Integer.MIN_VALUE);</b>
+<b class="fc"><i>195</i>&nbsp;    final static BigInteger BI_MAX_INT = BigInteger.valueOf(Integer.MAX_VALUE);</b>
+<i>196</i>&nbsp;
+<b class="fc"><i>197</i>&nbsp;    final static BigInteger BI_MIN_LONG = BigInteger.valueOf(Long.MIN_VALUE);</b>
+<b class="fc"><i>198</i>&nbsp;    final static BigInteger BI_MAX_LONG = BigInteger.valueOf(Long.MAX_VALUE);</b>
+<i>199</i>&nbsp;    
+<b class="fc"><i>200</i>&nbsp;    final static BigDecimal BD_MIN_LONG = new BigDecimal(BI_MIN_LONG);</b>
+<b class="fc"><i>201</i>&nbsp;    final static BigDecimal BD_MAX_LONG = new BigDecimal(BI_MAX_LONG);</b>
+<i>202</i>&nbsp;
+<b class="fc"><i>203</i>&nbsp;    final static BigDecimal BD_MIN_INT = new BigDecimal(BI_MIN_INT);</b>
+<b class="fc"><i>204</i>&nbsp;    final static BigDecimal BD_MAX_INT = new BigDecimal(BI_MAX_INT);</b>
+<i>205</i>&nbsp;
+<i>206</i>&nbsp;    final static long MIN_INT_L = (long) Integer.MIN_VALUE;
+<i>207</i>&nbsp;    final static long MAX_INT_L = (long) Integer.MAX_VALUE;
+<i>208</i>&nbsp;
+<i>209</i>&nbsp;    // These are not very accurate, but have to do... (for bounds checks)
+<i>210</i>&nbsp;
+<i>211</i>&nbsp;    final static double MIN_LONG_D = (double) Long.MIN_VALUE;
+<i>212</i>&nbsp;    final static double MAX_LONG_D = (double) Long.MAX_VALUE;
+<i>213</i>&nbsp;
+<i>214</i>&nbsp;    final static double MIN_INT_D = (double) Integer.MIN_VALUE;
+<i>215</i>&nbsp;    final static double MAX_INT_D = (double) Integer.MAX_VALUE;
+<i>216</i>&nbsp;
+<i>217</i>&nbsp;    // Digits, numeric
+<i>218</i>&nbsp;    final protected static int INT_0 = &#39;0&#39;;
+<i>219</i>&nbsp;    final protected static int INT_9 = &#39;9&#39;;
+<i>220</i>&nbsp;
+<i>221</i>&nbsp;    final protected static int INT_MINUS = &#39;-&#39;;
+<i>222</i>&nbsp;    final protected static int INT_PLUS = &#39;+&#39;;
+<i>223</i>&nbsp;
+<i>224</i>&nbsp;    final protected static char CHAR_NULL = &#39;\0&#39;;
+<i>225</i>&nbsp;    
+<i>226</i>&nbsp;    // Numeric value holders: multiple fields used for
+<i>227</i>&nbsp;    // for efficiency
+<i>228</i>&nbsp;
+<i>229</i>&nbsp;    /**
+<i>230</i>&nbsp;     * Bitfield that indicates which numeric representations
+<i>231</i>&nbsp;     * have been calculated for the current type
+<i>232</i>&nbsp;     */
+<b class="fc"><i>233</i>&nbsp;    protected int _numTypesValid = NR_UNKNOWN;</b>
+<i>234</i>&nbsp;
+<i>235</i>&nbsp;    // First primitives
+<i>236</i>&nbsp;
+<i>237</i>&nbsp;    protected int _numberInt;
+<i>238</i>&nbsp;
+<i>239</i>&nbsp;    protected long _numberLong;
+<i>240</i>&nbsp;
+<i>241</i>&nbsp;    protected double _numberDouble;
+<i>242</i>&nbsp;
+<i>243</i>&nbsp;    // And then object types
+<i>244</i>&nbsp;
+<i>245</i>&nbsp;    protected BigInteger _numberBigInt;
+<i>246</i>&nbsp;
+<i>247</i>&nbsp;    protected BigDecimal _numberBigDecimal;
+<i>248</i>&nbsp;
+<i>249</i>&nbsp;    // And then other information about value itself
+<i>250</i>&nbsp;
+<i>251</i>&nbsp;    /**
+<i>252</i>&nbsp;     * Flag that indicates whether numeric value has a negative
+<i>253</i>&nbsp;     * value. That is, whether its textual representation starts
+<i>254</i>&nbsp;     * with minus character.
+<i>255</i>&nbsp;     */
+<i>256</i>&nbsp;    protected boolean _numberNegative;
+<i>257</i>&nbsp;
+<i>258</i>&nbsp;    /**
+<i>259</i>&nbsp;     * Length of integer part of the number, in characters
+<i>260</i>&nbsp;     */
+<i>261</i>&nbsp;    protected int _intLength;
+<i>262</i>&nbsp;
+<i>263</i>&nbsp;    /**
+<i>264</i>&nbsp;     * Length of the fractional part (not including decimal
+<i>265</i>&nbsp;     * point or exponent), in characters.
+<i>266</i>&nbsp;     * Not used for  pure integer values.
+<i>267</i>&nbsp;     */
+<i>268</i>&nbsp;    protected int _fractLength;
+<i>269</i>&nbsp;
+<i>270</i>&nbsp;    /**
+<i>271</i>&nbsp;     * Length of the exponent part of the number, if any, not
+<i>272</i>&nbsp;     * including &#39;e&#39; marker or sign, just digits. 
+<i>273</i>&nbsp;     * Not used for  pure integer values.
+<i>274</i>&nbsp;     */
+<i>275</i>&nbsp;    protected int _expLength;
+<i>276</i>&nbsp;
+<i>277</i>&nbsp;    /*
+<i>278</i>&nbsp;    /**********************************************************
+<i>279</i>&nbsp;    /* Life-cycle
+<i>280</i>&nbsp;    /**********************************************************
+<i>281</i>&nbsp;     */
+<i>282</i>&nbsp;
+<i>283</i>&nbsp;    protected ParserBase(IOContext ctxt, int features) {
+<b class="fc"><i>284</i>&nbsp;        super(features);</b>
+<b class="fc"><i>285</i>&nbsp;        _ioContext = ctxt;</b>
+<b class="fc"><i>286</i>&nbsp;        _textBuffer = ctxt.constructTextBuffer();</b>
+<b class="fc"><i>287</i>&nbsp;        DupDetector dups = Feature.STRICT_DUPLICATE_DETECTION.enabledIn(features)</b>
+<b class="fc"><i>288</i>&nbsp;                ? DupDetector.rootDetector(this) : null;</b>
+<b class="fc"><i>289</i>&nbsp;        _parsingContext = JsonReadContext.createRootContext(dups);</b>
+<b class="fc"><i>290</i>&nbsp;    }</b>
+<i>291</i>&nbsp;
+<b class="fc"><i>292</i>&nbsp;    @Override public Version version() { return PackageVersion.VERSION; }</b>
+<i>293</i>&nbsp;
+<i>294</i>&nbsp;    @Override
+<i>295</i>&nbsp;    public Object getCurrentValue() {
+<b class="fc"><i>296</i>&nbsp;        return _parsingContext.getCurrentValue();</b>
+<i>297</i>&nbsp;    }
+<i>298</i>&nbsp;
+<i>299</i>&nbsp;    @Override
+<i>300</i>&nbsp;    public void setCurrentValue(Object v) {
+<b class="fc"><i>301</i>&nbsp;        _parsingContext.setCurrentValue(v);</b>
+<b class="fc"><i>302</i>&nbsp;    }</b>
+<i>303</i>&nbsp;    
+<i>304</i>&nbsp;    /*
+<i>305</i>&nbsp;    /**********************************************************
+<i>306</i>&nbsp;    /* Overrides for Feature handling
+<i>307</i>&nbsp;    /**********************************************************
+<i>308</i>&nbsp;     */
+<i>309</i>&nbsp;
+<i>310</i>&nbsp;    @Override
+<i>311</i>&nbsp;    public JsonParser enable(Feature f) {
+<b class="fc"><i>312</i>&nbsp;        _features |= f.getMask();</b>
+<b class="fc"><i>313</i>&nbsp;        if (f == Feature.STRICT_DUPLICATE_DETECTION) { // enabling dup detection?</b>
+<b class="fc"><i>314</i>&nbsp;            if (_parsingContext.getDupDetector() == null) { // but only if disabled currently</b>
+<b class="fc"><i>315</i>&nbsp;                _parsingContext = _parsingContext.withDupDetector(DupDetector.rootDetector(this));</b>
+<i>316</i>&nbsp;            }
+<i>317</i>&nbsp;        }
+<b class="fc"><i>318</i>&nbsp;        return this;</b>
+<i>319</i>&nbsp;    }
+<i>320</i>&nbsp;
+<i>321</i>&nbsp;    @Override
+<i>322</i>&nbsp;    public JsonParser disable(Feature f) {
+<b class="fc"><i>323</i>&nbsp;        _features &amp;= ~f.getMask();</b>
+<b class="fc"><i>324</i>&nbsp;        if (f == Feature.STRICT_DUPLICATE_DETECTION) {</b>
+<b class="nc"><i>325</i>&nbsp;            _parsingContext = _parsingContext.withDupDetector(null);</b>
+<i>326</i>&nbsp;        }
+<b class="fc"><i>327</i>&nbsp;        return this;</b>
+<i>328</i>&nbsp;    }
+<i>329</i>&nbsp;
+<i>330</i>&nbsp;    @Override
+<i>331</i>&nbsp;    @Deprecated
+<i>332</i>&nbsp;    public JsonParser setFeatureMask(int newMask) {
+<b class="nc"><i>333</i>&nbsp;        int changes = (_features ^ newMask);</b>
+<b class="nc"><i>334</i>&nbsp;        if (changes != 0) {</b>
+<b class="nc"><i>335</i>&nbsp;            _features = newMask;</b>
+<b class="nc"><i>336</i>&nbsp;            _checkStdFeatureChanges(newMask, changes);</b>
+<i>337</i>&nbsp;        }
+<b class="nc"><i>338</i>&nbsp;        return this;</b>
+<i>339</i>&nbsp;    }
+<i>340</i>&nbsp;
+<i>341</i>&nbsp;    @Override // since 2.7
+<i>342</i>&nbsp;    public JsonParser overrideStdFeatures(int values, int mask) {
+<b class="nc"><i>343</i>&nbsp;        int oldState = _features;</b>
+<b class="nc"><i>344</i>&nbsp;        int newState = (oldState &amp; ~mask) | (values &amp; mask);</b>
+<b class="nc"><i>345</i>&nbsp;        int changed = oldState ^ newState;</b>
+<b class="nc"><i>346</i>&nbsp;        if (changed != 0) {</b>
+<b class="nc"><i>347</i>&nbsp;            _features = newState;</b>
+<b class="nc"><i>348</i>&nbsp;            _checkStdFeatureChanges(newState, changed);</b>
+<i>349</i>&nbsp;        }
+<b class="nc"><i>350</i>&nbsp;        return this;</b>
+<i>351</i>&nbsp;    }
+<i>352</i>&nbsp;
+<i>353</i>&nbsp;    /**
+<i>354</i>&nbsp;     * Helper method called to verify changes to standard features.
+<i>355</i>&nbsp;     *
+<i>356</i>&nbsp;     * @param newFeatureFlags Bitflag of standard features after they were changed
+<i>357</i>&nbsp;     * @param changedFeatures Bitflag of standard features for which setting
+<i>358</i>&nbsp;     *    did change
+<i>359</i>&nbsp;     *
+<i>360</i>&nbsp;     * @since 2.7
+<i>361</i>&nbsp;     */
+<i>362</i>&nbsp;    protected void _checkStdFeatureChanges(int newFeatureFlags, int changedFeatures)
+<i>363</i>&nbsp;    {
+<b class="nc"><i>364</i>&nbsp;        int f = Feature.STRICT_DUPLICATE_DETECTION.getMask();</b>
+<i>365</i>&nbsp;        
+<b class="nc"><i>366</i>&nbsp;        if ((changedFeatures &amp; f) != 0) {</b>
+<b class="nc"><i>367</i>&nbsp;            if ((newFeatureFlags &amp; f) != 0) {</b>
+<b class="nc"><i>368</i>&nbsp;                if (_parsingContext.getDupDetector() == null) {</b>
+<b class="nc"><i>369</i>&nbsp;                    _parsingContext = _parsingContext.withDupDetector(DupDetector.rootDetector(this));</b>
+<i>370</i>&nbsp;                } else { // disabling
+<b class="nc"><i>371</i>&nbsp;                    _parsingContext = _parsingContext.withDupDetector(null);</b>
+<i>372</i>&nbsp;                }
+<i>373</i>&nbsp;            }
+<i>374</i>&nbsp;        }
+<b class="nc"><i>375</i>&nbsp;    }</b>
+<i>376</i>&nbsp;
+<i>377</i>&nbsp;    /*
+<i>378</i>&nbsp;    /**********************************************************
+<i>379</i>&nbsp;    /* JsonParser impl
+<i>380</i>&nbsp;    /**********************************************************
+<i>381</i>&nbsp;     */
+<i>382</i>&nbsp;    
+<i>383</i>&nbsp;    /**
+<i>384</i>&nbsp;     * Method that can be called to get the name associated with
+<i>385</i>&nbsp;     * the current event.
+<i>386</i>&nbsp;     */
+<i>387</i>&nbsp;    @Override public String getCurrentName() throws IOException {
+<i>388</i>&nbsp;        // [JACKSON-395]: start markers require information from parent
+<b class="fc"><i>389</i>&nbsp;        if (_currToken == JsonToken.START_OBJECT || _currToken == JsonToken.START_ARRAY) {</b>
+<b class="fc"><i>390</i>&nbsp;            JsonReadContext parent = _parsingContext.getParent();</b>
+<b class="fc"><i>391</i>&nbsp;            if (parent != null) {</b>
+<b class="fc"><i>392</i>&nbsp;                return parent.getCurrentName();</b>
+<i>393</i>&nbsp;            }
+<i>394</i>&nbsp;        }
+<b class="fc"><i>395</i>&nbsp;        return _parsingContext.getCurrentName();</b>
+<i>396</i>&nbsp;    }
+<i>397</i>&nbsp;
+<i>398</i>&nbsp;    @Override public void overrideCurrentName(String name) {
+<i>399</i>&nbsp;        // Simple, but need to look for START_OBJECT/ARRAY&#39;s &quot;off-by-one&quot; thing:
+<b class="fc"><i>400</i>&nbsp;        JsonReadContext ctxt = _parsingContext;</b>
+<b class="fc"><i>401</i>&nbsp;        if (_currToken == JsonToken.START_OBJECT || _currToken == JsonToken.START_ARRAY) {</b>
+<b class="fc"><i>402</i>&nbsp;            ctxt = ctxt.getParent();</b>
+<i>403</i>&nbsp;        }
+<i>404</i>&nbsp;        /* 24-Sep-2013, tatu: Unfortunate, but since we did not expose exceptions,
+<i>405</i>&nbsp;         *   need to wrap this here
+<i>406</i>&nbsp;         */
+<i>407</i>&nbsp;        try {
+<b class="fc"><i>408</i>&nbsp;            ctxt.setCurrentName(name);</b>
+<b class="nc"><i>409</i>&nbsp;        } catch (IOException e) {</b>
+<b class="nc"><i>410</i>&nbsp;            throw new IllegalStateException(e);</b>
+<b class="fc"><i>411</i>&nbsp;        }</b>
+<b class="fc"><i>412</i>&nbsp;    }</b>
+<i>413</i>&nbsp;    
+<i>414</i>&nbsp;    @Override public void close() throws IOException {
+<b class="fc"><i>415</i>&nbsp;        if (!_closed) {</b>
+<b class="fc"><i>416</i>&nbsp;            _closed = true;</b>
+<i>417</i>&nbsp;            try {
+<b class="fc"><i>418</i>&nbsp;                _closeInput();</b>
+<i>419</i>&nbsp;            } finally {
+<i>420</i>&nbsp;                // as per [JACKSON-324], do in finally block
+<i>421</i>&nbsp;                // Also, internal buffer(s) can now be released as well
+<b class="fc"><i>422</i>&nbsp;                _releaseBuffers();</b>
+<b class="fc"><i>423</i>&nbsp;            }</b>
+<i>424</i>&nbsp;        }
+<b class="fc"><i>425</i>&nbsp;    }</b>
+<i>426</i>&nbsp;
+<b class="fc"><i>427</i>&nbsp;    @Override public boolean isClosed() { return _closed; }</b>
+<b class="fc"><i>428</i>&nbsp;    @Override public JsonReadContext getParsingContext() { return _parsingContext; }</b>
+<i>429</i>&nbsp;
+<i>430</i>&nbsp;    /**
+<i>431</i>&nbsp;     * Method that return the &lt;b&gt;starting&lt;/b&gt; location of the current
+<i>432</i>&nbsp;     * token; that is, position of the first character from input
+<i>433</i>&nbsp;     * that starts the current token.
+<i>434</i>&nbsp;     */
+<i>435</i>&nbsp;    @Override
+<i>436</i>&nbsp;    public JsonLocation getTokenLocation() {
+<b class="nc"><i>437</i>&nbsp;        return new JsonLocation(_ioContext.getSourceReference(),</b>
+<b class="nc"><i>438</i>&nbsp;                -1L, getTokenCharacterOffset(), // bytes, chars</b>
+<b class="nc"><i>439</i>&nbsp;                getTokenLineNr(),</b>
+<b class="nc"><i>440</i>&nbsp;                getTokenColumnNr());</b>
+<i>441</i>&nbsp;    }
+<i>442</i>&nbsp;
+<i>443</i>&nbsp;    /**
+<i>444</i>&nbsp;     * Method that returns location of the last processed character;
+<i>445</i>&nbsp;     * usually for error reporting purposes
+<i>446</i>&nbsp;     */
+<i>447</i>&nbsp;    @Override
+<i>448</i>&nbsp;    public JsonLocation getCurrentLocation() {
+<b class="nc"><i>449</i>&nbsp;        int col = _inputPtr - _currInputRowStart + 1; // 1-based</b>
+<b class="nc"><i>450</i>&nbsp;        return new JsonLocation(_ioContext.getSourceReference(),</b>
+<i>451</i>&nbsp;                -1L, _currInputProcessed + _inputPtr, // bytes, chars
+<i>452</i>&nbsp;                _currInputRow, col);
+<i>453</i>&nbsp;    }
+<i>454</i>&nbsp;
+<i>455</i>&nbsp;    /*
+<i>456</i>&nbsp;    /**********************************************************
+<i>457</i>&nbsp;    /* Public API, access to token information, text and similar
+<i>458</i>&nbsp;    /**********************************************************
+<i>459</i>&nbsp;     */
+<i>460</i>&nbsp;
+<i>461</i>&nbsp;    @Override
+<i>462</i>&nbsp;    public boolean hasTextCharacters() {
+<b class="fc"><i>463</i>&nbsp;        if (_currToken == JsonToken.VALUE_STRING) { return true; } // usually true        </b>
+<b class="nc"><i>464</i>&nbsp;        if (_currToken == JsonToken.FIELD_NAME) { return _nameCopied; }</b>
+<b class="nc"><i>465</i>&nbsp;        return false;</b>
+<i>466</i>&nbsp;    }
+<i>467</i>&nbsp;
+<i>468</i>&nbsp;    @SuppressWarnings(&quot;resource&quot;)
+<i>469</i>&nbsp;    @Override // since 2.7
+<i>470</i>&nbsp;    public byte[] getBinaryValue(Base64Variant variant) throws IOException
+<i>471</i>&nbsp;    {
+<b class="nc"><i>472</i>&nbsp;        if (_binaryValue == null) {</b>
+<b class="nc"><i>473</i>&nbsp;            if (_currToken != JsonToken.VALUE_STRING) {</b>
+<b class="nc"><i>474</i>&nbsp;                _reportError(&quot;Current token (&quot;+_currToken+&quot;) not VALUE_STRING, can not access as binary&quot;);</b>
+<i>475</i>&nbsp;            }
+<b class="nc"><i>476</i>&nbsp;            ByteArrayBuilder builder = _getByteArrayBuilder();</b>
+<b class="nc"><i>477</i>&nbsp;            _decodeBase64(getText(), builder, variant);</b>
+<b class="nc"><i>478</i>&nbsp;            _binaryValue = builder.toByteArray();</b>
+<i>479</i>&nbsp;        }
+<b class="nc"><i>480</i>&nbsp;        return _binaryValue;</b>
+<i>481</i>&nbsp;    }
+<i>482</i>&nbsp;
+<i>483</i>&nbsp;    /*
+<i>484</i>&nbsp;    /**********************************************************
+<i>485</i>&nbsp;    /* Public low-level accessors
+<i>486</i>&nbsp;    /**********************************************************
+<i>487</i>&nbsp;     */
+<i>488</i>&nbsp;
+<b class="nc"><i>489</i>&nbsp;    public long getTokenCharacterOffset() { return _tokenInputTotal; }</b>
+<b class="nc"><i>490</i>&nbsp;    public int getTokenLineNr() { return _tokenInputRow; }</b>
+<i>491</i>&nbsp;    public int getTokenColumnNr() {
+<i>492</i>&nbsp;        // note: value of -1 means &quot;not available&quot;; otherwise convert from 0-based to 1-based
+<b class="nc"><i>493</i>&nbsp;        int col = _tokenInputCol;</b>
+<b class="nc"><i>494</i>&nbsp;        return (col &lt; 0) ? col : (col + 1);</b>
+<i>495</i>&nbsp;    }
+<i>496</i>&nbsp;
+<i>497</i>&nbsp;    /*
+<i>498</i>&nbsp;    /**********************************************************
+<i>499</i>&nbsp;    /* Abstract methods needed from sub-classes
+<i>500</i>&nbsp;    /**********************************************************
+<i>501</i>&nbsp;     */
+<i>502</i>&nbsp;
+<i>503</i>&nbsp;    protected abstract void _closeInput() throws IOException;
+<i>504</i>&nbsp;    
+<i>505</i>&nbsp;    /*
+<i>506</i>&nbsp;    /**********************************************************
+<i>507</i>&nbsp;    /* Low-level reading, other
+<i>508</i>&nbsp;    /**********************************************************
+<i>509</i>&nbsp;     */
+<i>510</i>&nbsp;
+<i>511</i>&nbsp;    /**
+<i>512</i>&nbsp;     * Method called to release internal buffers owned by the base
+<i>513</i>&nbsp;     * reader. This may be called along with {@link #_closeInput} (for
+<i>514</i>&nbsp;     * example, when explicitly closing this reader instance), or
+<i>515</i>&nbsp;     * separately (if need be).
+<i>516</i>&nbsp;     */
+<i>517</i>&nbsp;    protected void _releaseBuffers() throws IOException {
+<b class="fc"><i>518</i>&nbsp;        _textBuffer.releaseBuffers();</b>
+<b class="fc"><i>519</i>&nbsp;        char[] buf = _nameCopyBuffer;</b>
+<b class="fc"><i>520</i>&nbsp;        if (buf != null) {</b>
+<b class="fc"><i>521</i>&nbsp;            _nameCopyBuffer = null;</b>
+<b class="fc"><i>522</i>&nbsp;            _ioContext.releaseNameCopyBuffer(buf);</b>
+<i>523</i>&nbsp;        }
+<b class="fc"><i>524</i>&nbsp;    }</b>
+<i>525</i>&nbsp;    
+<i>526</i>&nbsp;    /**
+<i>527</i>&nbsp;     * Method called when an EOF is encountered between tokens.
+<i>528</i>&nbsp;     * If so, it may be a legitimate EOF, but only iff there
+<i>529</i>&nbsp;     * is no open non-root context.
+<i>530</i>&nbsp;     */
+<i>531</i>&nbsp;    @Override
+<i>532</i>&nbsp;    protected void _handleEOF() throws JsonParseException {
+<b class="fc"><i>533</i>&nbsp;        if (!_parsingContext.inRoot()) {</b>
+<b class="fc"><i>534</i>&nbsp;            String marker = _parsingContext.inArray() ? &quot;Array&quot; : &quot;Object&quot;;</b>
+<b class="fc"><i>535</i>&nbsp;            _reportInvalidEOF(String.format(</b>
+<i>536</i>&nbsp;                    &quot;: expected close marker for %s (start marker at %s)&quot;,
+<i>537</i>&nbsp;                    marker,
+<b class="fc"><i>538</i>&nbsp;                    _parsingContext.getStartLocation(_ioContext.getSourceReference())),</b>
+<i>539</i>&nbsp;                    null);
+<i>540</i>&nbsp;        }
+<b class="fc"><i>541</i>&nbsp;    }</b>
+<i>542</i>&nbsp;
+<i>543</i>&nbsp;    /**
+<i>544</i>&nbsp;     * @since 2.4
+<i>545</i>&nbsp;     */
+<i>546</i>&nbsp;    protected final int _eofAsNextChar() throws JsonParseException {
+<b class="fc"><i>547</i>&nbsp;        _handleEOF();</b>
+<b class="fc"><i>548</i>&nbsp;        return -1;</b>
+<i>549</i>&nbsp;    }
+<i>550</i>&nbsp;    
+<i>551</i>&nbsp;    /*
+<i>552</i>&nbsp;    /**********************************************************
+<i>553</i>&nbsp;    /* Internal/package methods: Error reporting
+<i>554</i>&nbsp;    /**********************************************************
+<i>555</i>&nbsp;     */
+<i>556</i>&nbsp;    
+<i>557</i>&nbsp;    protected void _reportMismatchedEndMarker(int actCh, char expCh) throws JsonParseException {
+<b class="fc"><i>558</i>&nbsp;        String startDesc = &quot;&quot;+_parsingContext.getStartLocation(_ioContext.getSourceReference());</b>
+<b class="fc"><i>559</i>&nbsp;        _reportError(&quot;Unexpected close marker &#39;&quot;+((char) actCh)+&quot;&#39;: expected &#39;&quot;+expCh+&quot;&#39; (for &quot;+_parsingContext.typeDesc()+&quot; starting at &quot;+startDesc+&quot;)&quot;);</b>
+<b class="nc"><i>560</i>&nbsp;    }</b>
+<i>561</i>&nbsp;
+<i>562</i>&nbsp;    /*
+<i>563</i>&nbsp;    /**********************************************************
+<i>564</i>&nbsp;    /* Internal/package methods: shared/reusable builders
+<i>565</i>&nbsp;    /**********************************************************
+<i>566</i>&nbsp;     */
+<i>567</i>&nbsp;    
+<i>568</i>&nbsp;    public ByteArrayBuilder _getByteArrayBuilder()
+<i>569</i>&nbsp;    {
+<b class="fc"><i>570</i>&nbsp;        if (_byteArrayBuilder == null) {</b>
+<b class="fc"><i>571</i>&nbsp;            _byteArrayBuilder = new ByteArrayBuilder();</b>
+<i>572</i>&nbsp;        } else {
+<b class="fc"><i>573</i>&nbsp;            _byteArrayBuilder.reset();</b>
+<i>574</i>&nbsp;        }
+<b class="fc"><i>575</i>&nbsp;        return _byteArrayBuilder;</b>
+<i>576</i>&nbsp;    }
+<i>577</i>&nbsp;
+<i>578</i>&nbsp;    /*
+<i>579</i>&nbsp;    /**********************************************************
+<i>580</i>&nbsp;    /* Methods from former JsonNumericParserBase
+<i>581</i>&nbsp;    /**********************************************************
+<i>582</i>&nbsp;     */
+<i>583</i>&nbsp;
+<i>584</i>&nbsp;    // // // Life-cycle of number-parsing
+<i>585</i>&nbsp;    
+<i>586</i>&nbsp;    protected final JsonToken reset(boolean negative, int intLen, int fractLen, int expLen)
+<i>587</i>&nbsp;    {
+<b class="fc"><i>588</i>&nbsp;        if (fractLen &lt; 1 &amp;&amp; expLen &lt; 1) { // integer</b>
+<b class="fc"><i>589</i>&nbsp;            return resetInt(negative, intLen);</b>
+<i>590</i>&nbsp;        }
+<b class="fc"><i>591</i>&nbsp;        return resetFloat(negative, intLen, fractLen, expLen);</b>
+<i>592</i>&nbsp;    }
+<i>593</i>&nbsp;        
+<i>594</i>&nbsp;    protected final JsonToken resetInt(boolean negative, int intLen)
+<i>595</i>&nbsp;    {
+<b class="fc"><i>596</i>&nbsp;        _numberNegative = negative;</b>
+<b class="fc"><i>597</i>&nbsp;        _intLength = intLen;</b>
+<b class="fc"><i>598</i>&nbsp;        _fractLength = 0;</b>
+<b class="fc"><i>599</i>&nbsp;        _expLength = 0;</b>
+<b class="fc"><i>600</i>&nbsp;        _numTypesValid = NR_UNKNOWN; // to force parsing</b>
+<b class="fc"><i>601</i>&nbsp;        return JsonToken.VALUE_NUMBER_INT;</b>
+<i>602</i>&nbsp;    }
+<i>603</i>&nbsp;    
+<i>604</i>&nbsp;    protected final JsonToken resetFloat(boolean negative, int intLen, int fractLen, int expLen)
+<i>605</i>&nbsp;    {
+<b class="fc"><i>606</i>&nbsp;        _numberNegative = negative;</b>
+<b class="fc"><i>607</i>&nbsp;        _intLength = intLen;</b>
+<b class="fc"><i>608</i>&nbsp;        _fractLength = fractLen;</b>
+<b class="fc"><i>609</i>&nbsp;        _expLength = expLen;</b>
+<b class="fc"><i>610</i>&nbsp;        _numTypesValid = NR_UNKNOWN; // to force parsing</b>
+<b class="fc"><i>611</i>&nbsp;        return JsonToken.VALUE_NUMBER_FLOAT;</b>
+<i>612</i>&nbsp;    }
+<i>613</i>&nbsp;    
+<i>614</i>&nbsp;    protected final JsonToken resetAsNaN(String valueStr, double value)
+<i>615</i>&nbsp;    {
+<b class="fc"><i>616</i>&nbsp;        _textBuffer.resetWithString(valueStr);</b>
+<b class="fc"><i>617</i>&nbsp;        _numberDouble = value;</b>
+<b class="fc"><i>618</i>&nbsp;        _numTypesValid = NR_DOUBLE;</b>
+<b class="fc"><i>619</i>&nbsp;        return JsonToken.VALUE_NUMBER_FLOAT;</b>
+<i>620</i>&nbsp;    }
+<i>621</i>&nbsp;    
+<i>622</i>&nbsp;    /*
+<i>623</i>&nbsp;    /**********************************************************
+<i>624</i>&nbsp;    /* Numeric accessors of public API
+<i>625</i>&nbsp;    /**********************************************************
+<i>626</i>&nbsp;     */
+<i>627</i>&nbsp;    
+<i>628</i>&nbsp;    @Override
+<i>629</i>&nbsp;    public Number getNumberValue() throws IOException
+<i>630</i>&nbsp;    {
+<b class="fc"><i>631</i>&nbsp;        if (_numTypesValid == NR_UNKNOWN) {</b>
+<b class="fc"><i>632</i>&nbsp;            _parseNumericValue(NR_UNKNOWN); // will also check event type</b>
+<i>633</i>&nbsp;        }
+<i>634</i>&nbsp;        // Separate types for int types
+<b class="fc"><i>635</i>&nbsp;        if (_currToken == JsonToken.VALUE_NUMBER_INT) {</b>
+<b class="fc"><i>636</i>&nbsp;            if ((_numTypesValid &amp; NR_INT) != 0) {</b>
+<b class="fc"><i>637</i>&nbsp;                return _numberInt;</b>
+<i>638</i>&nbsp;            }
+<b class="fc"><i>639</i>&nbsp;            if ((_numTypesValid &amp; NR_LONG) != 0) {</b>
+<b class="fc"><i>640</i>&nbsp;                return _numberLong;</b>
+<i>641</i>&nbsp;            }
+<b class="fc"><i>642</i>&nbsp;            if ((_numTypesValid &amp; NR_BIGINT) != 0) {</b>
+<b class="fc"><i>643</i>&nbsp;                return _numberBigInt;</b>
+<i>644</i>&nbsp;            }
+<i>645</i>&nbsp;            // Shouldn&#39;t get this far but if we do
+<b class="nc"><i>646</i>&nbsp;            return _numberBigDecimal;</b>
+<i>647</i>&nbsp;        }
+<i>648</i>&nbsp;    
+<i>649</i>&nbsp;        /* And then floating point types. But here optimal type
+<i>650</i>&nbsp;         * needs to be big decimal, to avoid losing any data?
+<i>651</i>&nbsp;         */
+<b class="nc"><i>652</i>&nbsp;        if ((_numTypesValid &amp; NR_BIGDECIMAL) != 0) {</b>
+<b class="nc"><i>653</i>&nbsp;            return _numberBigDecimal;</b>
+<i>654</i>&nbsp;        }
+<b class="nc"><i>655</i>&nbsp;        if ((_numTypesValid &amp; NR_DOUBLE) == 0) { // sanity check</b>
+<b class="nc"><i>656</i>&nbsp;            _throwInternal();</b>
+<i>657</i>&nbsp;        }
+<b class="nc"><i>658</i>&nbsp;        return _numberDouble;</b>
+<i>659</i>&nbsp;    }
+<i>660</i>&nbsp;    
+<i>661</i>&nbsp;    @Override
+<i>662</i>&nbsp;    public NumberType getNumberType() throws IOException
+<i>663</i>&nbsp;    {
+<b class="fc"><i>664</i>&nbsp;        if (_numTypesValid == NR_UNKNOWN) {</b>
+<b class="fc"><i>665</i>&nbsp;            _parseNumericValue(NR_UNKNOWN); // will also check event type</b>
+<i>666</i>&nbsp;        }
+<b class="fc"><i>667</i>&nbsp;        if (_currToken == JsonToken.VALUE_NUMBER_INT) {</b>
+<b class="fc"><i>668</i>&nbsp;            if ((_numTypesValid &amp; NR_INT) != 0) {</b>
+<b class="fc"><i>669</i>&nbsp;                return NumberType.INT;</b>
+<i>670</i>&nbsp;            }
+<b class="fc"><i>671</i>&nbsp;            if ((_numTypesValid &amp; NR_LONG) != 0) {</b>
+<b class="fc"><i>672</i>&nbsp;                return NumberType.LONG;</b>
+<i>673</i>&nbsp;            }
+<b class="fc"><i>674</i>&nbsp;            return NumberType.BIG_INTEGER;</b>
+<i>675</i>&nbsp;        }
+<i>676</i>&nbsp;    
+<i>677</i>&nbsp;        /* And then floating point types. Here optimal type
+<i>678</i>&nbsp;         * needs to be big decimal, to avoid losing any data?
+<i>679</i>&nbsp;         * However... using BD is slow, so let&#39;s allow returning
+<i>680</i>&nbsp;         * double as type if no explicit call has been made to access
+<i>681</i>&nbsp;         * data as BD?
+<i>682</i>&nbsp;         */
+<b class="fc"><i>683</i>&nbsp;        if ((_numTypesValid &amp; NR_BIGDECIMAL) != 0) {</b>
+<b class="nc"><i>684</i>&nbsp;            return NumberType.BIG_DECIMAL;</b>
+<i>685</i>&nbsp;        }
+<b class="fc"><i>686</i>&nbsp;        return NumberType.DOUBLE;</b>
+<i>687</i>&nbsp;    }
+<i>688</i>&nbsp;    
+<i>689</i>&nbsp;    @Override
+<i>690</i>&nbsp;    public int getIntValue() throws IOException
+<i>691</i>&nbsp;    {
+<b class="fc"><i>692</i>&nbsp;        if ((_numTypesValid &amp; NR_INT) == 0) {</b>
+<b class="fc"><i>693</i>&nbsp;            if (_numTypesValid == NR_UNKNOWN) { // not parsed at all</b>
+<b class="fc"><i>694</i>&nbsp;                return _parseIntValue();</b>
+<i>695</i>&nbsp;            }
+<b class="fc"><i>696</i>&nbsp;            if ((_numTypesValid &amp; NR_INT) == 0) { // wasn&#39;t an int natively?</b>
+<b class="fc"><i>697</i>&nbsp;                convertNumberToInt(); // let&#39;s make it so, if possible</b>
+<i>698</i>&nbsp;            }
+<i>699</i>&nbsp;        }
+<b class="fc"><i>700</i>&nbsp;        return _numberInt;</b>
+<i>701</i>&nbsp;    }
+<i>702</i>&nbsp;    
+<i>703</i>&nbsp;    @Override
+<i>704</i>&nbsp;    public long getLongValue() throws IOException
+<i>705</i>&nbsp;    {
+<b class="fc"><i>706</i>&nbsp;        if ((_numTypesValid &amp; NR_LONG) == 0) {</b>
+<b class="fc"><i>707</i>&nbsp;            if (_numTypesValid == NR_UNKNOWN) {</b>
+<b class="fc"><i>708</i>&nbsp;                _parseNumericValue(NR_LONG);</b>
+<i>709</i>&nbsp;            }
+<b class="fc"><i>710</i>&nbsp;            if ((_numTypesValid &amp; NR_LONG) == 0) {</b>
+<b class="fc"><i>711</i>&nbsp;                convertNumberToLong();</b>
+<i>712</i>&nbsp;            }
+<i>713</i>&nbsp;        }
+<b class="fc"><i>714</i>&nbsp;        return _numberLong;</b>
+<i>715</i>&nbsp;    }
+<i>716</i>&nbsp;    
+<i>717</i>&nbsp;    @Override
+<i>718</i>&nbsp;    public BigInteger getBigIntegerValue() throws IOException
+<i>719</i>&nbsp;    {
+<b class="fc"><i>720</i>&nbsp;        if ((_numTypesValid &amp; NR_BIGINT) == 0) {</b>
+<b class="fc"><i>721</i>&nbsp;            if (_numTypesValid == NR_UNKNOWN) {</b>
+<b class="fc"><i>722</i>&nbsp;                _parseNumericValue(NR_BIGINT);</b>
+<i>723</i>&nbsp;            }
+<b class="fc"><i>724</i>&nbsp;            if ((_numTypesValid &amp; NR_BIGINT) == 0) {</b>
+<b class="fc"><i>725</i>&nbsp;                convertNumberToBigInteger();</b>
+<i>726</i>&nbsp;            }
+<i>727</i>&nbsp;        }
+<b class="fc"><i>728</i>&nbsp;        return _numberBigInt;</b>
+<i>729</i>&nbsp;    }
+<i>730</i>&nbsp;    
+<i>731</i>&nbsp;    @Override
+<i>732</i>&nbsp;    public float getFloatValue() throws IOException
+<i>733</i>&nbsp;    {
+<b class="nc"><i>734</i>&nbsp;        double value = getDoubleValue();</b>
+<i>735</i>&nbsp;        /* 22-Jan-2009, tatu: Bounds/range checks would be tricky
+<i>736</i>&nbsp;         *   here, so let&#39;s not bother even trying...
+<i>737</i>&nbsp;         */
+<i>738</i>&nbsp;        /*
+<i>739</i>&nbsp;        if (value &lt; -Float.MAX_VALUE || value &gt; MAX_FLOAT_D) {
+<i>740</i>&nbsp;            _reportError(&quot;Numeric value (&quot;+getText()+&quot;) out of range of Java float&quot;);
+<i>741</i>&nbsp;        }
+<i>742</i>&nbsp;        */
+<b class="nc"><i>743</i>&nbsp;        return (float) value;</b>
+<i>744</i>&nbsp;    }
+<i>745</i>&nbsp;    
+<i>746</i>&nbsp;    @Override
+<i>747</i>&nbsp;    public double getDoubleValue() throws IOException
+<i>748</i>&nbsp;    {
+<b class="fc"><i>749</i>&nbsp;        if ((_numTypesValid &amp; NR_DOUBLE) == 0) {</b>
+<b class="fc"><i>750</i>&nbsp;            if (_numTypesValid == NR_UNKNOWN) {</b>
+<b class="fc"><i>751</i>&nbsp;                _parseNumericValue(NR_DOUBLE);</b>
+<i>752</i>&nbsp;            }
+<b class="fc"><i>753</i>&nbsp;            if ((_numTypesValid &amp; NR_DOUBLE) == 0) {</b>
+<b class="fc"><i>754</i>&nbsp;                convertNumberToDouble();</b>
+<i>755</i>&nbsp;            }
+<i>756</i>&nbsp;        }
+<b class="fc"><i>757</i>&nbsp;        return _numberDouble;</b>
+<i>758</i>&nbsp;    }
+<i>759</i>&nbsp;    
+<i>760</i>&nbsp;    @Override
+<i>761</i>&nbsp;    public BigDecimal getDecimalValue() throws IOException
+<i>762</i>&nbsp;    {
+<b class="fc"><i>763</i>&nbsp;        if ((_numTypesValid &amp; NR_BIGDECIMAL) == 0) {</b>
+<b class="fc"><i>764</i>&nbsp;            if (_numTypesValid == NR_UNKNOWN) {</b>
+<b class="fc"><i>765</i>&nbsp;                _parseNumericValue(NR_BIGDECIMAL);</b>
+<i>766</i>&nbsp;            }
+<b class="fc"><i>767</i>&nbsp;            if ((_numTypesValid &amp; NR_BIGDECIMAL) == 0) {</b>
+<b class="fc"><i>768</i>&nbsp;                convertNumberToBigDecimal();</b>
+<i>769</i>&nbsp;            }
+<i>770</i>&nbsp;        }
+<b class="fc"><i>771</i>&nbsp;        return _numberBigDecimal;</b>
+<i>772</i>&nbsp;    }
+<i>773</i>&nbsp;
+<i>774</i>&nbsp;    /*
+<i>775</i>&nbsp;    /**********************************************************
+<i>776</i>&nbsp;    /* Conversion from textual to numeric representation
+<i>777</i>&nbsp;    /**********************************************************
+<i>778</i>&nbsp;     */
+<i>779</i>&nbsp;    
+<i>780</i>&nbsp;    /**
+<i>781</i>&nbsp;     * Method that will parse actual numeric value out of a syntactically
+<i>782</i>&nbsp;     * valid number value. Type it will parse into depends on whether
+<i>783</i>&nbsp;     * it is a floating point number, as well as its magnitude: smallest
+<i>784</i>&nbsp;     * legal type (of ones available) is used for efficiency.
+<i>785</i>&nbsp;     *
+<i>786</i>&nbsp;     * @param expType Numeric type that we will immediately need, if any;
+<i>787</i>&nbsp;     *   mostly necessary to optimize handling of floating point numbers
+<i>788</i>&nbsp;     */
+<i>789</i>&nbsp;    protected void _parseNumericValue(int expType) throws IOException
+<i>790</i>&nbsp;    {
+<i>791</i>&nbsp;        // Int or float?
+<b class="fc"><i>792</i>&nbsp;        if (_currToken == JsonToken.VALUE_NUMBER_INT) {</b>
+<b class="fc"><i>793</i>&nbsp;            char[] buf = _textBuffer.getTextBuffer();</b>
+<b class="fc"><i>794</i>&nbsp;            int offset = _textBuffer.getTextOffset();</b>
+<b class="fc"><i>795</i>&nbsp;            int len = _intLength;</b>
+<b class="fc"><i>796</i>&nbsp;            if (_numberNegative) {</b>
+<b class="fc"><i>797</i>&nbsp;                ++offset;</b>
+<i>798</i>&nbsp;            }
+<b class="fc"><i>799</i>&nbsp;            if (len &lt;= 9) { // definitely fits in int</b>
+<b class="fc"><i>800</i>&nbsp;                int i = NumberInput.parseInt(buf, offset, len);</b>
+<b class="fc"><i>801</i>&nbsp;                _numberInt = _numberNegative ? -i : i;</b>
+<b class="fc"><i>802</i>&nbsp;                _numTypesValid = NR_INT;</b>
+<b class="fc"><i>803</i>&nbsp;                return;</b>
+<i>804</i>&nbsp;            }
+<b class="fc"><i>805</i>&nbsp;            if (len &lt;= 18) { // definitely fits AND is easy to parse using 2 int parse calls</b>
+<b class="fc"><i>806</i>&nbsp;                long l = NumberInput.parseLong(buf, offset, len);</b>
+<b class="fc"><i>807</i>&nbsp;                if (_numberNegative) {</b>
+<b class="fc"><i>808</i>&nbsp;                    l = -l;</b>
+<i>809</i>&nbsp;                }
+<i>810</i>&nbsp;                // [JACKSON-230] Could still fit in int, need to check
+<b class="fc"><i>811</i>&nbsp;                if (len == 10) {</b>
+<b class="fc"><i>812</i>&nbsp;                    if (_numberNegative) {</b>
+<b class="fc"><i>813</i>&nbsp;                        if (l &gt;= MIN_INT_L) {</b>
+<b class="fc"><i>814</i>&nbsp;                            _numberInt = (int) l;</b>
+<b class="fc"><i>815</i>&nbsp;                            _numTypesValid = NR_INT;</b>
+<b class="fc"><i>816</i>&nbsp;                            return;</b>
+<i>817</i>&nbsp;                        }
+<i>818</i>&nbsp;                    } else {
+<b class="fc"><i>819</i>&nbsp;                        if (l &lt;= MAX_INT_L) {</b>
+<b class="fc"><i>820</i>&nbsp;                            _numberInt = (int) l;</b>
+<b class="fc"><i>821</i>&nbsp;                            _numTypesValid = NR_INT;</b>
+<b class="fc"><i>822</i>&nbsp;                            return;</b>
+<i>823</i>&nbsp;                        }
+<i>824</i>&nbsp;                    }
+<i>825</i>&nbsp;                }
+<b class="fc"><i>826</i>&nbsp;                _numberLong = l;</b>
+<b class="fc"><i>827</i>&nbsp;                _numTypesValid = NR_LONG;</b>
+<b class="fc"><i>828</i>&nbsp;                return;</b>
+<i>829</i>&nbsp;            }
+<b class="fc"><i>830</i>&nbsp;            _parseSlowInt(expType, buf, offset, len);</b>
+<b class="fc"><i>831</i>&nbsp;            return;</b>
+<i>832</i>&nbsp;        }
+<b class="fc"><i>833</i>&nbsp;        if (_currToken == JsonToken.VALUE_NUMBER_FLOAT) {</b>
+<b class="fc"><i>834</i>&nbsp;            _parseSlowFloat(expType);</b>
+<b class="fc"><i>835</i>&nbsp;            return;</b>
+<i>836</i>&nbsp;        }
+<b class="fc"><i>837</i>&nbsp;        _reportError(&quot;Current token (&quot;+_currToken+&quot;) not numeric, can not use numeric value accessors&quot;);</b>
+<b class="nc"><i>838</i>&nbsp;    }</b>
+<i>839</i>&nbsp;
+<i>840</i>&nbsp;    /**
+<i>841</i>&nbsp;     * @since 2.6
+<i>842</i>&nbsp;     */
+<i>843</i>&nbsp;    protected int _parseIntValue() throws IOException
+<i>844</i>&nbsp;    {
+<i>845</i>&nbsp;        // Inlined variant of: _parseNumericValue(NR_INT)
+<i>846</i>&nbsp;
+<b class="fc"><i>847</i>&nbsp;        if (_currToken == JsonToken.VALUE_NUMBER_INT) {</b>
+<b class="fc"><i>848</i>&nbsp;            char[] buf = _textBuffer.getTextBuffer();</b>
+<b class="fc"><i>849</i>&nbsp;            int offset = _textBuffer.getTextOffset();</b>
+<b class="fc"><i>850</i>&nbsp;            int len = _intLength;</b>
+<b class="fc"><i>851</i>&nbsp;            if (_numberNegative) {</b>
+<b class="fc"><i>852</i>&nbsp;                ++offset;</b>
+<i>853</i>&nbsp;            }
+<b class="fc"><i>854</i>&nbsp;            if (len &lt;= 9) {</b>
+<b class="fc"><i>855</i>&nbsp;                int i = NumberInput.parseInt(buf, offset, len);</b>
+<b class="fc"><i>856</i>&nbsp;                if (_numberNegative) {</b>
+<b class="fc"><i>857</i>&nbsp;                    i = -i;</b>
+<i>858</i>&nbsp;                }
+<b class="fc"><i>859</i>&nbsp;                _numberInt = i;</b>
+<b class="fc"><i>860</i>&nbsp;                _numTypesValid = NR_INT;</b>
+<b class="fc"><i>861</i>&nbsp;                return i;</b>
+<i>862</i>&nbsp;            }
+<i>863</i>&nbsp;        }
+<b class="fc"><i>864</i>&nbsp;        _parseNumericValue(NR_INT);</b>
+<b class="fc"><i>865</i>&nbsp;        if ((_numTypesValid &amp; NR_INT) == 0) {</b>
+<b class="fc"><i>866</i>&nbsp;            convertNumberToInt();</b>
+<i>867</i>&nbsp;        }
+<b class="fc"><i>868</i>&nbsp;        return _numberInt;</b>
+<i>869</i>&nbsp;    }
+<i>870</i>&nbsp;
+<i>871</i>&nbsp;    private void _parseSlowFloat(int expType) throws IOException
+<i>872</i>&nbsp;    {
+<i>873</i>&nbsp;        /* Nope: floating point. Here we need to be careful to get
+<i>874</i>&nbsp;         * optimal parsing strategy: choice is between accurate but
+<i>875</i>&nbsp;         * slow (BigDecimal) and lossy but fast (Double). For now
+<i>876</i>&nbsp;         * let&#39;s only use BD when explicitly requested -- it can
+<i>877</i>&nbsp;         * still be constructed correctly at any point since we do
+<i>878</i>&nbsp;         * retain textual representation
+<i>879</i>&nbsp;         */
+<i>880</i>&nbsp;        try {
+<b class="fc"><i>881</i>&nbsp;            if (expType == NR_BIGDECIMAL) {</b>
+<b class="fc"><i>882</i>&nbsp;                _numberBigDecimal = _textBuffer.contentsAsDecimal();</b>
+<b class="fc"><i>883</i>&nbsp;                _numTypesValid = NR_BIGDECIMAL;</b>
+<i>884</i>&nbsp;            } else {
+<i>885</i>&nbsp;                // Otherwise double has to do
+<b class="fc"><i>886</i>&nbsp;                _numberDouble = _textBuffer.contentsAsDouble();</b>
+<b class="fc"><i>887</i>&nbsp;                _numTypesValid = NR_DOUBLE;</b>
+<i>888</i>&nbsp;            }
+<b class="nc"><i>889</i>&nbsp;        } catch (NumberFormatException nex) {</b>
+<i>890</i>&nbsp;            // Can this ever occur? Due to overflow, maybe?
+<b class="nc"><i>891</i>&nbsp;            _wrapError(&quot;Malformed numeric value &#39;&quot;+_textBuffer.contentsAsString()+&quot;&#39;&quot;, nex);</b>
+<b class="fc"><i>892</i>&nbsp;        }</b>
+<b class="fc"><i>893</i>&nbsp;    }</b>
+<i>894</i>&nbsp;    
+<i>895</i>&nbsp;    private void _parseSlowInt(int expType, char[] buf, int offset, int len) throws IOException
+<i>896</i>&nbsp;    {
+<b class="fc"><i>897</i>&nbsp;        String numStr = _textBuffer.contentsAsString();</b>
+<i>898</i>&nbsp;        try {
+<i>899</i>&nbsp;            // [JACKSON-230] Some long cases still...
+<b class="fc"><i>900</i>&nbsp;            if (NumberInput.inLongRange(buf, offset, len, _numberNegative)) {</b>
+<i>901</i>&nbsp;                // Probably faster to construct a String, call parse, than to use BigInteger
+<b class="fc"><i>902</i>&nbsp;                _numberLong = Long.parseLong(numStr);</b>
+<b class="fc"><i>903</i>&nbsp;                _numTypesValid = NR_LONG;</b>
+<i>904</i>&nbsp;            } else {
+<i>905</i>&nbsp;                // nope, need the heavy guns... (rare case)
+<b class="fc"><i>906</i>&nbsp;                _numberBigInt = new BigInteger(numStr);</b>
+<b class="fc"><i>907</i>&nbsp;                _numTypesValid = NR_BIGINT;</b>
+<i>908</i>&nbsp;            }
+<b class="nc"><i>909</i>&nbsp;        } catch (NumberFormatException nex) {</b>
+<i>910</i>&nbsp;            // Can this ever occur? Due to overflow, maybe?
+<b class="nc"><i>911</i>&nbsp;            _wrapError(&quot;Malformed numeric value &#39;&quot;+numStr+&quot;&#39;&quot;, nex);</b>
+<b class="fc"><i>912</i>&nbsp;        }</b>
+<b class="fc"><i>913</i>&nbsp;    }</b>
+<i>914</i>&nbsp;    
+<i>915</i>&nbsp;    /*
+<i>916</i>&nbsp;    /**********************************************************
+<i>917</i>&nbsp;    /* Numeric conversions
+<i>918</i>&nbsp;    /**********************************************************
+<i>919</i>&nbsp;     */    
+<i>920</i>&nbsp;    
+<i>921</i>&nbsp;    protected void convertNumberToInt() throws IOException
+<i>922</i>&nbsp;    {
+<i>923</i>&nbsp;        // First, converting from long ought to be easy
+<b class="fc"><i>924</i>&nbsp;        if ((_numTypesValid &amp; NR_LONG) != 0) {</b>
+<i>925</i>&nbsp;            // Let&#39;s verify it&#39;s lossless conversion by simple roundtrip
+<b class="fc"><i>926</i>&nbsp;            int result = (int) _numberLong;</b>
+<b class="fc"><i>927</i>&nbsp;            if (((long) result) != _numberLong) {</b>
+<b class="fc"><i>928</i>&nbsp;                _reportError(&quot;Numeric value (&quot;+getText()+&quot;) out of range of int&quot;);</b>
+<i>929</i>&nbsp;            }
+<b class="nc"><i>930</i>&nbsp;            _numberInt = result;</b>
+<b class="nc"><i>931</i>&nbsp;        } else if ((_numTypesValid &amp; NR_BIGINT) != 0) {</b>
+<b class="nc"><i>932</i>&nbsp;            if (BI_MIN_INT.compareTo(_numberBigInt) &gt; 0 </b>
+<b class="nc"><i>933</i>&nbsp;                    || BI_MAX_INT.compareTo(_numberBigInt) &lt; 0) {</b>
+<b class="nc"><i>934</i>&nbsp;                reportOverflowInt();</b>
+<i>935</i>&nbsp;            }
+<b class="nc"><i>936</i>&nbsp;            _numberInt = _numberBigInt.intValue();</b>
+<b class="fc"><i>937</i>&nbsp;        } else if ((_numTypesValid &amp; NR_DOUBLE) != 0) {</b>
+<i>938</i>&nbsp;            // Need to check boundaries
+<b class="fc"><i>939</i>&nbsp;            if (_numberDouble &lt; MIN_INT_D || _numberDouble &gt; MAX_INT_D) {</b>
+<b class="fc"><i>940</i>&nbsp;                reportOverflowInt();</b>
+<i>941</i>&nbsp;            }
+<b class="fc"><i>942</i>&nbsp;            _numberInt = (int) _numberDouble;</b>
+<b class="nc"><i>943</i>&nbsp;        } else if ((_numTypesValid &amp; NR_BIGDECIMAL) != 0) {</b>
+<b class="nc"><i>944</i>&nbsp;            if (BD_MIN_INT.compareTo(_numberBigDecimal) &gt; 0 </b>
+<b class="nc"><i>945</i>&nbsp;                || BD_MAX_INT.compareTo(_numberBigDecimal) &lt; 0) {</b>
+<b class="nc"><i>946</i>&nbsp;                reportOverflowInt();</b>
+<i>947</i>&nbsp;            }
+<b class="nc"><i>948</i>&nbsp;            _numberInt = _numberBigDecimal.intValue();</b>
+<i>949</i>&nbsp;        } else {
+<b class="nc"><i>950</i>&nbsp;            _throwInternal();</b>
+<i>951</i>&nbsp;        }
+<b class="fc"><i>952</i>&nbsp;        _numTypesValid |= NR_INT;</b>
+<b class="fc"><i>953</i>&nbsp;    }</b>
+<i>954</i>&nbsp;    
+<i>955</i>&nbsp;    protected void convertNumberToLong() throws IOException
+<i>956</i>&nbsp;    {
+<b class="fc"><i>957</i>&nbsp;        if ((_numTypesValid &amp; NR_INT) != 0) {</b>
+<b class="fc"><i>958</i>&nbsp;            _numberLong = (long) _numberInt;</b>
+<b class="fc"><i>959</i>&nbsp;        } else if ((_numTypesValid &amp; NR_BIGINT) != 0) {</b>
+<b class="fc"><i>960</i>&nbsp;            if (BI_MIN_LONG.compareTo(_numberBigInt) &gt; 0 </b>
+<b class="fc"><i>961</i>&nbsp;                    || BI_MAX_LONG.compareTo(_numberBigInt) &lt; 0) {</b>
+<b class="fc"><i>962</i>&nbsp;                reportOverflowLong();</b>
+<i>963</i>&nbsp;            }
+<b class="nc"><i>964</i>&nbsp;            _numberLong = _numberBigInt.longValue();</b>
+<b class="fc"><i>965</i>&nbsp;        } else if ((_numTypesValid &amp; NR_DOUBLE) != 0) {</b>
+<i>966</i>&nbsp;            // Need to check boundaries
+<b class="fc"><i>967</i>&nbsp;            if (_numberDouble &lt; MIN_LONG_D || _numberDouble &gt; MAX_LONG_D) {</b>
+<b class="nc"><i>968</i>&nbsp;                reportOverflowLong();</b>
+<i>969</i>&nbsp;            }
+<b class="fc"><i>970</i>&nbsp;            _numberLong = (long) _numberDouble;</b>
+<b class="nc"><i>971</i>&nbsp;        } else if ((_numTypesValid &amp; NR_BIGDECIMAL) != 0) {</b>
+<b class="nc"><i>972</i>&nbsp;            if (BD_MIN_LONG.compareTo(_numberBigDecimal) &gt; 0 </b>
+<b class="nc"><i>973</i>&nbsp;                || BD_MAX_LONG.compareTo(_numberBigDecimal) &lt; 0) {</b>
+<b class="nc"><i>974</i>&nbsp;                reportOverflowLong();</b>
+<i>975</i>&nbsp;            }
+<b class="nc"><i>976</i>&nbsp;            _numberLong = _numberBigDecimal.longValue();</b>
+<i>977</i>&nbsp;        } else {
+<b class="nc"><i>978</i>&nbsp;            _throwInternal();</b>
+<i>979</i>&nbsp;        }
+<b class="fc"><i>980</i>&nbsp;        _numTypesValid |= NR_LONG;</b>
+<b class="fc"><i>981</i>&nbsp;    }</b>
+<i>982</i>&nbsp;    
+<i>983</i>&nbsp;    protected void convertNumberToBigInteger() throws IOException
+<i>984</i>&nbsp;    {
+<b class="fc"><i>985</i>&nbsp;        if ((_numTypesValid &amp; NR_BIGDECIMAL) != 0) {</b>
+<i>986</i>&nbsp;            // here it&#39;ll just get truncated, no exceptions thrown
+<b class="fc"><i>987</i>&nbsp;            _numberBigInt = _numberBigDecimal.toBigInteger();</b>
+<b class="fc"><i>988</i>&nbsp;        } else if ((_numTypesValid &amp; NR_LONG) != 0) {</b>
+<b class="fc"><i>989</i>&nbsp;            _numberBigInt = BigInteger.valueOf(_numberLong);</b>
+<b class="fc"><i>990</i>&nbsp;        } else if ((_numTypesValid &amp; NR_INT) != 0) {</b>
+<b class="fc"><i>991</i>&nbsp;            _numberBigInt = BigInteger.valueOf(_numberInt);</b>
+<b class="fc"><i>992</i>&nbsp;        } else if ((_numTypesValid &amp; NR_DOUBLE) != 0) {</b>
+<b class="fc"><i>993</i>&nbsp;            _numberBigInt = BigDecimal.valueOf(_numberDouble).toBigInteger();</b>
+<i>994</i>&nbsp;        } else {
+<b class="nc"><i>995</i>&nbsp;            _throwInternal();</b>
+<i>996</i>&nbsp;        }
+<b class="fc"><i>997</i>&nbsp;        _numTypesValid |= NR_BIGINT;</b>
+<b class="fc"><i>998</i>&nbsp;    }</b>
+<i>999</i>&nbsp;    
+<i>1000</i>&nbsp;    protected void convertNumberToDouble() throws IOException
+<i>1001</i>&nbsp;    {
+<i>1002</i>&nbsp;        /* 05-Aug-2008, tatus: Important note: this MUST start with
+<i>1003</i>&nbsp;         *   more accurate representations, since we don&#39;t know which
+<i>1004</i>&nbsp;         *   value is the original one (others get generated when
+<i>1005</i>&nbsp;         *   requested)
+<i>1006</i>&nbsp;         */
+<i>1007</i>&nbsp;    
+<b class="fc"><i>1008</i>&nbsp;        if ((_numTypesValid &amp; NR_BIGDECIMAL) != 0) {</b>
+<b class="fc"><i>1009</i>&nbsp;            _numberDouble = _numberBigDecimal.doubleValue();</b>
+<b class="fc"><i>1010</i>&nbsp;        } else if ((_numTypesValid &amp; NR_BIGINT) != 0) {</b>
+<b class="fc"><i>1011</i>&nbsp;            _numberDouble = _numberBigInt.doubleValue();</b>
+<b class="fc"><i>1012</i>&nbsp;        } else if ((_numTypesValid &amp; NR_LONG) != 0) {</b>
+<b class="fc"><i>1013</i>&nbsp;            _numberDouble = (double) _numberLong;</b>
+<b class="fc"><i>1014</i>&nbsp;        } else if ((_numTypesValid &amp; NR_INT) != 0) {</b>
+<b class="fc"><i>1015</i>&nbsp;            _numberDouble = (double) _numberInt;</b>
+<i>1016</i>&nbsp;        } else {
+<b class="nc"><i>1017</i>&nbsp;            _throwInternal();</b>
+<i>1018</i>&nbsp;        }
+<b class="fc"><i>1019</i>&nbsp;        _numTypesValid |= NR_DOUBLE;</b>
+<b class="fc"><i>1020</i>&nbsp;    }</b>
+<i>1021</i>&nbsp;    
+<i>1022</i>&nbsp;    protected void convertNumberToBigDecimal() throws IOException
+<i>1023</i>&nbsp;    {
+<i>1024</i>&nbsp;        /* 05-Aug-2008, tatus: Important note: this MUST start with
+<i>1025</i>&nbsp;         *   more accurate representations, since we don&#39;t know which
+<i>1026</i>&nbsp;         *   value is the original one (others get generated when
+<i>1027</i>&nbsp;         *   requested)
+<i>1028</i>&nbsp;         */
+<i>1029</i>&nbsp;    
+<b class="fc"><i>1030</i>&nbsp;        if ((_numTypesValid &amp; NR_DOUBLE) != 0) {</b>
+<i>1031</i>&nbsp;            /* Let&#39;s actually parse from String representation, to avoid
+<i>1032</i>&nbsp;             * rounding errors that non-decimal floating operations could incur
+<i>1033</i>&nbsp;             */
+<b class="fc"><i>1034</i>&nbsp;            _numberBigDecimal = NumberInput.parseBigDecimal(getText());</b>
+<b class="fc"><i>1035</i>&nbsp;        } else if ((_numTypesValid &amp; NR_BIGINT) != 0) {</b>
+<b class="fc"><i>1036</i>&nbsp;            _numberBigDecimal = new BigDecimal(_numberBigInt);</b>
+<b class="fc"><i>1037</i>&nbsp;        } else if ((_numTypesValid &amp; NR_LONG) != 0) {</b>
+<b class="fc"><i>1038</i>&nbsp;            _numberBigDecimal = BigDecimal.valueOf(_numberLong);</b>
+<b class="fc"><i>1039</i>&nbsp;        } else if ((_numTypesValid &amp; NR_INT) != 0) {</b>
+<b class="fc"><i>1040</i>&nbsp;            _numberBigDecimal = BigDecimal.valueOf(_numberInt);</b>
+<i>1041</i>&nbsp;        } else {
+<b class="nc"><i>1042</i>&nbsp;            _throwInternal();</b>
+<i>1043</i>&nbsp;        }
+<b class="fc"><i>1044</i>&nbsp;        _numTypesValid |= NR_BIGDECIMAL;</b>
+<b class="fc"><i>1045</i>&nbsp;    }</b>
+<i>1046</i>&nbsp;    
+<i>1047</i>&nbsp;    /*
+<i>1048</i>&nbsp;    /**********************************************************
+<i>1049</i>&nbsp;    /* Number handling exceptions
+<i>1050</i>&nbsp;    /**********************************************************
+<i>1051</i>&nbsp;     */    
+<i>1052</i>&nbsp;    
+<i>1053</i>&nbsp;    protected void reportUnexpectedNumberChar(int ch, String comment) throws JsonParseException {
+<b class="fc"><i>1054</i>&nbsp;        String msg = &quot;Unexpected character (&quot;+_getCharDesc(ch)+&quot;) in numeric value&quot;;</b>
+<b class="fc"><i>1055</i>&nbsp;        if (comment != null) {</b>
+<b class="fc"><i>1056</i>&nbsp;            msg += &quot;: &quot;+comment;</b>
+<i>1057</i>&nbsp;        }
+<b class="fc"><i>1058</i>&nbsp;        _reportError(msg);</b>
+<b class="nc"><i>1059</i>&nbsp;    }</b>
+<i>1060</i>&nbsp;    
+<i>1061</i>&nbsp;    protected void reportInvalidNumber(String msg) throws JsonParseException {
+<b class="fc"><i>1062</i>&nbsp;        _reportError(&quot;Invalid numeric value: &quot;+msg);</b>
+<b class="nc"><i>1063</i>&nbsp;    }</b>
+<i>1064</i>&nbsp;
+<i>1065</i>&nbsp;    protected void reportOverflowInt() throws IOException {
+<b class="fc"><i>1066</i>&nbsp;        _reportError(String.format(&quot;Numeric value (%s) out of range of int (%d - %s)&quot;,</b>
+<b class="fc"><i>1067</i>&nbsp;                getText(), Integer.MIN_VALUE, Integer.MAX_VALUE));</b>
+<b class="nc"><i>1068</i>&nbsp;    }</b>
+<i>1069</i>&nbsp;    
+<i>1070</i>&nbsp;    protected void reportOverflowLong() throws IOException {
+<b class="fc"><i>1071</i>&nbsp;        _reportError(String.format(&quot;Numeric value (%s) out of range of long (%d - %s)&quot;,</b>
+<b class="fc"><i>1072</i>&nbsp;                getText(), Long.MIN_VALUE, Long.MAX_VALUE));</b>
+<b class="nc"><i>1073</i>&nbsp;    }    </b>
+<i>1074</i>&nbsp;
+<i>1075</i>&nbsp;    /*
+<i>1076</i>&nbsp;    /**********************************************************
+<i>1077</i>&nbsp;    /* Base64 handling support
+<i>1078</i>&nbsp;    /**********************************************************
+<i>1079</i>&nbsp;     */
+<i>1080</i>&nbsp;
+<i>1081</i>&nbsp;    /**
+<i>1082</i>&nbsp;     * Method that sub-classes must implement to support escaped sequences
+<i>1083</i>&nbsp;     * in base64-encoded sections.
+<i>1084</i>&nbsp;     * Sub-classes that do not need base64 support can leave this as is
+<i>1085</i>&nbsp;     */
+<i>1086</i>&nbsp;    protected char _decodeEscaped() throws IOException {
+<b class="nc"><i>1087</i>&nbsp;        throw new UnsupportedOperationException();</b>
+<i>1088</i>&nbsp;    }
+<i>1089</i>&nbsp;    
+<i>1090</i>&nbsp;    protected final int _decodeBase64Escape(Base64Variant b64variant, int ch, int index) throws IOException
+<i>1091</i>&nbsp;    {
+<i>1092</i>&nbsp;        // 17-May-2011, tatu: As per [JACKSON-xxx], need to handle escaped chars
+<b class="fc"><i>1093</i>&nbsp;        if (ch != &#39;\\&#39;) {</b>
+<b class="fc"><i>1094</i>&nbsp;            throw reportInvalidBase64Char(b64variant, ch, index);</b>
+<i>1095</i>&nbsp;        }
+<b class="fc"><i>1096</i>&nbsp;        int unescaped = _decodeEscaped();</b>
+<i>1097</i>&nbsp;        // if white space, skip if first triplet; otherwise errors
+<b class="fc"><i>1098</i>&nbsp;        if (unescaped &lt;= INT_SPACE) {</b>
+<b class="fc"><i>1099</i>&nbsp;            if (index == 0) { // whitespace only allowed to be skipped between triplets</b>
+<b class="fc"><i>1100</i>&nbsp;                return -1;</b>
+<i>1101</i>&nbsp;            }
+<i>1102</i>&nbsp;        }
+<i>1103</i>&nbsp;        // otherwise try to find actual triplet value
+<b class="fc"><i>1104</i>&nbsp;        int bits = b64variant.decodeBase64Char(unescaped);</b>
+<b class="fc"><i>1105</i>&nbsp;        if (bits &lt; 0) {</b>
+<b class="nc"><i>1106</i>&nbsp;            throw reportInvalidBase64Char(b64variant, unescaped, index);</b>
+<i>1107</i>&nbsp;        }
+<b class="fc"><i>1108</i>&nbsp;        return bits;</b>
+<i>1109</i>&nbsp;    }
+<i>1110</i>&nbsp;    
+<i>1111</i>&nbsp;    protected final int _decodeBase64Escape(Base64Variant b64variant, char ch, int index) throws IOException
+<i>1112</i>&nbsp;    {
+<b class="fc"><i>1113</i>&nbsp;        if (ch != &#39;\\&#39;) {</b>
+<b class="fc"><i>1114</i>&nbsp;            throw reportInvalidBase64Char(b64variant, ch, index);</b>
+<i>1115</i>&nbsp;        }
+<b class="fc"><i>1116</i>&nbsp;        char unescaped = _decodeEscaped();</b>
+<i>1117</i>&nbsp;        // if white space, skip if first triplet; otherwise errors
+<b class="fc"><i>1118</i>&nbsp;        if (unescaped &lt;= INT_SPACE) {</b>
+<b class="fc"><i>1119</i>&nbsp;            if (index == 0) { // whitespace only allowed to be skipped between triplets</b>
+<b class="fc"><i>1120</i>&nbsp;                return -1;</b>
+<i>1121</i>&nbsp;            }
+<i>1122</i>&nbsp;        }
+<i>1123</i>&nbsp;        // otherwise try to find actual triplet value
+<b class="fc"><i>1124</i>&nbsp;        int bits = b64variant.decodeBase64Char(unescaped);</b>
+<b class="fc"><i>1125</i>&nbsp;        if (bits &lt; 0) {</b>
+<b class="nc"><i>1126</i>&nbsp;            throw reportInvalidBase64Char(b64variant, unescaped, index);</b>
+<i>1127</i>&nbsp;        }
+<b class="fc"><i>1128</i>&nbsp;        return bits;</b>
+<i>1129</i>&nbsp;    }
+<i>1130</i>&nbsp;    
+<i>1131</i>&nbsp;    protected IllegalArgumentException reportInvalidBase64Char(Base64Variant b64variant, int ch, int bindex) throws IllegalArgumentException {
+<b class="fc"><i>1132</i>&nbsp;        return reportInvalidBase64Char(b64variant, ch, bindex, null);</b>
+<i>1133</i>&nbsp;    }
+<i>1134</i>&nbsp;
+<i>1135</i>&nbsp;    /**
+<i>1136</i>&nbsp;     * @param bindex Relative index within base64 character unit; between 0
+<i>1137</i>&nbsp;     *   and 3 (as unit has exactly 4 characters)
+<i>1138</i>&nbsp;     */
+<i>1139</i>&nbsp;    protected IllegalArgumentException reportInvalidBase64Char(Base64Variant b64variant, int ch, int bindex, String msg) throws IllegalArgumentException {
+<i>1140</i>&nbsp;        String base;
+<b class="fc"><i>1141</i>&nbsp;        if (ch &lt;= INT_SPACE) {</b>
+<b class="fc"><i>1142</i>&nbsp;            base = &quot;Illegal white space character (code 0x&quot;+Integer.toHexString(ch)+&quot;) as character #&quot;+(bindex+1)+&quot; of 4-char base64 unit: can only used between units&quot;;</b>
+<b class="fc"><i>1143</i>&nbsp;        } else if (b64variant.usesPaddingChar(ch)) {</b>
+<b class="fc"><i>1144</i>&nbsp;            base = &quot;Unexpected padding character (&#39;&quot;+b64variant.getPaddingChar()+&quot;&#39;) as character #&quot;+(bindex+1)+&quot; of 4-char base64 unit: padding only legal as 3rd or 4th character&quot;;</b>
+<b class="fc"><i>1145</i>&nbsp;        } else if (!Character.isDefined(ch) || Character.isISOControl(ch)) {</b>
+<i>1146</i>&nbsp;            // Not sure if we can really get here... ? (most illegal xml chars are caught at lower level)
+<b class="nc"><i>1147</i>&nbsp;            base = &quot;Illegal character (code 0x&quot;+Integer.toHexString(ch)+&quot;) in base64 content&quot;;</b>
+<i>1148</i>&nbsp;        } else {
+<b class="fc"><i>1149</i>&nbsp;            base = &quot;Illegal character &#39;&quot;+((char)ch)+&quot;&#39; (code 0x&quot;+Integer.toHexString(ch)+&quot;) in base64 content&quot;;</b>
+<i>1150</i>&nbsp;        }
+<b class="fc"><i>1151</i>&nbsp;        if (msg != null) {</b>
+<b class="nc"><i>1152</i>&nbsp;            base = base + &quot;: &quot; + msg;</b>
+<i>1153</i>&nbsp;        }
+<b class="fc"><i>1154</i>&nbsp;        return new IllegalArgumentException(base);</b>
+<i>1155</i>&nbsp;    }
+<i>1156</i>&nbsp;
+<i>1157</i>&nbsp;    /*
+<i>1158</i>&nbsp;    /**********************************************************
+<i>1159</i>&nbsp;    /* Stuff that was abstract and required before 2.8, but that
+<i>1160</i>&nbsp;    /* is not mandatory in 2.8 or above.
+<i>1161</i>&nbsp;    /**********************************************************
+<i>1162</i>&nbsp;     */
+<i>1163</i>&nbsp;
+<i>1164</i>&nbsp;    @Deprecated // since 2.8
+<i>1165</i>&nbsp;    protected void loadMoreGuaranteed() throws IOException {
+<b class="nc"><i>1166</i>&nbsp;        if (!loadMore()) { _reportInvalidEOF(); }</b>
+<b class="nc"><i>1167</i>&nbsp;    }</b>
+<i>1168</i>&nbsp;
+<i>1169</i>&nbsp;    @Deprecated // since 2.8
+<b class="nc"><i>1170</i>&nbsp;    protected boolean loadMore() throws IOException { return false; }</b>
+<i>1171</i>&nbsp;
+<i>1172</i>&nbsp;    // Can&#39;t declare as deprecated, for now, but shouldn&#39;t be needed
+<b class="nc"><i>1173</i>&nbsp;    protected void _finishString() throws IOException { }</b>
+<i>1174</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 04:22</div>
+</div>
+</body>
+</html>

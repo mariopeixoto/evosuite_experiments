@@ -1,0 +1,121 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: OutputDecorator</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.fasterxml.jackson.core.io</a> ]
+</div>
+
+<h1>Coverage Summary for Class: OutputDecorator (com.fasterxml.jackson.core.io)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">OutputDecorator</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package com.fasterxml.jackson.core.io;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import java.io.*;
+<i>4</i>&nbsp;
+<i>5</i>&nbsp;/**
+<i>6</i>&nbsp; * Handler class that can be used to decorate output destinations.
+<i>7</i>&nbsp; * Typical use is to use a filter abstraction (filtered output stream,
+<i>8</i>&nbsp; * writer) around original output destination, and apply additional
+<i>9</i>&nbsp; * processing during write operations.
+<i>10</i>&nbsp; */
+<i>11</i>&nbsp;@SuppressWarnings(&quot;serial&quot;)
+<b class="fc"><i>12</i>&nbsp;public abstract class OutputDecorator implements java.io.Serializable // since 2.1</b>
+<i>13</i>&nbsp;{
+<i>14</i>&nbsp;    /**
+<i>15</i>&nbsp;     * Method called by {@link com.fasterxml.jackson.core.JsonFactory} instance when
+<i>16</i>&nbsp;     * creating generator for given {@link OutputStream}, when this decorator
+<i>17</i>&nbsp;     * has been registered.
+<i>18</i>&nbsp;     * 
+<i>19</i>&nbsp;     * @param ctxt IO context in use (provides access to declared encoding)
+<i>20</i>&nbsp;     * @param out Original output destination
+<i>21</i>&nbsp;     * 
+<i>22</i>&nbsp;     * @return OutputStream to use; either passed in argument, or something that
+<i>23</i>&nbsp;     *   calls it
+<i>24</i>&nbsp;     */
+<i>25</i>&nbsp;    public abstract OutputStream decorate(IOContext ctxt, OutputStream out) throws IOException;
+<i>26</i>&nbsp;
+<i>27</i>&nbsp;    /**
+<i>28</i>&nbsp;     * Method called by {@link com.fasterxml.jackson.core.JsonFactory} instance when
+<i>29</i>&nbsp;     * creating generator for given {@link Writer}, when this decorator
+<i>30</i>&nbsp;     * has been registered.
+<i>31</i>&nbsp;     * 
+<i>32</i>&nbsp;     * @param ctxt IO context in use (provides access to declared encoding)
+<i>33</i>&nbsp;     * @param w Original output writer
+<i>34</i>&nbsp;     * 
+<i>35</i>&nbsp;     * @return Writer to use; either passed in argument, or something that calls it
+<i>36</i>&nbsp;     */
+<i>37</i>&nbsp;    public abstract Writer decorate(IOContext ctxt, Writer w) throws IOException;
+<i>38</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 04:22</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,138 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: DateTimeParserInternalParser</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time.format</a> ]
+</div>
+
+<h1>Coverage Summary for Class: DateTimeParserInternalParser (org.joda.time.format)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">DateTimeParserInternalParser</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    60%
+  </span>
+  <span class="absValue">
+    (3/ 5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    81.8%
+  </span>
+  <span class="absValue">
+    (9/ 11)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2014 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time.format;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;/**
+<i>19</i>&nbsp; * Adapter between old and new parser interface.
+<i>20</i>&nbsp; *
+<i>21</i>&nbsp; * @author Stephen Colebourne
+<i>22</i>&nbsp; * @since 2.4
+<i>23</i>&nbsp; */
+<i>24</i>&nbsp;class DateTimeParserInternalParser implements InternalParser {
+<i>25</i>&nbsp;    
+<i>26</i>&nbsp;    private final DateTimeParser underlying;
+<i>27</i>&nbsp;
+<i>28</i>&nbsp;    static InternalParser of(DateTimeParser underlying) {
+<b class="fc"><i>29</i>&nbsp;        if (underlying instanceof InternalParserDateTimeParser) {</b>
+<b class="fc"><i>30</i>&nbsp;            return (InternalParser) underlying;</b>
+<i>31</i>&nbsp;        }
+<b class="fc"><i>32</i>&nbsp;        if (underlying == null) {</b>
+<b class="fc"><i>33</i>&nbsp;            return null;</b>
+<i>34</i>&nbsp;        }
+<b class="fc"><i>35</i>&nbsp;        return new DateTimeParserInternalParser(underlying);</b>
+<i>36</i>&nbsp;    }
+<i>37</i>&nbsp;
+<b class="fc"><i>38</i>&nbsp;    private DateTimeParserInternalParser(DateTimeParser underlying) {</b>
+<b class="fc"><i>39</i>&nbsp;        this.underlying = underlying;</b>
+<b class="fc"><i>40</i>&nbsp;    }</b>
+<i>41</i>&nbsp;
+<i>42</i>&nbsp;    //-----------------------------------------------------------------------
+<i>43</i>&nbsp;    DateTimeParser getUnderlying() {
+<b class="nc"><i>44</i>&nbsp;        return underlying;</b>
+<i>45</i>&nbsp;    }
+<i>46</i>&nbsp;
+<i>47</i>&nbsp;    public int estimateParsedLength() {
+<b class="nc"><i>48</i>&nbsp;        return underlying.estimateParsedLength();</b>
+<i>49</i>&nbsp;    }
+<i>50</i>&nbsp;
+<i>51</i>&nbsp;    public int parseInto(DateTimeParserBucket bucket, CharSequence text, int position) {
+<b class="fc"><i>52</i>&nbsp;        return underlying.parseInto(bucket, text.toString(), position);</b>
+<i>53</i>&nbsp;    }
+<i>54</i>&nbsp;
+<i>55</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

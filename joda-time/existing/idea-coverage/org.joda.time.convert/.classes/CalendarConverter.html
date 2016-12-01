@@ -1,0 +1,218 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: CalendarConverter</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time.convert</a> ]
+</div>
+
+<h1>Coverage Summary for Class: CalendarConverter (org.joda.time.convert)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">CalendarConverter</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (6/ 6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (26/ 26)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2009 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time.convert;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;import java.util.Calendar;
+<i>19</i>&nbsp;import java.util.GregorianCalendar;
+<i>20</i>&nbsp;
+<i>21</i>&nbsp;import org.joda.time.Chronology;
+<i>22</i>&nbsp;import org.joda.time.DateTimeZone;
+<i>23</i>&nbsp;import org.joda.time.chrono.BuddhistChronology;
+<i>24</i>&nbsp;import org.joda.time.chrono.GJChronology;
+<i>25</i>&nbsp;import org.joda.time.chrono.GregorianChronology;
+<i>26</i>&nbsp;import org.joda.time.chrono.ISOChronology;
+<i>27</i>&nbsp;import org.joda.time.chrono.JulianChronology;
+<i>28</i>&nbsp;
+<i>29</i>&nbsp;/**
+<i>30</i>&nbsp; * CalendarConverter converts a java util Calendar to an instant or partial.
+<i>31</i>&nbsp; * The Calendar is converted to milliseconds and the chronology that best
+<i>32</i>&nbsp; * matches the calendar.
+<i>33</i>&nbsp; *
+<i>34</i>&nbsp; * @author Stephen Colebourne
+<i>35</i>&nbsp; * @since 1.0
+<i>36</i>&nbsp; */
+<i>37</i>&nbsp;final class CalendarConverter extends AbstractConverter
+<i>38</i>&nbsp;        implements InstantConverter, PartialConverter {
+<i>39</i>&nbsp;
+<i>40</i>&nbsp;    /**
+<i>41</i>&nbsp;     * Singleton instance.
+<i>42</i>&nbsp;     */
+<b class="fc"><i>43</i>&nbsp;    static final CalendarConverter INSTANCE = new CalendarConverter();</b>
+<i>44</i>&nbsp;
+<i>45</i>&nbsp;    /**
+<i>46</i>&nbsp;     * Restricted constructor.
+<i>47</i>&nbsp;     */
+<i>48</i>&nbsp;    protected CalendarConverter() {
+<b class="fc"><i>49</i>&nbsp;        super();</b>
+<b class="fc"><i>50</i>&nbsp;    }</b>
+<i>51</i>&nbsp;
+<i>52</i>&nbsp;    //-----------------------------------------------------------------------
+<i>53</i>&nbsp;    /**
+<i>54</i>&nbsp;     * Gets the chronology.
+<i>55</i>&nbsp;     * &lt;p&gt;
+<i>56</i>&nbsp;     * If a chronology is specified then it is used.
+<i>57</i>&nbsp;     * Otherwise, it is the GJChronology if a GregorianCalendar is used,
+<i>58</i>&nbsp;     * BuddhistChronology if a BuddhistCalendar is used or ISOChronology otherwise.
+<i>59</i>&nbsp;     * The time zone is extracted from the calendar if possible, default used if not.
+<i>60</i>&nbsp;     * 
+<i>61</i>&nbsp;     * @param object  the Calendar to convert, must not be null
+<i>62</i>&nbsp;     * @param chrono  the chronology to use, null means use Calendar
+<i>63</i>&nbsp;     * @return the chronology, never null
+<i>64</i>&nbsp;     * @throws NullPointerException if the object is null
+<i>65</i>&nbsp;     * @throws ClassCastException if the object is an invalid type
+<i>66</i>&nbsp;     */
+<i>67</i>&nbsp;    public Chronology getChronology(Object object, Chronology chrono) {
+<b class="fc"><i>68</i>&nbsp;        if (chrono != null) {</b>
+<b class="fc"><i>69</i>&nbsp;            return chrono;</b>
+<i>70</i>&nbsp;        }
+<b class="fc"><i>71</i>&nbsp;        Calendar cal = (Calendar) object;</b>
+<b class="fc"><i>72</i>&nbsp;        DateTimeZone zone = null;</b>
+<i>73</i>&nbsp;        try {
+<b class="fc"><i>74</i>&nbsp;            zone = DateTimeZone.forTimeZone(cal.getTimeZone());</b>
+<i>75</i>&nbsp;            
+<b class="fc"><i>76</i>&nbsp;        } catch (IllegalArgumentException ex) {</b>
+<b class="fc"><i>77</i>&nbsp;            zone = DateTimeZone.getDefault();</b>
+<b class="fc"><i>78</i>&nbsp;        }</b>
+<b class="fc"><i>79</i>&nbsp;        return getChronology(cal, zone);</b>
+<i>80</i>&nbsp;    }
+<i>81</i>&nbsp;
+<i>82</i>&nbsp;    /**
+<i>83</i>&nbsp;     * Gets the chronology, which is the GJChronology if a GregorianCalendar is used,
+<i>84</i>&nbsp;     * BuddhistChronology if a BuddhistCalendar is used or ISOChronology otherwise.
+<i>85</i>&nbsp;     * The time zone specified is used in preference to that on the calendar.
+<i>86</i>&nbsp;     * 
+<i>87</i>&nbsp;     * @param object  the Calendar to convert, must not be null
+<i>88</i>&nbsp;     * @param zone  the specified zone to use, null means default zone
+<i>89</i>&nbsp;     * @return the chronology, never null
+<i>90</i>&nbsp;     * @throws NullPointerException if the object is null
+<i>91</i>&nbsp;     * @throws ClassCastException if the object is an invalid type
+<i>92</i>&nbsp;     */
+<i>93</i>&nbsp;    public Chronology getChronology(Object object, DateTimeZone zone) {
+<b class="fc"><i>94</i>&nbsp;        if (object.getClass().getName().endsWith(&quot;.BuddhistCalendar&quot;)) {</b>
+<b class="fc"><i>95</i>&nbsp;            return BuddhistChronology.getInstance(zone);</b>
+<b class="fc"><i>96</i>&nbsp;        } else if (object instanceof GregorianCalendar) {</b>
+<b class="fc"><i>97</i>&nbsp;            GregorianCalendar gc = (GregorianCalendar) object;</b>
+<b class="fc"><i>98</i>&nbsp;            long cutover = gc.getGregorianChange().getTime();</b>
+<b class="fc"><i>99</i>&nbsp;            if (cutover == Long.MIN_VALUE) {</b>
+<b class="fc"><i>100</i>&nbsp;                return GregorianChronology.getInstance(zone);</b>
+<b class="fc"><i>101</i>&nbsp;            } else if (cutover == Long.MAX_VALUE) {</b>
+<b class="fc"><i>102</i>&nbsp;                return JulianChronology.getInstance(zone);</b>
+<i>103</i>&nbsp;            } else {
+<b class="fc"><i>104</i>&nbsp;                return GJChronology.getInstance(zone, cutover, 4);</b>
+<i>105</i>&nbsp;            }
+<i>106</i>&nbsp;        } else {
+<b class="fc"><i>107</i>&nbsp;            return ISOChronology.getInstance(zone);</b>
+<i>108</i>&nbsp;        }
+<i>109</i>&nbsp;    }
+<i>110</i>&nbsp;
+<i>111</i>&nbsp;    /**
+<i>112</i>&nbsp;     * Gets the millis, which is the Calendar millis value.
+<i>113</i>&nbsp;     * 
+<i>114</i>&nbsp;     * @param object  the Calendar to convert, must not be null
+<i>115</i>&nbsp;     * @param chrono  the chronology result from getChronology, non-null
+<i>116</i>&nbsp;     * @return the millisecond value
+<i>117</i>&nbsp;     * @throws NullPointerException if the object is null
+<i>118</i>&nbsp;     * @throws ClassCastException if the object is an invalid type
+<i>119</i>&nbsp;     */
+<i>120</i>&nbsp;    public long getInstantMillis(Object object, Chronology chrono) {
+<b class="fc"><i>121</i>&nbsp;        Calendar calendar = (Calendar) object;</b>
+<b class="fc"><i>122</i>&nbsp;        return calendar.getTime().getTime();</b>
+<i>123</i>&nbsp;    }
+<i>124</i>&nbsp;
+<i>125</i>&nbsp;    //-----------------------------------------------------------------------
+<i>126</i>&nbsp;    /**
+<i>127</i>&nbsp;     * Returns Calendar.class.
+<i>128</i>&nbsp;     * 
+<i>129</i>&nbsp;     * @return Calendar.class
+<i>130</i>&nbsp;     */
+<i>131</i>&nbsp;    public Class&lt;?&gt; getSupportedType() {
+<b class="fc"><i>132</i>&nbsp;        return Calendar.class;</b>
+<i>133</i>&nbsp;    }
+<i>134</i>&nbsp;
+<i>135</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,115 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: Name2</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.fasterxml.jackson.core.sym</a> ]
+</div>
+
+<h1>Coverage Summary for Class: Name2 (com.fasterxml.jackson.core.sym)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">Name2</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    0%
+  </span>
+  <span class="absValue">
+    (0/ 7)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package com.fasterxml.jackson.core.sym;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;/**
+<i>4</i>&nbsp; * Specialized implementation of PName: can be used for short Strings
+<i>5</i>&nbsp; * that consists of 5 to 8 bytes. Usually this means relatively short
+<i>6</i>&nbsp; * ascii-only names.
+<i>7</i>&nbsp; *&lt;p&gt;
+<i>8</i>&nbsp; * The reason for such specialized classes is mostly space efficiency;
+<i>9</i>&nbsp; * and to a lesser degree performance. Both are achieved for short
+<i>10</i>&nbsp; * Strings by avoiding another level of indirection (via quad arrays)
+<i>11</i>&nbsp; */
+<i>12</i>&nbsp;public final class Name2 extends Name
+<i>13</i>&nbsp;{
+<i>14</i>&nbsp;    private final int q1,  q2;
+<i>15</i>&nbsp;
+<i>16</i>&nbsp;    Name2(String name, int hash, int quad1, int quad2) {
+<b class="nc"><i>17</i>&nbsp;        super(name, hash);</b>
+<b class="nc"><i>18</i>&nbsp;        q1 = quad1;</b>
+<b class="nc"><i>19</i>&nbsp;        q2 = quad2;</b>
+<i>20</i>&nbsp;    }
+<i>21</i>&nbsp;
+<i>22</i>&nbsp;    @Override
+<b class="nc"><i>23</i>&nbsp;    public boolean equals(int quad) { return false; }</b>
+<i>24</i>&nbsp;
+<i>25</i>&nbsp;    @Override
+<b class="nc"><i>26</i>&nbsp;    public boolean equals(int quad1, int quad2) { return (quad1 == q1) &amp;&amp; (quad2 == q2); }</b>
+<i>27</i>&nbsp;
+<b class="nc"><i>28</i>&nbsp;    @Override public boolean equals(int quad1, int quad2, int q3) { return false; }</b>
+<i>29</i>&nbsp;    
+<i>30</i>&nbsp;    @Override
+<b class="nc"><i>31</i>&nbsp;    public boolean equals(int[] quads, int qlen) { return (qlen == 2 &amp;&amp; quads[0] == q1 &amp;&amp; quads[1] == q2); }</b>
+<i>32</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 04:22</div>
+</div>
+</body>
+</html>

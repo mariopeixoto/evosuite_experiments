@@ -1,0 +1,342 @@
+Going to execute command:
+/Library/Java/Home/bin/java  -jar  /Users/mario/Downloads/evosuite-1.0.3.jar  -continuous  execute  -Dspawn_process_manager_port=52528  -Dctg_memory=8000  -Dctg_cores=4  -Dctg_time_per_class=1  -Dctg_export_folder=src/test/java  -Dctg_selected_cuts_file_location=/var/folders/fw/p1v413pn3d37fq0grpb41s8w0000gn/T/EvoSuite_ctg_CUT_file2724270924907949395.txt  -DCP_file_path=/var/folders/fw/p1v413pn3d37fq0grpb41s8w0000gn/T/EvoSuite_ctg_classpath_file926731949683208394.txt
+in folder: /Users/mario/Documents/experiments/joda-time
+Going to execute command:
+/Library/Java/Home/bin/java  -jar  /Users/mario/Downloads/evosuite-1.0.3.jar  -continuous  execute  -Dspawn_process_manager_port=52528  -Dctg_memory=8000  -Dctg_cores=4  -Dctg_time_per_class=1  -Dctg_export_folder=src/test/java  -Dctg_selected_cuts_file_location=/var/folders/fw/p1v413pn3d37fq0grpb41s8w0000gn/T/EvoSuite_ctg_CUT_file2724270924907949395.txt  -DCP_file_path=/var/folders/fw/p1v413pn3d37fq0grpb41s8w0000gn/T/EvoSuite_ctg_classpath_file926731949683208394.txt
+in folder: /Users/mario/Documents/experiments/joda-time
+* EvoSuite 1.0.3
+Going to execute 142 jobs
+Estimated completion time: 36 minutes, by 2016-11-30T03:46:58.225
+Going to start job for: org.joda.time.tz.ZoneInfoCompiler. Expected to end in 64 seconds, by 2016-11-30T03:12:02.246
+Going to start job for: org.joda.time.DateTimeZone. Expected to end in 64 seconds, by 2016-11-30T03:12:02.246
+Going to start job for: org.joda.time.format.DateTimeFormat. Expected to end in 69 seconds, by 2016-11-30T03:12:07.246
+Going to start job for: org.joda.time.format.ISODateTimeFormat. Expected to end in 63 seconds, by 2016-11-30T03:12:01.246
+Completed job. Left: 141
+Going to start job for: org.joda.time.LocalDate. Expected to end in 63 seconds, by 2016-11-30T03:12:59.580
+Completed job. Left: 140
+Going to start job for: org.joda.time.format.PeriodFormatterBuilder. Expected to end in 62 seconds, by 2016-11-30T03:13:01.577
+Completed job. Left: 139
+Going to start job for: org.joda.time.format.DateTimeFormatterBuilder. Expected to end in 62 seconds, by 2016-11-30T03:13:03.758
+Completed job. Left: 138
+Going to start job for: org.joda.time.format.FormatUtils. Expected to end in 62 seconds, by 2016-11-30T03:13:11.251
+Completed job. Left: 137
+Going to start job for: org.joda.time.PeriodType. Expected to end in 62 seconds, by 2016-11-30T03:13:13.650
+Completed job. Left: 136
+Going to start job for: org.joda.time.tz.DateTimeZoneBuilder. Expected to end in 62 seconds, by 2016-11-30T03:14:04.964
+Completed job. Left: 135
+Going to start job for: org.joda.time.LocalDateTime. Expected to end in 62 seconds, by 2016-11-30T03:14:08.911
+Completed job. Left: 134
+Going to start job for: org.joda.time.Partial. Expected to end in 62 seconds, by 2016-11-30T03:14:09.907
+Completed job. Left: 133
+Going to start job for: org.joda.time.LocalTime. Expected to end in 62 seconds, by 2016-11-30T03:14:17.926
+Completed job. Left: 132
+Going to start job for: org.joda.time.chrono.AssembledChronology. Expected to end in 62 seconds, by 2016-11-30T03:14:18.429
+Completed job. Left: 131
+Going to start job for: org.joda.time.DateTimeComparator. Expected to end in 61 seconds, by 2016-11-30T03:15:10.424
+Completed job. Left: 130
+Going to start job for: org.joda.time.chrono.BasicChronology. Expected to end in 61 seconds, by 2016-11-30T03:15:10.460
+Completed job. Left: 129
+Going to start job for: org.joda.time.chrono.ZonedChronology. Expected to end in 61 seconds, by 2016-11-30T03:15:21.623
+Completed job. Left: 128
+Going to start job for: org.joda.time.field.BaseDateTimeField. Expected to end in 61 seconds, by 2016-11-30T03:15:23.328
+Completed job. Left: 127
+Going to start job for: org.joda.time.chrono.GJChronology. Expected to end in 61 seconds, by 2016-11-30T03:16:04.593
+Completed job. Left: 126
+Going to start job for: org.joda.time.Interval. Expected to end in 61 seconds, by 2016-11-30T03:16:15.338
+Completed job. Left: 125
+Going to start job for: org.joda.time.chrono.IslamicChronology. Expected to end in 61 seconds, by 2016-11-30T03:16:19.520
+Completed job. Left: 124
+Going to start job for: org.joda.time.format.DateTimeParserBucket. Expected to end in 61 seconds, by 2016-11-30T03:16:19.572
+Completed job. Left: 123
+Going to start job for: org.joda.time.convert.ConverterSet. Expected to end in 61 seconds, by 2016-11-30T03:17:04.045
+Completed job. Left: 122
+Going to start job for: org.joda.time.MutableDateTime. Expected to end in 61 seconds, by 2016-11-30T03:17:09.513
+Completed job. Left: 121
+Going to start job for: org.joda.time.DateMidnight. Expected to end in 61 seconds, by 2016-11-30T03:17:14.038
+Completed job. Left: 120
+Going to start job for: org.joda.time.Months. Expected to end in 61 seconds, by 2016-11-30T03:17:25.049
+Completed job. Left: 119
+Going to start job for: org.joda.time.Days. Expected to end in 61 seconds, by 2016-11-30T03:17:58.599
+Completed job. Left: 118
+Going to start job for: org.joda.time.field.FieldUtils. Expected to end in 61 seconds, by 2016-11-30T03:18:03.977
+Completed job. Left: 117
+Going to start job for: org.joda.time.chrono.LimitChronology. Expected to end in 61 seconds, by 2016-11-30T03:18:08.516
+Completed job. Left: 116
+Going to start job for: org.joda.time.base.BaseSingleFieldPeriod. Expected to end in 61 seconds, by 2016-11-30T03:18:27.012
+Completed job. Left: 115
+Going to start job for: org.joda.time.tz.DefaultNameProvider. Expected to end in 61 seconds, by 2016-11-30T03:18:58.854
+Completed job. Left: 114
+Going to start job for: org.joda.time.convert.ConverterManager. Expected to end in 61 seconds, by 2016-11-30T03:19:02.223
+Completed job. Left: 113
+Going to start job for: org.joda.time.chrono.BasicMonthOfYearDateTimeField. Expected to end in 61 seconds, by 2016-11-30T03:19:07.198
+Completed job. Left: 112
+Going to start job for: org.joda.time.base.AbstractPartial. Expected to end in 61 seconds, by 2016-11-30T03:19:23.403
+Completed job. Left: 111
+Going to start job for: org.joda.time.DateTimeUtils. Expected to end in 61 seconds, by 2016-11-30T03:19:46.039
+Completed job. Left: 110
+Going to start job for: org.joda.time.base.AbstractInterval. Expected to end in 61 seconds, by 2016-11-30T03:19:58.014
+Completed job. Left: 109
+Going to start job for: org.joda.time.Hours. Expected to end in 61 seconds, by 2016-11-30T03:20:03.524
+Completed job. Left: 108
+Going to start job for: org.joda.time.convert.StringConverter. Expected to end in 61 seconds, by 2016-11-30T03:20:23.617
+Completed job. Left: 107
+Going to start job for: org.joda.time.base.BasePeriod. Expected to end in 61 seconds, by 2016-11-30T03:20:43.270
+Completed job. Left: 106
+Going to start job for: org.joda.time.Period. Expected to end in 61 seconds, by 2016-11-30T03:20:59.588
+Completed job. Left: 105
+Going to start job for: org.joda.time.chrono.BasicGJChronology. Expected to end in 61 seconds, by 2016-11-30T03:21:05.060
+Completed job. Left: 104
+Going to start job for: org.joda.time.format.DateTimeFormatter. Expected to end in 61 seconds, by 2016-11-30T03:21:16.055
+Completed job. Left: 103
+Going to start job for: org.joda.time.DateTime. Expected to end in 61 seconds, by 2016-11-30T03:21:28.835
+Completed job. Left: 102
+Going to start job for: org.joda.time.convert.ReadablePartialConverter. Expected to end in 60 seconds, by 2016-11-30T03:21:43.074
+Completed job. Left: 101
+Going to start job for: org.joda.time.chrono.GJYearOfEraDateTimeField. Expected to end in 60 seconds, by 2016-11-30T03:22:01.083
+Completed job. Left: 100
+Going to start job for: org.joda.time.Seconds. Expected to end in 60 seconds, by 2016-11-30T03:22:04.614
+Completed job. Left: 99
+Going to start job for: org.joda.time.field.RemainderDateTimeField. Expected to end in 60 seconds, by 2016-11-30T03:22:22.950
+Completed job. Left: 98
+Going to start job for: org.joda.time.JodaTimePermission. Expected to end in 60 seconds, by 2016-11-30T03:22:29.739
+Completed job. Left: 97
+Going to start job for: org.joda.time.chrono.BasicWeekOfWeekyearDateTimeField. Expected to end in 60 seconds, by 2016-11-30T03:22:48.029
+Completed job. Left: 96
+Going to start job for: org.joda.time.field.AbstractPartialFieldProperty. Expected to end in 60 seconds, by 2016-11-30T03:22:49.354
+Completed job. Left: 95
+Going to start job for: org.joda.time.field.StrictDateTimeField. Expected to end in 60 seconds, by 2016-11-30T03:23:03.268
+Completed job. Left: 94
+Going to start job for: org.joda.time.DateTimeFieldType. Expected to end in 60 seconds, by 2016-11-30T03:23:13.254
+Completed job. Left: 93
+Going to start job for: org.joda.time.field.UnsupportedDurationField. Expected to end in 60 seconds, by 2016-11-30T03:23:33.898
+Completed job. Left: 92
+Going to start job for: org.joda.time.field.LenientDateTimeField. Expected to end in 60 seconds, by 2016-11-30T03:23:37.736
+Completed job. Left: 91
+Going to start job for: org.joda.time.base.AbstractDateTime. Expected to end in 60 seconds, by 2016-11-30T03:23:49.820
+Completed job. Left: 90
+Going to start job for: org.joda.time.field.SkipUndoDateTimeField. Expected to end in 60 seconds, by 2016-11-30T03:23:50.957
+Completed job. Left: 89
+Going to start job for: org.joda.time.convert.AbstractConverter. Expected to end in 60 seconds, by 2016-11-30T03:24:14.892
+Completed job. Left: 88
+Going to start job for: org.joda.time.chrono.ISOChronology. Expected to end in 60 seconds, by 2016-11-30T03:24:24.087
+Completed job. Left: 87
+Going to start job for: org.joda.time.base.BaseLocal. Expected to end in 60 seconds, by 2016-11-30T03:24:38.216
+Completed job. Left: 86
+Going to start job for: org.joda.time.field.DelegatedDateTimeField. Expected to end in 60 seconds, by 2016-11-30T03:24:41.872
+Completed job. Left: 85
+Going to start job for: org.joda.time.chrono.LenientChronology. Expected to end in 60 seconds, by 2016-11-30T03:25:06.191
+Completed job. Left: 84
+Going to start job for: org.joda.time.chrono.BasicYearDateTimeField. Expected to end in 60 seconds, by 2016-11-30T03:25:15.028
+Completed job. Left: 83
+Going to start job for: org.joda.time.field.DividedDateTimeField. Expected to end in 60 seconds, by 2016-11-30T03:25:29.549
+Completed job. Left: 82
+Going to start job for: org.joda.time.convert.DateConverter. Expected to end in 60 seconds, by 2016-11-30T03:25:30.528
+Completed job. Left: 81
+Going to start job for: org.joda.time.field.ZeroIsMaxDateTimeField. Expected to end in 60 seconds, by 2016-11-30T03:25:58.164
+Completed job. Left: 80
+Going to start job for: org.joda.time.base.BaseInterval. Expected to end in 60 seconds, by 2016-11-30T03:26:03.959
+Completed job. Left: 79
+Going to start job for: org.joda.time.chrono.EthiopicChronology. Expected to end in 60 seconds, by 2016-11-30T03:26:10.023
+Completed job. Left: 78
+Going to start job for: org.joda.time.Duration. Expected to end in 60 seconds, by 2016-11-30T03:26:17.258
+Completed job. Left: 77
+Going to start job for: org.joda.time.format.PeriodFormatter. Expected to end in 60 seconds, by 2016-11-30T03:26:19.854
+Completed job. Left: 76
+Going to start job for: org.joda.time.field.MillisDurationField. Expected to end in 60 seconds, by 2016-11-30T03:26:21.639
+Completed job. Left: 75
+Going to start job for: org.joda.time.format.DateTimePrinterInternalPrinter. Expected to end in 60 seconds, by 2016-11-30T03:26:54.681
+Completed job. Left: 74
+Going to start job for: org.joda.time.convert.LongConverter. Expected to end in 60 seconds, by 2016-11-30T03:27:07.296
+Completed job. Left: 73
+Going to start job for: org.joda.time.base.AbstractInstant. Expected to end in 60 seconds, by 2016-11-30T03:27:14.488
+Completed job. Left: 72
+Going to start job for: org.joda.time.chrono.BasicFixedMonthChronology. Expected to end in 60 seconds, by 2016-11-30T03:27:20.801
+Completed job. Left: 71
+Going to start job for: org.joda.time.field.UnsupportedDateTimeField. Expected to end in 60 seconds, by 2016-11-30T03:27:46.397
+Completed job. Left: 70
+Going to start job for: org.joda.time.chrono.ISOYearOfEraDateTimeField. Expected to end in 60 seconds, by 2016-11-30T03:27:55.868
+Completed job. Left: 69
+Going to start job for: org.joda.time.field.ScaledDurationField. Expected to end in 60 seconds, by 2016-11-30T03:28:08.202
+Completed job. Left: 68
+Going to start job for: org.joda.time.field.PreciseDurationDateTimeField. Expected to end in 60 seconds, by 2016-11-30T03:28:18.980
+Completed job. Left: 67
+Going to start job for: org.joda.time.MonthDay. Expected to end in 60 seconds, by 2016-11-30T03:28:39.581
+Completed job. Left: 66
+Going to start job for: org.joda.time.chrono.GJCacheKey. Expected to end in 60 seconds, by 2016-11-30T03:28:48.397
+Completed job. Left: 65
+Going to start job for: org.joda.time.MutablePeriod. Expected to end in 60 seconds, by 2016-11-30T03:28:58.767
+Completed job. Left: 64
+Going to start job for: org.joda.time.tz.FixedDateTimeZone. Expected to end in 60 seconds, by 2016-11-30T03:29:05.634
+Completed job. Left: 63
+Going to start job for: org.joda.time.field.PreciseDateTimeField. Expected to end in 60 seconds, by 2016-11-30T03:29:38.896
+Completed job. Left: 62
+Going to start job for: org.joda.time.tz.CachedDateTimeZone. Expected to end in 60 seconds, by 2016-11-30T03:29:42.799
+Completed job. Left: 61
+Going to start job for: org.joda.time.chrono.GJLocaleSymbols. Expected to end in 60 seconds, by 2016-11-30T03:30:02.717
+Completed job. Left: 60
+Going to start job for: org.joda.time.convert.ReadableDurationConverter. Expected to end in 60 seconds, by 2016-11-30T03:30:04.464
+Completed job. Left: 59
+Going to start job for: org.joda.time.base.BaseDuration. Expected to end in 60 seconds, by 2016-11-30T03:30:28.274
+Completed job. Left: 58
+Going to start job for: org.joda.time.field.DecoratedDateTimeField. Expected to end in 60 seconds, by 2016-11-30T03:30:44.805
+Completed job. Left: 57
+Going to start job for: org.joda.time.YearMonthDay. Expected to end in 60 seconds, by 2016-11-30T03:31:00.455
+Completed job. Left: 56
+Going to start job for: org.joda.time.YearMonth. Expected to end in 60 seconds, by 2016-11-30T03:31:05.721
+Completed job. Left: 55
+Going to start job for: org.joda.time.convert.ReadablePeriodConverter. Expected to end in 60 seconds, by 2016-11-30T03:31:32.448
+Completed job. Left: 54
+Going to start job for: org.joda.time.field.OffsetDateTimeField. Expected to end in 60 seconds, by 2016-11-30T03:31:36.714
+Completed job. Left: 53
+Going to start job for: org.joda.time.chrono.GJMonthOfYearDateTimeField. Expected to end in 60 seconds, by 2016-11-30T03:32:00.328
+Completed job. Left: 52
+Going to start job for: org.joda.time.Years. Expected to end in 60 seconds, by 2016-11-30T03:32:06.348
+Completed job. Left: 51
+Going to start job for: org.joda.time.convert.ReadableIntervalConverter. Expected to end in 60 seconds, by 2016-11-30T03:32:19.720
+Completed job. Left: 50
+Going to start job for: org.joda.time.chrono.BasicWeekyearDateTimeField. Expected to end in 60 seconds, by 2016-11-30T03:32:25.993
+Completed job. Left: 49
+Going to start job for: org.joda.time.DateTimeField. Expected to end in 60 seconds, by 2016-11-30T03:32:54.356
+Completed job. Left: 48
+Going to start job for: org.joda.time.chrono.BasicSingleEraDateTimeField. Expected to end in 60 seconds, by 2016-11-30T03:33:08.407
+Completed job. Left: 47
+Going to start job for: org.joda.time.field.SkipDateTimeField. Expected to end in 60 seconds, by 2016-11-30T03:33:13.627
+Completed job. Left: 46
+Going to start job for: org.joda.time.tz.UTCProvider. Expected to end in 60 seconds, by 2016-11-30T03:33:18.093
+Completed job. Left: 45
+Going to start job for: org.joda.time.format.InternalPrinterDateTimePrinter. Expected to end in 60 seconds, by 2016-11-30T03:33:50.455
+Completed job. Left: 44
+Going to start job for: org.joda.time.base.AbstractPeriod. Expected to end in 60 seconds, by 2016-11-30T03:34:01.864
+Completed job. Left: 43
+Going to start job for: org.joda.time.chrono.GJDayOfWeekDateTimeField. Expected to end in 60 seconds, by 2016-11-30T03:34:06.863
+Completed job. Left: 42
+Going to start job for: org.joda.time.convert.NullConverter. Expected to end in 60 seconds, by 2016-11-30T03:34:10.507
+Completed job. Left: 41
+Going to start job for: org.joda.time.IllegalFieldValueException. Expected to end in 60 seconds, by 2016-11-30T03:34:48.073
+Completed job. Left: 40
+Going to start job for: org.joda.time.IllegalInstantException. Expected to end in 60 seconds, by 2016-11-30T03:34:57.651
+Completed job. Left: 39
+Going to start job for: org.joda.time.tz.ZoneInfoLogger. Expected to end in 60 seconds, by 2016-11-30T03:35:01.777
+Completed job. Left: 38
+Going to start job for: org.joda.time.chrono.GregorianChronology. Expected to end in 60 seconds, by 2016-11-30T03:35:06.750
+Completed job. Left: 37
+Going to start job for: org.joda.time.DurationFieldType. Expected to end in 60 seconds, by 2016-11-30T03:35:44.246
+Completed job. Left: 36
+Going to start job for: org.joda.time.MutableInterval. Expected to end in 60 seconds, by 2016-11-30T03:35:54.330
+Completed job. Left: 35
+Going to start job for: org.joda.time.Minutes. Expected to end in 60 seconds, by 2016-11-30T03:35:56.710
+Completed job. Left: 34
+Going to start job for: org.joda.time.base.BasePartial. Expected to end in 60 seconds, by 2016-11-30T03:36:13.543
+Completed job. Left: 33
+Going to start job for: org.joda.time.base.AbstractDuration. Expected to end in 60 seconds, by 2016-11-30T03:36:42.002
+Completed job. Left: 32
+Going to start job for: org.joda.time.base.BaseDateTime. Expected to end in 60 seconds, by 2016-11-30T03:36:48.772
+Completed job. Left: 31
+Going to start job for: org.joda.time.convert.ReadableInstantConverter. Expected to end in 60 seconds, by 2016-11-30T03:37:01.491
+Completed job. Left: 30
+Going to start job for: org.joda.time.field.DecoratedDurationField. Expected to end in 60 seconds, by 2016-11-30T03:37:11.745
+Completed job. Left: 29
+Going to start job for: org.joda.time.chrono.StrictChronology. Expected to end in 60 seconds, by 2016-11-30T03:37:45.827
+Completed job. Left: 28
+Going to start job for: org.joda.time.format.ISOPeriodFormat. Expected to end in 60 seconds, by 2016-11-30T03:37:48.922
+Completed job. Left: 27
+Going to start job for: org.joda.time.TimeOfDay. Expected to end in 60 seconds, by 2016-11-30T03:38:00.077
+Completed job. Left: 26
+Going to start job for: org.joda.time.chrono.GJEraDateTimeField. Expected to end in 60 seconds, by 2016-11-30T03:38:05.611
+Completed job. Left: 25
+Going to start job for: org.joda.time.tz.ZoneInfoProvider. Expected to end in 60 seconds, by 2016-11-30T03:38:39.551
+Completed job. Left: 24
+Going to start job for: org.joda.time.chrono.BaseChronology. Expected to end in 60 seconds, by 2016-11-30T03:38:41.144
+Completed job. Left: 23
+Going to start job for: org.joda.time.chrono.JulianChronology. Expected to end in 60 seconds, by 2016-11-30T03:38:57.211
+Completed job. Left: 22
+Going to start job for: org.joda.time.chrono.CopticChronology. Expected to end in 60 seconds, by 2016-11-30T03:39:04.877
+Completed job. Left: 21
+Going to start job for: org.joda.time.field.ImpreciseDateTimeField. Expected to end in 60 seconds, by 2016-11-30T03:39:42.117
+Completed job. Left: 20
+Going to start job for: org.joda.time.field.PreciseDurationField. Expected to end in 60 seconds, by 2016-11-30T03:39:44.737
+Completed job. Left: 19
+Going to start job for: org.joda.time.DurationField. Expected to end in 60 seconds, by 2016-11-30T03:39:58.542
+Completed job. Left: 18
+Going to start job for: org.joda.time.format.PeriodFormat. Expected to end in 60 seconds, by 2016-11-30T03:40:09.690
+Completed job. Left: 17
+Going to start job for: org.joda.time.Weeks. Expected to end in 60 seconds, by 2016-11-30T03:40:34.673
+Completed job. Left: 16
+Going to start job for: org.joda.time.Chronology. Expected to end in 60 seconds, by 2016-11-30T03:40:36.066
+Completed job. Left: 15
+Going to start job for: org.joda.time.field.DelegatedDurationField. Expected to end in 60 seconds, by 2016-11-30T03:40:50.035
+Completed job. Left: 14
+Going to start job for: org.joda.time.field.AbstractReadableInstantFieldProperty. Expected to end in 60 seconds, by 2016-11-30T03:40:50.244
+Completed job. Left: 13
+Going to start job for: org.joda.time.format.DateTimeParserInternalParser. Expected to end in 60 seconds, by 2016-11-30T03:40:56.033
+Completed job. Left: 12
+Going to start job for: org.joda.time.UTCDateTimeZone. Expected to end in 60 seconds, by 2016-11-30T03:41:01.689
+Completed job. Left: 11
+Going to start job for: org.joda.time.chrono.BasicDayOfMonthDateTimeField. Expected to end in 60 seconds, by 2016-11-30T03:41:38.573
+Completed job. Left: 10
+Going to start job for: org.joda.time.format.InternalParserDateTimeParser. Expected to end in 60 seconds, by 2016-11-30T03:41:42.316
+Completed job. Left: 9
+Going to start job for: org.joda.time.convert.CalendarConverter. Expected to end in 60 seconds, by 2016-11-30T03:41:48.455
+Completed job. Left: 8
+Going to start job for: org.joda.time.Instant. Expected to end in 60 seconds, by 2016-11-30T03:41:50.784
+Completed job. Left: 7
+Going to start job for: org.joda.time.chrono.BasicDayOfYearDateTimeField. Expected to end in 60 seconds, by 2016-11-30T03:42:30.034
+Completed job. Left: 6
+Going to start job for: org.joda.time.field.BaseDurationField. Expected to end in 60 seconds, by 2016-11-30T03:42:32.541
+Completed job. Left: 5
+Going to start job for: org.joda.time.DateTimeConstants. Expected to end in 60 seconds, by 2016-11-30T03:42:43.186
+Completed job. Left: 4
+Going to start job for: org.joda.time.chrono.BuddhistChronology. Expected to end in 60 seconds, by 2016-11-30T03:42:48.646
+Completed job. Left: 3
+Completed job. Left: 2
+Completed job. Left: 1
+Completed job. Left: 0
+Removed test suites: 0
+
+=== CTG run results ===
+New test suites: 125
+
+Missing classes:
+org.joda.time.Chronology
+org.joda.time.Duration
+org.joda.time.LocalDate
+org.joda.time.Minutes
+org.joda.time.Period
+org.joda.time.ReadWritableDateTime
+org.joda.time.ReadWritableInstant
+org.joda.time.ReadWritableInterval
+org.joda.time.ReadWritablePeriod
+org.joda.time.ReadableDateTime
+org.joda.time.ReadableDuration
+org.joda.time.ReadableInstant
+org.joda.time.ReadableInterval
+org.joda.time.ReadablePartial
+org.joda.time.ReadablePeriod
+org.joda.time.TimeOfDay
+org.joda.time.chrono.AssembledChronology
+org.joda.time.chrono.CopticChronology
+org.joda.time.chrono.EthiopicChronology
+org.joda.time.chrono.GregorianChronology
+org.joda.time.convert.Converter
+org.joda.time.convert.DurationConverter
+org.joda.time.convert.InstantConverter
+org.joda.time.convert.IntervalConverter
+org.joda.time.convert.PartialConverter
+org.joda.time.convert.PeriodConverter
+org.joda.time.field.DelegatedDurationField
+org.joda.time.field.LenientDateTimeField
+org.joda.time.field.ZeroIsMaxDateTimeField
+org.joda.time.format.DateTimeFormatter
+org.joda.time.format.DateTimeFormatterBuilder
+org.joda.time.format.DateTimeParser
+org.joda.time.format.DateTimePrinter
+org.joda.time.format.InternalParser
+org.joda.time.format.InternalPrinter
+org.joda.time.format.PeriodFormatterBuilder
+org.joda.time.format.PeriodParser
+org.joda.time.format.PeriodPrinter
+org.joda.time.tz.DateTimeZoneBuilder
+org.joda.time.tz.NameProvider
+org.joda.time.tz.Provider
+
+WARN: failed to generate tests for 41 classes out of 166

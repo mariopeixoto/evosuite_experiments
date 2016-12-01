@@ -1,0 +1,1107 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: DateTimeFormatter</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time.format</a> ]
+</div>
+
+<h1>Coverage Summary for Class: DateTimeFormatter (org.joda.time.format)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">DateTimeFormatter</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96%
+  </span>
+  <span class="absValue">
+    (48/ 50)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    94%
+  </span>
+  <span class="absValue">
+    (202/ 215)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2014 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time.format;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;import java.io.IOException;
+<i>19</i>&nbsp;import java.io.Writer;
+<i>20</i>&nbsp;import java.util.Locale;
+<i>21</i>&nbsp;
+<i>22</i>&nbsp;import org.joda.time.Chronology;
+<i>23</i>&nbsp;import org.joda.time.DateTime;
+<i>24</i>&nbsp;import org.joda.time.DateTimeUtils;
+<i>25</i>&nbsp;import org.joda.time.DateTimeZone;
+<i>26</i>&nbsp;import org.joda.time.LocalDate;
+<i>27</i>&nbsp;import org.joda.time.LocalDateTime;
+<i>28</i>&nbsp;import org.joda.time.LocalTime;
+<i>29</i>&nbsp;import org.joda.time.MutableDateTime;
+<i>30</i>&nbsp;import org.joda.time.ReadWritableInstant;
+<i>31</i>&nbsp;import org.joda.time.ReadableInstant;
+<i>32</i>&nbsp;import org.joda.time.ReadablePartial;
+<i>33</i>&nbsp;
+<i>34</i>&nbsp;/**
+<i>35</i>&nbsp; * Controls the printing and parsing of a datetime to and from a string.
+<i>36</i>&nbsp; * &lt;p&gt;
+<i>37</i>&nbsp; * This class is the main API for printing and parsing used by most applications.
+<i>38</i>&nbsp; * Instances of this class are created via one of three factory classes:
+<i>39</i>&nbsp; * &lt;ul&gt;
+<i>40</i>&nbsp; * &lt;li&gt;{@link DateTimeFormat} - formats by pattern and style&lt;/li&gt;
+<i>41</i>&nbsp; * &lt;li&gt;{@link ISODateTimeFormat} - ISO8601 formats&lt;/li&gt;
+<i>42</i>&nbsp; * &lt;li&gt;{@link DateTimeFormatterBuilder} - complex formats created via method calls&lt;/li&gt;
+<i>43</i>&nbsp; * &lt;/ul&gt;
+<i>44</i>&nbsp; * &lt;p&gt;
+<i>45</i>&nbsp; * An instance of this class holds a reference internally to one printer and
+<i>46</i>&nbsp; * one parser. It is possible that one of these may be null, in which case the
+<i>47</i>&nbsp; * formatter cannot print/parse. This can be checked via the {@link #isPrinter()}
+<i>48</i>&nbsp; * and {@link #isParser()} methods.
+<i>49</i>&nbsp; * &lt;p&gt;
+<i>50</i>&nbsp; * The underlying printer/parser can be altered to behave exactly as required
+<i>51</i>&nbsp; * by using one of the decorator modifiers:
+<i>52</i>&nbsp; * &lt;ul&gt;
+<i>53</i>&nbsp; * &lt;li&gt;{@link #withLocale(Locale)} - returns a new formatter that uses the specified locale&lt;/li&gt;
+<i>54</i>&nbsp; * &lt;li&gt;{@link #withZone(DateTimeZone)} - returns a new formatter that uses the specified time zone&lt;/li&gt;
+<i>55</i>&nbsp; * &lt;li&gt;{@link #withChronology(Chronology)} - returns a new formatter that uses the specified chronology&lt;/li&gt;
+<i>56</i>&nbsp; * &lt;li&gt;{@link #withOffsetParsed()} - returns a new formatter that returns the parsed time zone offset&lt;/li&gt;
+<i>57</i>&nbsp; * &lt;li&gt;{@link #withPivotYear(int)} - returns a new formatter with the specified pivot year&lt;/li&gt;
+<i>58</i>&nbsp; * &lt;li&gt;{@link #withDefaultYear(int)} - returns a new formatter with the specified default year&lt;/li&gt;
+<i>59</i>&nbsp; * &lt;/ul&gt;
+<i>60</i>&nbsp; * Each of these returns a new formatter (instances of this class are immutable).
+<i>61</i>&nbsp; * &lt;p&gt;
+<i>62</i>&nbsp; * The main methods of the class are the &lt;code&gt;printXxx&lt;/code&gt; and
+<i>63</i>&nbsp; * &lt;code&gt;parseXxx&lt;/code&gt; methods. These are used as follows:
+<i>64</i>&nbsp; * &lt;pre&gt;
+<i>65</i>&nbsp; * // print using the defaults (default locale, chronology/zone of the datetime)
+<i>66</i>&nbsp; * String dateStr = formatter.print(dt);
+<i>67</i>&nbsp; * // print using the French locale
+<i>68</i>&nbsp; * String dateStr = formatter.withLocale(Locale.FRENCH).print(dt);
+<i>69</i>&nbsp; * // print using the UTC zone
+<i>70</i>&nbsp; * String dateStr = formatter.withZone(DateTimeZone.UTC).print(dt);
+<i>71</i>&nbsp; * 
+<i>72</i>&nbsp; * // parse using the Paris zone
+<i>73</i>&nbsp; * DateTime date = formatter.withZone(DateTimeZone.forID(&quot;Europe/Paris&quot;)).parseDateTime(str);
+<i>74</i>&nbsp; * &lt;/pre&gt;
+<i>75</i>&nbsp; * &lt;p&gt;
+<i>76</i>&nbsp; * Parsing builds up the resultant instant by &#39;setting&#39; the value of each parsed field
+<i>77</i>&nbsp; * from largest to smallest onto an initial instant, typically 1970-01-01T00:00Z.
+<i>78</i>&nbsp; * This design means that day-of-month is set before day-of-week.
+<i>79</i>&nbsp; * As such, if both the day-of-month and day-of-week are parsed, and the day-of-week
+<i>80</i>&nbsp; * is incorrect, then the day-of-week overrides the day-of-month.
+<i>81</i>&nbsp; * 
+<i>82</i>&nbsp; * This has a side effect if the input is not consistent.
+<i>83</i>&nbsp; * 
+<i>84</i>&nbsp; * 
+<i>85</i>&nbsp; * @author Brian S O&#39;Neill
+<i>86</i>&nbsp; * @author Stephen Colebourne
+<i>87</i>&nbsp; * @author Fredrik Borgh
+<i>88</i>&nbsp; * @since 1.0
+<i>89</i>&nbsp; */
+<i>90</i>&nbsp;public class DateTimeFormatter {
+<i>91</i>&nbsp;
+<i>92</i>&nbsp;    /** The internal printer used to output the datetime. */
+<i>93</i>&nbsp;    private final InternalPrinter iPrinter;
+<i>94</i>&nbsp;    /** The internal parser used to output the datetime. */
+<i>95</i>&nbsp;    private final InternalParser iParser;
+<i>96</i>&nbsp;    /** The locale to use for printing and parsing. */
+<i>97</i>&nbsp;    private final Locale iLocale;
+<i>98</i>&nbsp;    /** Whether the offset is parsed. */
+<i>99</i>&nbsp;    private final boolean iOffsetParsed;
+<i>100</i>&nbsp;    /** The chronology to use as an override. */
+<i>101</i>&nbsp;    private final Chronology iChrono;
+<i>102</i>&nbsp;    /** The zone to use as an override. */
+<i>103</i>&nbsp;    private final DateTimeZone iZone;
+<i>104</i>&nbsp;    /** The pivot year to use for two-digit year parsing. */
+<i>105</i>&nbsp;    private final Integer iPivotYear;
+<i>106</i>&nbsp;    /** The default year for parsing month/day without year. */
+<i>107</i>&nbsp;    private final int iDefaultYear;
+<i>108</i>&nbsp;
+<i>109</i>&nbsp;    /**
+<i>110</i>&nbsp;     * Creates a new formatter, however you will normally use the factory
+<i>111</i>&nbsp;     * or the builder.
+<i>112</i>&nbsp;     * 
+<i>113</i>&nbsp;     * @param printer  the internal printer, null if cannot print
+<i>114</i>&nbsp;     * @param parser  the internal parser, null if cannot parse
+<i>115</i>&nbsp;     */
+<i>116</i>&nbsp;    public DateTimeFormatter(
+<i>117</i>&nbsp;            DateTimePrinter printer, DateTimeParser parser) {
+<b class="fc"><i>118</i>&nbsp;        this(DateTimePrinterInternalPrinter.of(printer), DateTimeParserInternalParser.of(parser));</b>
+<b class="fc"><i>119</i>&nbsp;    }</b>
+<i>120</i>&nbsp;
+<i>121</i>&nbsp;    /**
+<i>122</i>&nbsp;     * Creates a new formatter, however you will normally use the factory
+<i>123</i>&nbsp;     * or the builder.
+<i>124</i>&nbsp;     * 
+<i>125</i>&nbsp;     * @param printer  the internal printer, null if cannot print
+<i>126</i>&nbsp;     * @param parser  the internal parser, null if cannot parse
+<i>127</i>&nbsp;     */
+<i>128</i>&nbsp;    DateTimeFormatter(
+<i>129</i>&nbsp;            InternalPrinter printer, InternalParser parser) {
+<b class="fc"><i>130</i>&nbsp;        super();</b>
+<b class="fc"><i>131</i>&nbsp;        iPrinter = printer;</b>
+<b class="fc"><i>132</i>&nbsp;        iParser = parser;</b>
+<b class="fc"><i>133</i>&nbsp;        iLocale = null;</b>
+<b class="fc"><i>134</i>&nbsp;        iOffsetParsed = false;</b>
+<b class="fc"><i>135</i>&nbsp;        iChrono = null;</b>
+<b class="fc"><i>136</i>&nbsp;        iZone = null;</b>
+<b class="fc"><i>137</i>&nbsp;        iPivotYear = null;</b>
+<b class="fc"><i>138</i>&nbsp;        iDefaultYear = 2000;</b>
+<b class="fc"><i>139</i>&nbsp;    }</b>
+<i>140</i>&nbsp;
+<i>141</i>&nbsp;    /**
+<i>142</i>&nbsp;     * Constructor.
+<i>143</i>&nbsp;     */
+<i>144</i>&nbsp;    private DateTimeFormatter(
+<i>145</i>&nbsp;            InternalPrinter printer, InternalParser parser,
+<i>146</i>&nbsp;            Locale locale, boolean offsetParsed,
+<i>147</i>&nbsp;            Chronology chrono, DateTimeZone zone,
+<i>148</i>&nbsp;            Integer pivotYear, int defaultYear) {
+<b class="fc"><i>149</i>&nbsp;        super();</b>
+<b class="fc"><i>150</i>&nbsp;        iPrinter = printer;</b>
+<b class="fc"><i>151</i>&nbsp;        iParser = parser;</b>
+<b class="fc"><i>152</i>&nbsp;        iLocale = locale;</b>
+<b class="fc"><i>153</i>&nbsp;        iOffsetParsed = offsetParsed;</b>
+<b class="fc"><i>154</i>&nbsp;        iChrono = chrono;</b>
+<b class="fc"><i>155</i>&nbsp;        iZone = zone;</b>
+<b class="fc"><i>156</i>&nbsp;        iPivotYear = pivotYear;</b>
+<b class="fc"><i>157</i>&nbsp;        iDefaultYear = defaultYear;</b>
+<b class="fc"><i>158</i>&nbsp;    }</b>
+<i>159</i>&nbsp;
+<i>160</i>&nbsp;    //-----------------------------------------------------------------------
+<i>161</i>&nbsp;    /**
+<i>162</i>&nbsp;     * Is this formatter capable of printing.
+<i>163</i>&nbsp;     * 
+<i>164</i>&nbsp;     * @return true if this is a printer
+<i>165</i>&nbsp;     */
+<i>166</i>&nbsp;    public boolean isPrinter() {
+<b class="fc"><i>167</i>&nbsp;        return (iPrinter != null);</b>
+<i>168</i>&nbsp;    }
+<i>169</i>&nbsp;
+<i>170</i>&nbsp;    /**
+<i>171</i>&nbsp;     * Gets the internal printer object that performs the real printing work.
+<i>172</i>&nbsp;     * 
+<i>173</i>&nbsp;     * @return the internal printer; is null if printing not supported
+<i>174</i>&nbsp;     */
+<i>175</i>&nbsp;    public DateTimePrinter getPrinter() {
+<b class="fc"><i>176</i>&nbsp;        return InternalPrinterDateTimePrinter.of(iPrinter);</b>
+<i>177</i>&nbsp;    }
+<i>178</i>&nbsp;
+<i>179</i>&nbsp;    /**
+<i>180</i>&nbsp;     * Gets the internal printer object that performs the real printing work.
+<i>181</i>&nbsp;     * 
+<i>182</i>&nbsp;     * @return the internal printer; is null if printing not supported
+<i>183</i>&nbsp;     */
+<i>184</i>&nbsp;    InternalPrinter getPrinter0() {
+<b class="fc"><i>185</i>&nbsp;        return iPrinter;</b>
+<i>186</i>&nbsp;    }
+<i>187</i>&nbsp;
+<i>188</i>&nbsp;    /**
+<i>189</i>&nbsp;     * Is this formatter capable of parsing.
+<i>190</i>&nbsp;     * 
+<i>191</i>&nbsp;     * @return true if this is a parser
+<i>192</i>&nbsp;     */
+<i>193</i>&nbsp;    public boolean isParser() {
+<b class="fc"><i>194</i>&nbsp;        return (iParser != null);</b>
+<i>195</i>&nbsp;    }
+<i>196</i>&nbsp;
+<i>197</i>&nbsp;    /**
+<i>198</i>&nbsp;     * Gets the internal parser object that performs the real parsing work.
+<i>199</i>&nbsp;     * 
+<i>200</i>&nbsp;     * @return the internal parser; is null if parsing not supported
+<i>201</i>&nbsp;     */
+<i>202</i>&nbsp;    public DateTimeParser getParser() {
+<b class="fc"><i>203</i>&nbsp;        return InternalParserDateTimeParser.of(iParser);</b>
+<i>204</i>&nbsp;    }
+<i>205</i>&nbsp;
+<i>206</i>&nbsp;    InternalParser getParser0() {
+<b class="fc"><i>207</i>&nbsp;        return iParser;</b>
+<i>208</i>&nbsp;    }
+<i>209</i>&nbsp;
+<i>210</i>&nbsp;    //-----------------------------------------------------------------------
+<i>211</i>&nbsp;    /**
+<i>212</i>&nbsp;     * Returns a new formatter with a different locale that will be used
+<i>213</i>&nbsp;     * for printing and parsing.
+<i>214</i>&nbsp;     * &lt;p&gt;
+<i>215</i>&nbsp;     * A DateTimeFormatter is immutable, so a new instance is returned,
+<i>216</i>&nbsp;     * and the original is unaltered and still usable.
+<i>217</i>&nbsp;     * 
+<i>218</i>&nbsp;     * @param locale the locale to use; if null, formatter uses default locale
+<i>219</i>&nbsp;     * at invocation time
+<i>220</i>&nbsp;     * @return the new formatter
+<i>221</i>&nbsp;     */
+<i>222</i>&nbsp;    public DateTimeFormatter withLocale(Locale locale) {
+<b class="fc"><i>223</i>&nbsp;        if (locale == getLocale() || (locale != null &amp;&amp; locale.equals(getLocale()))) {</b>
+<b class="fc"><i>224</i>&nbsp;            return this;</b>
+<i>225</i>&nbsp;        }
+<b class="fc"><i>226</i>&nbsp;        return new DateTimeFormatter(iPrinter, iParser, locale,</b>
+<i>227</i>&nbsp;                iOffsetParsed, iChrono, iZone, iPivotYear, iDefaultYear);
+<i>228</i>&nbsp;    }
+<i>229</i>&nbsp;
+<i>230</i>&nbsp;    /**
+<i>231</i>&nbsp;     * Gets the locale that will be used for printing and parsing.
+<i>232</i>&nbsp;     * 
+<i>233</i>&nbsp;     * @return the locale to use; if null, formatter uses default locale at
+<i>234</i>&nbsp;     * invocation time
+<i>235</i>&nbsp;     */
+<i>236</i>&nbsp;    public Locale getLocale() {
+<b class="fc"><i>237</i>&nbsp;        return iLocale;</b>
+<i>238</i>&nbsp;    }
+<i>239</i>&nbsp;
+<i>240</i>&nbsp;    //-----------------------------------------------------------------------
+<i>241</i>&nbsp;    /**
+<i>242</i>&nbsp;     * Returns a new formatter that will create a datetime with a time zone
+<i>243</i>&nbsp;     * equal to that of the offset of the parsed string.
+<i>244</i>&nbsp;     * &lt;p&gt;
+<i>245</i>&nbsp;     * After calling this method, a string &#39;2004-06-09T10:20:30-08:00&#39; will
+<i>246</i>&nbsp;     * create a datetime with a zone of -08:00 (a fixed zone, with no daylight
+<i>247</i>&nbsp;     * savings rules). If the parsed string represents a local time (no zone
+<i>248</i>&nbsp;     * offset) the parsed datetime will be in the default zone.
+<i>249</i>&nbsp;     * &lt;p&gt;
+<i>250</i>&nbsp;     * Calling this method sets the override zone to null.
+<i>251</i>&nbsp;     * Calling the override zone method sets this flag off.
+<i>252</i>&nbsp;     * 
+<i>253</i>&nbsp;     * @return the new formatter
+<i>254</i>&nbsp;     */
+<i>255</i>&nbsp;    public DateTimeFormatter withOffsetParsed() {
+<b class="fc"><i>256</i>&nbsp;        if (iOffsetParsed == true) {</b>
+<b class="fc"><i>257</i>&nbsp;            return this;</b>
+<i>258</i>&nbsp;        }
+<b class="fc"><i>259</i>&nbsp;        return new DateTimeFormatter(iPrinter, iParser, iLocale,</b>
+<i>260</i>&nbsp;                true, iChrono, null, iPivotYear, iDefaultYear);
+<i>261</i>&nbsp;    }
+<i>262</i>&nbsp;
+<i>263</i>&nbsp;    /**
+<i>264</i>&nbsp;     * Checks whether the offset from the string is used as the zone of
+<i>265</i>&nbsp;     * the parsed datetime.
+<i>266</i>&nbsp;     * 
+<i>267</i>&nbsp;     * @return true if the offset from the string is used as the zone
+<i>268</i>&nbsp;     */
+<i>269</i>&nbsp;    public boolean isOffsetParsed() {
+<b class="fc"><i>270</i>&nbsp;        return iOffsetParsed;</b>
+<i>271</i>&nbsp;    }
+<i>272</i>&nbsp;
+<i>273</i>&nbsp;    //-----------------------------------------------------------------------
+<i>274</i>&nbsp;    /**
+<i>275</i>&nbsp;     * Returns a new formatter that will use the specified chronology in
+<i>276</i>&nbsp;     * preference to that of the printed object, or ISO on a parse.
+<i>277</i>&nbsp;     * &lt;p&gt;
+<i>278</i>&nbsp;     * When printing, this chronology will be used in preference to the chronology
+<i>279</i>&nbsp;     * from the datetime that would otherwise be used.
+<i>280</i>&nbsp;     * &lt;p&gt;
+<i>281</i>&nbsp;     * When parsing, this chronology will be set on the parsed datetime.
+<i>282</i>&nbsp;     * &lt;p&gt;
+<i>283</i>&nbsp;     * A null chronology means no-override.
+<i>284</i>&nbsp;     * If both an override chronology and an override zone are set, the
+<i>285</i>&nbsp;     * override zone will take precedence over the zone in the chronology.
+<i>286</i>&nbsp;     * 
+<i>287</i>&nbsp;     * @param chrono  the chronology to use as an override
+<i>288</i>&nbsp;     * @return the new formatter
+<i>289</i>&nbsp;     */
+<i>290</i>&nbsp;    public DateTimeFormatter withChronology(Chronology chrono) {
+<b class="fc"><i>291</i>&nbsp;        if (iChrono == chrono) {</b>
+<b class="fc"><i>292</i>&nbsp;            return this;</b>
+<i>293</i>&nbsp;        }
+<b class="fc"><i>294</i>&nbsp;        return new DateTimeFormatter(iPrinter, iParser, iLocale,</b>
+<i>295</i>&nbsp;                iOffsetParsed, chrono, iZone, iPivotYear, iDefaultYear);
+<i>296</i>&nbsp;    }
+<i>297</i>&nbsp;
+<i>298</i>&nbsp;    /**
+<i>299</i>&nbsp;     * Gets the chronology to use as an override.
+<i>300</i>&nbsp;     * 
+<i>301</i>&nbsp;     * @return the chronology to use as an override
+<i>302</i>&nbsp;     */
+<i>303</i>&nbsp;    public Chronology getChronology() {
+<b class="fc"><i>304</i>&nbsp;        return iChrono;</b>
+<i>305</i>&nbsp;    }
+<i>306</i>&nbsp;
+<i>307</i>&nbsp;    /**
+<i>308</i>&nbsp;     * Gets the chronology to use as an override.
+<i>309</i>&nbsp;     * 
+<i>310</i>&nbsp;     * @return the chronology to use as an override
+<i>311</i>&nbsp;     * @deprecated Use the method with the correct spelling
+<i>312</i>&nbsp;     */
+<i>313</i>&nbsp;    @Deprecated
+<i>314</i>&nbsp;    public Chronology getChronolgy() {
+<b class="nc"><i>315</i>&nbsp;        return iChrono;</b>
+<i>316</i>&nbsp;    }
+<i>317</i>&nbsp;
+<i>318</i>&nbsp;    //-----------------------------------------------------------------------
+<i>319</i>&nbsp;    /**
+<i>320</i>&nbsp;     * Returns a new formatter that will use the UTC zone in preference
+<i>321</i>&nbsp;     * to the zone of the printed object, or default zone on a parse.
+<i>322</i>&nbsp;     * &lt;p&gt;
+<i>323</i>&nbsp;     * When printing, UTC will be used in preference to the zone
+<i>324</i>&nbsp;     * from the datetime that would otherwise be used.
+<i>325</i>&nbsp;     * &lt;p&gt;
+<i>326</i>&nbsp;     * When parsing, UTC will be set on the parsed datetime.
+<i>327</i>&nbsp;     * &lt;p&gt;
+<i>328</i>&nbsp;     * If both an override chronology and an override zone are set, the
+<i>329</i>&nbsp;     * override zone will take precedence over the zone in the chronology.
+<i>330</i>&nbsp;     * 
+<i>331</i>&nbsp;     * @return the new formatter, never null
+<i>332</i>&nbsp;     * @since 2.0
+<i>333</i>&nbsp;     */
+<i>334</i>&nbsp;    public DateTimeFormatter withZoneUTC() {
+<b class="fc"><i>335</i>&nbsp;        return withZone(DateTimeZone.UTC);</b>
+<i>336</i>&nbsp;    }
+<i>337</i>&nbsp;
+<i>338</i>&nbsp;    /**
+<i>339</i>&nbsp;     * Returns a new formatter that will use the specified zone in preference
+<i>340</i>&nbsp;     * to the zone of the printed object, or default zone on a parse.
+<i>341</i>&nbsp;     * &lt;p&gt;
+<i>342</i>&nbsp;     * When printing, this zone will be used in preference to the zone
+<i>343</i>&nbsp;     * from the datetime that would otherwise be used.
+<i>344</i>&nbsp;     * &lt;p&gt;
+<i>345</i>&nbsp;     * When parsing, this zone will be set on the parsed datetime.
+<i>346</i>&nbsp;     * &lt;p&gt;
+<i>347</i>&nbsp;     * A null zone means of no-override.
+<i>348</i>&nbsp;     * If both an override chronology and an override zone are set, the
+<i>349</i>&nbsp;     * override zone will take precedence over the zone in the chronology.
+<i>350</i>&nbsp;     * 
+<i>351</i>&nbsp;     * @param zone  the zone to use as an override
+<i>352</i>&nbsp;     * @return the new formatter
+<i>353</i>&nbsp;     */
+<i>354</i>&nbsp;    public DateTimeFormatter withZone(DateTimeZone zone) {
+<b class="fc"><i>355</i>&nbsp;        if (iZone == zone) {</b>
+<b class="fc"><i>356</i>&nbsp;            return this;</b>
+<i>357</i>&nbsp;        }
+<b class="fc"><i>358</i>&nbsp;        return new DateTimeFormatter(iPrinter, iParser, iLocale,</b>
+<i>359</i>&nbsp;                false, iChrono, zone, iPivotYear, iDefaultYear);
+<i>360</i>&nbsp;    }
+<i>361</i>&nbsp;
+<i>362</i>&nbsp;    /**
+<i>363</i>&nbsp;     * Gets the zone to use as an override.
+<i>364</i>&nbsp;     * 
+<i>365</i>&nbsp;     * @return the zone to use as an override
+<i>366</i>&nbsp;     */
+<i>367</i>&nbsp;    public DateTimeZone getZone() {
+<b class="fc"><i>368</i>&nbsp;        return iZone;</b>
+<i>369</i>&nbsp;    }
+<i>370</i>&nbsp;
+<i>371</i>&nbsp;    //-----------------------------------------------------------------------
+<i>372</i>&nbsp;    /**
+<i>373</i>&nbsp;     * Returns a new formatter that will use the specified pivot year for two
+<i>374</i>&nbsp;     * digit year parsing in preference to that stored in the parser.
+<i>375</i>&nbsp;     * &lt;p&gt;
+<i>376</i>&nbsp;     * This setting is useful for changing the pivot year of formats built
+<i>377</i>&nbsp;     * using a pattern - {@link DateTimeFormat#forPattern(String)}.
+<i>378</i>&nbsp;     * &lt;p&gt;
+<i>379</i>&nbsp;     * When parsing, this pivot year is used. Null means no-override.
+<i>380</i>&nbsp;     * There is no effect when printing.
+<i>381</i>&nbsp;     * &lt;p&gt;
+<i>382</i>&nbsp;     * The pivot year enables a two digit year to be converted to a four
+<i>383</i>&nbsp;     * digit year. The pivot represents the year in the middle of the
+<i>384</i>&nbsp;     * supported range of years. Thus the full range of years that will
+<i>385</i>&nbsp;     * be built is &lt;code&gt;(pivot - 50) .. (pivot + 49)&lt;/code&gt;.
+<i>386</i>&nbsp;     *
+<i>387</i>&nbsp;     * &lt;pre&gt;
+<i>388</i>&nbsp;     * pivot   supported range   00 is   20 is   40 is   60 is   80 is
+<i>389</i>&nbsp;     * ---------------------------------------------------------------
+<i>390</i>&nbsp;     * 1950      1900..1999      1900    1920    1940    1960    1980
+<i>391</i>&nbsp;     * 1975      1925..2024      2000    2020    1940    1960    1980
+<i>392</i>&nbsp;     * 2000      1950..2049      2000    2020    2040    1960    1980
+<i>393</i>&nbsp;     * 2025      1975..2074      2000    2020    2040    2060    1980
+<i>394</i>&nbsp;     * 2050      2000..2099      2000    2020    2040    2060    2080
+<i>395</i>&nbsp;     * &lt;/pre&gt;
+<i>396</i>&nbsp;     *
+<i>397</i>&nbsp;     * @param pivotYear  the pivot year to use as an override when parsing
+<i>398</i>&nbsp;     * @return the new formatter
+<i>399</i>&nbsp;     * @since 1.1
+<i>400</i>&nbsp;     */
+<i>401</i>&nbsp;    public DateTimeFormatter withPivotYear(Integer pivotYear) {
+<b class="fc"><i>402</i>&nbsp;        if (iPivotYear == pivotYear || (iPivotYear != null &amp;&amp; iPivotYear.equals(pivotYear))) {</b>
+<b class="fc"><i>403</i>&nbsp;            return this;</b>
+<i>404</i>&nbsp;        }
+<b class="fc"><i>405</i>&nbsp;        return new DateTimeFormatter(iPrinter, iParser, iLocale,</b>
+<i>406</i>&nbsp;                iOffsetParsed, iChrono, iZone, pivotYear, iDefaultYear);
+<i>407</i>&nbsp;    }
+<i>408</i>&nbsp;
+<i>409</i>&nbsp;    /**
+<i>410</i>&nbsp;     * Returns a new formatter that will use the specified pivot year for two
+<i>411</i>&nbsp;     * digit year parsing in preference to that stored in the parser.
+<i>412</i>&nbsp;     * &lt;p&gt;
+<i>413</i>&nbsp;     * This setting is useful for changing the pivot year of formats built
+<i>414</i>&nbsp;     * using a pattern - {@link DateTimeFormat#forPattern(String)}.
+<i>415</i>&nbsp;     * &lt;p&gt;
+<i>416</i>&nbsp;     * When parsing, this pivot year is used.
+<i>417</i>&nbsp;     * There is no effect when printing.
+<i>418</i>&nbsp;     * &lt;p&gt;
+<i>419</i>&nbsp;     * The pivot year enables a two digit year to be converted to a four
+<i>420</i>&nbsp;     * digit year. The pivot represents the year in the middle of the
+<i>421</i>&nbsp;     * supported range of years. Thus the full range of years that will
+<i>422</i>&nbsp;     * be built is &lt;code&gt;(pivot - 50) .. (pivot + 49)&lt;/code&gt;.
+<i>423</i>&nbsp;     *
+<i>424</i>&nbsp;     * &lt;pre&gt;
+<i>425</i>&nbsp;     * pivot   supported range   00 is   20 is   40 is   60 is   80 is
+<i>426</i>&nbsp;     * ---------------------------------------------------------------
+<i>427</i>&nbsp;     * 1950      1900..1999      1900    1920    1940    1960    1980
+<i>428</i>&nbsp;     * 1975      1925..2024      2000    2020    1940    1960    1980
+<i>429</i>&nbsp;     * 2000      1950..2049      2000    2020    2040    1960    1980
+<i>430</i>&nbsp;     * 2025      1975..2074      2000    2020    2040    2060    1980
+<i>431</i>&nbsp;     * 2050      2000..2099      2000    2020    2040    2060    2080
+<i>432</i>&nbsp;     * &lt;/pre&gt;
+<i>433</i>&nbsp;     *
+<i>434</i>&nbsp;     * @param pivotYear  the pivot year to use as an override when parsing
+<i>435</i>&nbsp;     * @return the new formatter
+<i>436</i>&nbsp;     * @since 1.1
+<i>437</i>&nbsp;     */
+<i>438</i>&nbsp;    public DateTimeFormatter withPivotYear(int pivotYear) {
+<b class="fc"><i>439</i>&nbsp;        return withPivotYear(Integer.valueOf(pivotYear));</b>
+<i>440</i>&nbsp;    }
+<i>441</i>&nbsp;
+<i>442</i>&nbsp;    /**
+<i>443</i>&nbsp;     * Gets the pivot year to use as an override.
+<i>444</i>&nbsp;     *
+<i>445</i>&nbsp;     * @return the pivot year to use as an override
+<i>446</i>&nbsp;     * @since 1.1
+<i>447</i>&nbsp;     */
+<i>448</i>&nbsp;    public Integer getPivotYear() {
+<b class="fc"><i>449</i>&nbsp;      return iPivotYear;</b>
+<i>450</i>&nbsp;    }
+<i>451</i>&nbsp;
+<i>452</i>&nbsp;    //-----------------------------------------------------------------------
+<i>453</i>&nbsp;    /**
+<i>454</i>&nbsp;     * Returns a new formatter that will use the specified default year.
+<i>455</i>&nbsp;     * &lt;p&gt;
+<i>456</i>&nbsp;     * The default year is used when parsing in the case where there is a
+<i>457</i>&nbsp;     * month or a day but not a year. Specifically, it is used if there is
+<i>458</i>&nbsp;     * a field parsed with a duration between the length of a month and the
+<i>459</i>&nbsp;     * length of a day inclusive.
+<i>460</i>&nbsp;     * &lt;p&gt;
+<i>461</i>&nbsp;     * This value is typically used to move the year from 1970 to a leap year
+<i>462</i>&nbsp;     * to enable February 29th to be parsed.
+<i>463</i>&nbsp;     * Unless customised, the year 2000 is used.
+<i>464</i>&nbsp;     * &lt;p&gt;
+<i>465</i>&nbsp;     * This setting has no effect when printing.
+<i>466</i>&nbsp;     *
+<i>467</i>&nbsp;     * @param defaultYear  the default year to use
+<i>468</i>&nbsp;     * @return the new formatter, not null
+<i>469</i>&nbsp;     * @since 2.0
+<i>470</i>&nbsp;     */
+<i>471</i>&nbsp;    public DateTimeFormatter withDefaultYear(int defaultYear) {
+<b class="fc"><i>472</i>&nbsp;        return new DateTimeFormatter(iPrinter, iParser, iLocale,</b>
+<i>473</i>&nbsp;                iOffsetParsed, iChrono, iZone, iPivotYear, defaultYear);
+<i>474</i>&nbsp;    }
+<i>475</i>&nbsp;
+<i>476</i>&nbsp;    /**
+<i>477</i>&nbsp;     * Gets the default year for parsing months and days.
+<i>478</i>&nbsp;     *
+<i>479</i>&nbsp;     * @return the default year for parsing months and days
+<i>480</i>&nbsp;     * @since 2.0
+<i>481</i>&nbsp;     */
+<i>482</i>&nbsp;    public int getDefaultYear() {
+<b class="nc"><i>483</i>&nbsp;      return iDefaultYear;</b>
+<i>484</i>&nbsp;    }
+<i>485</i>&nbsp;
+<i>486</i>&nbsp;    //-----------------------------------------------------------------------
+<i>487</i>&nbsp;    /**
+<i>488</i>&nbsp;     * Prints a ReadableInstant, using the chronology supplied by the instant.
+<i>489</i>&nbsp;     *
+<i>490</i>&nbsp;     * @param buf  the destination to format to, not null
+<i>491</i>&nbsp;     * @param instant  instant to format, null means now
+<i>492</i>&nbsp;     */
+<i>493</i>&nbsp;    public void printTo(StringBuffer buf, ReadableInstant instant) {
+<i>494</i>&nbsp;        try {
+<b class="fc"><i>495</i>&nbsp;            printTo((Appendable) buf, instant);</b>
+<b class="nc"><i>496</i>&nbsp;        } catch (IOException ex) {</b>
+<i>497</i>&nbsp;            // StringBuffer does not throw IOException
+<b class="fc"><i>498</i>&nbsp;        }</b>
+<b class="fc"><i>499</i>&nbsp;    }</b>
+<i>500</i>&nbsp;
+<i>501</i>&nbsp;    /**
+<i>502</i>&nbsp;     * Prints a ReadableInstant, using the chronology supplied by the instant.
+<i>503</i>&nbsp;     *
+<i>504</i>&nbsp;     * @param buf  the destination to format to, not null
+<i>505</i>&nbsp;     * @param instant  instant to format, null means now
+<i>506</i>&nbsp;     */
+<i>507</i>&nbsp;    public void printTo(StringBuilder buf, ReadableInstant instant) {
+<i>508</i>&nbsp;        try {
+<b class="fc"><i>509</i>&nbsp;            printTo((Appendable) buf, instant);</b>
+<b class="nc"><i>510</i>&nbsp;        } catch (IOException ex) {</b>
+<i>511</i>&nbsp;            // StringBuilder does not throw IOException
+<b class="fc"><i>512</i>&nbsp;        }</b>
+<b class="fc"><i>513</i>&nbsp;    }</b>
+<i>514</i>&nbsp;
+<i>515</i>&nbsp;    /**
+<i>516</i>&nbsp;     * Prints a ReadableInstant, using the chronology supplied by the instant.
+<i>517</i>&nbsp;     *
+<i>518</i>&nbsp;     * @param out  the destination to format to, not null
+<i>519</i>&nbsp;     * @param instant  instant to format, null means now
+<i>520</i>&nbsp;     */
+<i>521</i>&nbsp;    public void printTo(Writer out, ReadableInstant instant) throws IOException {
+<b class="fc"><i>522</i>&nbsp;        printTo((Appendable) out, instant);</b>
+<b class="fc"><i>523</i>&nbsp;    }</b>
+<i>524</i>&nbsp;
+<i>525</i>&nbsp;    /**
+<i>526</i>&nbsp;     * Prints a ReadableInstant, using the chronology supplied by the instant.
+<i>527</i>&nbsp;     *
+<i>528</i>&nbsp;     * @param appendable  the destination to format to, not null
+<i>529</i>&nbsp;     * @param instant  instant to format, null means now
+<i>530</i>&nbsp;     * @since 2.0
+<i>531</i>&nbsp;     */
+<i>532</i>&nbsp;    public void printTo(Appendable appendable, ReadableInstant instant) throws IOException {
+<b class="fc"><i>533</i>&nbsp;        long millis = DateTimeUtils.getInstantMillis(instant);</b>
+<b class="fc"><i>534</i>&nbsp;        Chronology chrono = DateTimeUtils.getInstantChronology(instant);</b>
+<b class="fc"><i>535</i>&nbsp;        printTo(appendable, millis, chrono);</b>
+<b class="fc"><i>536</i>&nbsp;    }</b>
+<i>537</i>&nbsp;
+<i>538</i>&nbsp;    //-----------------------------------------------------------------------
+<i>539</i>&nbsp;    /**
+<i>540</i>&nbsp;     * Prints an instant from milliseconds since 1970-01-01T00:00:00Z,
+<i>541</i>&nbsp;     * using ISO chronology in the default DateTimeZone.
+<i>542</i>&nbsp;     *
+<i>543</i>&nbsp;     * @param buf  the destination to format to, not null
+<i>544</i>&nbsp;     * @param instant  millis since 1970-01-01T00:00:00Z
+<i>545</i>&nbsp;     */
+<i>546</i>&nbsp;    public void printTo(StringBuffer buf, long instant) {
+<i>547</i>&nbsp;        try {
+<b class="fc"><i>548</i>&nbsp;            printTo((Appendable) buf, instant);</b>
+<b class="nc"><i>549</i>&nbsp;        } catch (IOException ex) {</b>
+<i>550</i>&nbsp;            // StringBuffer does not throw IOException
+<b class="fc"><i>551</i>&nbsp;        }</b>
+<b class="fc"><i>552</i>&nbsp;    }</b>
+<i>553</i>&nbsp;
+<i>554</i>&nbsp;    /**
+<i>555</i>&nbsp;     * Prints an instant from milliseconds since 1970-01-01T00:00:00Z,
+<i>556</i>&nbsp;     * using ISO chronology in the default DateTimeZone.
+<i>557</i>&nbsp;     *
+<i>558</i>&nbsp;     * @param buf  the destination to format to, not null
+<i>559</i>&nbsp;     * @param instant  millis since 1970-01-01T00:00:00Z
+<i>560</i>&nbsp;     */
+<i>561</i>&nbsp;    public void printTo(StringBuilder buf, long instant) {
+<i>562</i>&nbsp;        try {
+<b class="fc"><i>563</i>&nbsp;            printTo((Appendable) buf, instant);</b>
+<b class="nc"><i>564</i>&nbsp;        } catch (IOException ex) {</b>
+<i>565</i>&nbsp;            // StringBuilder does not throw IOException
+<b class="fc"><i>566</i>&nbsp;        }</b>
+<b class="fc"><i>567</i>&nbsp;    }</b>
+<i>568</i>&nbsp;
+<i>569</i>&nbsp;    /**
+<i>570</i>&nbsp;     * Prints an instant from milliseconds since 1970-01-01T00:00:00Z,
+<i>571</i>&nbsp;     * using ISO chronology in the default DateTimeZone.
+<i>572</i>&nbsp;     *
+<i>573</i>&nbsp;     * @param out  the destination to format to, not null
+<i>574</i>&nbsp;     * @param instant  millis since 1970-01-01T00:00:00Z
+<i>575</i>&nbsp;     */
+<i>576</i>&nbsp;    public void printTo(Writer out, long instant) throws IOException {
+<b class="fc"><i>577</i>&nbsp;        printTo((Appendable) out, instant);</b>
+<b class="fc"><i>578</i>&nbsp;    }</b>
+<i>579</i>&nbsp;
+<i>580</i>&nbsp;    /**
+<i>581</i>&nbsp;     * Prints an instant from milliseconds since 1970-01-01T00:00:00Z,
+<i>582</i>&nbsp;     * using ISO chronology in the default DateTimeZone.
+<i>583</i>&nbsp;     *
+<i>584</i>&nbsp;     * @param appendable  the destination to format to, not null
+<i>585</i>&nbsp;     * @param instant  millis since 1970-01-01T00:00:00Z
+<i>586</i>&nbsp;     * @since 2.0
+<i>587</i>&nbsp;     */
+<i>588</i>&nbsp;    public void printTo(Appendable appendable, long instant) throws IOException {
+<b class="fc"><i>589</i>&nbsp;        printTo(appendable, instant, null);</b>
+<b class="fc"><i>590</i>&nbsp;    }</b>
+<i>591</i>&nbsp;
+<i>592</i>&nbsp;    //-----------------------------------------------------------------------
+<i>593</i>&nbsp;    /**
+<i>594</i>&nbsp;     * Prints a ReadablePartial.
+<i>595</i>&nbsp;     * &lt;p&gt;
+<i>596</i>&nbsp;     * Neither the override chronology nor the override zone are used
+<i>597</i>&nbsp;     * by this method.
+<i>598</i>&nbsp;     *
+<i>599</i>&nbsp;     * @param buf  the destination to format to, not null
+<i>600</i>&nbsp;     * @param partial  partial to format
+<i>601</i>&nbsp;     */
+<i>602</i>&nbsp;    public void printTo(StringBuffer buf, ReadablePartial partial) {
+<i>603</i>&nbsp;        try {
+<b class="fc"><i>604</i>&nbsp;            printTo((Appendable) buf, partial);</b>
+<b class="nc"><i>605</i>&nbsp;        } catch (IOException ex) {</b>
+<i>606</i>&nbsp;            // StringBuffer does not throw IOException
+<b class="fc"><i>607</i>&nbsp;        }</b>
+<b class="fc"><i>608</i>&nbsp;    }</b>
+<i>609</i>&nbsp;
+<i>610</i>&nbsp;    /**
+<i>611</i>&nbsp;     * Prints a ReadablePartial.
+<i>612</i>&nbsp;     * &lt;p&gt;
+<i>613</i>&nbsp;     * Neither the override chronology nor the override zone are used
+<i>614</i>&nbsp;     * by this method.
+<i>615</i>&nbsp;     *
+<i>616</i>&nbsp;     * @param buf  the destination to format to, not null
+<i>617</i>&nbsp;     * @param partial  partial to format
+<i>618</i>&nbsp;     */
+<i>619</i>&nbsp;    public void printTo(StringBuilder buf, ReadablePartial partial) {
+<i>620</i>&nbsp;        try {
+<b class="fc"><i>621</i>&nbsp;            printTo((Appendable) buf, partial);</b>
+<b class="nc"><i>622</i>&nbsp;        } catch (IOException ex) {</b>
+<i>623</i>&nbsp;            // StringBuilder does not throw IOException
+<b class="fc"><i>624</i>&nbsp;        }</b>
+<b class="fc"><i>625</i>&nbsp;    }</b>
+<i>626</i>&nbsp;
+<i>627</i>&nbsp;    /**
+<i>628</i>&nbsp;     * Prints a ReadablePartial.
+<i>629</i>&nbsp;     * &lt;p&gt;
+<i>630</i>&nbsp;     * Neither the override chronology nor the override zone are used
+<i>631</i>&nbsp;     * by this method.
+<i>632</i>&nbsp;     *
+<i>633</i>&nbsp;     * @param out  the destination to format to, not null
+<i>634</i>&nbsp;     * @param partial  partial to format
+<i>635</i>&nbsp;     */
+<i>636</i>&nbsp;    public void printTo(Writer out, ReadablePartial partial) throws IOException {
+<b class="fc"><i>637</i>&nbsp;        printTo((Appendable) out, partial);</b>
+<b class="fc"><i>638</i>&nbsp;    }</b>
+<i>639</i>&nbsp;
+<i>640</i>&nbsp;    /**
+<i>641</i>&nbsp;     * Prints a ReadablePartial.
+<i>642</i>&nbsp;     * &lt;p&gt;
+<i>643</i>&nbsp;     * Neither the override chronology nor the override zone are used
+<i>644</i>&nbsp;     * by this method.
+<i>645</i>&nbsp;     *
+<i>646</i>&nbsp;     * @param appendable  the destination to format to, not null
+<i>647</i>&nbsp;     * @param partial  partial to format
+<i>648</i>&nbsp;     * @since 2.0
+<i>649</i>&nbsp;     */
+<i>650</i>&nbsp;    public void printTo(Appendable appendable, ReadablePartial partial) throws IOException {
+<b class="fc"><i>651</i>&nbsp;        InternalPrinter printer = requirePrinter();</b>
+<b class="fc"><i>652</i>&nbsp;        if (partial == null) {</b>
+<b class="fc"><i>653</i>&nbsp;            throw new IllegalArgumentException(&quot;The partial must not be null&quot;);</b>
+<i>654</i>&nbsp;        }
+<b class="fc"><i>655</i>&nbsp;        printer.printTo(appendable, partial, iLocale);</b>
+<b class="fc"><i>656</i>&nbsp;    }</b>
+<i>657</i>&nbsp;
+<i>658</i>&nbsp;    //-----------------------------------------------------------------------
+<i>659</i>&nbsp;    /**
+<i>660</i>&nbsp;     * Prints a ReadableInstant to a String.
+<i>661</i>&nbsp;     * &lt;p&gt;
+<i>662</i>&nbsp;     * This method will use the override zone and the override chronology if
+<i>663</i>&nbsp;     * they are set. Otherwise it will use the chronology and zone of the instant.
+<i>664</i>&nbsp;     *
+<i>665</i>&nbsp;     * @param instant  instant to format, null means now
+<i>666</i>&nbsp;     * @return the printed result
+<i>667</i>&nbsp;     */
+<i>668</i>&nbsp;    public String print(ReadableInstant instant) {
+<b class="fc"><i>669</i>&nbsp;        StringBuilder buf = new StringBuilder(requirePrinter().estimatePrintedLength());</b>
+<i>670</i>&nbsp;        try {
+<b class="fc"><i>671</i>&nbsp;            printTo((Appendable) buf, instant);</b>
+<b class="nc"><i>672</i>&nbsp;        } catch (IOException ex) {</b>
+<i>673</i>&nbsp;            // StringBuilder does not throw IOException
+<b class="fc"><i>674</i>&nbsp;        }</b>
+<b class="fc"><i>675</i>&nbsp;        return buf.toString();</b>
+<i>676</i>&nbsp;    }
+<i>677</i>&nbsp;
+<i>678</i>&nbsp;    /**
+<i>679</i>&nbsp;     * Prints a millisecond instant to a String.
+<i>680</i>&nbsp;     * &lt;p&gt;
+<i>681</i>&nbsp;     * This method will use the override zone and the override chronology if
+<i>682</i>&nbsp;     * they are set. Otherwise it will use the ISO chronology and default zone.
+<i>683</i>&nbsp;     *
+<i>684</i>&nbsp;     * @param instant  millis since 1970-01-01T00:00:00Z
+<i>685</i>&nbsp;     * @return the printed result
+<i>686</i>&nbsp;     */
+<i>687</i>&nbsp;    public String print(long instant) {
+<b class="fc"><i>688</i>&nbsp;        StringBuilder buf = new StringBuilder(requirePrinter().estimatePrintedLength());</b>
+<i>689</i>&nbsp;        try {
+<b class="fc"><i>690</i>&nbsp;            printTo((Appendable) buf, instant);</b>
+<b class="nc"><i>691</i>&nbsp;        } catch (IOException ex) {</b>
+<i>692</i>&nbsp;            // StringBuilder does not throw IOException
+<b class="fc"><i>693</i>&nbsp;        }</b>
+<b class="fc"><i>694</i>&nbsp;        return buf.toString();</b>
+<i>695</i>&nbsp;    }
+<i>696</i>&nbsp;
+<i>697</i>&nbsp;    /**
+<i>698</i>&nbsp;     * Prints a ReadablePartial to a new String.
+<i>699</i>&nbsp;     * &lt;p&gt;
+<i>700</i>&nbsp;     * Neither the override chronology nor the override zone are used
+<i>701</i>&nbsp;     * by this method.
+<i>702</i>&nbsp;     *
+<i>703</i>&nbsp;     * @param partial  partial to format
+<i>704</i>&nbsp;     * @return the printed result
+<i>705</i>&nbsp;     */
+<i>706</i>&nbsp;    public String print(ReadablePartial partial) {
+<b class="fc"><i>707</i>&nbsp;        StringBuilder buf = new StringBuilder(requirePrinter().estimatePrintedLength());</b>
+<i>708</i>&nbsp;        try {
+<b class="fc"><i>709</i>&nbsp;            printTo((Appendable) buf, partial);</b>
+<b class="nc"><i>710</i>&nbsp;        } catch (IOException ex) {</b>
+<i>711</i>&nbsp;            // StringBuilder does not throw IOException
+<b class="fc"><i>712</i>&nbsp;        }</b>
+<b class="fc"><i>713</i>&nbsp;        return buf.toString();</b>
+<i>714</i>&nbsp;    }
+<i>715</i>&nbsp;
+<i>716</i>&nbsp;    private void printTo(Appendable appendable, long instant, Chronology chrono) throws IOException {
+<b class="fc"><i>717</i>&nbsp;        InternalPrinter printer = requirePrinter();</b>
+<b class="fc"><i>718</i>&nbsp;        chrono = selectChronology(chrono);</b>
+<i>719</i>&nbsp;        // Shift instant into local time (UTC) to avoid excessive offset
+<i>720</i>&nbsp;        // calculations when printing multiple fields in a composite printer.
+<b class="fc"><i>721</i>&nbsp;        DateTimeZone zone = chrono.getZone();</b>
+<b class="fc"><i>722</i>&nbsp;        int offset = zone.getOffset(instant);</b>
+<b class="fc"><i>723</i>&nbsp;        long adjustedInstant = instant + offset;</b>
+<b class="fc"><i>724</i>&nbsp;        if ((instant ^ adjustedInstant) &lt; 0 &amp;&amp; (instant ^ offset) &gt;= 0) {</b>
+<i>725</i>&nbsp;            // Time zone offset overflow, so revert to UTC.
+<b class="fc"><i>726</i>&nbsp;            zone = DateTimeZone.UTC;</b>
+<b class="fc"><i>727</i>&nbsp;            offset = 0;</b>
+<b class="fc"><i>728</i>&nbsp;            adjustedInstant = instant;</b>
+<i>729</i>&nbsp;        }
+<b class="fc"><i>730</i>&nbsp;        printer.printTo(appendable, adjustedInstant, chrono.withUTC(), offset, zone, iLocale);</b>
+<b class="fc"><i>731</i>&nbsp;    }</b>
+<i>732</i>&nbsp;
+<i>733</i>&nbsp;    /**
+<i>734</i>&nbsp;     * Checks whether printing is supported.
+<i>735</i>&nbsp;     * 
+<i>736</i>&nbsp;     * @throws UnsupportedOperationException if printing is not supported
+<i>737</i>&nbsp;     */
+<i>738</i>&nbsp;    private InternalPrinter requirePrinter() {
+<b class="fc"><i>739</i>&nbsp;        InternalPrinter printer = iPrinter;</b>
+<b class="fc"><i>740</i>&nbsp;        if (printer == null) {</b>
+<b class="fc"><i>741</i>&nbsp;            throw new UnsupportedOperationException(&quot;Printing not supported&quot;);</b>
+<i>742</i>&nbsp;        }
+<b class="fc"><i>743</i>&nbsp;        return printer;</b>
+<i>744</i>&nbsp;    }
+<i>745</i>&nbsp;
+<i>746</i>&nbsp;    //-----------------------------------------------------------------------
+<i>747</i>&nbsp;    /**
+<i>748</i>&nbsp;     * Parses a datetime from the given text, at the given position, saving the
+<i>749</i>&nbsp;     * result into the fields of the given ReadWritableInstant. If the parse
+<i>750</i>&nbsp;     * succeeds, the return value is the new text position. Note that the parse
+<i>751</i>&nbsp;     * may succeed without fully reading the text and in this case those fields
+<i>752</i>&nbsp;     * that were read will be set.
+<i>753</i>&nbsp;     * &lt;p&gt;
+<i>754</i>&nbsp;     * Only those fields present in the string will be changed in the specified
+<i>755</i>&nbsp;     * instant. All other fields will remain unaltered. Thus if the string only
+<i>756</i>&nbsp;     * contains a year and a month, then the day and time will be retained from
+<i>757</i>&nbsp;     * the input instant. If this is not the behaviour you want, then reset the
+<i>758</i>&nbsp;     * fields before calling this method, or use {@link #parseDateTime(String)}
+<i>759</i>&nbsp;     * or {@link #parseMutableDateTime(String)}.
+<i>760</i>&nbsp;     * &lt;p&gt;
+<i>761</i>&nbsp;     * If it fails, the return value is negative, but the instant may still be
+<i>762</i>&nbsp;     * modified. To determine the position where the parse failed, apply the
+<i>763</i>&nbsp;     * one&#39;s complement operator (~) on the return value.
+<i>764</i>&nbsp;     * &lt;p&gt;
+<i>765</i>&nbsp;     * This parse method ignores the {@link #getDefaultYear() default year} and
+<i>766</i>&nbsp;     * parses using the year from the supplied instant based on the chronology
+<i>767</i>&nbsp;     * and time-zone of the supplied instant.
+<i>768</i>&nbsp;     * &lt;p&gt;
+<i>769</i>&nbsp;     * The parse will use the chronology of the instant.
+<i>770</i>&nbsp;     *
+<i>771</i>&nbsp;     * @param instant  an instant that will be modified, not null
+<i>772</i>&nbsp;     * @param text  the text to parse
+<i>773</i>&nbsp;     * @param position  position to start parsing from
+<i>774</i>&nbsp;     * @return new position, negative value means parse failed -
+<i>775</i>&nbsp;     *  apply complement operator (~) to get position of failure
+<i>776</i>&nbsp;     * @throws UnsupportedOperationException if parsing is not supported
+<i>777</i>&nbsp;     * @throws IllegalArgumentException if the instant is null
+<i>778</i>&nbsp;     * @throws IllegalArgumentException if any field is out of range
+<i>779</i>&nbsp;     */
+<i>780</i>&nbsp;    public int parseInto(ReadWritableInstant instant, String text, int position) {
+<b class="fc"><i>781</i>&nbsp;        InternalParser parser = requireParser();</b>
+<b class="fc"><i>782</i>&nbsp;        if (instant == null) {</b>
+<b class="fc"><i>783</i>&nbsp;            throw new IllegalArgumentException(&quot;Instant must not be null&quot;);</b>
+<i>784</i>&nbsp;        }
+<i>785</i>&nbsp;        
+<b class="fc"><i>786</i>&nbsp;        long instantMillis = instant.getMillis();</b>
+<b class="fc"><i>787</i>&nbsp;        Chronology chrono = instant.getChronology();</b>
+<b class="fc"><i>788</i>&nbsp;        int defaultYear = DateTimeUtils.getChronology(chrono).year().get(instantMillis);</b>
+<b class="fc"><i>789</i>&nbsp;        long instantLocal = instantMillis + chrono.getZone().getOffset(instantMillis);</b>
+<b class="fc"><i>790</i>&nbsp;        chrono = selectChronology(chrono);</b>
+<i>791</i>&nbsp;        
+<b class="fc"><i>792</i>&nbsp;        DateTimeParserBucket bucket = new DateTimeParserBucket(</b>
+<i>793</i>&nbsp;            instantLocal, chrono, iLocale, iPivotYear, defaultYear);
+<b class="fc"><i>794</i>&nbsp;        int newPos = parser.parseInto(bucket, text, position);</b>
+<b class="fc"><i>795</i>&nbsp;        instant.setMillis(bucket.computeMillis(false, text));</b>
+<b class="fc"><i>796</i>&nbsp;        if (iOffsetParsed &amp;&amp; bucket.getOffsetInteger() != null) {</b>
+<b class="fc"><i>797</i>&nbsp;            int parsedOffset = bucket.getOffsetInteger();</b>
+<b class="fc"><i>798</i>&nbsp;            DateTimeZone parsedZone = DateTimeZone.forOffsetMillis(parsedOffset);</b>
+<b class="fc"><i>799</i>&nbsp;            chrono = chrono.withZone(parsedZone);</b>
+<b class="fc"><i>800</i>&nbsp;        } else if (bucket.getZone() != null) {</b>
+<b class="fc"><i>801</i>&nbsp;            chrono = chrono.withZone(bucket.getZone());</b>
+<i>802</i>&nbsp;        }
+<b class="fc"><i>803</i>&nbsp;        instant.setChronology(chrono);</b>
+<b class="fc"><i>804</i>&nbsp;        if (iZone != null) {</b>
+<b class="fc"><i>805</i>&nbsp;            instant.setZone(iZone);</b>
+<i>806</i>&nbsp;        }
+<b class="fc"><i>807</i>&nbsp;        return newPos;</b>
+<i>808</i>&nbsp;    }
+<i>809</i>&nbsp;
+<i>810</i>&nbsp;    /**
+<i>811</i>&nbsp;     * Parses a datetime from the given text, returning the number of
+<i>812</i>&nbsp;     * milliseconds since the epoch, 1970-01-01T00:00:00Z.
+<i>813</i>&nbsp;     * &lt;p&gt;
+<i>814</i>&nbsp;     * The parse will use the ISO chronology, and the default time zone.
+<i>815</i>&nbsp;     * If the text contains a time zone string then that will be taken into account.
+<i>816</i>&nbsp;     *
+<i>817</i>&nbsp;     * @param text  the text to parse, not null
+<i>818</i>&nbsp;     * @return parsed value expressed in milliseconds since the epoch
+<i>819</i>&nbsp;     * @throws UnsupportedOperationException if parsing is not supported
+<i>820</i>&nbsp;     * @throws IllegalArgumentException if the text to parse is invalid
+<i>821</i>&nbsp;     */
+<i>822</i>&nbsp;    public long parseMillis(String text) {
+<b class="fc"><i>823</i>&nbsp;        InternalParser parser = requireParser();</b>
+<b class="fc"><i>824</i>&nbsp;        Chronology chrono = selectChronology(iChrono);</b>
+<b class="fc"><i>825</i>&nbsp;        DateTimeParserBucket bucket = new DateTimeParserBucket(0, chrono, iLocale, iPivotYear, iDefaultYear);</b>
+<b class="fc"><i>826</i>&nbsp;        return bucket.doParseMillis(parser, text);</b>
+<i>827</i>&nbsp;    }
+<i>828</i>&nbsp;
+<i>829</i>&nbsp;    /**
+<i>830</i>&nbsp;     * Parses only the local date from the given text, returning a new LocalDate.
+<i>831</i>&nbsp;     * &lt;p&gt;
+<i>832</i>&nbsp;     * This will parse the text fully according to the formatter, using the UTC zone.
+<i>833</i>&nbsp;     * Once parsed, only the local date will be used.
+<i>834</i>&nbsp;     * This means that any parsed time, time-zone or offset field is completely ignored.
+<i>835</i>&nbsp;     * It also means that the zone and offset-parsed settings are ignored.
+<i>836</i>&nbsp;     *
+<i>837</i>&nbsp;     * @param text  the text to parse, not null
+<i>838</i>&nbsp;     * @return the parsed date, never null
+<i>839</i>&nbsp;     * @throws UnsupportedOperationException if parsing is not supported
+<i>840</i>&nbsp;     * @throws IllegalArgumentException if the text to parse is invalid
+<i>841</i>&nbsp;     * @since 2.0
+<i>842</i>&nbsp;     */
+<i>843</i>&nbsp;    public LocalDate parseLocalDate(String text) {
+<b class="fc"><i>844</i>&nbsp;        return parseLocalDateTime(text).toLocalDate();</b>
+<i>845</i>&nbsp;    }
+<i>846</i>&nbsp;
+<i>847</i>&nbsp;    /**
+<i>848</i>&nbsp;     * Parses only the local time from the given text, returning a new LocalTime.
+<i>849</i>&nbsp;     * &lt;p&gt;
+<i>850</i>&nbsp;     * This will parse the text fully according to the formatter, using the UTC zone.
+<i>851</i>&nbsp;     * Once parsed, only the local time will be used.
+<i>852</i>&nbsp;     * This means that any parsed date, time-zone or offset field is completely ignored.
+<i>853</i>&nbsp;     * It also means that the zone and offset-parsed settings are ignored.
+<i>854</i>&nbsp;     *
+<i>855</i>&nbsp;     * @param text  the text to parse, not null
+<i>856</i>&nbsp;     * @return the parsed time, never null
+<i>857</i>&nbsp;     * @throws UnsupportedOperationException if parsing is not supported
+<i>858</i>&nbsp;     * @throws IllegalArgumentException if the text to parse is invalid
+<i>859</i>&nbsp;     * @since 2.0
+<i>860</i>&nbsp;     */
+<i>861</i>&nbsp;    public LocalTime parseLocalTime(String text) {
+<b class="fc"><i>862</i>&nbsp;        return parseLocalDateTime(text).toLocalTime();</b>
+<i>863</i>&nbsp;    }
+<i>864</i>&nbsp;
+<i>865</i>&nbsp;    /**
+<i>866</i>&nbsp;     * Parses only the local date-time from the given text, returning a new LocalDateTime.
+<i>867</i>&nbsp;     * &lt;p&gt;
+<i>868</i>&nbsp;     * This will parse the text fully according to the formatter, using the UTC zone.
+<i>869</i>&nbsp;     * Once parsed, only the local date-time will be used.
+<i>870</i>&nbsp;     * This means that any parsed time-zone or offset field is completely ignored.
+<i>871</i>&nbsp;     * It also means that the zone and offset-parsed settings are ignored.
+<i>872</i>&nbsp;     *
+<i>873</i>&nbsp;     * @param text  the text to parse, not null
+<i>874</i>&nbsp;     * @return the parsed date-time, never null
+<i>875</i>&nbsp;     * @throws UnsupportedOperationException if parsing is not supported
+<i>876</i>&nbsp;     * @throws IllegalArgumentException if the text to parse is invalid
+<i>877</i>&nbsp;     * @since 2.0
+<i>878</i>&nbsp;     */
+<i>879</i>&nbsp;    public LocalDateTime parseLocalDateTime(String text) {
+<b class="fc"><i>880</i>&nbsp;        InternalParser parser = requireParser();</b>
+<i>881</i>&nbsp;        
+<b class="fc"><i>882</i>&nbsp;        Chronology chrono = selectChronology(null).withUTC();  // always use UTC, avoiding DST gaps</b>
+<b class="fc"><i>883</i>&nbsp;        DateTimeParserBucket bucket = new DateTimeParserBucket(0, chrono, iLocale, iPivotYear, iDefaultYear);</b>
+<b class="fc"><i>884</i>&nbsp;        int newPos = parser.parseInto(bucket, text, 0);</b>
+<b class="fc"><i>885</i>&nbsp;        if (newPos &gt;= 0) {</b>
+<b class="fc"><i>886</i>&nbsp;            if (newPos &gt;= text.length()) {</b>
+<b class="fc"><i>887</i>&nbsp;                long millis = bucket.computeMillis(true, text);</b>
+<b class="fc"><i>888</i>&nbsp;                if (bucket.getOffsetInteger() != null) {  // treat withOffsetParsed() as being true</b>
+<b class="fc"><i>889</i>&nbsp;                    int parsedOffset = bucket.getOffsetInteger();</b>
+<b class="fc"><i>890</i>&nbsp;                    DateTimeZone parsedZone = DateTimeZone.forOffsetMillis(parsedOffset);</b>
+<b class="fc"><i>891</i>&nbsp;                    chrono = chrono.withZone(parsedZone);</b>
+<b class="fc"><i>892</i>&nbsp;                } else if (bucket.getZone() != null) {</b>
+<b class="fc"><i>893</i>&nbsp;                    chrono = chrono.withZone(bucket.getZone());</b>
+<i>894</i>&nbsp;                }
+<b class="fc"><i>895</i>&nbsp;                return new LocalDateTime(millis, chrono);</b>
+<i>896</i>&nbsp;            }
+<i>897</i>&nbsp;        } else {
+<b class="nc"><i>898</i>&nbsp;            newPos = ~newPos;</b>
+<i>899</i>&nbsp;        }
+<b class="nc"><i>900</i>&nbsp;        throw new IllegalArgumentException(FormatUtils.createErrorMessage(text, newPos));</b>
+<i>901</i>&nbsp;    }
+<i>902</i>&nbsp;
+<i>903</i>&nbsp;    /**
+<i>904</i>&nbsp;     * Parses a date-time from the given text, returning a new DateTime.
+<i>905</i>&nbsp;     * &lt;p&gt;
+<i>906</i>&nbsp;     * The parse will use the zone and chronology specified on this formatter.
+<i>907</i>&nbsp;     * &lt;p&gt;
+<i>908</i>&nbsp;     * If the text contains a time zone string then that will be taken into
+<i>909</i>&nbsp;     * account in adjusting the time of day as follows.
+<i>910</i>&nbsp;     * If the {@link #withOffsetParsed()} has been called, then the resulting
+<i>911</i>&nbsp;     * DateTime will have a fixed offset based on the parsed time zone.
+<i>912</i>&nbsp;     * Otherwise the resulting DateTime will have the zone of this formatter,
+<i>913</i>&nbsp;     * but the parsed zone may have caused the time to be adjusted.
+<i>914</i>&nbsp;     *
+<i>915</i>&nbsp;     * @param text  the text to parse, not null
+<i>916</i>&nbsp;     * @return the parsed date-time, never null
+<i>917</i>&nbsp;     * @throws UnsupportedOperationException if parsing is not supported
+<i>918</i>&nbsp;     * @throws IllegalArgumentException if the text to parse is invalid
+<i>919</i>&nbsp;     */
+<i>920</i>&nbsp;    public DateTime parseDateTime(String text) {
+<b class="fc"><i>921</i>&nbsp;        InternalParser parser = requireParser();</b>
+<i>922</i>&nbsp;        
+<b class="fc"><i>923</i>&nbsp;        Chronology chrono = selectChronology(null);</b>
+<b class="fc"><i>924</i>&nbsp;        DateTimeParserBucket bucket = new DateTimeParserBucket(0, chrono, iLocale, iPivotYear, iDefaultYear);</b>
+<b class="fc"><i>925</i>&nbsp;        int newPos = parser.parseInto(bucket, text, 0);</b>
+<b class="fc"><i>926</i>&nbsp;        if (newPos &gt;= 0) {</b>
+<b class="fc"><i>927</i>&nbsp;            if (newPos &gt;= text.length()) {</b>
+<b class="fc"><i>928</i>&nbsp;                long millis = bucket.computeMillis(true, text);</b>
+<b class="fc"><i>929</i>&nbsp;                if (iOffsetParsed &amp;&amp; bucket.getOffsetInteger() != null) {</b>
+<b class="fc"><i>930</i>&nbsp;                    int parsedOffset = bucket.getOffsetInteger();</b>
+<b class="fc"><i>931</i>&nbsp;                    DateTimeZone parsedZone = DateTimeZone.forOffsetMillis(parsedOffset);</b>
+<b class="fc"><i>932</i>&nbsp;                    chrono = chrono.withZone(parsedZone);</b>
+<b class="fc"><i>933</i>&nbsp;                } else if (bucket.getZone() != null) {</b>
+<b class="fc"><i>934</i>&nbsp;                    chrono = chrono.withZone(bucket.getZone());</b>
+<i>935</i>&nbsp;                }
+<b class="fc"><i>936</i>&nbsp;                DateTime dt = new DateTime(millis, chrono);</b>
+<b class="fc"><i>937</i>&nbsp;                if (iZone != null) {</b>
+<b class="fc"><i>938</i>&nbsp;                    dt = dt.withZone(iZone);</b>
+<i>939</i>&nbsp;                }
+<b class="fc"><i>940</i>&nbsp;                return dt;</b>
+<i>941</i>&nbsp;            }
+<i>942</i>&nbsp;        } else {
+<b class="fc"><i>943</i>&nbsp;            newPos = ~newPos;</b>
+<i>944</i>&nbsp;        }
+<b class="fc"><i>945</i>&nbsp;        throw new IllegalArgumentException(FormatUtils.createErrorMessage(text, newPos));</b>
+<i>946</i>&nbsp;    }
+<i>947</i>&nbsp;
+<i>948</i>&nbsp;    /**
+<i>949</i>&nbsp;     * Parses a date-time from the given text, returning a new MutableDateTime.
+<i>950</i>&nbsp;     * &lt;p&gt;
+<i>951</i>&nbsp;     * The parse will use the zone and chronology specified on this formatter.
+<i>952</i>&nbsp;     * &lt;p&gt;
+<i>953</i>&nbsp;     * If the text contains a time zone string then that will be taken into
+<i>954</i>&nbsp;     * account in adjusting the time of day as follows.
+<i>955</i>&nbsp;     * If the {@link #withOffsetParsed()} has been called, then the resulting
+<i>956</i>&nbsp;     * DateTime will have a fixed offset based on the parsed time zone.
+<i>957</i>&nbsp;     * Otherwise the resulting DateTime will have the zone of this formatter,
+<i>958</i>&nbsp;     * but the parsed zone may have caused the time to be adjusted.
+<i>959</i>&nbsp;     *
+<i>960</i>&nbsp;     * @param text  the text to parse, not null
+<i>961</i>&nbsp;     * @return the parsed date-time, never null
+<i>962</i>&nbsp;     * @throws UnsupportedOperationException if parsing is not supported
+<i>963</i>&nbsp;     * @throws IllegalArgumentException if the text to parse is invalid
+<i>964</i>&nbsp;     */
+<i>965</i>&nbsp;    public MutableDateTime parseMutableDateTime(String text) {
+<b class="fc"><i>966</i>&nbsp;        InternalParser parser = requireParser();</b>
+<i>967</i>&nbsp;        
+<b class="fc"><i>968</i>&nbsp;        Chronology chrono = selectChronology(null);</b>
+<b class="fc"><i>969</i>&nbsp;        DateTimeParserBucket bucket = new DateTimeParserBucket(0, chrono, iLocale, iPivotYear, iDefaultYear);</b>
+<b class="fc"><i>970</i>&nbsp;        int newPos = parser.parseInto(bucket, text, 0);</b>
+<b class="fc"><i>971</i>&nbsp;        if (newPos &gt;= 0) {</b>
+<b class="fc"><i>972</i>&nbsp;            if (newPos &gt;= text.length()) {</b>
+<b class="fc"><i>973</i>&nbsp;                long millis = bucket.computeMillis(true, text);</b>
+<b class="fc"><i>974</i>&nbsp;                if (iOffsetParsed &amp;&amp; bucket.getOffsetInteger() != null) {</b>
+<b class="fc"><i>975</i>&nbsp;                    int parsedOffset = bucket.getOffsetInteger();</b>
+<b class="fc"><i>976</i>&nbsp;                    DateTimeZone parsedZone = DateTimeZone.forOffsetMillis(parsedOffset);</b>
+<b class="fc"><i>977</i>&nbsp;                    chrono = chrono.withZone(parsedZone);</b>
+<b class="fc"><i>978</i>&nbsp;                } else if (bucket.getZone() != null) {</b>
+<b class="fc"><i>979</i>&nbsp;                    chrono = chrono.withZone(bucket.getZone());</b>
+<i>980</i>&nbsp;                }
+<b class="fc"><i>981</i>&nbsp;                MutableDateTime dt = new MutableDateTime(millis, chrono);</b>
+<b class="fc"><i>982</i>&nbsp;                if (iZone != null) {</b>
+<b class="fc"><i>983</i>&nbsp;                    dt.setZone(iZone);</b>
+<i>984</i>&nbsp;                }
+<b class="fc"><i>985</i>&nbsp;                return dt;</b>
+<i>986</i>&nbsp;            }
+<i>987</i>&nbsp;        } else {
+<b class="fc"><i>988</i>&nbsp;            newPos = ~newPos;</b>
+<i>989</i>&nbsp;        }
+<b class="fc"><i>990</i>&nbsp;        throw new IllegalArgumentException(FormatUtils.createErrorMessage(text, newPos));</b>
+<i>991</i>&nbsp;    }
+<i>992</i>&nbsp;
+<i>993</i>&nbsp;    /**
+<i>994</i>&nbsp;     * Checks whether parsing is supported.
+<i>995</i>&nbsp;     * 
+<i>996</i>&nbsp;     * @throws UnsupportedOperationException if parsing is not supported
+<i>997</i>&nbsp;     */
+<i>998</i>&nbsp;    private InternalParser requireParser() {
+<b class="fc"><i>999</i>&nbsp;        InternalParser parser = iParser;</b>
+<b class="fc"><i>1000</i>&nbsp;        if (parser == null) {</b>
+<b class="fc"><i>1001</i>&nbsp;            throw new UnsupportedOperationException(&quot;Parsing not supported&quot;);</b>
+<i>1002</i>&nbsp;        }
+<b class="fc"><i>1003</i>&nbsp;        return parser;</b>
+<i>1004</i>&nbsp;    }
+<i>1005</i>&nbsp;
+<i>1006</i>&nbsp;    //-----------------------------------------------------------------------
+<i>1007</i>&nbsp;    /**
+<i>1008</i>&nbsp;     * Determines the correct chronology to use.
+<i>1009</i>&nbsp;     *
+<i>1010</i>&nbsp;     * @param chrono  the proposed chronology
+<i>1011</i>&nbsp;     * @return the actual chronology
+<i>1012</i>&nbsp;     */
+<i>1013</i>&nbsp;    private Chronology selectChronology(Chronology chrono) {
+<b class="fc"><i>1014</i>&nbsp;        chrono = DateTimeUtils.getChronology(chrono);</b>
+<b class="fc"><i>1015</i>&nbsp;        if (iChrono != null) {</b>
+<b class="fc"><i>1016</i>&nbsp;            chrono = iChrono;</b>
+<i>1017</i>&nbsp;        }
+<b class="fc"><i>1018</i>&nbsp;        if (iZone != null) {</b>
+<b class="fc"><i>1019</i>&nbsp;            chrono = chrono.withZone(iZone);</b>
+<i>1020</i>&nbsp;        }
+<b class="fc"><i>1021</i>&nbsp;        return chrono;</b>
+<i>1022</i>&nbsp;    }
+<i>1023</i>&nbsp;
+<i>1024</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

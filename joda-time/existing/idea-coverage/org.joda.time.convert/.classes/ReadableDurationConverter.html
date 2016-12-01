@@ -1,0 +1,174 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: ReadableDurationConverter</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time.convert</a> ]
+</div>
+
+<h1>Coverage Summary for Class: ReadableDurationConverter (org.joda.time.convert)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">ReadableDurationConverter</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (5/ 5)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (12/ 12)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2009 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time.convert;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;import org.joda.time.Chronology;
+<i>19</i>&nbsp;import org.joda.time.DateTimeUtils;
+<i>20</i>&nbsp;import org.joda.time.ReadWritablePeriod;
+<i>21</i>&nbsp;import org.joda.time.ReadableDuration;
+<i>22</i>&nbsp;
+<i>23</i>&nbsp;/**
+<i>24</i>&nbsp; * ReadableDurationConverter extracts milliseconds and chronology from a ReadableDuration.
+<i>25</i>&nbsp; *
+<i>26</i>&nbsp; * @author Stephen Colebourne
+<i>27</i>&nbsp; * @author Brian S O&#39;Neill
+<i>28</i>&nbsp; * @since 1.0
+<i>29</i>&nbsp; */
+<i>30</i>&nbsp;class ReadableDurationConverter extends AbstractConverter
+<i>31</i>&nbsp;        implements DurationConverter, PeriodConverter {
+<i>32</i>&nbsp;
+<i>33</i>&nbsp;    /**
+<i>34</i>&nbsp;     * Singleton instance.
+<i>35</i>&nbsp;     */
+<b class="fc"><i>36</i>&nbsp;    static final ReadableDurationConverter INSTANCE = new ReadableDurationConverter();</b>
+<i>37</i>&nbsp;
+<i>38</i>&nbsp;    /**
+<i>39</i>&nbsp;     * Restricted constructor.
+<i>40</i>&nbsp;     */
+<i>41</i>&nbsp;    protected ReadableDurationConverter() {
+<b class="fc"><i>42</i>&nbsp;        super();</b>
+<b class="fc"><i>43</i>&nbsp;    }</b>
+<i>44</i>&nbsp;
+<i>45</i>&nbsp;    //-----------------------------------------------------------------------
+<i>46</i>&nbsp;    /**
+<i>47</i>&nbsp;     * Extracts the millis from an object of this converter&#39;s type.
+<i>48</i>&nbsp;     * 
+<i>49</i>&nbsp;     * @param object  the object to convert, must not be null
+<i>50</i>&nbsp;     * @return the millisecond value
+<i>51</i>&nbsp;     * @throws NullPointerException if the object is null
+<i>52</i>&nbsp;     * @throws ClassCastException if the object is an invalid type
+<i>53</i>&nbsp;     * @throws IllegalArgumentException if the object is invalid
+<i>54</i>&nbsp;     */
+<i>55</i>&nbsp;    public long getDurationMillis(Object object) {
+<b class="fc"><i>56</i>&nbsp;        return ((ReadableDuration) object).getMillis();</b>
+<i>57</i>&nbsp;    }
+<i>58</i>&nbsp;
+<i>59</i>&nbsp;    //-----------------------------------------------------------------------
+<i>60</i>&nbsp;    /**
+<i>61</i>&nbsp;     * Extracts duration values from an object of this converter&#39;s type, and
+<i>62</i>&nbsp;     * sets them into the given ReadWritableDuration.
+<i>63</i>&nbsp;     *
+<i>64</i>&nbsp;     * @param writablePeriod  period to get modified
+<i>65</i>&nbsp;     * @param object  the object to convert, must not be null
+<i>66</i>&nbsp;     * @param chrono  the chronology to use, must not be null
+<i>67</i>&nbsp;     * @throws NullPointerException if the duration or object is null
+<i>68</i>&nbsp;     * @throws ClassCastException if the object is an invalid type
+<i>69</i>&nbsp;     * @throws IllegalArgumentException if the object is invalid
+<i>70</i>&nbsp;     */
+<i>71</i>&nbsp;    public void setInto(ReadWritablePeriod writablePeriod, Object object, Chronology chrono) {
+<b class="fc"><i>72</i>&nbsp;        ReadableDuration dur = (ReadableDuration) object;</b>
+<b class="fc"><i>73</i>&nbsp;        chrono = DateTimeUtils.getChronology(chrono);</b>
+<b class="fc"><i>74</i>&nbsp;        long duration = dur.getMillis();</b>
+<b class="fc"><i>75</i>&nbsp;        int[] values = chrono.get(writablePeriod, duration);</b>
+<b class="fc"><i>76</i>&nbsp;        for (int i = 0; i &lt; values.length; i++) {</b>
+<b class="fc"><i>77</i>&nbsp;            writablePeriod.setValue(i, values[i]);</b>
+<i>78</i>&nbsp;        }
+<b class="fc"><i>79</i>&nbsp;    }</b>
+<i>80</i>&nbsp;
+<i>81</i>&nbsp;    //-----------------------------------------------------------------------
+<i>82</i>&nbsp;    /**
+<i>83</i>&nbsp;     * Returns ReadableDuration.class.
+<i>84</i>&nbsp;     * 
+<i>85</i>&nbsp;     * @return ReadableDuration.class
+<i>86</i>&nbsp;     */
+<i>87</i>&nbsp;    public Class&lt;?&gt; getSupportedType() {
+<b class="fc"><i>88</i>&nbsp;        return ReadableDuration.class;</b>
+<i>89</i>&nbsp;    }
+<i>90</i>&nbsp;
+<i>91</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,190 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: SkipDateTimeField</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time.field</a> ]
+</div>
+
+<h1>Coverage Summary for Class: SkipDateTimeField (org.joda.time.field)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">SkipDateTimeField</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    83.3%
+  </span>
+  <span class="absValue">
+    (5/ 6)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    84%
+  </span>
+  <span class="absValue">
+    (21/ 25)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2005 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time.field;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;import org.joda.time.Chronology;
+<i>19</i>&nbsp;import org.joda.time.DateTimeField;
+<i>20</i>&nbsp;import org.joda.time.DateTimeFieldType;
+<i>21</i>&nbsp;import org.joda.time.IllegalFieldValueException;
+<i>22</i>&nbsp;
+<i>23</i>&nbsp;/**
+<i>24</i>&nbsp; * Wraps another field such that a certain value is skipped.
+<i>25</i>&nbsp; * &lt;p&gt;
+<i>26</i>&nbsp; * This is most useful for years where you want to skip zero, so the
+<i>27</i>&nbsp; * sequence runs ...,2,1,-1,-2,...
+<i>28</i>&nbsp; * &lt;p&gt;
+<i>29</i>&nbsp; * SkipDateTimeField is thread-safe and immutable.
+<i>30</i>&nbsp; *
+<i>31</i>&nbsp; * @author Brian S O&#39;Neill
+<i>32</i>&nbsp; * @author Stephen Colebourne
+<i>33</i>&nbsp; * @since 1.0
+<i>34</i>&nbsp; */
+<i>35</i>&nbsp;public final class SkipDateTimeField extends DelegatedDateTimeField {
+<i>36</i>&nbsp;
+<i>37</i>&nbsp;    /** Serialization version. */
+<i>38</i>&nbsp;    private static final long serialVersionUID = -8869148464118507846L;
+<i>39</i>&nbsp;
+<i>40</i>&nbsp;    /** The chronology to wrap. */
+<i>41</i>&nbsp;    private final Chronology iChronology;
+<i>42</i>&nbsp;    /** The value to skip. */
+<i>43</i>&nbsp;    private final int iSkip;
+<i>44</i>&nbsp;    /** The calculated minimum value. */
+<i>45</i>&nbsp;    private transient int iMinValue;
+<i>46</i>&nbsp;
+<i>47</i>&nbsp;    /**
+<i>48</i>&nbsp;     * Constructor that skips zero.
+<i>49</i>&nbsp;     * 
+<i>50</i>&nbsp;     * @param chronology  the chronoogy to use
+<i>51</i>&nbsp;     * @param field  the field to skip zero on
+<i>52</i>&nbsp;     */
+<i>53</i>&nbsp;    public SkipDateTimeField(Chronology chronology, DateTimeField field) {
+<b class="fc"><i>54</i>&nbsp;        this(chronology, field, 0);</b>
+<b class="fc"><i>55</i>&nbsp;    }</b>
+<i>56</i>&nbsp;
+<i>57</i>&nbsp;    /**
+<i>58</i>&nbsp;     * Constructor.
+<i>59</i>&nbsp;     * 
+<i>60</i>&nbsp;     * @param chronology  the chronoogy to use
+<i>61</i>&nbsp;     * @param field  the field to skip zero on
+<i>62</i>&nbsp;     * @param skip  the value to skip
+<i>63</i>&nbsp;     */
+<i>64</i>&nbsp;    public SkipDateTimeField(Chronology chronology, DateTimeField field, int skip) {
+<b class="fc"><i>65</i>&nbsp;        super(field);</b>
+<b class="fc"><i>66</i>&nbsp;        iChronology = chronology;</b>
+<b class="fc"><i>67</i>&nbsp;        int min = super.getMinimumValue();</b>
+<b class="fc"><i>68</i>&nbsp;        if (min &lt; skip) {</b>
+<b class="fc"><i>69</i>&nbsp;            iMinValue = min - 1;</b>
+<b class="nc"><i>70</i>&nbsp;        } else if (min == skip) {</b>
+<b class="nc"><i>71</i>&nbsp;            iMinValue = skip + 1;</b>
+<i>72</i>&nbsp;        } else {
+<b class="nc"><i>73</i>&nbsp;            iMinValue = min;</b>
+<i>74</i>&nbsp;        }
+<b class="fc"><i>75</i>&nbsp;        iSkip = skip;</b>
+<b class="fc"><i>76</i>&nbsp;    }</b>
+<i>77</i>&nbsp;
+<i>78</i>&nbsp;    //-----------------------------------------------------------------------
+<i>79</i>&nbsp;    public int get(long millis) {
+<b class="fc"><i>80</i>&nbsp;        int value = super.get(millis);</b>
+<b class="fc"><i>81</i>&nbsp;        if (value &lt;= iSkip) {</b>
+<b class="fc"><i>82</i>&nbsp;            value--;</b>
+<i>83</i>&nbsp;        }
+<b class="fc"><i>84</i>&nbsp;        return value;</b>
+<i>85</i>&nbsp;    }
+<i>86</i>&nbsp;
+<i>87</i>&nbsp;    public long set(long millis, int value) {
+<b class="fc"><i>88</i>&nbsp;        FieldUtils.verifyValueBounds(this, value, iMinValue, getMaximumValue());</b>
+<b class="fc"><i>89</i>&nbsp;        if (value &lt;= iSkip) {</b>
+<b class="fc"><i>90</i>&nbsp;            if (value == iSkip) {</b>
+<b class="fc"><i>91</i>&nbsp;                throw new IllegalFieldValueException</b>
+<b class="fc"><i>92</i>&nbsp;                    (DateTimeFieldType.year(), Integer.valueOf(value), null, null);</b>
+<i>93</i>&nbsp;            }
+<b class="fc"><i>94</i>&nbsp;            value++;</b>
+<i>95</i>&nbsp;        }
+<b class="fc"><i>96</i>&nbsp;        return super.set(millis, value);</b>
+<i>97</i>&nbsp;    }
+<i>98</i>&nbsp;
+<i>99</i>&nbsp;    public int getMinimumValue() {
+<b class="fc"><i>100</i>&nbsp;        return iMinValue;</b>
+<i>101</i>&nbsp;    }
+<i>102</i>&nbsp;
+<i>103</i>&nbsp;    private Object readResolve() {
+<b class="nc"><i>104</i>&nbsp;        return getType().getField(iChronology);</b>
+<i>105</i>&nbsp;    }
+<i>106</i>&nbsp;
+<i>107</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

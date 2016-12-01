@@ -1,0 +1,103 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: InternalParser</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time.format</a> ]
+</div>
+
+<h1>Coverage Summary for Class: InternalParser (org.joda.time.format)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+</tr>
+<tr>
+  <td class="name">InternalParser</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2014 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time.format;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;/**
+<i>19</i>&nbsp; * Internal interface for parsing textual representations of datetimes.
+<i>20</i>&nbsp; * &lt;p&gt;
+<i>21</i>&nbsp; * This has been separated from {@link DateTimeParser} to change to using
+<i>22</i>&nbsp; * {@code CharSequence}.
+<i>23</i>&nbsp; *
+<i>24</i>&nbsp; * @author Stephen Colebourne
+<i>25</i>&nbsp; * @since 2.4
+<i>26</i>&nbsp; */
+<i>27</i>&nbsp;interface InternalParser {
+<i>28</i>&nbsp;
+<i>29</i>&nbsp;    /**
+<i>30</i>&nbsp;     * Returns the expected maximum number of characters consumed.
+<i>31</i>&nbsp;     * The actual amount should rarely exceed this estimate.
+<i>32</i>&nbsp;     * 
+<i>33</i>&nbsp;     * @return the estimated length
+<i>34</i>&nbsp;     */
+<i>35</i>&nbsp;    int estimateParsedLength();
+<i>36</i>&nbsp;
+<i>37</i>&nbsp;    /**
+<i>38</i>&nbsp;     * Parse an element from the given text, saving any fields into the given
+<i>39</i>&nbsp;     * DateTimeParserBucket. If the parse succeeds, the return value is the new
+<i>40</i>&nbsp;     * text position. Note that the parse may succeed without fully reading the
+<i>41</i>&nbsp;     * text.
+<i>42</i>&nbsp;     * &lt;p&gt;
+<i>43</i>&nbsp;     * If it fails, the return value is negative. To determine the position
+<i>44</i>&nbsp;     * where the parse failed, apply the one&#39;s complement operator (~) on the
+<i>45</i>&nbsp;     * return value.
+<i>46</i>&nbsp;     *
+<i>47</i>&nbsp;     * @param bucket  field are saved into this, not null
+<i>48</i>&nbsp;     * @param text  the text to parse, not null
+<i>49</i>&nbsp;     * @param position  position to start parsing from
+<i>50</i>&nbsp;     * @return new position, negative value means parse failed -
+<i>51</i>&nbsp;     *  apply complement operator (~) to get position of failure
+<i>52</i>&nbsp;     * @throws IllegalArgumentException if any field is out of range
+<i>53</i>&nbsp;     */
+<i>54</i>&nbsp;    int parseInto(DateTimeParserBucket bucket, CharSequence text, int position);
+<i>55</i>&nbsp;
+<i>56</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

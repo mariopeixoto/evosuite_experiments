@@ -1,0 +1,188 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: DefaultIndenter</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.fasterxml.jackson.core.util</a> ]
+</div>
+
+<h1>Coverage Summary for Class: DefaultIndenter (com.fasterxml.jackson.core.util)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">DefaultIndenter</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    88.9%
+  </span>
+  <span class="absValue">
+    (8/ 9)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    79.4%
+  </span>
+  <span class="absValue">
+    (27/ 34)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package com.fasterxml.jackson.core.util;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import java.io.IOException;
+<i>4</i>&nbsp;
+<i>5</i>&nbsp;import com.fasterxml.jackson.core.JsonGenerator;
+<i>6</i>&nbsp;
+<i>7</i>&nbsp;/**
+<i>8</i>&nbsp; * Default linefeed-based indenter, used by {@link DefaultPrettyPrinter} (unless
+<i>9</i>&nbsp; * overridden). Uses system-specific linefeeds and 2 spaces for indentation per level.
+<i>10</i>&nbsp; * 
+<i>11</i>&nbsp; * @since 2.5
+<i>12</i>&nbsp; */
+<i>13</i>&nbsp;public class DefaultIndenter
+<i>14</i>&nbsp;    extends DefaultPrettyPrinter.NopIndenter
+<i>15</i>&nbsp;{
+<i>16</i>&nbsp;    private static final long serialVersionUID = 1L;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;    public final static String SYS_LF;
+<i>19</i>&nbsp;    static {
+<i>20</i>&nbsp;        String lf;
+<i>21</i>&nbsp;        try {
+<b class="fc"><i>22</i>&nbsp;            lf = System.getProperty(&quot;line.separator&quot;);</b>
+<b class="nc"><i>23</i>&nbsp;        } catch (Throwable t) {</b>
+<b class="nc"><i>24</i>&nbsp;            lf = &quot;\n&quot;; // fallback when security manager denies access</b>
+<b class="fc"><i>25</i>&nbsp;        }</b>
+<b class="fc"><i>26</i>&nbsp;        SYS_LF = lf;</b>
+<i>27</i>&nbsp;    }
+<i>28</i>&nbsp;
+<b class="fc"><i>29</i>&nbsp;    public static final DefaultIndenter SYSTEM_LINEFEED_INSTANCE = new DefaultIndenter(&quot;  &quot;, SYS_LF);</b>
+<i>30</i>&nbsp;
+<i>31</i>&nbsp;    /**
+<i>32</i>&nbsp;     * We expect to rarely get indentation deeper than this number of levels,
+<i>33</i>&nbsp;     * and try not to pre-generate more indentations than needed.
+<i>34</i>&nbsp;     */
+<i>35</i>&nbsp;    private final static int INDENT_LEVELS = 16;
+<i>36</i>&nbsp;    private final char[] indents;
+<i>37</i>&nbsp;    private final int charsPerLevel;
+<i>38</i>&nbsp;    private final String eol;
+<i>39</i>&nbsp;
+<i>40</i>&nbsp;    /**
+<i>41</i>&nbsp;     * Indent with two spaces and the system&#39;s default line feed
+<i>42</i>&nbsp;     */
+<i>43</i>&nbsp;    public DefaultIndenter() {
+<b class="fc"><i>44</i>&nbsp;        this(&quot;  &quot;, SYS_LF);</b>
+<b class="fc"><i>45</i>&nbsp;    }</b>
+<i>46</i>&nbsp;    
+<i>47</i>&nbsp;    /**
+<i>48</i>&nbsp;     * Create an indenter which uses the &lt;code&gt;indent&lt;/code&gt; string to indent one level
+<i>49</i>&nbsp;     *  and the &lt;code&gt;eol&lt;/code&gt; string to separate lines.
+<i>50</i>&nbsp;     */
+<i>51</i>&nbsp;    public DefaultIndenter(String indent, String eol)
+<b class="fc"><i>52</i>&nbsp;    {</b>
+<b class="fc"><i>53</i>&nbsp;        charsPerLevel = indent.length();</b>
+<i>54</i>&nbsp;
+<b class="fc"><i>55</i>&nbsp;        indents = new char[indent.length() * INDENT_LEVELS];</b>
+<b class="fc"><i>56</i>&nbsp;        int offset = 0;</b>
+<b class="fc"><i>57</i>&nbsp;        for (int i=0; i&lt;INDENT_LEVELS; i++) {</b>
+<b class="fc"><i>58</i>&nbsp;            indent.getChars(0, indent.length(), indents, offset);</b>
+<b class="fc"><i>59</i>&nbsp;            offset += indent.length();</b>
+<i>60</i>&nbsp;        }
+<i>61</i>&nbsp;
+<b class="fc"><i>62</i>&nbsp;        this.eol = eol;</b>
+<b class="fc"><i>63</i>&nbsp;    }</b>
+<i>64</i>&nbsp;    
+<i>65</i>&nbsp;    public DefaultIndenter withLinefeed(String lf)
+<i>66</i>&nbsp;    {
+<b class="fc"><i>67</i>&nbsp;        if (lf.equals(eol)) {</b>
+<b class="fc"><i>68</i>&nbsp;            return this;</b>
+<i>69</i>&nbsp;        }
+<b class="nc"><i>70</i>&nbsp;        return new DefaultIndenter(getIndent(), lf);</b>
+<i>71</i>&nbsp;    }
+<i>72</i>&nbsp;    
+<i>73</i>&nbsp;    public DefaultIndenter withIndent(String indent)
+<i>74</i>&nbsp;    {
+<b class="fc"><i>75</i>&nbsp;        if (indent.equals(getIndent())) {</b>
+<b class="nc"><i>76</i>&nbsp;            return this;</b>
+<i>77</i>&nbsp;        }
+<b class="fc"><i>78</i>&nbsp;        return new DefaultIndenter(indent, eol);</b>
+<i>79</i>&nbsp;    }
+<i>80</i>&nbsp;
+<i>81</i>&nbsp;    @Override
+<b class="fc"><i>82</i>&nbsp;    public boolean isInline() { return false; }</b>
+<i>83</i>&nbsp;
+<i>84</i>&nbsp;    @Override
+<i>85</i>&nbsp;    public void writeIndentation(JsonGenerator jg, int level) throws IOException
+<i>86</i>&nbsp;    {
+<b class="fc"><i>87</i>&nbsp;        jg.writeRaw(eol);</b>
+<b class="fc"><i>88</i>&nbsp;        if (level &gt; 0) { // should we err on negative values (as there&#39;s some flaw?)</b>
+<b class="fc"><i>89</i>&nbsp;            level *= charsPerLevel;</b>
+<b class="fc"><i>90</i>&nbsp;            while (level &gt; indents.length) { // unlike to happen but just in case</b>
+<b class="nc"><i>91</i>&nbsp;                jg.writeRaw(indents, 0, indents.length); </b>
+<b class="nc"><i>92</i>&nbsp;                level -= indents.length;</b>
+<i>93</i>&nbsp;            }
+<b class="fc"><i>94</i>&nbsp;            jg.writeRaw(indents, 0, level);</b>
+<i>95</i>&nbsp;        }
+<b class="fc"><i>96</i>&nbsp;    }</b>
+<i>97</i>&nbsp;    
+<i>98</i>&nbsp;    public String getEol() {
+<b class="nc"><i>99</i>&nbsp;        return eol;</b>
+<i>100</i>&nbsp;    }
+<i>101</i>&nbsp;    
+<i>102</i>&nbsp;    public String getIndent() {
+<b class="fc"><i>103</i>&nbsp;        return new String(indents, 0, charsPerLevel);</b>
+<i>104</i>&nbsp;    }
+<i>105</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 04:22</div>
+</div>
+</body>
+</html>

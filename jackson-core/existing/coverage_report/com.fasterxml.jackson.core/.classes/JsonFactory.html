@@ -1,0 +1,1658 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: JsonFactory</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.fasterxml.jackson.core</a> ]
+</div>
+
+<h1>Coverage Summary for Class: JsonFactory (com.fasterxml.jackson.core)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">JsonFactory</td>
+<td class="coverageStat">
+  <span class="percent">
+    73.5%
+  </span>
+  <span class="absValue">
+    (61/ 83)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    80.5%
+  </span>
+  <span class="absValue">
+    (173/ 215)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">JsonFactory$Feature</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (7/ 7)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (13/ 13)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    75.6%
+  </span>
+  <span class="absValue">
+    (68/ 90)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    81.6%
+  </span>
+  <span class="absValue">
+    (186/ 228)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/* Jackson JSON-processor.
+<i>2</i>&nbsp; *
+<i>3</i>&nbsp; * Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
+<i>4</i>&nbsp; */
+<i>5</i>&nbsp;package com.fasterxml.jackson.core;
+<i>6</i>&nbsp;
+<i>7</i>&nbsp;import java.io.*;
+<i>8</i>&nbsp;import java.lang.ref.SoftReference;
+<i>9</i>&nbsp;import java.net.URL;
+<i>10</i>&nbsp;
+<i>11</i>&nbsp;import com.fasterxml.jackson.core.format.InputAccessor;
+<i>12</i>&nbsp;import com.fasterxml.jackson.core.format.MatchStrength;
+<i>13</i>&nbsp;import com.fasterxml.jackson.core.io.*;
+<i>14</i>&nbsp;import com.fasterxml.jackson.core.json.*;
+<i>15</i>&nbsp;import com.fasterxml.jackson.core.sym.ByteQuadsCanonicalizer;
+<i>16</i>&nbsp;import com.fasterxml.jackson.core.sym.CharsToNameCanonicalizer;
+<i>17</i>&nbsp;import com.fasterxml.jackson.core.util.BufferRecycler;
+<i>18</i>&nbsp;import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
+<i>19</i>&nbsp;
+<i>20</i>&nbsp;/**
+<i>21</i>&nbsp; * The main factory class of Jackson package, used to configure and
+<i>22</i>&nbsp; * construct reader (aka parser, {@link JsonParser})
+<i>23</i>&nbsp; * and writer (aka generator, {@link JsonGenerator})
+<i>24</i>&nbsp; * instances.
+<i>25</i>&nbsp; *&lt;p&gt;
+<i>26</i>&nbsp; * Factory instances are thread-safe and reusable after configuration
+<i>27</i>&nbsp; * (if any). Typically applications and services use only a single
+<i>28</i>&nbsp; * globally shared factory instance, unless they need differently
+<i>29</i>&nbsp; * configured factories. Factory reuse is important if efficiency matters;
+<i>30</i>&nbsp; * most recycling of expensive construct is done on per-factory basis.
+<i>31</i>&nbsp; *&lt;p&gt;
+<i>32</i>&nbsp; * Creation of a factory instance is a light-weight operation,
+<i>33</i>&nbsp; * and since there is no need for pluggable alternative implementations
+<i>34</i>&nbsp; * (as there is no &quot;standard&quot; JSON processor API to implement),
+<i>35</i>&nbsp; * the default constructor is used for constructing factory
+<i>36</i>&nbsp; * instances.
+<i>37</i>&nbsp; *
+<i>38</i>&nbsp; * @author Tatu Saloranta
+<i>39</i>&nbsp; */
+<i>40</i>&nbsp;@SuppressWarnings(&quot;resource&quot;)
+<i>41</i>&nbsp;public class JsonFactory
+<i>42</i>&nbsp;    implements Versioned,
+<i>43</i>&nbsp;        java.io.Serializable // since 2.1 (for Android, mostly)
+<i>44</i>&nbsp;{
+<i>45</i>&nbsp;    private static final long serialVersionUID = 1; // since 2.6.0
+<i>46</i>&nbsp;
+<i>47</i>&nbsp;    /*
+<i>48</i>&nbsp;    /**********************************************************
+<i>49</i>&nbsp;    /* Helper types
+<i>50</i>&nbsp;    /**********************************************************
+<i>51</i>&nbsp;     */
+<i>52</i>&nbsp;
+<i>53</i>&nbsp;    /**
+<i>54</i>&nbsp;     * Enumeration that defines all on/off features that can only be
+<i>55</i>&nbsp;     * changed for {@link JsonFactory}.
+<i>56</i>&nbsp;     */
+<b class="fc"><i>57</i>&nbsp;    public enum Feature {</b>
+<i>58</i>&nbsp;        
+<i>59</i>&nbsp;        // // // Symbol handling (interning etc)
+<i>60</i>&nbsp;        
+<i>61</i>&nbsp;        /**
+<i>62</i>&nbsp;         * Feature that determines whether JSON object field names are
+<i>63</i>&nbsp;         * to be canonicalized using {@link String#intern} or not:
+<i>64</i>&nbsp;         * if enabled, all field names will be intern()ed (and caller
+<i>65</i>&nbsp;         * can count on this being true for all such names); if disabled,
+<i>66</i>&nbsp;         * no intern()ing is done. There may still be basic
+<i>67</i>&nbsp;         * canonicalization (that is, same String will be used to represent
+<i>68</i>&nbsp;         * all identical object property names for a single document).
+<i>69</i>&nbsp;         *&lt;p&gt;
+<i>70</i>&nbsp;         * Note: this setting only has effect if
+<i>71</i>&nbsp;         * {@link #CANONICALIZE_FIELD_NAMES} is true -- otherwise no
+<i>72</i>&nbsp;         * canonicalization of any sort is done.
+<i>73</i>&nbsp;         *&lt;p&gt;
+<i>74</i>&nbsp;         * This setting is enabled by default.
+<i>75</i>&nbsp;         */
+<b class="fc"><i>76</i>&nbsp;        INTERN_FIELD_NAMES(true),</b>
+<i>77</i>&nbsp;
+<i>78</i>&nbsp;        /**
+<i>79</i>&nbsp;         * Feature that determines whether JSON object field names are
+<i>80</i>&nbsp;         * to be canonicalized (details of how canonicalization is done
+<i>81</i>&nbsp;         * then further specified by
+<i>82</i>&nbsp;         * {@link #INTERN_FIELD_NAMES}).
+<i>83</i>&nbsp;         *&lt;p&gt;
+<i>84</i>&nbsp;         * This setting is enabled by default.
+<i>85</i>&nbsp;         */
+<b class="fc"><i>86</i>&nbsp;        CANONICALIZE_FIELD_NAMES(true),</b>
+<i>87</i>&nbsp;
+<i>88</i>&nbsp;        /**
+<i>89</i>&nbsp;         * Feature that determines what happens if we encounter a case in symbol
+<i>90</i>&nbsp;         * handling where number of hash collisions exceeds a safety threshold
+<i>91</i>&nbsp;         * -- which almost certainly means a denial-of-service attack via generated
+<i>92</i>&nbsp;         * duplicate hash codes.
+<i>93</i>&nbsp;         * If feature is enabled, an {@link IllegalStateException} is
+<i>94</i>&nbsp;         * thrown to indicate the suspected denial-of-service attack; if disabled, processing continues but
+<i>95</i>&nbsp;         * canonicalization (and thereby &lt;code&gt;intern()&lt;/code&gt;ing) is disabled) as protective
+<i>96</i>&nbsp;         * measure.
+<i>97</i>&nbsp;         *&lt;p&gt;
+<i>98</i>&nbsp;         * This setting is enabled by default.
+<i>99</i>&nbsp;         * 
+<i>100</i>&nbsp;         * @since 2.4
+<i>101</i>&nbsp;         */
+<b class="fc"><i>102</i>&nbsp;        FAIL_ON_SYMBOL_HASH_OVERFLOW(true),</b>
+<i>103</i>&nbsp;
+<i>104</i>&nbsp;        /**
+<i>105</i>&nbsp;         * Feature that determines whether we will use {@link BufferRecycler} with
+<i>106</i>&nbsp;         * {@link ThreadLocal} and {@link SoftReference}, for efficient reuse of
+<i>107</i>&nbsp;         * underlying input/output buffers.
+<i>108</i>&nbsp;         * This usually makes sense on normal J2SE/J2EE server-side processing;
+<i>109</i>&nbsp;         * but may not make sense on platforms where {@link SoftReference} handling
+<i>110</i>&nbsp;         * is broken (like Android), or if there are retention issues due to
+<i>111</i>&nbsp;         * {@link ThreadLocal} (see
+<i>112</i>&nbsp;         * &lt;a href=&quot;https://github.com/FasterXML/jackson-core/issues/189&quot;&gt;Issue #189&lt;/a&gt;
+<i>113</i>&nbsp;         * for a possible case)
+<i>114</i>&nbsp;         *
+<i>115</i>&nbsp;         * @since 2.6
+<i>116</i>&nbsp;         */
+<b class="fc"><i>117</i>&nbsp;        USE_THREAD_LOCAL_FOR_BUFFER_RECYCLING(true)</b>
+<i>118</i>&nbsp;        
+<i>119</i>&nbsp;        ;
+<i>120</i>&nbsp;
+<i>121</i>&nbsp;        /**
+<i>122</i>&nbsp;         * Whether feature is enabled or disabled by default.
+<i>123</i>&nbsp;         */
+<i>124</i>&nbsp;        private final boolean _defaultState;
+<i>125</i>&nbsp;        
+<i>126</i>&nbsp;        /**
+<i>127</i>&nbsp;         * Method that calculates bit set (flags) of all features that
+<i>128</i>&nbsp;         * are enabled by default.
+<i>129</i>&nbsp;         */
+<i>130</i>&nbsp;        public static int collectDefaults() {
+<b class="fc"><i>131</i>&nbsp;            int flags = 0;</b>
+<b class="fc"><i>132</i>&nbsp;            for (Feature f : values()) {</b>
+<b class="fc"><i>133</i>&nbsp;                if (f.enabledByDefault()) { flags |= f.getMask(); }</b>
+<i>134</i>&nbsp;            }
+<b class="fc"><i>135</i>&nbsp;            return flags;</b>
+<i>136</i>&nbsp;        }
+<i>137</i>&nbsp;        
+<b class="fc"><i>138</i>&nbsp;        private Feature(boolean defaultState) { _defaultState = defaultState; }</b>
+<i>139</i>&nbsp;        
+<b class="fc"><i>140</i>&nbsp;        public boolean enabledByDefault() { return _defaultState; }</b>
+<b class="fc"><i>141</i>&nbsp;        public boolean enabledIn(int flags) { return (flags &amp; getMask()) != 0; }</b>
+<b class="fc"><i>142</i>&nbsp;        public int getMask() { return (1 &lt;&lt; ordinal()); }</b>
+<i>143</i>&nbsp;    }
+<i>144</i>&nbsp;
+<i>145</i>&nbsp;    /*
+<i>146</i>&nbsp;    /**********************************************************
+<i>147</i>&nbsp;    /* Constants
+<i>148</i>&nbsp;    /**********************************************************
+<i>149</i>&nbsp;     */
+<i>150</i>&nbsp;    
+<i>151</i>&nbsp;    /**
+<i>152</i>&nbsp;     * Name used to identify JSON format
+<i>153</i>&nbsp;     * (and returned by {@link #getFormatName()}
+<i>154</i>&nbsp;     */
+<i>155</i>&nbsp;    public final static String FORMAT_NAME_JSON = &quot;JSON&quot;;
+<i>156</i>&nbsp;    
+<i>157</i>&nbsp;    /**
+<i>158</i>&nbsp;     * Bitfield (set of flags) of all factory features that are enabled by default.
+<i>159</i>&nbsp;     */
+<b class="fc"><i>160</i>&nbsp;    protected final static int DEFAULT_FACTORY_FEATURE_FLAGS = JsonFactory.Feature.collectDefaults();</b>
+<i>161</i>&nbsp;
+<i>162</i>&nbsp;    /**
+<i>163</i>&nbsp;     * Bitfield (set of flags) of all parser features that are enabled
+<i>164</i>&nbsp;     * by default.
+<i>165</i>&nbsp;     */
+<b class="fc"><i>166</i>&nbsp;    protected final static int DEFAULT_PARSER_FEATURE_FLAGS = JsonParser.Feature.collectDefaults();</b>
+<i>167</i>&nbsp;    
+<i>168</i>&nbsp;    /**
+<i>169</i>&nbsp;     * Bitfield (set of flags) of all generator features that are enabled
+<i>170</i>&nbsp;     * by default.
+<i>171</i>&nbsp;     */
+<b class="fc"><i>172</i>&nbsp;    protected final static int DEFAULT_GENERATOR_FEATURE_FLAGS = JsonGenerator.Feature.collectDefaults();</b>
+<i>173</i>&nbsp;
+<b class="fc"><i>174</i>&nbsp;    private final static SerializableString DEFAULT_ROOT_VALUE_SEPARATOR = DefaultPrettyPrinter.DEFAULT_ROOT_VALUE_SEPARATOR;</b>
+<i>175</i>&nbsp;    
+<i>176</i>&nbsp;    /*
+<i>177</i>&nbsp;    /**********************************************************
+<i>178</i>&nbsp;    /* Buffer, symbol table management
+<i>179</i>&nbsp;    /**********************************************************
+<i>180</i>&nbsp;     */
+<i>181</i>&nbsp;
+<i>182</i>&nbsp;    /**
+<i>183</i>&nbsp;     * This &lt;code&gt;ThreadLocal&lt;/code&gt; contains a {@link java.lang.ref.SoftReference}
+<i>184</i>&nbsp;     * to a {@link BufferRecycler} used to provide a low-cost
+<i>185</i>&nbsp;     * buffer recycling between reader and writer instances.
+<i>186</i>&nbsp;     */
+<b class="fc"><i>187</i>&nbsp;    final protected static ThreadLocal&lt;SoftReference&lt;BufferRecycler&gt;&gt; _recyclerRef</b>
+<i>188</i>&nbsp;        = new ThreadLocal&lt;SoftReference&lt;BufferRecycler&gt;&gt;();
+<i>189</i>&nbsp;
+<i>190</i>&nbsp;    /**
+<i>191</i>&nbsp;     * Each factory comes equipped with a shared root symbol table.
+<i>192</i>&nbsp;     * It should not be linked back to the original blueprint, to
+<i>193</i>&nbsp;     * avoid contents from leaking between factories.
+<i>194</i>&nbsp;     */
+<b class="fc"><i>195</i>&nbsp;    protected final transient CharsToNameCanonicalizer _rootCharSymbols = CharsToNameCanonicalizer.createRoot();</b>
+<i>196</i>&nbsp;
+<i>197</i>&nbsp;    /**
+<i>198</i>&nbsp;     * Alternative to the basic symbol table, some stream-based
+<i>199</i>&nbsp;     * parsers use different name canonicalization method.
+<i>200</i>&nbsp;     *&lt;p&gt;
+<i>201</i>&nbsp;     * TODO: should clean up this; looks messy having 2 alternatives
+<i>202</i>&nbsp;     * with not very clear differences.
+<i>203</i>&nbsp;     * 
+<i>204</i>&nbsp;     * @since 2.6.0
+<i>205</i>&nbsp;     */
+<b class="fc"><i>206</i>&nbsp;    protected final transient ByteQuadsCanonicalizer _byteSymbolCanonicalizer = ByteQuadsCanonicalizer.createRoot();</b>
+<i>207</i>&nbsp;
+<i>208</i>&nbsp;    /*
+<i>209</i>&nbsp;    /**********************************************************
+<i>210</i>&nbsp;    /* Configuration
+<i>211</i>&nbsp;    /**********************************************************
+<i>212</i>&nbsp;     */
+<i>213</i>&nbsp;
+<i>214</i>&nbsp;    /**
+<i>215</i>&nbsp;     * Object that implements conversion functionality between
+<i>216</i>&nbsp;     * Java objects and JSON content. For base JsonFactory implementation
+<i>217</i>&nbsp;     * usually not set by default, but can be explicitly set.
+<i>218</i>&nbsp;     * Sub-classes (like @link org.codehaus.jackson.map.MappingJsonFactory}
+<i>219</i>&nbsp;     * usually provide an implementation.
+<i>220</i>&nbsp;     */
+<i>221</i>&nbsp;    protected ObjectCodec _objectCodec;
+<i>222</i>&nbsp;
+<i>223</i>&nbsp;    /**
+<i>224</i>&nbsp;     * Currently enabled factory features.
+<i>225</i>&nbsp;     */
+<b class="fc"><i>226</i>&nbsp;    protected int _factoryFeatures = DEFAULT_FACTORY_FEATURE_FLAGS;</b>
+<i>227</i>&nbsp;    
+<i>228</i>&nbsp;    /**
+<i>229</i>&nbsp;     * Currently enabled parser features.
+<i>230</i>&nbsp;     */
+<b class="fc"><i>231</i>&nbsp;    protected int _parserFeatures = DEFAULT_PARSER_FEATURE_FLAGS;</b>
+<i>232</i>&nbsp;
+<i>233</i>&nbsp;    /**
+<i>234</i>&nbsp;     * Currently enabled generator features.
+<i>235</i>&nbsp;     */
+<b class="fc"><i>236</i>&nbsp;    protected int _generatorFeatures = DEFAULT_GENERATOR_FEATURE_FLAGS;</b>
+<i>237</i>&nbsp;
+<i>238</i>&nbsp;    /**
+<i>239</i>&nbsp;     * Definition of custom character escapes to use for generators created
+<i>240</i>&nbsp;     * by this factory, if any. If null, standard data format specific
+<i>241</i>&nbsp;     * escapes are used.
+<i>242</i>&nbsp;     */
+<i>243</i>&nbsp;    protected CharacterEscapes _characterEscapes;
+<i>244</i>&nbsp;
+<i>245</i>&nbsp;    /**
+<i>246</i>&nbsp;     * Optional helper object that may decorate input sources, to do
+<i>247</i>&nbsp;     * additional processing on input during parsing.
+<i>248</i>&nbsp;     */
+<i>249</i>&nbsp;    protected InputDecorator _inputDecorator;
+<i>250</i>&nbsp;
+<i>251</i>&nbsp;    /**
+<i>252</i>&nbsp;     * Optional helper object that may decorate output object, to do
+<i>253</i>&nbsp;     * additional processing on output during content generation.
+<i>254</i>&nbsp;     */
+<i>255</i>&nbsp;    protected OutputDecorator _outputDecorator;
+<i>256</i>&nbsp;
+<i>257</i>&nbsp;    /**
+<i>258</i>&nbsp;     * Separator used between root-level values, if any; null indicates
+<i>259</i>&nbsp;     * &quot;do not add separator&quot;.
+<i>260</i>&nbsp;     * Default separator is a single space character.
+<i>261</i>&nbsp;     * 
+<i>262</i>&nbsp;     * @since 2.1
+<i>263</i>&nbsp;     */
+<b class="fc"><i>264</i>&nbsp;    protected SerializableString _rootValueSeparator = DEFAULT_ROOT_VALUE_SEPARATOR;</b>
+<i>265</i>&nbsp;    
+<i>266</i>&nbsp;    /*
+<i>267</i>&nbsp;    /**********************************************************
+<i>268</i>&nbsp;    /* Construction
+<i>269</i>&nbsp;    /**********************************************************
+<i>270</i>&nbsp;     */
+<i>271</i>&nbsp;    
+<i>272</i>&nbsp;    /**
+<i>273</i>&nbsp;     * Default constructor used to create factory instances.
+<i>274</i>&nbsp;     * Creation of a factory instance is a light-weight operation,
+<i>275</i>&nbsp;     * but it is still a good idea to reuse limited number of
+<i>276</i>&nbsp;     * factory instances (and quite often just a single instance):
+<i>277</i>&nbsp;     * factories are used as context for storing some reused
+<i>278</i>&nbsp;     * processing objects (such as symbol tables parsers use)
+<i>279</i>&nbsp;     * and this reuse only works within context of a single
+<i>280</i>&nbsp;     * factory instance.
+<i>281</i>&nbsp;     */
+<b class="fc"><i>282</i>&nbsp;    public JsonFactory() { this(null); }</b>
+<i>283</i>&nbsp;
+<b class="fc"><i>284</i>&nbsp;    public JsonFactory(ObjectCodec oc) { _objectCodec = oc; }</b>
+<i>285</i>&nbsp;
+<i>286</i>&nbsp;    /**
+<i>287</i>&nbsp;     * Constructor used when copy()ing a factory instance.
+<i>288</i>&nbsp;     * 
+<i>289</i>&nbsp;     * @since 2.2.1
+<i>290</i>&nbsp;     */
+<i>291</i>&nbsp;    protected JsonFactory(JsonFactory src, ObjectCodec codec)
+<b class="fc"><i>292</i>&nbsp;    {</b>
+<b class="fc"><i>293</i>&nbsp;        _objectCodec = null;</b>
+<b class="fc"><i>294</i>&nbsp;        _factoryFeatures = src._factoryFeatures;</b>
+<b class="fc"><i>295</i>&nbsp;        _parserFeatures = src._parserFeatures;</b>
+<b class="fc"><i>296</i>&nbsp;        _generatorFeatures = src._generatorFeatures;</b>
+<b class="fc"><i>297</i>&nbsp;        _characterEscapes = src._characterEscapes;</b>
+<b class="fc"><i>298</i>&nbsp;        _inputDecorator = src._inputDecorator;</b>
+<b class="fc"><i>299</i>&nbsp;        _outputDecorator = src._outputDecorator;</b>
+<b class="fc"><i>300</i>&nbsp;        _rootValueSeparator = src._rootValueSeparator;</b>
+<i>301</i>&nbsp;        
+<i>302</i>&nbsp;        /* 27-Apr-2013, tatu: How about symbol table; should we try to
+<i>303</i>&nbsp;         *   reuse shared symbol tables? Could be more efficient that way;
+<i>304</i>&nbsp;         *   although can slightly add to concurrency overhead.
+<i>305</i>&nbsp;         */
+<b class="fc"><i>306</i>&nbsp;    }</b>
+<i>307</i>&nbsp;    
+<i>308</i>&nbsp;    /**
+<i>309</i>&nbsp;     * Method for constructing a new {@link JsonFactory} that has
+<i>310</i>&nbsp;     * the same settings as this instance, but is otherwise
+<i>311</i>&nbsp;     * independent (i.e. nothing is actually shared, symbol tables
+<i>312</i>&nbsp;     * are separate).
+<i>313</i>&nbsp;     * Note that {@link ObjectCodec} reference is not copied but is
+<i>314</i>&nbsp;     * set to null; caller typically needs to set it after calling
+<i>315</i>&nbsp;     * this method. Reason for this is that the codec is used for
+<i>316</i>&nbsp;     * callbacks, and assumption is that there is strict 1-to-1
+<i>317</i>&nbsp;     * mapping between codec, factory. Caller has to, then, explicitly
+<i>318</i>&nbsp;     * set codec after making the copy.
+<i>319</i>&nbsp;     * 
+<i>320</i>&nbsp;     * @since 2.1
+<i>321</i>&nbsp;     */
+<i>322</i>&nbsp;    public JsonFactory copy()
+<i>323</i>&nbsp;    {
+<b class="fc"><i>324</i>&nbsp;        _checkInvalidCopy(JsonFactory.class);</b>
+<i>325</i>&nbsp;        // as per above, do clear ObjectCodec
+<b class="fc"><i>326</i>&nbsp;        return new JsonFactory(this, null);</b>
+<i>327</i>&nbsp;    }
+<i>328</i>&nbsp;    
+<i>329</i>&nbsp;    /**
+<i>330</i>&nbsp;     * @since 2.1
+<i>331</i>&nbsp;     * @param exp
+<i>332</i>&nbsp;     */
+<i>333</i>&nbsp;    protected void _checkInvalidCopy(Class&lt;?&gt; exp)
+<i>334</i>&nbsp;    {
+<b class="fc"><i>335</i>&nbsp;        if (getClass() != exp) {</b>
+<b class="nc"><i>336</i>&nbsp;            throw new IllegalStateException(&quot;Failed copy(): &quot;+getClass().getName()</b>
+<b class="nc"><i>337</i>&nbsp;                    +&quot; (version: &quot;+version()+&quot;) does not override copy(); it has to&quot;);</b>
+<i>338</i>&nbsp;        }
+<b class="fc"><i>339</i>&nbsp;    }</b>
+<i>340</i>&nbsp;
+<i>341</i>&nbsp;    /*
+<i>342</i>&nbsp;    /**********************************************************
+<i>343</i>&nbsp;    /* Serializable overrides
+<i>344</i>&nbsp;    /**********************************************************
+<i>345</i>&nbsp;     */
+<i>346</i>&nbsp;
+<i>347</i>&nbsp;    /**
+<i>348</i>&nbsp;     * Method that we need to override to actually make restoration go
+<i>349</i>&nbsp;     * through constructors etc.
+<i>350</i>&nbsp;     * Also: must be overridden by sub-classes as well.
+<i>351</i>&nbsp;     */
+<i>352</i>&nbsp;    protected Object readResolve() {
+<b class="fc"><i>353</i>&nbsp;        return new JsonFactory(this, _objectCodec);</b>
+<i>354</i>&nbsp;    }
+<i>355</i>&nbsp;
+<i>356</i>&nbsp;    /*
+<i>357</i>&nbsp;    /**********************************************************
+<i>358</i>&nbsp;    /* Capability introspection
+<i>359</i>&nbsp;    /**********************************************************
+<i>360</i>&nbsp;     */
+<i>361</i>&nbsp;    
+<i>362</i>&nbsp;    /**
+<i>363</i>&nbsp;     * Introspection method that higher-level functionality may call
+<i>364</i>&nbsp;     * to see whether underlying data format requires a stable ordering
+<i>365</i>&nbsp;     * of object properties or not.
+<i>366</i>&nbsp;     * This is usually used for determining
+<i>367</i>&nbsp;     * whether to force a stable ordering (like alphabetic ordering by name)
+<i>368</i>&nbsp;     * if no ordering if explicitly specified.
+<i>369</i>&nbsp;     *&lt;p&gt;
+<i>370</i>&nbsp;     * Default implementation returns &lt;code&gt;false&lt;/code&gt; as JSON does NOT
+<i>371</i>&nbsp;     * require stable ordering. Formats that require ordering include positional
+<i>372</i>&nbsp;     * textual formats like &lt;code&gt;CSV&lt;/code&gt;, and schema-based binary formats
+<i>373</i>&nbsp;     * like &lt;code&gt;Avro&lt;/code&gt;.
+<i>374</i>&nbsp;     * 
+<i>375</i>&nbsp;     * @since 2.3
+<i>376</i>&nbsp;     */
+<b class="nc"><i>377</i>&nbsp;    public boolean requiresPropertyOrdering() { return false; }</b>
+<i>378</i>&nbsp;
+<i>379</i>&nbsp;    /**
+<i>380</i>&nbsp;     * Introspection method that higher-level functionality may call
+<i>381</i>&nbsp;     * to see whether underlying data format can read and write binary
+<i>382</i>&nbsp;     * data natively; that is, embeded it as-is without using encodings
+<i>383</i>&nbsp;     * such as Base64.
+<i>384</i>&nbsp;     *&lt;p&gt;
+<i>385</i>&nbsp;     * Default implementation returns &lt;code&gt;false&lt;/code&gt; as JSON does not
+<i>386</i>&nbsp;     * support native access: all binary content must use Base64 encoding.
+<i>387</i>&nbsp;     * Most binary formats (like Smile and Avro) support native binary content.
+<i>388</i>&nbsp;     * 
+<i>389</i>&nbsp;     * @since 2.3
+<i>390</i>&nbsp;     */
+<b class="nc"><i>391</i>&nbsp;    public boolean canHandleBinaryNatively() { return false; }</b>
+<i>392</i>&nbsp;
+<i>393</i>&nbsp;    /**
+<i>394</i>&nbsp;     * Introspection method that can be used by base factory to check
+<i>395</i>&nbsp;     * whether access using &lt;code&gt;char[]&lt;/code&gt; is something that actual
+<i>396</i>&nbsp;     * parser implementations can take advantage of, over having to
+<i>397</i>&nbsp;     * use {@link java.io.Reader}. Sub-types are expected to override
+<i>398</i>&nbsp;     * definition; default implementation (suitable for JSON) alleges
+<i>399</i>&nbsp;     * that optimization are possible; and thereby is likely to try
+<i>400</i>&nbsp;     * to access {@link java.lang.String} content by first copying it into
+<i>401</i>&nbsp;     * recyclable intermediate buffer.
+<i>402</i>&nbsp;     * 
+<i>403</i>&nbsp;     * @since 2.4
+<i>404</i>&nbsp;     */
+<b class="fc"><i>405</i>&nbsp;    public boolean canUseCharArrays() { return true; }</b>
+<i>406</i>&nbsp;
+<i>407</i>&nbsp;    /**
+<i>408</i>&nbsp;     * Method for accessing kind of {@link FormatFeature} that a parser
+<i>409</i>&nbsp;     * {@link JsonParser} produced by this factory would accept, if any;
+<i>410</i>&nbsp;     * &lt;code&gt;null&lt;/code&gt; returned if none.
+<i>411</i>&nbsp;     *
+<i>412</i>&nbsp;     * @since 2.6
+<i>413</i>&nbsp;     */
+<i>414</i>&nbsp;    public Class&lt;? extends FormatFeature&gt; getFormatReadFeatureType() {
+<b class="nc"><i>415</i>&nbsp;        return null;</b>
+<i>416</i>&nbsp;    }
+<i>417</i>&nbsp;
+<i>418</i>&nbsp;    /**
+<i>419</i>&nbsp;     * Method for accessing kind of {@link FormatFeature} that a parser
+<i>420</i>&nbsp;     * {@link JsonGenerator} produced by this factory would accept, if any;
+<i>421</i>&nbsp;     * &lt;code&gt;null&lt;/code&gt; returned if none.
+<i>422</i>&nbsp;     *
+<i>423</i>&nbsp;     * @since 2.6
+<i>424</i>&nbsp;     */
+<i>425</i>&nbsp;    public Class&lt;? extends FormatFeature&gt; getFormatWriteFeatureType() {
+<b class="nc"><i>426</i>&nbsp;        return null;</b>
+<i>427</i>&nbsp;    }
+<i>428</i>&nbsp;    /*
+<i>429</i>&nbsp;    /**********************************************************
+<i>430</i>&nbsp;    /* Format detection functionality
+<i>431</i>&nbsp;    /**********************************************************
+<i>432</i>&nbsp;     */
+<i>433</i>&nbsp;
+<i>434</i>&nbsp;    /**
+<i>435</i>&nbsp;     * Method that can be used to quickly check whether given schema
+<i>436</i>&nbsp;     * is something that parsers and/or generators constructed by this
+<i>437</i>&nbsp;     * factory could use. Note that this means possible use, at the level
+<i>438</i>&nbsp;     * of data format (i.e. schema is for same data format as parsers and
+<i>439</i>&nbsp;     * generators this factory constructs); individual schema instances
+<i>440</i>&nbsp;     * may have further usage restrictions.
+<i>441</i>&nbsp;     * 
+<i>442</i>&nbsp;     * @since 2.1
+<i>443</i>&nbsp;     */
+<i>444</i>&nbsp;    public boolean canUseSchema(FormatSchema schema) {
+<b class="nc"><i>445</i>&nbsp;        if (schema == null){</b>
+<b class="nc"><i>446</i>&nbsp;            return false;</b>
+<i>447</i>&nbsp;        }
+<b class="nc"><i>448</i>&nbsp;        String ourFormat = getFormatName();</b>
+<b class="nc"><i>449</i>&nbsp;        return (ourFormat != null) &amp;&amp; ourFormat.equals(schema.getSchemaType());</b>
+<i>450</i>&nbsp;    }
+<i>451</i>&nbsp;
+<i>452</i>&nbsp;    /**
+<i>453</i>&nbsp;     * Method that returns short textual id identifying format
+<i>454</i>&nbsp;     * this factory supports.
+<i>455</i>&nbsp;     *&lt;p&gt;
+<i>456</i>&nbsp;     * Note: sub-classes should override this method; default
+<i>457</i>&nbsp;     * implementation will return null for all sub-classes
+<i>458</i>&nbsp;     */
+<i>459</i>&nbsp;    public String getFormatName()
+<i>460</i>&nbsp;    {
+<i>461</i>&nbsp;        /* Somewhat nasty check: since we can&#39;t make this abstract
+<i>462</i>&nbsp;         * (due to backwards compatibility concerns), need to prevent
+<i>463</i>&nbsp;         * format name &quot;leakage&quot;
+<i>464</i>&nbsp;         */
+<b class="fc"><i>465</i>&nbsp;        if (getClass() == JsonFactory.class) {</b>
+<b class="fc"><i>466</i>&nbsp;            return FORMAT_NAME_JSON;</b>
+<i>467</i>&nbsp;        }
+<b class="nc"><i>468</i>&nbsp;        return null;</b>
+<i>469</i>&nbsp;    }
+<i>470</i>&nbsp;
+<i>471</i>&nbsp;    /**
+<i>472</i>&nbsp;     * Convenience method for trying to determine whether input via given accessor
+<i>473</i>&nbsp;     * is of format type supported by this factory.
+<i>474</i>&nbsp;     */
+<i>475</i>&nbsp;    public MatchStrength hasFormat(InputAccessor acc) throws IOException
+<i>476</i>&nbsp;    {
+<i>477</i>&nbsp;        // since we can&#39;t keep this abstract, only implement for &quot;vanilla&quot; instance
+<b class="fc"><i>478</i>&nbsp;        if (getClass() == JsonFactory.class) {</b>
+<b class="fc"><i>479</i>&nbsp;            return hasJSONFormat(acc);</b>
+<i>480</i>&nbsp;        }
+<b class="nc"><i>481</i>&nbsp;        return null;</b>
+<i>482</i>&nbsp;    }
+<i>483</i>&nbsp;
+<i>484</i>&nbsp;    /**
+<i>485</i>&nbsp;     * Method that can be called to determine if a custom
+<i>486</i>&nbsp;     * {@link ObjectCodec} is needed for binding data parsed
+<i>487</i>&nbsp;     * using {@link JsonParser} constructed by this factory
+<i>488</i>&nbsp;     * (which typically also implies the same for serialization
+<i>489</i>&nbsp;     * with {@link JsonGenerator}).
+<i>490</i>&nbsp;     * 
+<i>491</i>&nbsp;     * @return True if custom codec is needed with parsers and
+<i>492</i>&nbsp;     *   generators created by this factory; false if a general
+<i>493</i>&nbsp;     *   {@link ObjectCodec} is enough
+<i>494</i>&nbsp;     * 
+<i>495</i>&nbsp;     * @since 2.1
+<i>496</i>&nbsp;     */
+<i>497</i>&nbsp;    public boolean requiresCustomCodec() {
+<b class="nc"><i>498</i>&nbsp;        return false;</b>
+<i>499</i>&nbsp;    }
+<i>500</i>&nbsp;    
+<i>501</i>&nbsp;    /**
+<i>502</i>&nbsp;     * Helper method that can be called to determine if content accessed
+<i>503</i>&nbsp;     * using given accessor seems to be JSON content.
+<i>504</i>&nbsp;     */
+<i>505</i>&nbsp;    protected MatchStrength hasJSONFormat(InputAccessor acc) throws IOException
+<i>506</i>&nbsp;    {
+<b class="fc"><i>507</i>&nbsp;        return ByteSourceJsonBootstrapper.hasJSONFormat(acc);</b>
+<i>508</i>&nbsp;    }
+<i>509</i>&nbsp;
+<i>510</i>&nbsp;    /*
+<i>511</i>&nbsp;    /**********************************************************
+<i>512</i>&nbsp;    /* Versioned
+<i>513</i>&nbsp;    /**********************************************************
+<i>514</i>&nbsp;     */
+<i>515</i>&nbsp;
+<i>516</i>&nbsp;    @Override
+<i>517</i>&nbsp;    public Version version() {
+<b class="fc"><i>518</i>&nbsp;        return PackageVersion.VERSION;</b>
+<i>519</i>&nbsp;    }
+<i>520</i>&nbsp;
+<i>521</i>&nbsp;    /*
+<i>522</i>&nbsp;    /**********************************************************
+<i>523</i>&nbsp;    /* Configuration, factory features
+<i>524</i>&nbsp;    /**********************************************************
+<i>525</i>&nbsp;     */
+<i>526</i>&nbsp;
+<i>527</i>&nbsp;    /**
+<i>528</i>&nbsp;     * Method for enabling or disabling specified parser feature
+<i>529</i>&nbsp;     * (check {@link JsonParser.Feature} for list of features)
+<i>530</i>&nbsp;     */
+<i>531</i>&nbsp;    public final JsonFactory configure(JsonFactory.Feature f, boolean state) {
+<b class="fc"><i>532</i>&nbsp;        return state ? enable(f) : disable(f);</b>
+<i>533</i>&nbsp;    }
+<i>534</i>&nbsp;
+<i>535</i>&nbsp;    /**
+<i>536</i>&nbsp;     * Method for enabling specified parser feature
+<i>537</i>&nbsp;     * (check {@link JsonFactory.Feature} for list of features)
+<i>538</i>&nbsp;     */
+<i>539</i>&nbsp;    public JsonFactory enable(JsonFactory.Feature f) {
+<b class="fc"><i>540</i>&nbsp;        _factoryFeatures |= f.getMask();</b>
+<b class="fc"><i>541</i>&nbsp;        return this;</b>
+<i>542</i>&nbsp;    }
+<i>543</i>&nbsp;
+<i>544</i>&nbsp;    /**
+<i>545</i>&nbsp;     * Method for disabling specified parser features
+<i>546</i>&nbsp;     * (check {@link JsonFactory.Feature} for list of features)
+<i>547</i>&nbsp;     */
+<i>548</i>&nbsp;    public JsonFactory disable(JsonFactory.Feature f) {
+<b class="fc"><i>549</i>&nbsp;        _factoryFeatures &amp;= ~f.getMask();</b>
+<b class="fc"><i>550</i>&nbsp;        return this;</b>
+<i>551</i>&nbsp;    }
+<i>552</i>&nbsp;
+<i>553</i>&nbsp;    /**
+<i>554</i>&nbsp;     * Checked whether specified parser feature is enabled.
+<i>555</i>&nbsp;     */
+<i>556</i>&nbsp;    public final boolean isEnabled(JsonFactory.Feature f) {
+<b class="fc"><i>557</i>&nbsp;        return (_factoryFeatures &amp; f.getMask()) != 0;</b>
+<i>558</i>&nbsp;    }
+<i>559</i>&nbsp;    
+<i>560</i>&nbsp;    /*
+<i>561</i>&nbsp;    /**********************************************************
+<i>562</i>&nbsp;    /* Configuration, parser configuration
+<i>563</i>&nbsp;    /**********************************************************
+<i>564</i>&nbsp;     */
+<i>565</i>&nbsp;    
+<i>566</i>&nbsp;    /**
+<i>567</i>&nbsp;     * Method for enabling or disabling specified parser feature
+<i>568</i>&nbsp;     * (check {@link JsonParser.Feature} for list of features)
+<i>569</i>&nbsp;     */
+<i>570</i>&nbsp;    public final JsonFactory configure(JsonParser.Feature f, boolean state) {
+<b class="fc"><i>571</i>&nbsp;        return state ? enable(f) : disable(f);</b>
+<i>572</i>&nbsp;    }
+<i>573</i>&nbsp;
+<i>574</i>&nbsp;    /**
+<i>575</i>&nbsp;     * Method for enabling specified parser feature
+<i>576</i>&nbsp;     * (check {@link JsonParser.Feature} for list of features)
+<i>577</i>&nbsp;     */
+<i>578</i>&nbsp;    public JsonFactory enable(JsonParser.Feature f) {
+<b class="fc"><i>579</i>&nbsp;        _parserFeatures |= f.getMask();</b>
+<b class="fc"><i>580</i>&nbsp;        return this;</b>
+<i>581</i>&nbsp;    }
+<i>582</i>&nbsp;
+<i>583</i>&nbsp;    /**
+<i>584</i>&nbsp;     * Method for disabling specified parser features
+<i>585</i>&nbsp;     * (check {@link JsonParser.Feature} for list of features)
+<i>586</i>&nbsp;     */
+<i>587</i>&nbsp;    public JsonFactory disable(JsonParser.Feature f) {
+<b class="fc"><i>588</i>&nbsp;        _parserFeatures &amp;= ~f.getMask();</b>
+<b class="fc"><i>589</i>&nbsp;        return this;</b>
+<i>590</i>&nbsp;    }
+<i>591</i>&nbsp;
+<i>592</i>&nbsp;    /**
+<i>593</i>&nbsp;     * Checked whether specified parser feature is enabled.
+<i>594</i>&nbsp;     */
+<i>595</i>&nbsp;    public final boolean isEnabled(JsonParser.Feature f) {
+<b class="fc"><i>596</i>&nbsp;        return (_parserFeatures &amp; f.getMask()) != 0;</b>
+<i>597</i>&nbsp;    }
+<i>598</i>&nbsp;
+<i>599</i>&nbsp;    /**
+<i>600</i>&nbsp;     * Method for getting currently configured input decorator (if any;
+<i>601</i>&nbsp;     * there is no default decorator).
+<i>602</i>&nbsp;     */
+<i>603</i>&nbsp;    public InputDecorator getInputDecorator() {
+<b class="nc"><i>604</i>&nbsp;        return _inputDecorator;</b>
+<i>605</i>&nbsp;    }
+<i>606</i>&nbsp;
+<i>607</i>&nbsp;    /**
+<i>608</i>&nbsp;     * Method for overriding currently configured input decorator
+<i>609</i>&nbsp;     */
+<i>610</i>&nbsp;    public JsonFactory setInputDecorator(InputDecorator d) {
+<b class="fc"><i>611</i>&nbsp;        _inputDecorator = d;</b>
+<b class="fc"><i>612</i>&nbsp;        return this;</b>
+<i>613</i>&nbsp;    }
+<i>614</i>&nbsp;    
+<i>615</i>&nbsp;    /*
+<i>616</i>&nbsp;    /**********************************************************
+<i>617</i>&nbsp;    /* Configuration, generator settings
+<i>618</i>&nbsp;    /**********************************************************
+<i>619</i>&nbsp;     */
+<i>620</i>&nbsp;
+<i>621</i>&nbsp;    /**
+<i>622</i>&nbsp;     * Method for enabling or disabling specified generator feature
+<i>623</i>&nbsp;     * (check {@link JsonGenerator.Feature} for list of features)
+<i>624</i>&nbsp;     */
+<i>625</i>&nbsp;    public final JsonFactory configure(JsonGenerator.Feature f, boolean state) {
+<b class="fc"><i>626</i>&nbsp;        return state ? enable(f) : disable(f);</b>
+<i>627</i>&nbsp;    }
+<i>628</i>&nbsp;
+<i>629</i>&nbsp;
+<i>630</i>&nbsp;    /**
+<i>631</i>&nbsp;     * Method for enabling specified generator features
+<i>632</i>&nbsp;     * (check {@link JsonGenerator.Feature} for list of features)
+<i>633</i>&nbsp;     */
+<i>634</i>&nbsp;    public JsonFactory enable(JsonGenerator.Feature f) {
+<b class="fc"><i>635</i>&nbsp;        _generatorFeatures |= f.getMask();</b>
+<b class="fc"><i>636</i>&nbsp;        return this;</b>
+<i>637</i>&nbsp;    }
+<i>638</i>&nbsp;
+<i>639</i>&nbsp;    /**
+<i>640</i>&nbsp;     * Method for disabling specified generator feature
+<i>641</i>&nbsp;     * (check {@link JsonGenerator.Feature} for list of features)
+<i>642</i>&nbsp;     */
+<i>643</i>&nbsp;    public JsonFactory disable(JsonGenerator.Feature f) {
+<b class="fc"><i>644</i>&nbsp;        _generatorFeatures &amp;= ~f.getMask();</b>
+<b class="fc"><i>645</i>&nbsp;        return this;</b>
+<i>646</i>&nbsp;    }
+<i>647</i>&nbsp;
+<i>648</i>&nbsp;    /**
+<i>649</i>&nbsp;     * Check whether specified generator feature is enabled.
+<i>650</i>&nbsp;     */
+<i>651</i>&nbsp;    public final boolean isEnabled(JsonGenerator.Feature f) {
+<b class="fc"><i>652</i>&nbsp;        return (_generatorFeatures &amp; f.getMask()) != 0;</b>
+<i>653</i>&nbsp;    }
+<i>654</i>&nbsp;
+<i>655</i>&nbsp;    /**
+<i>656</i>&nbsp;     * Method for accessing custom escapes factory uses for {@link JsonGenerator}s
+<i>657</i>&nbsp;     * it creates.
+<i>658</i>&nbsp;     */
+<b class="nc"><i>659</i>&nbsp;    public CharacterEscapes getCharacterEscapes() { return _characterEscapes; }</b>
+<i>660</i>&nbsp;
+<i>661</i>&nbsp;    /**
+<i>662</i>&nbsp;     * Method for defining custom escapes factory uses for {@link JsonGenerator}s
+<i>663</i>&nbsp;     * it creates.
+<i>664</i>&nbsp;     */
+<i>665</i>&nbsp;    public JsonFactory setCharacterEscapes(CharacterEscapes esc) {
+<b class="fc"><i>666</i>&nbsp;        _characterEscapes = esc;</b>
+<b class="fc"><i>667</i>&nbsp;        return this;</b>
+<i>668</i>&nbsp;    }
+<i>669</i>&nbsp;
+<i>670</i>&nbsp;    /**
+<i>671</i>&nbsp;     * Method for getting currently configured output decorator (if any;
+<i>672</i>&nbsp;     * there is no default decorator).
+<i>673</i>&nbsp;     */
+<i>674</i>&nbsp;    public OutputDecorator getOutputDecorator() {
+<b class="nc"><i>675</i>&nbsp;        return _outputDecorator;</b>
+<i>676</i>&nbsp;    }
+<i>677</i>&nbsp;
+<i>678</i>&nbsp;    /**
+<i>679</i>&nbsp;     * Method for overriding currently configured output decorator
+<i>680</i>&nbsp;     */
+<i>681</i>&nbsp;    public JsonFactory setOutputDecorator(OutputDecorator d) {
+<b class="fc"><i>682</i>&nbsp;        _outputDecorator = d;</b>
+<b class="fc"><i>683</i>&nbsp;        return this;</b>
+<i>684</i>&nbsp;    }
+<i>685</i>&nbsp;
+<i>686</i>&nbsp;    /**
+<i>687</i>&nbsp;     * Method that allows overriding String used for separating root-level
+<i>688</i>&nbsp;     * JSON values (default is single space character)
+<i>689</i>&nbsp;     * 
+<i>690</i>&nbsp;     * @param sep Separator to use, if any; null means that no separator is
+<i>691</i>&nbsp;     *   automatically added
+<i>692</i>&nbsp;     * 
+<i>693</i>&nbsp;     * @since 2.1
+<i>694</i>&nbsp;     */
+<i>695</i>&nbsp;    public JsonFactory setRootValueSeparator(String sep) {
+<b class="fc"><i>696</i>&nbsp;        _rootValueSeparator = (sep == null) ? null : new SerializedString(sep);</b>
+<b class="fc"><i>697</i>&nbsp;        return this;</b>
+<i>698</i>&nbsp;    }
+<i>699</i>&nbsp;
+<i>700</i>&nbsp;    /**
+<i>701</i>&nbsp;     * @since 2.1
+<i>702</i>&nbsp;     */
+<i>703</i>&nbsp;    public String getRootValueSeparator() {
+<b class="nc"><i>704</i>&nbsp;        return (_rootValueSeparator == null) ? null : _rootValueSeparator.getValue();</b>
+<i>705</i>&nbsp;    }
+<i>706</i>&nbsp;    
+<i>707</i>&nbsp;    /*
+<i>708</i>&nbsp;    /**********************************************************
+<i>709</i>&nbsp;    /* Configuration, other
+<i>710</i>&nbsp;    /**********************************************************
+<i>711</i>&nbsp;     */
+<i>712</i>&nbsp;
+<i>713</i>&nbsp;    /**
+<i>714</i>&nbsp;     * Method for associating a {@link ObjectCodec} (typically
+<i>715</i>&nbsp;     * a &lt;code&gt;com.fasterxml.jackson.databind.ObjectMapper&lt;/code&gt;)
+<i>716</i>&nbsp;     * with this factory (and more importantly, parsers and generators
+<i>717</i>&nbsp;     * it constructs). This is needed to use data-binding methods
+<i>718</i>&nbsp;     * of {@link JsonParser} and {@link JsonGenerator} instances.
+<i>719</i>&nbsp;     */
+<i>720</i>&nbsp;    public JsonFactory setCodec(ObjectCodec oc) {
+<b class="nc"><i>721</i>&nbsp;        _objectCodec = oc;</b>
+<b class="nc"><i>722</i>&nbsp;        return this;</b>
+<i>723</i>&nbsp;    }
+<i>724</i>&nbsp;
+<b class="fc"><i>725</i>&nbsp;    public ObjectCodec getCodec() { return _objectCodec; }</b>
+<i>726</i>&nbsp;
+<i>727</i>&nbsp;    /*
+<i>728</i>&nbsp;    /**********************************************************
+<i>729</i>&nbsp;    /* Parser factories (new ones, as per [Issue-25])
+<i>730</i>&nbsp;    /**********************************************************
+<i>731</i>&nbsp;     */
+<i>732</i>&nbsp;
+<i>733</i>&nbsp;    /**
+<i>734</i>&nbsp;     * Method for constructing JSON parser instance to parse
+<i>735</i>&nbsp;     * contents of specified file.
+<i>736</i>&nbsp;     *
+<i>737</i>&nbsp;     *&lt;p&gt;
+<i>738</i>&nbsp;     * Encoding is auto-detected from contents according to JSON
+<i>739</i>&nbsp;     * specification recommended mechanism. Json specification
+<i>740</i>&nbsp;     * supports only UTF-8, UTF-16 and UTF-32 as valid encodings,
+<i>741</i>&nbsp;     * so auto-detection implemented only for this charsets.
+<i>742</i>&nbsp;     * For other charsets use {@link #createParser(java.io.Reader)}.
+<i>743</i>&nbsp;     *
+<i>744</i>&nbsp;     *&lt;p&gt;
+<i>745</i>&nbsp;     * Underlying input stream (needed for reading contents)
+<i>746</i>&nbsp;     * will be &lt;b&gt;owned&lt;/b&gt; (and managed, i.e. closed as need be) by
+<i>747</i>&nbsp;     * the parser, since caller has no access to it.
+<i>748</i>&nbsp;     *
+<i>749</i>&nbsp;     * @param f File that contains JSON content to parse
+<i>750</i>&nbsp;     * 
+<i>751</i>&nbsp;     * @since 2.1
+<i>752</i>&nbsp;     */
+<i>753</i>&nbsp;    public JsonParser createParser(File f) throws IOException, JsonParseException {
+<i>754</i>&nbsp;        // true, since we create InputStream from File
+<b class="fc"><i>755</i>&nbsp;        IOContext ctxt = _createContext(f, true);</b>
+<b class="fc"><i>756</i>&nbsp;        InputStream in = new FileInputStream(f);</b>
+<b class="fc"><i>757</i>&nbsp;        return _createParser(_decorate(in, ctxt), ctxt);</b>
+<i>758</i>&nbsp;    }
+<i>759</i>&nbsp;
+<i>760</i>&nbsp;    /**
+<i>761</i>&nbsp;     * Method for constructing JSON parser instance to parse
+<i>762</i>&nbsp;     * contents of resource reference by given URL.
+<i>763</i>&nbsp;     *
+<i>764</i>&nbsp;     *&lt;p&gt;
+<i>765</i>&nbsp;     * Encoding is auto-detected from contents according to JSON
+<i>766</i>&nbsp;     * specification recommended mechanism. Json specification
+<i>767</i>&nbsp;     * supports only UTF-8, UTF-16 and UTF-32 as valid encodings,
+<i>768</i>&nbsp;     * so auto-detection implemented only for this charsets.
+<i>769</i>&nbsp;     * For other charsets use {@link #createParser(java.io.Reader)}.
+<i>770</i>&nbsp;     *
+<i>771</i>&nbsp;     *&lt;p&gt;
+<i>772</i>&nbsp;     * Underlying input stream (needed for reading contents)
+<i>773</i>&nbsp;     * will be &lt;b&gt;owned&lt;/b&gt; (and managed, i.e. closed as need be) by
+<i>774</i>&nbsp;     * the parser, since caller has no access to it.
+<i>775</i>&nbsp;     *
+<i>776</i>&nbsp;     * @param url URL pointing to resource that contains JSON content to parse
+<i>777</i>&nbsp;     * 
+<i>778</i>&nbsp;     * @since 2.1
+<i>779</i>&nbsp;     */
+<i>780</i>&nbsp;    public JsonParser createParser(URL url) throws IOException, JsonParseException {
+<i>781</i>&nbsp;        // true, since we create InputStream from URL
+<b class="fc"><i>782</i>&nbsp;        IOContext ctxt = _createContext(url, true);</b>
+<b class="fc"><i>783</i>&nbsp;        InputStream in = _optimizedStreamFromURL(url);</b>
+<b class="fc"><i>784</i>&nbsp;        return _createParser(_decorate(in, ctxt), ctxt);</b>
+<i>785</i>&nbsp;    }
+<i>786</i>&nbsp;
+<i>787</i>&nbsp;    /**
+<i>788</i>&nbsp;     * Method for constructing JSON parser instance to parse
+<i>789</i>&nbsp;     * the contents accessed via specified input stream.
+<i>790</i>&nbsp;     *&lt;p&gt;
+<i>791</i>&nbsp;     * The input stream will &lt;b&gt;not be owned&lt;/b&gt; by
+<i>792</i>&nbsp;     * the parser, it will still be managed (i.e. closed if
+<i>793</i>&nbsp;     * end-of-stream is reacher, or parser close method called)
+<i>794</i>&nbsp;     * if (and only if) {@link com.fasterxml.jackson.core.JsonParser.Feature#AUTO_CLOSE_SOURCE}
+<i>795</i>&nbsp;     * is enabled.
+<i>796</i>&nbsp;     *&lt;p&gt;
+<i>797</i>&nbsp;     *
+<i>798</i>&nbsp;     * Note: no encoding argument is taken since it can always be
+<i>799</i>&nbsp;     * auto-detected as suggested by JSON RFC. Json specification
+<i>800</i>&nbsp;     * supports only UTF-8, UTF-16 and UTF-32 as valid encodings,
+<i>801</i>&nbsp;     * so auto-detection implemented only for this charsets.
+<i>802</i>&nbsp;     * For other charsets use {@link #createParser(java.io.Reader)}.
+<i>803</i>&nbsp;     *
+<i>804</i>&nbsp;     * @param in InputStream to use for reading JSON content to parse
+<i>805</i>&nbsp;     * 
+<i>806</i>&nbsp;     * @since 2.1
+<i>807</i>&nbsp;     */
+<i>808</i>&nbsp;    public JsonParser createParser(InputStream in) throws IOException, JsonParseException {
+<b class="fc"><i>809</i>&nbsp;        IOContext ctxt = _createContext(in, false);</b>
+<b class="fc"><i>810</i>&nbsp;        return _createParser(_decorate(in, ctxt), ctxt);</b>
+<i>811</i>&nbsp;    }
+<i>812</i>&nbsp;    
+<i>813</i>&nbsp;    /**
+<i>814</i>&nbsp;     * Method for constructing parser for parsing
+<i>815</i>&nbsp;     * the contents accessed via specified Reader.
+<i>816</i>&nbsp;     &lt;p&gt;
+<i>817</i>&nbsp;     * The read stream will &lt;b&gt;not be owned&lt;/b&gt; by
+<i>818</i>&nbsp;     * the parser, it will still be managed (i.e. closed if
+<i>819</i>&nbsp;     * end-of-stream is reacher, or parser close method called)
+<i>820</i>&nbsp;     * if (and only if) {@link com.fasterxml.jackson.core.JsonParser.Feature#AUTO_CLOSE_SOURCE}
+<i>821</i>&nbsp;     * is enabled.
+<i>822</i>&nbsp;     *
+<i>823</i>&nbsp;     * @param r Reader to use for reading JSON content to parse
+<i>824</i>&nbsp;     * 
+<i>825</i>&nbsp;     * @since 2.1
+<i>826</i>&nbsp;     */
+<i>827</i>&nbsp;    public JsonParser createParser(Reader r) throws IOException, JsonParseException {
+<i>828</i>&nbsp;        // false -&gt; we do NOT own Reader (did not create it)
+<b class="fc"><i>829</i>&nbsp;        IOContext ctxt = _createContext(r, false);</b>
+<b class="fc"><i>830</i>&nbsp;        return _createParser(_decorate(r, ctxt), ctxt);</b>
+<i>831</i>&nbsp;    }
+<i>832</i>&nbsp;
+<i>833</i>&nbsp;    /**
+<i>834</i>&nbsp;     * Method for constructing parser for parsing
+<i>835</i>&nbsp;     * the contents of given byte array.
+<i>836</i>&nbsp;     * 
+<i>837</i>&nbsp;     * @since 2.1
+<i>838</i>&nbsp;     */
+<i>839</i>&nbsp;    public JsonParser createParser(byte[] data) throws IOException, JsonParseException {
+<b class="fc"><i>840</i>&nbsp;        IOContext ctxt = _createContext(data, true);</b>
+<b class="fc"><i>841</i>&nbsp;        if (_inputDecorator != null) {</b>
+<b class="fc"><i>842</i>&nbsp;            InputStream in = _inputDecorator.decorate(ctxt, data, 0, data.length);</b>
+<b class="fc"><i>843</i>&nbsp;            if (in != null) {</b>
+<b class="fc"><i>844</i>&nbsp;                return _createParser(in, ctxt);</b>
+<i>845</i>&nbsp;            }
+<i>846</i>&nbsp;        }
+<b class="fc"><i>847</i>&nbsp;        return _createParser(data, 0, data.length, ctxt);</b>
+<i>848</i>&nbsp;    }
+<i>849</i>&nbsp;
+<i>850</i>&nbsp;    /**
+<i>851</i>&nbsp;     * Method for constructing parser for parsing
+<i>852</i>&nbsp;     * the contents of given byte array.
+<i>853</i>&nbsp;     * 
+<i>854</i>&nbsp;     * @param data Buffer that contains data to parse
+<i>855</i>&nbsp;     * @param offset Offset of the first data byte within buffer
+<i>856</i>&nbsp;     * @param len Length of contents to parse within buffer
+<i>857</i>&nbsp;     * 
+<i>858</i>&nbsp;     * @since 2.1
+<i>859</i>&nbsp;     */
+<i>860</i>&nbsp;    public JsonParser createParser(byte[] data, int offset, int len) throws IOException, JsonParseException {
+<b class="fc"><i>861</i>&nbsp;        IOContext ctxt = _createContext(data, true);</b>
+<i>862</i>&nbsp;        // [JACKSON-512]: allow wrapping with InputDecorator
+<b class="fc"><i>863</i>&nbsp;        if (_inputDecorator != null) {</b>
+<b class="nc"><i>864</i>&nbsp;            InputStream in = _inputDecorator.decorate(ctxt, data, offset, len);</b>
+<b class="nc"><i>865</i>&nbsp;            if (in != null) {</b>
+<b class="nc"><i>866</i>&nbsp;                return _createParser(in, ctxt);</b>
+<i>867</i>&nbsp;            }
+<i>868</i>&nbsp;        }
+<b class="fc"><i>869</i>&nbsp;        return _createParser(data, offset, len, ctxt);</b>
+<i>870</i>&nbsp;    }
+<i>871</i>&nbsp;
+<i>872</i>&nbsp;    /**
+<i>873</i>&nbsp;     * Method for constructing parser for parsing
+<i>874</i>&nbsp;     * contents of given String.
+<i>875</i>&nbsp;     * 
+<i>876</i>&nbsp;     * @since 2.1
+<i>877</i>&nbsp;     */
+<i>878</i>&nbsp;    public JsonParser createParser(String content) throws IOException, JsonParseException {
+<b class="fc"><i>879</i>&nbsp;        final int strLen = content.length();</b>
+<i>880</i>&nbsp;        // Actually, let&#39;s use this for medium-sized content, up to 64kB chunk (32kb char)
+<b class="fc"><i>881</i>&nbsp;        if ((_inputDecorator != null) || (strLen &gt; 0x8000) || !canUseCharArrays()) {</b>
+<i>882</i>&nbsp;            // easier to just wrap in a Reader than extend InputDecorator; or, if content
+<i>883</i>&nbsp;            // is too long for us to copy it over
+<b class="fc"><i>884</i>&nbsp;            return createParser(new StringReader(content));</b>
+<i>885</i>&nbsp;        }
+<b class="fc"><i>886</i>&nbsp;        IOContext ctxt = _createContext(content, true);</b>
+<b class="fc"><i>887</i>&nbsp;        char[] buf = ctxt.allocTokenBuffer(strLen);</b>
+<b class="fc"><i>888</i>&nbsp;        content.getChars(0, strLen, buf, 0);</b>
+<b class="fc"><i>889</i>&nbsp;        return _createParser(buf, 0, strLen, ctxt, true);</b>
+<i>890</i>&nbsp;    }
+<i>891</i>&nbsp;
+<i>892</i>&nbsp;    /**
+<i>893</i>&nbsp;     * Method for constructing parser for parsing
+<i>894</i>&nbsp;     * contents of given char array.
+<i>895</i>&nbsp;     * 
+<i>896</i>&nbsp;     * @since 2.4
+<i>897</i>&nbsp;     */
+<i>898</i>&nbsp;    public JsonParser createParser(char[] content) throws IOException {
+<b class="fc"><i>899</i>&nbsp;        return createParser(content, 0, content.length);</b>
+<i>900</i>&nbsp;    }
+<i>901</i>&nbsp;    
+<i>902</i>&nbsp;    /**
+<i>903</i>&nbsp;     * Method for constructing parser for parsing contents of given char array.
+<i>904</i>&nbsp;     * 
+<i>905</i>&nbsp;     * @since 2.4
+<i>906</i>&nbsp;     */
+<i>907</i>&nbsp;    public JsonParser createParser(char[] content, int offset, int len) throws IOException {
+<b class="fc"><i>908</i>&nbsp;        if (_inputDecorator != null) { // easier to just wrap in a Reader than extend InputDecorator</b>
+<b class="nc"><i>909</i>&nbsp;            return createParser(new CharArrayReader(content, offset, len));</b>
+<i>910</i>&nbsp;        }
+<b class="fc"><i>911</i>&nbsp;        return _createParser(content, offset, len, _createContext(content, true),</b>
+<i>912</i>&nbsp;                // important: buffer is NOT recyclable, as it&#39;s from caller
+<i>913</i>&nbsp;                false);
+<i>914</i>&nbsp;    }
+<i>915</i>&nbsp;
+<i>916</i>&nbsp;    /**
+<i>917</i>&nbsp;     * @since 2.8
+<i>918</i>&nbsp;     */
+<i>919</i>&nbsp;    public JsonParser createParser(DataInput in) throws IOException {
+<b class="fc"><i>920</i>&nbsp;        IOContext ctxt = _createContext(in, false);</b>
+<b class="fc"><i>921</i>&nbsp;        return _createParser(_decorate(in, ctxt), ctxt);</b>
+<i>922</i>&nbsp;    }
+<i>923</i>&nbsp;
+<i>924</i>&nbsp;    /*
+<i>925</i>&nbsp;    /**********************************************************
+<i>926</i>&nbsp;    /* Parser factories (old ones, pre-2.2)
+<i>927</i>&nbsp;    /**********************************************************
+<i>928</i>&nbsp;     */
+<i>929</i>&nbsp;
+<i>930</i>&nbsp;    /**
+<i>931</i>&nbsp;     * Method for constructing JSON parser instance to parse
+<i>932</i>&nbsp;     * contents of specified file.
+<i>933</i>&nbsp;     *&lt;p&gt;
+<i>934</i>&nbsp;     * Encoding is auto-detected from contents according to JSON
+<i>935</i>&nbsp;     * specification recommended mechanism. Json specification
+<i>936</i>&nbsp;     * supports only UTF-8, UTF-16 and UTF-32 as valid encodings,
+<i>937</i>&nbsp;     * so auto-detection implemented only for this charsets.
+<i>938</i>&nbsp;     * For other charsets use {@link #createParser(java.io.Reader)}.
+<i>939</i>&nbsp;     *
+<i>940</i>&nbsp;     *&lt;p&gt;
+<i>941</i>&nbsp;     * Underlying input stream (needed for reading contents)
+<i>942</i>&nbsp;     * will be &lt;b&gt;owned&lt;/b&gt; (and managed, i.e. closed as need be) by
+<i>943</i>&nbsp;     * the parser, since caller has no access to it.
+<i>944</i>&nbsp;     *
+<i>945</i>&nbsp;     * @param f File that contains JSON content to parse
+<i>946</i>&nbsp;     * 
+<i>947</i>&nbsp;     * @deprecated Since 2.2, use {@link #createParser(File)} instead.
+<i>948</i>&nbsp;     */
+<i>949</i>&nbsp;    @Deprecated
+<i>950</i>&nbsp;    public JsonParser createJsonParser(File f) throws IOException, JsonParseException {
+<b class="nc"><i>951</i>&nbsp;        return createParser(f);</b>
+<i>952</i>&nbsp;    }
+<i>953</i>&nbsp;
+<i>954</i>&nbsp;    /**
+<i>955</i>&nbsp;     * Method for constructing JSON parser instance to parse
+<i>956</i>&nbsp;     * contents of resource reference by given URL.
+<i>957</i>&nbsp;     *
+<i>958</i>&nbsp;     *&lt;p&gt;
+<i>959</i>&nbsp;     * Encoding is auto-detected from contents according to JSON
+<i>960</i>&nbsp;     * specification recommended mechanism. Json specification
+<i>961</i>&nbsp;     * supports only UTF-8, UTF-16 and UTF-32 as valid encodings,
+<i>962</i>&nbsp;     * so auto-detection implemented only for this charsets.
+<i>963</i>&nbsp;     * For other charsets use {@link #createParser(java.io.Reader)}.
+<i>964</i>&nbsp;     *
+<i>965</i>&nbsp;     *&lt;p&gt;
+<i>966</i>&nbsp;     * Underlying input stream (needed for reading contents)
+<i>967</i>&nbsp;     * will be &lt;b&gt;owned&lt;/b&gt; (and managed, i.e. closed as need be) by
+<i>968</i>&nbsp;     * the parser, since caller has no access to it.
+<i>969</i>&nbsp;     *
+<i>970</i>&nbsp;     * @param url URL pointing to resource that contains JSON content to parse
+<i>971</i>&nbsp;     * 
+<i>972</i>&nbsp;     * @deprecated Since 2.2, use {@link #createParser(URL)} instead.
+<i>973</i>&nbsp;     */
+<i>974</i>&nbsp;    @Deprecated
+<i>975</i>&nbsp;    public JsonParser createJsonParser(URL url) throws IOException, JsonParseException {
+<b class="nc"><i>976</i>&nbsp;        return createParser(url);</b>
+<i>977</i>&nbsp;    }
+<i>978</i>&nbsp;
+<i>979</i>&nbsp;    /**
+<i>980</i>&nbsp;     * Method for constructing JSON parser instance to parse
+<i>981</i>&nbsp;     * the contents accessed via specified input stream.
+<i>982</i>&nbsp;     *&lt;p&gt;
+<i>983</i>&nbsp;     * The input stream will &lt;b&gt;not be owned&lt;/b&gt; by
+<i>984</i>&nbsp;     * the parser, it will still be managed (i.e. closed if
+<i>985</i>&nbsp;     * end-of-stream is reacher, or parser close method called)
+<i>986</i>&nbsp;     * if (and only if) {@link com.fasterxml.jackson.core.JsonParser.Feature#AUTO_CLOSE_SOURCE}
+<i>987</i>&nbsp;     * is enabled.
+<i>988</i>&nbsp;     *&lt;p&gt;
+<i>989</i>&nbsp;     *
+<i>990</i>&nbsp;     * Note: no encoding argument is taken since it can always be
+<i>991</i>&nbsp;     * auto-detected as suggested by JSON RFC. Json specification
+<i>992</i>&nbsp;     * supports only UTF-8, UTF-16 and UTF-32 as valid encodings,
+<i>993</i>&nbsp;     * so auto-detection implemented only for this charsets.
+<i>994</i>&nbsp;     * For other charsets use {@link #createParser(java.io.Reader)}.
+<i>995</i>&nbsp;     *
+<i>996</i>&nbsp;     * @param in InputStream to use for reading JSON content to parse
+<i>997</i>&nbsp;     * 
+<i>998</i>&nbsp;     * @deprecated Since 2.2, use {@link #createParser(InputStream)} instead.
+<i>999</i>&nbsp;     */
+<i>1000</i>&nbsp;    @Deprecated
+<i>1001</i>&nbsp;    public JsonParser createJsonParser(InputStream in) throws IOException, JsonParseException {
+<b class="nc"><i>1002</i>&nbsp;        return createParser(in);</b>
+<i>1003</i>&nbsp;    }
+<i>1004</i>&nbsp;
+<i>1005</i>&nbsp;    /**
+<i>1006</i>&nbsp;     * Method for constructing parser for parsing
+<i>1007</i>&nbsp;     * the contents accessed via specified Reader.
+<i>1008</i>&nbsp;     &lt;p&gt;
+<i>1009</i>&nbsp;     * The read stream will &lt;b&gt;not be owned&lt;/b&gt; by
+<i>1010</i>&nbsp;     * the parser, it will still be managed (i.e. closed if
+<i>1011</i>&nbsp;     * end-of-stream is reacher, or parser close method called)
+<i>1012</i>&nbsp;     * if (and only if) {@link com.fasterxml.jackson.core.JsonParser.Feature#AUTO_CLOSE_SOURCE}
+<i>1013</i>&nbsp;     * is enabled.
+<i>1014</i>&nbsp;     *
+<i>1015</i>&nbsp;     * @param r Reader to use for reading JSON content to parse
+<i>1016</i>&nbsp;     * 
+<i>1017</i>&nbsp;     * @deprecated Since 2.2, use {@link #createParser(Reader)} instead.
+<i>1018</i>&nbsp;     */
+<i>1019</i>&nbsp;    @Deprecated
+<i>1020</i>&nbsp;    public JsonParser createJsonParser(Reader r) throws IOException, JsonParseException {
+<b class="nc"><i>1021</i>&nbsp;        return createParser(r);</b>
+<i>1022</i>&nbsp;    }
+<i>1023</i>&nbsp;
+<i>1024</i>&nbsp;    /**
+<i>1025</i>&nbsp;     * Method for constructing parser for parsing the contents of given byte array.
+<i>1026</i>&nbsp;     * 
+<i>1027</i>&nbsp;     * @deprecated Since 2.2, use {@link #createParser(byte[])} instead.
+<i>1028</i>&nbsp;     */
+<i>1029</i>&nbsp;    @Deprecated
+<i>1030</i>&nbsp;    public JsonParser createJsonParser(byte[] data) throws IOException, JsonParseException {
+<b class="nc"><i>1031</i>&nbsp;        return createParser(data);</b>
+<i>1032</i>&nbsp;    }
+<i>1033</i>&nbsp;
+<i>1034</i>&nbsp;    /**
+<i>1035</i>&nbsp;     * Method for constructing parser for parsing
+<i>1036</i>&nbsp;     * the contents of given byte array.
+<i>1037</i>&nbsp;     * 
+<i>1038</i>&nbsp;     * @param data Buffer that contains data to parse
+<i>1039</i>&nbsp;     * @param offset Offset of the first data byte within buffer
+<i>1040</i>&nbsp;     * @param len Length of contents to parse within buffer
+<i>1041</i>&nbsp;     * 
+<i>1042</i>&nbsp;     * @deprecated Since 2.2, use {@link #createParser(byte[],int,int)} instead.
+<i>1043</i>&nbsp;     */
+<i>1044</i>&nbsp;    @Deprecated
+<i>1045</i>&nbsp;    public JsonParser createJsonParser(byte[] data, int offset, int len) throws IOException, JsonParseException {
+<b class="nc"><i>1046</i>&nbsp;        return createParser(data, offset, len);</b>
+<i>1047</i>&nbsp;    }
+<i>1048</i>&nbsp;
+<i>1049</i>&nbsp;    /**
+<i>1050</i>&nbsp;     * Method for constructing parser for parsing
+<i>1051</i>&nbsp;     * contents of given String.
+<i>1052</i>&nbsp;     * 
+<i>1053</i>&nbsp;     * @deprecated Since 2.2, use {@link #createParser(String)} instead.
+<i>1054</i>&nbsp;     */
+<i>1055</i>&nbsp;    @Deprecated
+<i>1056</i>&nbsp;    public JsonParser createJsonParser(String content) throws IOException, JsonParseException {
+<b class="nc"><i>1057</i>&nbsp;        return createParser(content);</b>
+<i>1058</i>&nbsp;    }
+<i>1059</i>&nbsp;
+<i>1060</i>&nbsp;    /*
+<i>1061</i>&nbsp;    /**********************************************************
+<i>1062</i>&nbsp;    /* Generator factories, new (as per [Issue-25]
+<i>1063</i>&nbsp;    /**********************************************************
+<i>1064</i>&nbsp;     */
+<i>1065</i>&nbsp;
+<i>1066</i>&nbsp;    /**
+<i>1067</i>&nbsp;     * Method for constructing JSON generator for writing JSON content
+<i>1068</i>&nbsp;     * using specified output stream.
+<i>1069</i>&nbsp;     * Encoding to use must be specified, and needs to be one of available
+<i>1070</i>&nbsp;     * types (as per JSON specification).
+<i>1071</i>&nbsp;     *&lt;p&gt;
+<i>1072</i>&nbsp;     * Underlying stream &lt;b&gt;is NOT owned&lt;/b&gt; by the generator constructed,
+<i>1073</i>&nbsp;     * so that generator will NOT close the output stream when
+<i>1074</i>&nbsp;     * {@link JsonGenerator#close} is called (unless auto-closing
+<i>1075</i>&nbsp;     * feature,
+<i>1076</i>&nbsp;     * {@link com.fasterxml.jackson.core.JsonGenerator.Feature#AUTO_CLOSE_TARGET}
+<i>1077</i>&nbsp;     * is enabled).
+<i>1078</i>&nbsp;     * Using application needs to close it explicitly if this is the case.
+<i>1079</i>&nbsp;     *&lt;p&gt;
+<i>1080</i>&nbsp;     * Note: there are formats that use fixed encoding (like most binary data formats)
+<i>1081</i>&nbsp;     * and that ignore passed in encoding.
+<i>1082</i>&nbsp;     *
+<i>1083</i>&nbsp;     * @param out OutputStream to use for writing JSON content 
+<i>1084</i>&nbsp;     * @param enc Character encoding to use
+<i>1085</i>&nbsp;     * 
+<i>1086</i>&nbsp;     * @since 2.1
+<i>1087</i>&nbsp;     */
+<i>1088</i>&nbsp;    public JsonGenerator createGenerator(OutputStream out, JsonEncoding enc)
+<i>1089</i>&nbsp;        throws IOException
+<i>1090</i>&nbsp;    {
+<i>1091</i>&nbsp;        // false -&gt; we won&#39;t manage the stream unless explicitly directed to
+<b class="fc"><i>1092</i>&nbsp;        IOContext ctxt = _createContext(out, false);</b>
+<b class="fc"><i>1093</i>&nbsp;        ctxt.setEncoding(enc);</b>
+<b class="fc"><i>1094</i>&nbsp;        if (enc == JsonEncoding.UTF8) {</b>
+<b class="fc"><i>1095</i>&nbsp;            return _createUTF8Generator(_decorate(out, ctxt), ctxt);</b>
+<i>1096</i>&nbsp;        }
+<b class="nc"><i>1097</i>&nbsp;        Writer w = _createWriter(out, enc, ctxt);</b>
+<b class="nc"><i>1098</i>&nbsp;        return _createGenerator(_decorate(w, ctxt), ctxt);</b>
+<i>1099</i>&nbsp;    }
+<i>1100</i>&nbsp;
+<i>1101</i>&nbsp;    /**
+<i>1102</i>&nbsp;     * Convenience method for constructing generator that uses default
+<i>1103</i>&nbsp;     * encoding of the format (UTF-8 for JSON and most other data formats).
+<i>1104</i>&nbsp;     *&lt;p&gt;
+<i>1105</i>&nbsp;     * Note: there are formats that use fixed encoding (like most binary data formats).
+<i>1106</i>&nbsp;     * 
+<i>1107</i>&nbsp;     * @since 2.1
+<i>1108</i>&nbsp;     */
+<i>1109</i>&nbsp;    public JsonGenerator createGenerator(OutputStream out) throws IOException {
+<b class="fc"><i>1110</i>&nbsp;        return createGenerator(out, JsonEncoding.UTF8);</b>
+<i>1111</i>&nbsp;    }
+<i>1112</i>&nbsp;    
+<i>1113</i>&nbsp;    /**
+<i>1114</i>&nbsp;     * Method for constructing JSON generator for writing JSON content
+<i>1115</i>&nbsp;     * using specified Writer.
+<i>1116</i>&nbsp;     *&lt;p&gt;
+<i>1117</i>&nbsp;     * Underlying stream &lt;b&gt;is NOT owned&lt;/b&gt; by the generator constructed,
+<i>1118</i>&nbsp;     * so that generator will NOT close the Reader when
+<i>1119</i>&nbsp;     * {@link JsonGenerator#close} is called (unless auto-closing
+<i>1120</i>&nbsp;     * feature,
+<i>1121</i>&nbsp;     * {@link com.fasterxml.jackson.core.JsonGenerator.Feature#AUTO_CLOSE_TARGET} is enabled).
+<i>1122</i>&nbsp;     * Using application needs to close it explicitly.
+<i>1123</i>&nbsp;     * 
+<i>1124</i>&nbsp;     * @since 2.1
+<i>1125</i>&nbsp;     *
+<i>1126</i>&nbsp;     * @param w Writer to use for writing JSON content 
+<i>1127</i>&nbsp;     */
+<i>1128</i>&nbsp;    public JsonGenerator createGenerator(Writer w) throws IOException {
+<b class="fc"><i>1129</i>&nbsp;        IOContext ctxt = _createContext(w, false);</b>
+<b class="fc"><i>1130</i>&nbsp;        return _createGenerator(_decorate(w, ctxt), ctxt);</b>
+<i>1131</i>&nbsp;    }
+<i>1132</i>&nbsp;    
+<i>1133</i>&nbsp;    /**
+<i>1134</i>&nbsp;     * Method for constructing JSON generator for writing JSON content
+<i>1135</i>&nbsp;     * to specified file, overwriting contents it might have (or creating
+<i>1136</i>&nbsp;     * it if such file does not yet exist).
+<i>1137</i>&nbsp;     * Encoding to use must be specified, and needs to be one of available
+<i>1138</i>&nbsp;     * types (as per JSON specification).
+<i>1139</i>&nbsp;     *&lt;p&gt;
+<i>1140</i>&nbsp;     * Underlying stream &lt;b&gt;is owned&lt;/b&gt; by the generator constructed,
+<i>1141</i>&nbsp;     * i.e. generator will handle closing of file when
+<i>1142</i>&nbsp;     * {@link JsonGenerator#close} is called.
+<i>1143</i>&nbsp;     *
+<i>1144</i>&nbsp;     * @param f File to write contents to
+<i>1145</i>&nbsp;     * @param enc Character encoding to use
+<i>1146</i>&nbsp;     * 
+<i>1147</i>&nbsp;     * @since 2.1
+<i>1148</i>&nbsp;     */
+<i>1149</i>&nbsp;    public JsonGenerator createGenerator(File f, JsonEncoding enc) throws IOException
+<i>1150</i>&nbsp;    {
+<b class="fc"><i>1151</i>&nbsp;        OutputStream out = new FileOutputStream(f);</b>
+<i>1152</i>&nbsp;        // true -&gt; yes, we have to manage the stream since we created it
+<b class="fc"><i>1153</i>&nbsp;        IOContext ctxt = _createContext(out, true);</b>
+<b class="fc"><i>1154</i>&nbsp;        ctxt.setEncoding(enc);</b>
+<b class="fc"><i>1155</i>&nbsp;        if (enc == JsonEncoding.UTF8) {</b>
+<b class="nc"><i>1156</i>&nbsp;            return _createUTF8Generator(_decorate(out, ctxt), ctxt);</b>
+<i>1157</i>&nbsp;        }
+<b class="fc"><i>1158</i>&nbsp;        Writer w = _createWriter(out, enc, ctxt);</b>
+<b class="fc"><i>1159</i>&nbsp;        return _createGenerator(_decorate(w, ctxt), ctxt);</b>
+<i>1160</i>&nbsp;    }    
+<i>1161</i>&nbsp;
+<i>1162</i>&nbsp;    /**
+<i>1163</i>&nbsp;     * Method for constructing generator for writing content using specified
+<i>1164</i>&nbsp;     * {@link DataOutput} instance.
+<i>1165</i>&nbsp;     * 
+<i>1166</i>&nbsp;     * @since 2.8
+<i>1167</i>&nbsp;     */
+<i>1168</i>&nbsp;    public JsonGenerator createGenerator(DataOutput out, JsonEncoding enc) throws IOException {
+<b class="nc"><i>1169</i>&nbsp;        return createGenerator(_createDataOutputWrapper(out), enc);</b>
+<i>1170</i>&nbsp;    }
+<i>1171</i>&nbsp;
+<i>1172</i>&nbsp;    /**
+<i>1173</i>&nbsp;     * Convenience method for constructing generator that uses default
+<i>1174</i>&nbsp;     * encoding of the format (UTF-8 for JSON and most other data formats).
+<i>1175</i>&nbsp;     *&lt;p&gt;
+<i>1176</i>&nbsp;     * Note: there are formats that use fixed encoding (like most binary data formats).
+<i>1177</i>&nbsp;     * 
+<i>1178</i>&nbsp;     * @since 2.8
+<i>1179</i>&nbsp;     */
+<i>1180</i>&nbsp;    public JsonGenerator createGenerator(DataOutput out) throws IOException {
+<b class="fc"><i>1181</i>&nbsp;        return createGenerator(_createDataOutputWrapper(out), JsonEncoding.UTF8);</b>
+<i>1182</i>&nbsp;    }
+<i>1183</i>&nbsp;
+<i>1184</i>&nbsp;    /*
+<i>1185</i>&nbsp;    /**********************************************************
+<i>1186</i>&nbsp;    /* Generator factories, old (pre-2.2)
+<i>1187</i>&nbsp;    /**********************************************************
+<i>1188</i>&nbsp;     */
+<i>1189</i>&nbsp;
+<i>1190</i>&nbsp;    /**
+<i>1191</i>&nbsp;     * Method for constructing JSON generator for writing JSON content
+<i>1192</i>&nbsp;     * using specified output stream.
+<i>1193</i>&nbsp;     * Encoding to use must be specified, and needs to be one of available
+<i>1194</i>&nbsp;     * types (as per JSON specification).
+<i>1195</i>&nbsp;     *&lt;p&gt;
+<i>1196</i>&nbsp;     * Underlying stream &lt;b&gt;is NOT owned&lt;/b&gt; by the generator constructed,
+<i>1197</i>&nbsp;     * so that generator will NOT close the output stream when
+<i>1198</i>&nbsp;     * {@link JsonGenerator#close} is called (unless auto-closing
+<i>1199</i>&nbsp;     * feature,
+<i>1200</i>&nbsp;     * {@link com.fasterxml.jackson.core.JsonGenerator.Feature#AUTO_CLOSE_TARGET}
+<i>1201</i>&nbsp;     * is enabled).
+<i>1202</i>&nbsp;     * Using application needs to close it explicitly if this is the case.
+<i>1203</i>&nbsp;     *&lt;p&gt;
+<i>1204</i>&nbsp;     * Note: there are formats that use fixed encoding (like most binary data formats)
+<i>1205</i>&nbsp;     * and that ignore passed in encoding.
+<i>1206</i>&nbsp;     *
+<i>1207</i>&nbsp;     * @param out OutputStream to use for writing JSON content 
+<i>1208</i>&nbsp;     * @param enc Character encoding to use
+<i>1209</i>&nbsp;     *
+<i>1210</i>&nbsp;     * @deprecated Since 2.2, use {@link #createGenerator(OutputStream, JsonEncoding)} instead.
+<i>1211</i>&nbsp;     */
+<i>1212</i>&nbsp;    @Deprecated
+<i>1213</i>&nbsp;    public JsonGenerator createJsonGenerator(OutputStream out, JsonEncoding enc) throws IOException {
+<b class="nc"><i>1214</i>&nbsp;        return createGenerator(out, enc);</b>
+<i>1215</i>&nbsp;    }
+<i>1216</i>&nbsp;
+<i>1217</i>&nbsp;    /**
+<i>1218</i>&nbsp;     * Method for constructing JSON generator for writing JSON content
+<i>1219</i>&nbsp;     * using specified Writer.
+<i>1220</i>&nbsp;     *&lt;p&gt;
+<i>1221</i>&nbsp;     * Underlying stream &lt;b&gt;is NOT owned&lt;/b&gt; by the generator constructed,
+<i>1222</i>&nbsp;     * so that generator will NOT close the Reader when
+<i>1223</i>&nbsp;     * {@link JsonGenerator#close} is called (unless auto-closing
+<i>1224</i>&nbsp;     * feature,
+<i>1225</i>&nbsp;     * {@link com.fasterxml.jackson.core.JsonGenerator.Feature#AUTO_CLOSE_TARGET} is enabled).
+<i>1226</i>&nbsp;     * Using application needs to close it explicitly.
+<i>1227</i>&nbsp;     *
+<i>1228</i>&nbsp;     * @param out Writer to use for writing JSON content 
+<i>1229</i>&nbsp;     * 
+<i>1230</i>&nbsp;     * @deprecated Since 2.2, use {@link #createGenerator(Writer)} instead.
+<i>1231</i>&nbsp;     */
+<i>1232</i>&nbsp;    @Deprecated
+<i>1233</i>&nbsp;    public JsonGenerator createJsonGenerator(Writer out) throws IOException {
+<b class="nc"><i>1234</i>&nbsp;        return createGenerator(out);</b>
+<i>1235</i>&nbsp;    }
+<i>1236</i>&nbsp;
+<i>1237</i>&nbsp;    /**
+<i>1238</i>&nbsp;     * Convenience method for constructing generator that uses default
+<i>1239</i>&nbsp;     * encoding of the format (UTF-8 for JSON and most other data formats).
+<i>1240</i>&nbsp;     *&lt;p&gt;
+<i>1241</i>&nbsp;     * Note: there are formats that use fixed encoding (like most binary data formats).
+<i>1242</i>&nbsp;     * 
+<i>1243</i>&nbsp;     * @deprecated Since 2.2, use {@link #createGenerator(OutputStream)} instead.
+<i>1244</i>&nbsp;     */
+<i>1245</i>&nbsp;    @Deprecated
+<i>1246</i>&nbsp;    public JsonGenerator createJsonGenerator(OutputStream out) throws IOException {
+<b class="nc"><i>1247</i>&nbsp;        return createGenerator(out, JsonEncoding.UTF8);</b>
+<i>1248</i>&nbsp;    }
+<i>1249</i>&nbsp;
+<i>1250</i>&nbsp;    /*
+<i>1251</i>&nbsp;    /**********************************************************
+<i>1252</i>&nbsp;    /* Factory methods used by factory for creating parser instances,
+<i>1253</i>&nbsp;    /* overridable by sub-classes
+<i>1254</i>&nbsp;    /**********************************************************
+<i>1255</i>&nbsp;     */
+<i>1256</i>&nbsp;
+<i>1257</i>&nbsp;    /**
+<i>1258</i>&nbsp;     * Overridable factory method that actually instantiates desired parser
+<i>1259</i>&nbsp;     * given {@link InputStream} and context object.
+<i>1260</i>&nbsp;     *&lt;p&gt;
+<i>1261</i>&nbsp;     * This method is specifically designed to remain
+<i>1262</i>&nbsp;     * compatible between minor versions so that sub-classes can count
+<i>1263</i>&nbsp;     * on it being called as expected. That is, it is part of official
+<i>1264</i>&nbsp;     * interface from sub-class perspective, although not a public
+<i>1265</i>&nbsp;     * method available to users of factory implementations.
+<i>1266</i>&nbsp;     * 
+<i>1267</i>&nbsp;     * @since 2.1
+<i>1268</i>&nbsp;     */
+<i>1269</i>&nbsp;    protected JsonParser _createParser(InputStream in, IOContext ctxt) throws IOException {
+<i>1270</i>&nbsp;        // As per [JACKSON-259], may want to fully disable canonicalization:
+<b class="fc"><i>1271</i>&nbsp;        return new ByteSourceJsonBootstrapper(ctxt, in).constructParser(_parserFeatures,</b>
+<i>1272</i>&nbsp;                _objectCodec, _byteSymbolCanonicalizer, _rootCharSymbols, _factoryFeatures);
+<i>1273</i>&nbsp;    }
+<i>1274</i>&nbsp;
+<i>1275</i>&nbsp;    /**
+<i>1276</i>&nbsp;     * Overridable factory method that actually instantiates parser
+<i>1277</i>&nbsp;     * using given {@link Reader} object for reading content.
+<i>1278</i>&nbsp;     *&lt;p&gt;
+<i>1279</i>&nbsp;     * This method is specifically designed to remain
+<i>1280</i>&nbsp;     * compatible between minor versions so that sub-classes can count
+<i>1281</i>&nbsp;     * on it being called as expected. That is, it is part of official
+<i>1282</i>&nbsp;     * interface from sub-class perspective, although not a public
+<i>1283</i>&nbsp;     * method available to users of factory implementations.
+<i>1284</i>&nbsp;     * 
+<i>1285</i>&nbsp;     * @since 2.1
+<i>1286</i>&nbsp;     */
+<i>1287</i>&nbsp;    protected JsonParser _createParser(Reader r, IOContext ctxt) throws IOException {
+<b class="fc"><i>1288</i>&nbsp;        return new ReaderBasedJsonParser(ctxt, _parserFeatures, r, _objectCodec,</b>
+<b class="fc"><i>1289</i>&nbsp;                _rootCharSymbols.makeChild(_factoryFeatures));</b>
+<i>1290</i>&nbsp;    }
+<i>1291</i>&nbsp;
+<i>1292</i>&nbsp;    /**
+<i>1293</i>&nbsp;     * Overridable factory method that actually instantiates parser
+<i>1294</i>&nbsp;     * using given &lt;code&gt;char[]&lt;/code&gt; object for accessing content.
+<i>1295</i>&nbsp;     * 
+<i>1296</i>&nbsp;     * @since 2.4
+<i>1297</i>&nbsp;     */
+<i>1298</i>&nbsp;    protected JsonParser _createParser(char[] data, int offset, int len, IOContext ctxt,
+<i>1299</i>&nbsp;            boolean recyclable) throws IOException {
+<b class="fc"><i>1300</i>&nbsp;        return new ReaderBasedJsonParser(ctxt, _parserFeatures, null, _objectCodec,</b>
+<b class="fc"><i>1301</i>&nbsp;                _rootCharSymbols.makeChild(_factoryFeatures),</b>
+<i>1302</i>&nbsp;                        data, offset, offset+len, recyclable);
+<i>1303</i>&nbsp;    }
+<i>1304</i>&nbsp;
+<i>1305</i>&nbsp;    /**
+<i>1306</i>&nbsp;     * Overridable factory method that actually instantiates parser
+<i>1307</i>&nbsp;     * using given {@link Reader} object for reading content
+<i>1308</i>&nbsp;     * passed as raw byte array.
+<i>1309</i>&nbsp;     *&lt;p&gt;
+<i>1310</i>&nbsp;     * This method is specifically designed to remain
+<i>1311</i>&nbsp;     * compatible between minor versions so that sub-classes can count
+<i>1312</i>&nbsp;     * on it being called as expected. That is, it is part of official
+<i>1313</i>&nbsp;     * interface from sub-class perspective, although not a public
+<i>1314</i>&nbsp;     * method available to users of factory implementations.
+<i>1315</i>&nbsp;     */
+<i>1316</i>&nbsp;    protected JsonParser _createParser(byte[] data, int offset, int len, IOContext ctxt) throws IOException
+<i>1317</i>&nbsp;    {
+<b class="fc"><i>1318</i>&nbsp;        return new ByteSourceJsonBootstrapper(ctxt, data, offset, len).constructParser(_parserFeatures,</b>
+<i>1319</i>&nbsp;                _objectCodec, _byteSymbolCanonicalizer, _rootCharSymbols, _factoryFeatures);
+<i>1320</i>&nbsp;    }
+<i>1321</i>&nbsp;
+<i>1322</i>&nbsp;    /**
+<i>1323</i>&nbsp;     * @since 2.8
+<i>1324</i>&nbsp;     */
+<i>1325</i>&nbsp;    protected JsonParser _createParser(DataInput input, IOContext ctxt) throws IOException
+<i>1326</i>&nbsp;    {
+<i>1327</i>&nbsp;        // 13-May-2016, tatu: Need to take care not to accidentally create JSON parser for
+<i>1328</i>&nbsp;        //   non-JSON input. So, bit unclean but...
+<b class="fc"><i>1329</i>&nbsp;        String format = getFormatName();</b>
+<b class="fc"><i>1330</i>&nbsp;        if (format != FORMAT_NAME_JSON) { // NOTE: only ensure override; full equality NOT needed</b>
+<b class="nc"><i>1331</i>&nbsp;            throw new UnsupportedOperationException(String.format(</b>
+<i>1332</i>&nbsp;                    &quot;InputData source not (yet?) support for this format (%s)&quot;, format));
+<i>1333</i>&nbsp;        }
+<i>1334</i>&nbsp;        // Also: while we can&#39;t do full bootstrapping (due to read-ahead limitations), should
+<i>1335</i>&nbsp;        // at least handle possible UTF-8 BOM
+<b class="fc"><i>1336</i>&nbsp;        int firstByte = ByteSourceJsonBootstrapper.skipUTF8BOM(input);</b>
+<b class="fc"><i>1337</i>&nbsp;        ByteQuadsCanonicalizer can = _byteSymbolCanonicalizer.makeChild(_factoryFeatures);</b>
+<b class="fc"><i>1338</i>&nbsp;        return new UTF8DataInputJsonParser(ctxt, _parserFeatures, input,</b>
+<i>1339</i>&nbsp;                _objectCodec, can, firstByte);
+<i>1340</i>&nbsp;    }
+<i>1341</i>&nbsp;
+<i>1342</i>&nbsp;    /*
+<i>1343</i>&nbsp;    /**********************************************************
+<i>1344</i>&nbsp;    /* Factory methods used by factory for creating generator instances,
+<i>1345</i>&nbsp;    /* overridable by sub-classes
+<i>1346</i>&nbsp;    /**********************************************************
+<i>1347</i>&nbsp;     */
+<i>1348</i>&nbsp;    
+<i>1349</i>&nbsp;    /**
+<i>1350</i>&nbsp;     * Overridable factory method that actually instantiates generator for
+<i>1351</i>&nbsp;     * given {@link Writer} and context object.
+<i>1352</i>&nbsp;     *&lt;p&gt;
+<i>1353</i>&nbsp;     * This method is specifically designed to remain
+<i>1354</i>&nbsp;     * compatible between minor versions so that sub-classes can count
+<i>1355</i>&nbsp;     * on it being called as expected. That is, it is part of official
+<i>1356</i>&nbsp;     * interface from sub-class perspective, although not a public
+<i>1357</i>&nbsp;     * method available to users of factory implementations.
+<i>1358</i>&nbsp;     */
+<i>1359</i>&nbsp;    protected JsonGenerator _createGenerator(Writer out, IOContext ctxt) throws IOException
+<i>1360</i>&nbsp;    {
+<b class="fc"><i>1361</i>&nbsp;        WriterBasedJsonGenerator gen = new WriterBasedJsonGenerator(ctxt,</b>
+<i>1362</i>&nbsp;                _generatorFeatures, _objectCodec, out);
+<b class="fc"><i>1363</i>&nbsp;        if (_characterEscapes != null) {</b>
+<b class="fc"><i>1364</i>&nbsp;            gen.setCharacterEscapes(_characterEscapes);</b>
+<i>1365</i>&nbsp;        }
+<b class="fc"><i>1366</i>&nbsp;        SerializableString rootSep = _rootValueSeparator;</b>
+<b class="fc"><i>1367</i>&nbsp;        if (rootSep != DEFAULT_ROOT_VALUE_SEPARATOR) {</b>
+<b class="fc"><i>1368</i>&nbsp;            gen.setRootValueSeparator(rootSep);</b>
+<i>1369</i>&nbsp;        }
+<b class="fc"><i>1370</i>&nbsp;        return gen;</b>
+<i>1371</i>&nbsp;    }
+<i>1372</i>&nbsp;
+<i>1373</i>&nbsp;    /**
+<i>1374</i>&nbsp;     * Overridable factory method that actually instantiates generator for
+<i>1375</i>&nbsp;     * given {@link OutputStream} and context object, using UTF-8 encoding.
+<i>1376</i>&nbsp;     *&lt;p&gt;
+<i>1377</i>&nbsp;     * This method is specifically designed to remain
+<i>1378</i>&nbsp;     * compatible between minor versions so that sub-classes can count
+<i>1379</i>&nbsp;     * on it being called as expected. That is, it is part of official
+<i>1380</i>&nbsp;     * interface from sub-class perspective, although not a public
+<i>1381</i>&nbsp;     * method available to users of factory implementations.
+<i>1382</i>&nbsp;     */
+<i>1383</i>&nbsp;    protected JsonGenerator _createUTF8Generator(OutputStream out, IOContext ctxt) throws IOException {
+<b class="fc"><i>1384</i>&nbsp;        UTF8JsonGenerator gen = new UTF8JsonGenerator(ctxt,</b>
+<i>1385</i>&nbsp;                _generatorFeatures, _objectCodec, out);
+<b class="fc"><i>1386</i>&nbsp;        if (_characterEscapes != null) {</b>
+<b class="fc"><i>1387</i>&nbsp;            gen.setCharacterEscapes(_characterEscapes);</b>
+<i>1388</i>&nbsp;        }
+<b class="fc"><i>1389</i>&nbsp;        SerializableString rootSep = _rootValueSeparator;</b>
+<b class="fc"><i>1390</i>&nbsp;        if (rootSep != DEFAULT_ROOT_VALUE_SEPARATOR) {</b>
+<b class="fc"><i>1391</i>&nbsp;            gen.setRootValueSeparator(rootSep);</b>
+<i>1392</i>&nbsp;        }
+<b class="fc"><i>1393</i>&nbsp;        return gen;</b>
+<i>1394</i>&nbsp;    }
+<i>1395</i>&nbsp;
+<i>1396</i>&nbsp;    protected Writer _createWriter(OutputStream out, JsonEncoding enc, IOContext ctxt) throws IOException
+<i>1397</i>&nbsp;    {
+<i>1398</i>&nbsp;        // note: this should not get called any more (caller checks, dispatches)
+<b class="fc"><i>1399</i>&nbsp;        if (enc == JsonEncoding.UTF8) { // We have optimized writer for UTF-8</b>
+<b class="nc"><i>1400</i>&nbsp;            return new UTF8Writer(ctxt, out);</b>
+<i>1401</i>&nbsp;        }
+<i>1402</i>&nbsp;        // not optimal, but should do unless we really care about UTF-16/32 encoding speed
+<b class="fc"><i>1403</i>&nbsp;        return new OutputStreamWriter(out, enc.getJavaName());</b>
+<i>1404</i>&nbsp;    }
+<i>1405</i>&nbsp;
+<i>1406</i>&nbsp;    /*
+<i>1407</i>&nbsp;    /**********************************************************
+<i>1408</i>&nbsp;    /* Internal factory methods, decorator handling
+<i>1409</i>&nbsp;    /**********************************************************
+<i>1410</i>&nbsp;     */
+<i>1411</i>&nbsp;
+<i>1412</i>&nbsp;    /**
+<i>1413</i>&nbsp;     * @since 2.4
+<i>1414</i>&nbsp;     */
+<i>1415</i>&nbsp;    protected final InputStream _decorate(InputStream in, IOContext ctxt) throws IOException {
+<b class="fc"><i>1416</i>&nbsp;        if (_inputDecorator != null) {</b>
+<b class="fc"><i>1417</i>&nbsp;            InputStream in2 = _inputDecorator.decorate(ctxt, in);</b>
+<b class="fc"><i>1418</i>&nbsp;            if (in2 != null) {</b>
+<b class="fc"><i>1419</i>&nbsp;                return in2;</b>
+<i>1420</i>&nbsp;            }
+<i>1421</i>&nbsp;        }
+<b class="fc"><i>1422</i>&nbsp;        return in;</b>
+<i>1423</i>&nbsp;    }
+<i>1424</i>&nbsp;
+<i>1425</i>&nbsp;    /**
+<i>1426</i>&nbsp;     * @since 2.4
+<i>1427</i>&nbsp;     */
+<i>1428</i>&nbsp;    protected final Reader _decorate(Reader in, IOContext ctxt) throws IOException {
+<b class="fc"><i>1429</i>&nbsp;        if (_inputDecorator != null) {</b>
+<b class="fc"><i>1430</i>&nbsp;            Reader in2 = _inputDecorator.decorate(ctxt, in);</b>
+<b class="fc"><i>1431</i>&nbsp;            if (in2 != null) {</b>
+<b class="fc"><i>1432</i>&nbsp;                return in2;</b>
+<i>1433</i>&nbsp;            }
+<i>1434</i>&nbsp;        }
+<b class="fc"><i>1435</i>&nbsp;        return in;</b>
+<i>1436</i>&nbsp;    }
+<i>1437</i>&nbsp;
+<i>1438</i>&nbsp;    /**
+<i>1439</i>&nbsp;     * @since 2.8
+<i>1440</i>&nbsp;     */
+<i>1441</i>&nbsp;    protected final DataInput _decorate(DataInput in, IOContext ctxt) throws IOException {
+<b class="fc"><i>1442</i>&nbsp;        if (_inputDecorator != null) {</b>
+<b class="nc"><i>1443</i>&nbsp;            DataInput in2 = _inputDecorator.decorate(ctxt, in);</b>
+<b class="nc"><i>1444</i>&nbsp;            if (in2 != null) {</b>
+<b class="nc"><i>1445</i>&nbsp;                return in2;</b>
+<i>1446</i>&nbsp;            }
+<i>1447</i>&nbsp;        }
+<b class="fc"><i>1448</i>&nbsp;        return in;</b>
+<i>1449</i>&nbsp;    }
+<i>1450</i>&nbsp;    
+<i>1451</i>&nbsp;    /**
+<i>1452</i>&nbsp;     * @since 2.4
+<i>1453</i>&nbsp;     */
+<i>1454</i>&nbsp;    protected final OutputStream _decorate(OutputStream out, IOContext ctxt) throws IOException {
+<b class="fc"><i>1455</i>&nbsp;        if (_outputDecorator != null) {</b>
+<b class="fc"><i>1456</i>&nbsp;            OutputStream out2 = _outputDecorator.decorate(ctxt, out);</b>
+<b class="fc"><i>1457</i>&nbsp;            if (out2 != null) {</b>
+<b class="fc"><i>1458</i>&nbsp;                return out2;</b>
+<i>1459</i>&nbsp;            }
+<i>1460</i>&nbsp;        }
+<b class="fc"><i>1461</i>&nbsp;        return out;</b>
+<i>1462</i>&nbsp;    }
+<i>1463</i>&nbsp;
+<i>1464</i>&nbsp;    /**
+<i>1465</i>&nbsp;     * @since 2.4
+<i>1466</i>&nbsp;     */
+<i>1467</i>&nbsp;    protected final Writer _decorate(Writer out, IOContext ctxt) throws IOException {
+<b class="fc"><i>1468</i>&nbsp;        if (_outputDecorator != null) {</b>
+<b class="fc"><i>1469</i>&nbsp;            Writer out2 = _outputDecorator.decorate(ctxt, out);</b>
+<b class="fc"><i>1470</i>&nbsp;            if (out2 != null) {</b>
+<b class="fc"><i>1471</i>&nbsp;                return out2;</b>
+<i>1472</i>&nbsp;            }
+<i>1473</i>&nbsp;        }
+<b class="fc"><i>1474</i>&nbsp;        return out;</b>
+<i>1475</i>&nbsp;    }
+<i>1476</i>&nbsp;    
+<i>1477</i>&nbsp;    /*
+<i>1478</i>&nbsp;    /**********************************************************
+<i>1479</i>&nbsp;    /* Internal factory methods, other
+<i>1480</i>&nbsp;    /**********************************************************
+<i>1481</i>&nbsp;     */
+<i>1482</i>&nbsp;
+<i>1483</i>&nbsp;    /**
+<i>1484</i>&nbsp;     * Method used by factory to create buffer recycler instances
+<i>1485</i>&nbsp;     * for parsers and generators.
+<i>1486</i>&nbsp;     *&lt;p&gt;
+<i>1487</i>&nbsp;     * Note: only public to give access for &lt;code&gt;ObjectMapper&lt;/code&gt;
+<i>1488</i>&nbsp;     */
+<i>1489</i>&nbsp;    public BufferRecycler _getBufferRecycler()
+<i>1490</i>&nbsp;    {
+<i>1491</i>&nbsp;        /* 23-Apr-2015, tatu: Let&#39;s allow disabling of buffer recycling
+<i>1492</i>&nbsp;         *   scheme, for cases where it is considered harmful (possibly
+<i>1493</i>&nbsp;         *   on Android, for example)
+<i>1494</i>&nbsp;         */
+<b class="fc"><i>1495</i>&nbsp;        if (isEnabled(Feature.USE_THREAD_LOCAL_FOR_BUFFER_RECYCLING)) {</b>
+<b class="fc"><i>1496</i>&nbsp;            SoftReference&lt;BufferRecycler&gt; ref = _recyclerRef.get();</b>
+<b class="fc"><i>1497</i>&nbsp;            BufferRecycler br = (ref == null) ? null : ref.get();</b>
+<i>1498</i>&nbsp;    
+<b class="fc"><i>1499</i>&nbsp;            if (br == null) {</b>
+<b class="fc"><i>1500</i>&nbsp;                br = new BufferRecycler();</b>
+<b class="fc"><i>1501</i>&nbsp;                _recyclerRef.set(new SoftReference&lt;BufferRecycler&gt;(br));</b>
+<i>1502</i>&nbsp;            }
+<b class="fc"><i>1503</i>&nbsp;            return br;</b>
+<i>1504</i>&nbsp;        }
+<b class="fc"><i>1505</i>&nbsp;        return new BufferRecycler();</b>
+<i>1506</i>&nbsp;    }
+<i>1507</i>&nbsp;
+<i>1508</i>&nbsp;    /**
+<i>1509</i>&nbsp;     * Overridable factory method that actually instantiates desired
+<i>1510</i>&nbsp;     * context object.
+<i>1511</i>&nbsp;     */
+<i>1512</i>&nbsp;    protected IOContext _createContext(Object srcRef, boolean resourceManaged) {
+<b class="fc"><i>1513</i>&nbsp;        return new IOContext(_getBufferRecycler(), srcRef, resourceManaged);</b>
+<i>1514</i>&nbsp;    }
+<i>1515</i>&nbsp;
+<i>1516</i>&nbsp;    /**
+<i>1517</i>&nbsp;     * @since 2.8
+<i>1518</i>&nbsp;     */
+<i>1519</i>&nbsp;    protected OutputStream _createDataOutputWrapper(DataOutput out) {
+<b class="fc"><i>1520</i>&nbsp;        return new DataOutputAsStream(out);</b>
+<i>1521</i>&nbsp;    }
+<i>1522</i>&nbsp;
+<i>1523</i>&nbsp;    /**
+<i>1524</i>&nbsp;     * Helper methods used for constructing an optimal stream for
+<i>1525</i>&nbsp;     * parsers to use, when input is to be read from an URL.
+<i>1526</i>&nbsp;     * This helps when reading file content via URL.
+<i>1527</i>&nbsp;     */
+<i>1528</i>&nbsp;    protected InputStream _optimizedStreamFromURL(URL url) throws IOException {
+<b class="fc"><i>1529</i>&nbsp;        if (&quot;file&quot;.equals(url.getProtocol())) {</b>
+<i>1530</i>&nbsp;            /* Can not do this if the path refers
+<i>1531</i>&nbsp;             * to a network drive on windows. This fixes the problem;
+<i>1532</i>&nbsp;             * might not be needed on all platforms (NFS?), but should not
+<i>1533</i>&nbsp;             * matter a lot: performance penalty of extra wrapping is more
+<i>1534</i>&nbsp;             * relevant when accessing local file system.
+<i>1535</i>&nbsp;             */
+<b class="fc"><i>1536</i>&nbsp;            String host = url.getHost();</b>
+<b class="fc"><i>1537</i>&nbsp;            if (host == null || host.length() == 0) {</b>
+<i>1538</i>&nbsp;                // [core#48]: Let&#39;s try to avoid probs with URL encoded stuff
+<b class="fc"><i>1539</i>&nbsp;                String path = url.getPath();</b>
+<b class="fc"><i>1540</i>&nbsp;                if (path.indexOf(&#39;%&#39;) &lt; 0) {</b>
+<b class="fc"><i>1541</i>&nbsp;                    return new FileInputStream(url.getPath());</b>
+<i>1542</i>&nbsp;
+<i>1543</i>&nbsp;                }
+<i>1544</i>&nbsp;                // otherwise, let&#39;s fall through and let URL decoder do its magic
+<i>1545</i>&nbsp;            }
+<i>1546</i>&nbsp;        }
+<b class="fc"><i>1547</i>&nbsp;        return url.openStream();</b>
+<i>1548</i>&nbsp;    }
+<i>1549</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 04:22</div>
+</div>
+</body>
+</html>

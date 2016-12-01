@@ -1,0 +1,174 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: InputDecorator</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.fasterxml.jackson.core.io</a> ]
+</div>
+
+<h1>Coverage Summary for Class: InputDecorator (com.fasterxml.jackson.core.io)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">InputDecorator</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (1/ 2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    50%
+  </span>
+  <span class="absValue">
+    (1/ 2)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package com.fasterxml.jackson.core.io;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import java.io.*;
+<i>4</i>&nbsp;
+<i>5</i>&nbsp;/**
+<i>6</i>&nbsp; * Handler class that can be used to decorate input sources.
+<i>7</i>&nbsp; * Typical use is to use a filter abstraction (filtered stream,
+<i>8</i>&nbsp; * reader) around original input source, and apply additional
+<i>9</i>&nbsp; * processing during read operations.
+<i>10</i>&nbsp; */
+<b class="fc"><i>11</i>&nbsp;public abstract class InputDecorator</b>
+<i>12</i>&nbsp;    implements java.io.Serializable // since 2.1
+<i>13</i>&nbsp;{
+<i>14</i>&nbsp;    private static final long serialVersionUID = 1L;
+<i>15</i>&nbsp;    
+<i>16</i>&nbsp;    /**
+<i>17</i>&nbsp;     * Method called by {@link com.fasterxml.jackson.core.JsonFactory} instance when
+<i>18</i>&nbsp;     * creating parser given an {@link InputStream}, when this decorator
+<i>19</i>&nbsp;     * has been registered.
+<i>20</i>&nbsp;     * 
+<i>21</i>&nbsp;     * @param ctxt IO context in use (provides access to declared encoding).
+<i>22</i>&nbsp;     *   NOTE: at this point context may not have all information initialized;
+<i>23</i>&nbsp;     *   specifically auto-detected encoding is only available once parsing starts,
+<i>24</i>&nbsp;     *   which may occur only after this method is called.
+<i>25</i>&nbsp;     * @param in Original input source
+<i>26</i>&nbsp;     * 
+<i>27</i>&nbsp;     * @return InputStream to use; either &#39;in&#39; as is, or decorator
+<i>28</i>&nbsp;     *   version that typically delogates to &#39;in&#39;
+<i>29</i>&nbsp;     */
+<i>30</i>&nbsp;    public abstract InputStream decorate(IOContext ctxt, InputStream in)
+<i>31</i>&nbsp;        throws IOException;
+<i>32</i>&nbsp;
+<i>33</i>&nbsp;    /**
+<i>34</i>&nbsp;     * Method called by {@link com.fasterxml.jackson.core.JsonFactory} instance when
+<i>35</i>&nbsp;     * creating parser on given &quot;raw&quot; byte source.
+<i>36</i>&nbsp;     * Method can either construct a {@link InputStream} for reading; or return
+<i>37</i>&nbsp;     * null to indicate that no wrapping should occur.
+<i>38</i>&nbsp;     * 
+<i>39</i>&nbsp;     * @param ctxt IO context in use (provides access to declared encoding)
+<i>40</i>&nbsp;     *   NOTE: at this point context may not have all information initialized;
+<i>41</i>&nbsp;     *   specifically auto-detected encoding is only available once parsing starts,
+<i>42</i>&nbsp;     *   which may occur only after this method is called.
+<i>43</i>&nbsp;     * @param src Input buffer that contains contents to parse
+<i>44</i>&nbsp;     * @param offset Offset of the first available byte in the input buffer
+<i>45</i>&nbsp;     * @param length Number of bytes available in the input buffer
+<i>46</i>&nbsp;     * 
+<i>47</i>&nbsp;     * @return Either {@link InputStream} to use as input source; or null to indicate
+<i>48</i>&nbsp;     *   that contents are to be processed as-is by caller
+<i>49</i>&nbsp;     */
+<i>50</i>&nbsp;    public abstract InputStream decorate(IOContext ctxt, byte[] src, int offset, int length)
+<i>51</i>&nbsp;        throws IOException;
+<i>52</i>&nbsp;
+<i>53</i>&nbsp;    /**
+<i>54</i>&nbsp;     * Method called by {@link com.fasterxml.jackson.core.JsonFactory} instance when
+<i>55</i>&nbsp;     * creating parser given an {@link DataInput}, when this decorator
+<i>56</i>&nbsp;     * has been registered.
+<i>57</i>&nbsp;     *&lt;p&gt;
+<i>58</i>&nbsp;     * Default implementation simply throws {@link UnsupportedOperationException}
+<i>59</i>&nbsp;     * 
+<i>60</i>&nbsp;     * @param ctxt IO context in use (provides access to declared encoding).
+<i>61</i>&nbsp;     *   NOTE: at this point context may not have all information initialized;
+<i>62</i>&nbsp;     *   specifically auto-detected encoding is only available once parsing starts,
+<i>63</i>&nbsp;     *   which may occur only after this method is called.
+<i>64</i>&nbsp;     * @param input Original input source
+<i>65</i>&nbsp;     * 
+<i>66</i>&nbsp;     * @return InputStream to use; either &#39;input&#39; as is, or decorator
+<i>67</i>&nbsp;     *   version that typically delogates to &#39;input&#39;
+<i>68</i>&nbsp;     * 
+<i>69</i>&nbsp;     * @since 2.8
+<i>70</i>&nbsp;     */
+<i>71</i>&nbsp;    public DataInput decorate(IOContext ctxt, DataInput input)
+<i>72</i>&nbsp;        throws IOException {
+<b class="nc"><i>73</i>&nbsp;        throw new UnsupportedOperationException();</b>
+<i>74</i>&nbsp;    }
+<i>75</i>&nbsp;
+<i>76</i>&nbsp;    /**
+<i>77</i>&nbsp;     * Method called by {@link com.fasterxml.jackson.core.JsonFactory} instance when
+<i>78</i>&nbsp;     * creating parser given an {@link Reader}, when this decorator
+<i>79</i>&nbsp;     * has been registered.
+<i>80</i>&nbsp;     * 
+<i>81</i>&nbsp;     * @param ctxt IO context in use (provides access to declared encoding)
+<i>82</i>&nbsp;     *   NOTE: at this point context may not have all information initialized;
+<i>83</i>&nbsp;     *   specifically auto-detected encoding is only available once parsing starts,
+<i>84</i>&nbsp;     *   which may occur only after this method is called.
+<i>85</i>&nbsp;     * @param r Original reader
+<i>86</i>&nbsp;     * 
+<i>87</i>&nbsp;     * @return Reader to use; either passed in argument, or something that
+<i>88</i>&nbsp;     *   calls it (for example, a {@link FilterReader})
+<i>89</i>&nbsp;     */
+<i>90</i>&nbsp;    public abstract Reader decorate(IOContext ctxt, Reader r) throws IOException;
+<i>91</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 04:22</div>
+</div>
+</body>
+</html>

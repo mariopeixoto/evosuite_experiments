@@ -1,0 +1,206 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: ReadWritableInstant</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time</a> ]
+</div>
+
+<h1>Coverage Summary for Class: ReadWritableInstant (org.joda.time)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+</tr>
+<tr>
+  <td class="name">ReadWritableInstant</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2005 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;/**
+<i>19</i>&nbsp; * Defines an instant in the datetime continuum that can be queried and modified.
+<i>20</i>&nbsp; * This interface expresses the datetime as milliseconds from 1970-01-01T00:00:00Z.
+<i>21</i>&nbsp; * &lt;p&gt;
+<i>22</i>&nbsp; * The implementation of this interface will be mutable.
+<i>23</i>&nbsp; * It may provide more advanced methods than those in the interface.
+<i>24</i>&nbsp; *
+<i>25</i>&nbsp; * @author Stephen Colebourne
+<i>26</i>&nbsp; * @since 1.0
+<i>27</i>&nbsp; */
+<i>28</i>&nbsp;public interface ReadWritableInstant extends ReadableInstant {
+<i>29</i>&nbsp;
+<i>30</i>&nbsp;    /**
+<i>31</i>&nbsp;     * Sets the value as the number of milliseconds since
+<i>32</i>&nbsp;     * the epoch, 1970-01-01T00:00:00Z.
+<i>33</i>&nbsp;     * 
+<i>34</i>&nbsp;     * @param instant  the milliseconds since 1970-01-01T00:00:00Z to set the
+<i>35</i>&nbsp;     * instant to
+<i>36</i>&nbsp;     * @throws IllegalArgumentException if the value is invalid
+<i>37</i>&nbsp;     */
+<i>38</i>&nbsp;    void setMillis(long instant);
+<i>39</i>&nbsp;
+<i>40</i>&nbsp;    /**
+<i>41</i>&nbsp;     * Sets the millisecond instant of this instant from another.
+<i>42</i>&nbsp;     * &lt;p&gt;
+<i>43</i>&nbsp;     * This method does not change the chronology of this instant, just the
+<i>44</i>&nbsp;     * millisecond instant.
+<i>45</i>&nbsp;     * 
+<i>46</i>&nbsp;     * @param instant  the instant to use, null means now
+<i>47</i>&nbsp;     */
+<i>48</i>&nbsp;    void setMillis(ReadableInstant instant);
+<i>49</i>&nbsp;
+<i>50</i>&nbsp;    /**
+<i>51</i>&nbsp;     * Sets the chronology of the datetime, which has no effect if not applicable.
+<i>52</i>&nbsp;     * 
+<i>53</i>&nbsp;     * @param chronology  the chronology to use, null means ISOChronology in default zone
+<i>54</i>&nbsp;     * @throws IllegalArgumentException if the value is invalid
+<i>55</i>&nbsp;     */
+<i>56</i>&nbsp;    void setChronology(Chronology chronology);
+<i>57</i>&nbsp;
+<i>58</i>&nbsp;    /**
+<i>59</i>&nbsp;     * Sets the time zone of the datetime, changing the chronology and field values.
+<i>60</i>&nbsp;     * &lt;p&gt;
+<i>61</i>&nbsp;     * Changing the zone using this method retains the millisecond instant.
+<i>62</i>&nbsp;     * The millisecond instant is adjusted in the new zone to compensate.
+<i>63</i>&nbsp;     * 
+<i>64</i>&nbsp;     * chronology. Setting the time zone does not affect the millisecond value
+<i>65</i>&nbsp;     * of this instant.
+<i>66</i>&nbsp;     * &lt;p&gt;
+<i>67</i>&nbsp;     * If the chronology already has this time zone, no change occurs.
+<i>68</i>&nbsp;     *
+<i>69</i>&nbsp;     * @param zone  the time zone to use, null means default zone
+<i>70</i>&nbsp;     * @see #setZoneRetainFields
+<i>71</i>&nbsp;     */
+<i>72</i>&nbsp;    void setZone(DateTimeZone zone);
+<i>73</i>&nbsp;
+<i>74</i>&nbsp;    /**
+<i>75</i>&nbsp;     * Sets the time zone of the datetime, changing the chronology and millisecond.
+<i>76</i>&nbsp;     * &lt;p&gt;
+<i>77</i>&nbsp;     * Changing the zone using this method retains the field values.
+<i>78</i>&nbsp;     * The millisecond instant is adjusted in the new zone to compensate.
+<i>79</i>&nbsp;     * &lt;p&gt;
+<i>80</i>&nbsp;     * If the chronology already has this time zone, no change occurs.
+<i>81</i>&nbsp;     *
+<i>82</i>&nbsp;     * @param zone  the time zone to use, null means default zone
+<i>83</i>&nbsp;     * @see #setZone
+<i>84</i>&nbsp;     */
+<i>85</i>&nbsp;    void setZoneRetainFields(DateTimeZone zone);
+<i>86</i>&nbsp;
+<i>87</i>&nbsp;    //-----------------------------------------------------------------------
+<i>88</i>&nbsp;    /**
+<i>89</i>&nbsp;     * Adds a millisecond duration to this instant.
+<i>90</i>&nbsp;     * &lt;p&gt;
+<i>91</i>&nbsp;     * This will typically change the value of ost fields.
+<i>92</i>&nbsp;     *
+<i>93</i>&nbsp;     * @param duration  the millis to add
+<i>94</i>&nbsp;     * @throws IllegalArgumentException if the value is invalid
+<i>95</i>&nbsp;     */
+<i>96</i>&nbsp;    void add(long duration);
+<i>97</i>&nbsp;
+<i>98</i>&nbsp;    /**
+<i>99</i>&nbsp;     * Adds a duration to this instant.
+<i>100</i>&nbsp;     * &lt;p&gt;
+<i>101</i>&nbsp;     * This will typically change the value of most fields.
+<i>102</i>&nbsp;     *
+<i>103</i>&nbsp;     * @param duration  the duration to add, null means add zero
+<i>104</i>&nbsp;     * @throws ArithmeticException if the result exceeds the capacity of the instant
+<i>105</i>&nbsp;     */
+<i>106</i>&nbsp;    void add(ReadableDuration duration);
+<i>107</i>&nbsp;
+<i>108</i>&nbsp;    /**
+<i>109</i>&nbsp;     * Adds a duration to this instant specifying how many times to add.
+<i>110</i>&nbsp;     * &lt;p&gt;
+<i>111</i>&nbsp;     * This will typically change the value of most fields.
+<i>112</i>&nbsp;     *
+<i>113</i>&nbsp;     * @param duration  the duration to add, null means add zero
+<i>114</i>&nbsp;     * @param scalar  direction and amount to add, which may be negative
+<i>115</i>&nbsp;     * @throws ArithmeticException if the result exceeds the capacity of the instant
+<i>116</i>&nbsp;     */
+<i>117</i>&nbsp;    void add(ReadableDuration duration, int scalar);
+<i>118</i>&nbsp;
+<i>119</i>&nbsp;    /**
+<i>120</i>&nbsp;     * Adds a period to this instant.
+<i>121</i>&nbsp;     * &lt;p&gt;
+<i>122</i>&nbsp;     * This will typically change the value of most fields.
+<i>123</i>&nbsp;     *
+<i>124</i>&nbsp;     * @param period  the period to add, null means add zero
+<i>125</i>&nbsp;     * @throws ArithmeticException if the result exceeds the capacity of the instant
+<i>126</i>&nbsp;     */
+<i>127</i>&nbsp;    void add(ReadablePeriod period);
+<i>128</i>&nbsp;
+<i>129</i>&nbsp;    /**
+<i>130</i>&nbsp;     * Adds a period to this instant specifying how many times to add.
+<i>131</i>&nbsp;     * &lt;p&gt;
+<i>132</i>&nbsp;     * This will typically change the value of most fields.
+<i>133</i>&nbsp;     *
+<i>134</i>&nbsp;     * @param period  the period to add, null means add zero
+<i>135</i>&nbsp;     * @param scalar  direction and amount to add, which may be negative
+<i>136</i>&nbsp;     * @throws ArithmeticException if the result exceeds the capacity of the instant
+<i>137</i>&nbsp;     */
+<i>138</i>&nbsp;    void add(ReadablePeriod period, int scalar);
+<i>139</i>&nbsp;
+<i>140</i>&nbsp;    //-----------------------------------------------------------------------
+<i>141</i>&nbsp;    /**
+<i>142</i>&nbsp;     * Sets the value of one of the fields of the instant, such as hourOfDay.
+<i>143</i>&nbsp;     *
+<i>144</i>&nbsp;     * @param type  a field type, usually obtained from DateTimeFieldType, null ignored
+<i>145</i>&nbsp;     * @param value  the value to set the field to
+<i>146</i>&nbsp;     * @throws IllegalArgumentException if the value is invalid
+<i>147</i>&nbsp;     */
+<i>148</i>&nbsp;    void set(DateTimeFieldType type, int value);
+<i>149</i>&nbsp;
+<i>150</i>&nbsp;    /**
+<i>151</i>&nbsp;     * Adds to the instant specifying the duration and multiple to add.
+<i>152</i>&nbsp;     *
+<i>153</i>&nbsp;     * @param type  a field type, usually obtained from DateTimeFieldType, null ignored
+<i>154</i>&nbsp;     * @param amount  the amount to add of this duration
+<i>155</i>&nbsp;     * @throws ArithmeticException if the result exceeds the capacity of the instant
+<i>156</i>&nbsp;     */
+<i>157</i>&nbsp;    void add(DurationFieldType type, int amount);
+<i>158</i>&nbsp;
+<i>159</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

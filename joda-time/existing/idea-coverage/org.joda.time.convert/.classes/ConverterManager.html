@@ -1,0 +1,680 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: ConverterManager</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time.convert</a> ]
+</div>
+
+<h1>Coverage Summary for Class: ConverterManager (org.joda.time.convert)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">ConverterManager</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (28/ 28)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    96.6%
+  </span>
+  <span class="absValue">
+    (141/ 146)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2005 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time.convert;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;import org.joda.time.JodaTimePermission;
+<i>19</i>&nbsp;
+<i>20</i>&nbsp;/**
+<i>21</i>&nbsp; * ConverterManager controls the date and time converters.
+<i>22</i>&nbsp; * &lt;p&gt;
+<i>23</i>&nbsp; * This class enables additional conversion classes to be added via
+<i>24</i>&nbsp; * {@link #addInstantConverter(InstantConverter)}, which may replace an
+<i>25</i>&nbsp; * existing converter. Similar methods exist for duration, time period and
+<i>26</i>&nbsp; * interval converters.
+<i>27</i>&nbsp; * &lt;p&gt;
+<i>28</i>&nbsp; * This class is threadsafe, so adding/removing converters can be done at any
+<i>29</i>&nbsp; * time. Updating the set of converters is relatively expensive, and so should
+<i>30</i>&nbsp; * not be performed often.
+<i>31</i>&nbsp; * &lt;p&gt;
+<i>32</i>&nbsp; * The default instant converters are:
+<i>33</i>&nbsp; * &lt;ul&gt;
+<i>34</i>&nbsp; * &lt;li&gt;ReadableInstant
+<i>35</i>&nbsp; * &lt;li&gt;String
+<i>36</i>&nbsp; * &lt;li&gt;Calendar
+<i>37</i>&nbsp; * &lt;li&gt;Date (includes sql package subclasses)
+<i>38</i>&nbsp; * &lt;li&gt;Long (milliseconds)
+<i>39</i>&nbsp; * &lt;li&gt;null (now)
+<i>40</i>&nbsp; * &lt;/ul&gt;
+<i>41</i>&nbsp; * 
+<i>42</i>&nbsp; * The default partial converters are:
+<i>43</i>&nbsp; * &lt;ul&gt;
+<i>44</i>&nbsp; * &lt;li&gt;ReadablePartial
+<i>45</i>&nbsp; * &lt;li&gt;ReadableInstant
+<i>46</i>&nbsp; * &lt;li&gt;String
+<i>47</i>&nbsp; * &lt;li&gt;Calendar
+<i>48</i>&nbsp; * &lt;li&gt;Date (includes sql package subclasses)
+<i>49</i>&nbsp; * &lt;li&gt;Long (milliseconds)
+<i>50</i>&nbsp; * &lt;li&gt;null (now)
+<i>51</i>&nbsp; * &lt;/ul&gt;
+<i>52</i>&nbsp; * 
+<i>53</i>&nbsp; * The default duration converters are:
+<i>54</i>&nbsp; * &lt;ul&gt;
+<i>55</i>&nbsp; * &lt;li&gt;ReadableDuration
+<i>56</i>&nbsp; * &lt;li&gt;ReadableInterval
+<i>57</i>&nbsp; * &lt;li&gt;String
+<i>58</i>&nbsp; * &lt;li&gt;Long (milliseconds)
+<i>59</i>&nbsp; * &lt;li&gt;null (zero ms)
+<i>60</i>&nbsp; * &lt;/ul&gt;
+<i>61</i>&nbsp; *
+<i>62</i>&nbsp; * The default time period converters are:
+<i>63</i>&nbsp; * &lt;ul&gt;
+<i>64</i>&nbsp; * &lt;li&gt;ReadablePeriod
+<i>65</i>&nbsp; * &lt;li&gt;ReadableInterval
+<i>66</i>&nbsp; * &lt;li&gt;String
+<i>67</i>&nbsp; * &lt;li&gt;null (zero)
+<i>68</i>&nbsp; * &lt;/ul&gt;
+<i>69</i>&nbsp; * 
+<i>70</i>&nbsp; * The default interval converters are:
+<i>71</i>&nbsp; * &lt;ul&gt;
+<i>72</i>&nbsp; * &lt;li&gt;ReadableInterval
+<i>73</i>&nbsp; * &lt;li&gt;String
+<i>74</i>&nbsp; * &lt;li&gt;null (zero-length from now to now)
+<i>75</i>&nbsp; * &lt;/ul&gt;
+<i>76</i>&nbsp; *
+<i>77</i>&nbsp; * @author Stephen Colebourne
+<i>78</i>&nbsp; * @author Brian S O&#39;Neill
+<i>79</i>&nbsp; * @since 1.0
+<i>80</i>&nbsp; */
+<i>81</i>&nbsp;public final class ConverterManager {
+<i>82</i>&nbsp;
+<i>83</i>&nbsp;    /**
+<i>84</i>&nbsp;     * Singleton instance, lazily loaded to avoid class loading.
+<i>85</i>&nbsp;     */
+<i>86</i>&nbsp;    private static ConverterManager INSTANCE;
+<i>87</i>&nbsp;
+<i>88</i>&nbsp;    public static ConverterManager getInstance() {
+<b class="fc"><i>89</i>&nbsp;        if (INSTANCE == null) {</b>
+<b class="fc"><i>90</i>&nbsp;            INSTANCE = new ConverterManager();</b>
+<i>91</i>&nbsp;        }
+<b class="fc"><i>92</i>&nbsp;        return INSTANCE;</b>
+<i>93</i>&nbsp;    }
+<i>94</i>&nbsp;    
+<i>95</i>&nbsp;    private ConverterSet iInstantConverters;
+<i>96</i>&nbsp;    private ConverterSet iPartialConverters;
+<i>97</i>&nbsp;    private ConverterSet iDurationConverters;
+<i>98</i>&nbsp;    private ConverterSet iPeriodConverters;
+<i>99</i>&nbsp;    private ConverterSet iIntervalConverters;
+<i>100</i>&nbsp;    
+<i>101</i>&nbsp;    /**
+<i>102</i>&nbsp;     * Restricted constructor.
+<i>103</i>&nbsp;     */
+<i>104</i>&nbsp;    protected ConverterManager() {
+<b class="fc"><i>105</i>&nbsp;        super();</b>
+<i>106</i>&nbsp;
+<b class="fc"><i>107</i>&nbsp;        iInstantConverters = new ConverterSet(new Converter[] {</b>
+<i>108</i>&nbsp;            ReadableInstantConverter.INSTANCE,
+<i>109</i>&nbsp;            StringConverter.INSTANCE,
+<i>110</i>&nbsp;            CalendarConverter.INSTANCE,
+<i>111</i>&nbsp;            DateConverter.INSTANCE,
+<i>112</i>&nbsp;            LongConverter.INSTANCE,
+<i>113</i>&nbsp;            NullConverter.INSTANCE,
+<i>114</i>&nbsp;        });
+<i>115</i>&nbsp;
+<b class="fc"><i>116</i>&nbsp;        iPartialConverters = new ConverterSet(new Converter[] {</b>
+<i>117</i>&nbsp;            ReadablePartialConverter.INSTANCE,
+<i>118</i>&nbsp;            ReadableInstantConverter.INSTANCE,
+<i>119</i>&nbsp;            StringConverter.INSTANCE,
+<i>120</i>&nbsp;            CalendarConverter.INSTANCE,
+<i>121</i>&nbsp;            DateConverter.INSTANCE,
+<i>122</i>&nbsp;            LongConverter.INSTANCE,
+<i>123</i>&nbsp;            NullConverter.INSTANCE,
+<i>124</i>&nbsp;        });
+<i>125</i>&nbsp;
+<b class="fc"><i>126</i>&nbsp;        iDurationConverters = new ConverterSet(new Converter[] {</b>
+<i>127</i>&nbsp;            ReadableDurationConverter.INSTANCE,
+<i>128</i>&nbsp;            ReadableIntervalConverter.INSTANCE,
+<i>129</i>&nbsp;            StringConverter.INSTANCE,
+<i>130</i>&nbsp;            LongConverter.INSTANCE,
+<i>131</i>&nbsp;            NullConverter.INSTANCE,
+<i>132</i>&nbsp;        });
+<i>133</i>&nbsp;
+<b class="fc"><i>134</i>&nbsp;        iPeriodConverters = new ConverterSet(new Converter[] {</b>
+<i>135</i>&nbsp;            ReadableDurationConverter.INSTANCE,
+<i>136</i>&nbsp;            ReadablePeriodConverter.INSTANCE,
+<i>137</i>&nbsp;            ReadableIntervalConverter.INSTANCE,
+<i>138</i>&nbsp;            StringConverter.INSTANCE,
+<i>139</i>&nbsp;            NullConverter.INSTANCE,
+<i>140</i>&nbsp;        });
+<i>141</i>&nbsp;
+<b class="fc"><i>142</i>&nbsp;        iIntervalConverters = new ConverterSet(new Converter[] {</b>
+<i>143</i>&nbsp;            ReadableIntervalConverter.INSTANCE,
+<i>144</i>&nbsp;            StringConverter.INSTANCE,
+<i>145</i>&nbsp;            NullConverter.INSTANCE,
+<i>146</i>&nbsp;        });
+<b class="fc"><i>147</i>&nbsp;    }</b>
+<i>148</i>&nbsp;
+<i>149</i>&nbsp;    //-----------------------------------------------------------------------
+<i>150</i>&nbsp;    /**
+<i>151</i>&nbsp;     * Gets the best converter for the object specified.
+<i>152</i>&nbsp;     * 
+<i>153</i>&nbsp;     * @param object  the object to convert
+<i>154</i>&nbsp;     * @return the converter to use
+<i>155</i>&nbsp;     * @throws IllegalArgumentException if no suitable converter
+<i>156</i>&nbsp;     * @throws IllegalStateException if multiple converters match the type
+<i>157</i>&nbsp;     * equally well
+<i>158</i>&nbsp;     */
+<i>159</i>&nbsp;    public InstantConverter getInstantConverter(Object object) {
+<b class="fc"><i>160</i>&nbsp;        InstantConverter converter =</b>
+<b class="fc"><i>161</i>&nbsp;            (InstantConverter)iInstantConverters.select(object == null ? null : object.getClass());</b>
+<b class="fc"><i>162</i>&nbsp;        if (converter != null) {</b>
+<b class="fc"><i>163</i>&nbsp;            return converter;</b>
+<i>164</i>&nbsp;        }
+<b class="fc"><i>165</i>&nbsp;        throw new IllegalArgumentException(&quot;No instant converter found for type: &quot; +</b>
+<b class="fc"><i>166</i>&nbsp;            (object == null ? &quot;null&quot; : object.getClass().getName()));</b>
+<i>167</i>&nbsp;    }
+<i>168</i>&nbsp;    
+<i>169</i>&nbsp;    //-----------------------------------------------------------------------
+<i>170</i>&nbsp;    /**
+<i>171</i>&nbsp;     * Gets a copy of the set of converters.
+<i>172</i>&nbsp;     * 
+<i>173</i>&nbsp;     * @return the converters, a copy of the real data, never null
+<i>174</i>&nbsp;     */
+<i>175</i>&nbsp;    public InstantConverter[] getInstantConverters() {
+<b class="fc"><i>176</i>&nbsp;        ConverterSet set = iInstantConverters;</b>
+<b class="fc"><i>177</i>&nbsp;        InstantConverter[] converters = new InstantConverter[set.size()];</b>
+<b class="fc"><i>178</i>&nbsp;        set.copyInto(converters);</b>
+<b class="fc"><i>179</i>&nbsp;        return converters;</b>
+<i>180</i>&nbsp;    }
+<i>181</i>&nbsp;    
+<i>182</i>&nbsp;    /**
+<i>183</i>&nbsp;     * Adds a converter to the set of converters. If a matching converter is
+<i>184</i>&nbsp;     * already in the set, the given converter replaces it. If the converter is
+<i>185</i>&nbsp;     * exactly the same as one already in the set, no changes are made.
+<i>186</i>&nbsp;     * &lt;p&gt;
+<i>187</i>&nbsp;     * The order in which converters are added is not relevent. The best
+<i>188</i>&nbsp;     * converter is selected by examining the object hierarchy.
+<i>189</i>&nbsp;     * 
+<i>190</i>&nbsp;     * @param converter  the converter to add, null ignored
+<i>191</i>&nbsp;     * @return replaced converter, or null
+<i>192</i>&nbsp;     */
+<i>193</i>&nbsp;    public InstantConverter addInstantConverter(InstantConverter converter)
+<i>194</i>&nbsp;            throws SecurityException {
+<i>195</i>&nbsp;        
+<b class="fc"><i>196</i>&nbsp;        checkAlterInstantConverters();</b>
+<b class="fc"><i>197</i>&nbsp;        if (converter == null) {</b>
+<b class="fc"><i>198</i>&nbsp;            return null;</b>
+<i>199</i>&nbsp;        }
+<b class="fc"><i>200</i>&nbsp;        InstantConverter[] removed = new InstantConverter[1];</b>
+<b class="fc"><i>201</i>&nbsp;        iInstantConverters = iInstantConverters.add(converter, removed);</b>
+<b class="fc"><i>202</i>&nbsp;        return removed[0];</b>
+<i>203</i>&nbsp;    }
+<i>204</i>&nbsp;    
+<i>205</i>&nbsp;    /**
+<i>206</i>&nbsp;     * Removes a converter from the set of converters. If the converter was
+<i>207</i>&nbsp;     * not in the set, no changes are made.
+<i>208</i>&nbsp;     * 
+<i>209</i>&nbsp;     * @param converter  the converter to remove, null ignored
+<i>210</i>&nbsp;     * @return replaced converter, or null
+<i>211</i>&nbsp;     */
+<i>212</i>&nbsp;    public InstantConverter removeInstantConverter(InstantConverter converter)
+<i>213</i>&nbsp;            throws SecurityException {
+<i>214</i>&nbsp;        
+<b class="fc"><i>215</i>&nbsp;        checkAlterInstantConverters();</b>
+<b class="fc"><i>216</i>&nbsp;        if (converter == null) {</b>
+<b class="fc"><i>217</i>&nbsp;            return null;</b>
+<i>218</i>&nbsp;        }
+<b class="fc"><i>219</i>&nbsp;        InstantConverter[] removed = new InstantConverter[1];</b>
+<b class="fc"><i>220</i>&nbsp;        iInstantConverters = iInstantConverters.remove(converter, removed);</b>
+<b class="fc"><i>221</i>&nbsp;        return removed[0];</b>
+<i>222</i>&nbsp;    }
+<i>223</i>&nbsp;    
+<i>224</i>&nbsp;    /**
+<i>225</i>&nbsp;     * Checks whether the user has permission &#39;ConverterManager.alterInstantConverters&#39;.
+<i>226</i>&nbsp;     * 
+<i>227</i>&nbsp;     * @throws SecurityException if the user does not have the permission
+<i>228</i>&nbsp;     */
+<i>229</i>&nbsp;    private void checkAlterInstantConverters() throws SecurityException {
+<b class="fc"><i>230</i>&nbsp;        SecurityManager sm = System.getSecurityManager();</b>
+<b class="fc"><i>231</i>&nbsp;        if (sm != null) {</b>
+<b class="nc"><i>232</i>&nbsp;            sm.checkPermission(new JodaTimePermission(&quot;ConverterManager.alterInstantConverters&quot;));</b>
+<i>233</i>&nbsp;        }
+<b class="fc"><i>234</i>&nbsp;    }</b>
+<i>235</i>&nbsp;
+<i>236</i>&nbsp;    //-----------------------------------------------------------------------
+<i>237</i>&nbsp;    /**
+<i>238</i>&nbsp;     * Gets the best converter for the object specified.
+<i>239</i>&nbsp;     * 
+<i>240</i>&nbsp;     * @param object  the object to convert
+<i>241</i>&nbsp;     * @return the converter to use
+<i>242</i>&nbsp;     * @throws IllegalArgumentException if no suitable converter
+<i>243</i>&nbsp;     * @throws IllegalStateException if multiple converters match the type
+<i>244</i>&nbsp;     * equally well
+<i>245</i>&nbsp;     */
+<i>246</i>&nbsp;    public PartialConverter getPartialConverter(Object object) {
+<b class="fc"><i>247</i>&nbsp;        PartialConverter converter =</b>
+<b class="fc"><i>248</i>&nbsp;            (PartialConverter)iPartialConverters.select(object == null ? null : object.getClass());</b>
+<b class="fc"><i>249</i>&nbsp;        if (converter != null) {</b>
+<b class="fc"><i>250</i>&nbsp;            return converter;</b>
+<i>251</i>&nbsp;        }
+<b class="fc"><i>252</i>&nbsp;        throw new IllegalArgumentException(&quot;No partial converter found for type: &quot; +</b>
+<b class="fc"><i>253</i>&nbsp;            (object == null ? &quot;null&quot; : object.getClass().getName()));</b>
+<i>254</i>&nbsp;    }
+<i>255</i>&nbsp;    
+<i>256</i>&nbsp;    //-----------------------------------------------------------------------
+<i>257</i>&nbsp;    /**
+<i>258</i>&nbsp;     * Gets a copy of the set of converters.
+<i>259</i>&nbsp;     * 
+<i>260</i>&nbsp;     * @return the converters, a copy of the real data, never null
+<i>261</i>&nbsp;     */
+<i>262</i>&nbsp;    public PartialConverter[] getPartialConverters() {
+<b class="fc"><i>263</i>&nbsp;        ConverterSet set = iPartialConverters;</b>
+<b class="fc"><i>264</i>&nbsp;        PartialConverter[] converters = new PartialConverter[set.size()];</b>
+<b class="fc"><i>265</i>&nbsp;        set.copyInto(converters);</b>
+<b class="fc"><i>266</i>&nbsp;        return converters;</b>
+<i>267</i>&nbsp;    }
+<i>268</i>&nbsp;    
+<i>269</i>&nbsp;    /**
+<i>270</i>&nbsp;     * Adds a converter to the set of converters. If a matching converter is
+<i>271</i>&nbsp;     * already in the set, the given converter replaces it. If the converter is
+<i>272</i>&nbsp;     * exactly the same as one already in the set, no changes are made.
+<i>273</i>&nbsp;     * &lt;p&gt;
+<i>274</i>&nbsp;     * The order in which converters are added is not relevent. The best
+<i>275</i>&nbsp;     * converter is selected by examining the object hierarchy.
+<i>276</i>&nbsp;     * 
+<i>277</i>&nbsp;     * @param converter  the converter to add, null ignored
+<i>278</i>&nbsp;     * @return replaced converter, or null
+<i>279</i>&nbsp;     */
+<i>280</i>&nbsp;    public PartialConverter addPartialConverter(PartialConverter converter)
+<i>281</i>&nbsp;            throws SecurityException {
+<i>282</i>&nbsp;        
+<b class="fc"><i>283</i>&nbsp;        checkAlterPartialConverters();</b>
+<b class="fc"><i>284</i>&nbsp;        if (converter == null) {</b>
+<b class="fc"><i>285</i>&nbsp;            return null;</b>
+<i>286</i>&nbsp;        }
+<b class="fc"><i>287</i>&nbsp;        PartialConverter[] removed = new PartialConverter[1];</b>
+<b class="fc"><i>288</i>&nbsp;        iPartialConverters = iPartialConverters.add(converter, removed);</b>
+<b class="fc"><i>289</i>&nbsp;        return removed[0];</b>
+<i>290</i>&nbsp;    }
+<i>291</i>&nbsp;    
+<i>292</i>&nbsp;    /**
+<i>293</i>&nbsp;     * Removes a converter from the set of converters. If the converter was
+<i>294</i>&nbsp;     * not in the set, no changes are made.
+<i>295</i>&nbsp;     * 
+<i>296</i>&nbsp;     * @param converter  the converter to remove, null ignored
+<i>297</i>&nbsp;     * @return replaced converter, or null
+<i>298</i>&nbsp;     */
+<i>299</i>&nbsp;    public PartialConverter removePartialConverter(PartialConverter converter)
+<i>300</i>&nbsp;            throws SecurityException {
+<i>301</i>&nbsp;        
+<b class="fc"><i>302</i>&nbsp;        checkAlterPartialConverters();</b>
+<b class="fc"><i>303</i>&nbsp;        if (converter == null) {</b>
+<b class="fc"><i>304</i>&nbsp;            return null;</b>
+<i>305</i>&nbsp;        }
+<b class="fc"><i>306</i>&nbsp;        PartialConverter[] removed = new PartialConverter[1];</b>
+<b class="fc"><i>307</i>&nbsp;        iPartialConverters = iPartialConverters.remove(converter, removed);</b>
+<b class="fc"><i>308</i>&nbsp;        return removed[0];</b>
+<i>309</i>&nbsp;    }
+<i>310</i>&nbsp;    
+<i>311</i>&nbsp;    /**
+<i>312</i>&nbsp;     * Checks whether the user has permission &#39;ConverterManager.alterPartialConverters&#39;.
+<i>313</i>&nbsp;     * 
+<i>314</i>&nbsp;     * @throws SecurityException if the user does not have the permission
+<i>315</i>&nbsp;     */
+<i>316</i>&nbsp;    private void checkAlterPartialConverters() throws SecurityException {
+<b class="fc"><i>317</i>&nbsp;        SecurityManager sm = System.getSecurityManager();</b>
+<b class="fc"><i>318</i>&nbsp;        if (sm != null) {</b>
+<b class="nc"><i>319</i>&nbsp;            sm.checkPermission(new JodaTimePermission(&quot;ConverterManager.alterPartialConverters&quot;));</b>
+<i>320</i>&nbsp;        }
+<b class="fc"><i>321</i>&nbsp;    }</b>
+<i>322</i>&nbsp;
+<i>323</i>&nbsp;    //-----------------------------------------------------------------------
+<i>324</i>&nbsp;    /**
+<i>325</i>&nbsp;     * Gets the best converter for the object specified.
+<i>326</i>&nbsp;     * 
+<i>327</i>&nbsp;     * @param object  the object to convert
+<i>328</i>&nbsp;     * @return the converter to use
+<i>329</i>&nbsp;     * @throws IllegalArgumentException if no suitable converter
+<i>330</i>&nbsp;     * @throws IllegalStateException if multiple converters match the type
+<i>331</i>&nbsp;     * equally well
+<i>332</i>&nbsp;     */
+<i>333</i>&nbsp;    public DurationConverter getDurationConverter(Object object) {
+<b class="fc"><i>334</i>&nbsp;        DurationConverter converter =</b>
+<b class="fc"><i>335</i>&nbsp;            (DurationConverter)iDurationConverters.select(object == null ? null : object.getClass());</b>
+<b class="fc"><i>336</i>&nbsp;        if (converter != null) {</b>
+<b class="fc"><i>337</i>&nbsp;            return converter;</b>
+<i>338</i>&nbsp;        }
+<b class="fc"><i>339</i>&nbsp;        throw new IllegalArgumentException(&quot;No duration converter found for type: &quot; +</b>
+<b class="fc"><i>340</i>&nbsp;            (object == null ? &quot;null&quot; : object.getClass().getName()));</b>
+<i>341</i>&nbsp;    }
+<i>342</i>&nbsp;    
+<i>343</i>&nbsp;    //-----------------------------------------------------------------------
+<i>344</i>&nbsp;    /**
+<i>345</i>&nbsp;     * Gets a copy of the list of converters.
+<i>346</i>&nbsp;     * 
+<i>347</i>&nbsp;     * @return the converters, a copy of the real data, never null
+<i>348</i>&nbsp;     */
+<i>349</i>&nbsp;    public DurationConverter[] getDurationConverters() {
+<b class="fc"><i>350</i>&nbsp;        ConverterSet set = iDurationConverters;</b>
+<b class="fc"><i>351</i>&nbsp;        DurationConverter[] converters = new DurationConverter[set.size()];</b>
+<b class="fc"><i>352</i>&nbsp;        set.copyInto(converters);</b>
+<b class="fc"><i>353</i>&nbsp;        return converters;</b>
+<i>354</i>&nbsp;    }
+<i>355</i>&nbsp;    
+<i>356</i>&nbsp;    /**
+<i>357</i>&nbsp;     * Adds a converter to the set of converters. If a matching converter is
+<i>358</i>&nbsp;     * already in the set, the given converter replaces it. If the converter is
+<i>359</i>&nbsp;     * exactly the same as one already in the set, no changes are made.
+<i>360</i>&nbsp;     * &lt;p&gt;
+<i>361</i>&nbsp;     * The order in which converters are added is not relevent. The best
+<i>362</i>&nbsp;     * converter is selected by examining the object hierarchy.
+<i>363</i>&nbsp;     * 
+<i>364</i>&nbsp;     * @param converter  the converter to add, null ignored
+<i>365</i>&nbsp;     * @return replaced converter, or null
+<i>366</i>&nbsp;     */
+<i>367</i>&nbsp;    public DurationConverter addDurationConverter(DurationConverter converter)
+<i>368</i>&nbsp;            throws SecurityException {
+<i>369</i>&nbsp;        
+<b class="fc"><i>370</i>&nbsp;        checkAlterDurationConverters();</b>
+<b class="fc"><i>371</i>&nbsp;        if (converter == null) {</b>
+<b class="fc"><i>372</i>&nbsp;            return null;</b>
+<i>373</i>&nbsp;        }
+<b class="fc"><i>374</i>&nbsp;        DurationConverter[] removed = new DurationConverter[1];</b>
+<b class="fc"><i>375</i>&nbsp;        iDurationConverters = iDurationConverters.add(converter, removed);</b>
+<b class="fc"><i>376</i>&nbsp;        return removed[0];</b>
+<i>377</i>&nbsp;    }
+<i>378</i>&nbsp;    
+<i>379</i>&nbsp;    /**
+<i>380</i>&nbsp;     * Removes a converter from the set of converters. If the converter was
+<i>381</i>&nbsp;     * not in the set, no changes are made.
+<i>382</i>&nbsp;     * 
+<i>383</i>&nbsp;     * @param converter  the converter to remove, null ignored
+<i>384</i>&nbsp;     * @return replaced converter, or null
+<i>385</i>&nbsp;     */
+<i>386</i>&nbsp;    public DurationConverter removeDurationConverter(DurationConverter converter)
+<i>387</i>&nbsp;            throws SecurityException {
+<i>388</i>&nbsp;        
+<b class="fc"><i>389</i>&nbsp;        checkAlterDurationConverters();</b>
+<b class="fc"><i>390</i>&nbsp;        if (converter == null) {</b>
+<b class="fc"><i>391</i>&nbsp;            return null;</b>
+<i>392</i>&nbsp;        }
+<b class="fc"><i>393</i>&nbsp;        DurationConverter[] removed = new DurationConverter[1];</b>
+<b class="fc"><i>394</i>&nbsp;        iDurationConverters = iDurationConverters.remove(converter, removed);</b>
+<b class="fc"><i>395</i>&nbsp;        return removed[0];</b>
+<i>396</i>&nbsp;    }
+<i>397</i>&nbsp;    
+<i>398</i>&nbsp;    /**
+<i>399</i>&nbsp;     * Checks whether the user has permission &#39;ConverterManager.alterDurationConverters&#39;.
+<i>400</i>&nbsp;     * 
+<i>401</i>&nbsp;     * @throws SecurityException if the user does not have the permission
+<i>402</i>&nbsp;     */
+<i>403</i>&nbsp;    private void checkAlterDurationConverters() throws SecurityException {
+<b class="fc"><i>404</i>&nbsp;        SecurityManager sm = System.getSecurityManager();</b>
+<b class="fc"><i>405</i>&nbsp;        if (sm != null) {</b>
+<b class="nc"><i>406</i>&nbsp;            sm.checkPermission(new JodaTimePermission(&quot;ConverterManager.alterDurationConverters&quot;));</b>
+<i>407</i>&nbsp;        }
+<b class="fc"><i>408</i>&nbsp;    }</b>
+<i>409</i>&nbsp;
+<i>410</i>&nbsp;    //-----------------------------------------------------------------------
+<i>411</i>&nbsp;    /**
+<i>412</i>&nbsp;     * Gets the best converter for the object specified.
+<i>413</i>&nbsp;     * 
+<i>414</i>&nbsp;     * @param object  the object to convert
+<i>415</i>&nbsp;     * @return the converter to use
+<i>416</i>&nbsp;     * @throws IllegalArgumentException if no suitable converter
+<i>417</i>&nbsp;     * @throws IllegalStateException if multiple converters match the type
+<i>418</i>&nbsp;     * equally well
+<i>419</i>&nbsp;     */
+<i>420</i>&nbsp;    public PeriodConverter getPeriodConverter(Object object) {
+<b class="fc"><i>421</i>&nbsp;        PeriodConverter converter =</b>
+<b class="fc"><i>422</i>&nbsp;            (PeriodConverter)iPeriodConverters.select(object == null ? null : object.getClass());</b>
+<b class="fc"><i>423</i>&nbsp;        if (converter != null) {</b>
+<b class="fc"><i>424</i>&nbsp;            return converter;</b>
+<i>425</i>&nbsp;        }
+<b class="fc"><i>426</i>&nbsp;        throw new IllegalArgumentException(&quot;No period converter found for type: &quot; +</b>
+<b class="fc"><i>427</i>&nbsp;            (object == null ? &quot;null&quot; : object.getClass().getName()));</b>
+<i>428</i>&nbsp;    }
+<i>429</i>&nbsp;    
+<i>430</i>&nbsp;    //-----------------------------------------------------------------------
+<i>431</i>&nbsp;    /**
+<i>432</i>&nbsp;     * Gets a copy of the list of converters.
+<i>433</i>&nbsp;     * 
+<i>434</i>&nbsp;     * @return the converters, a copy of the real data, never null
+<i>435</i>&nbsp;     */
+<i>436</i>&nbsp;    public PeriodConverter[] getPeriodConverters() {
+<b class="fc"><i>437</i>&nbsp;        ConverterSet set = iPeriodConverters;</b>
+<b class="fc"><i>438</i>&nbsp;        PeriodConverter[] converters = new PeriodConverter[set.size()];</b>
+<b class="fc"><i>439</i>&nbsp;        set.copyInto(converters);</b>
+<b class="fc"><i>440</i>&nbsp;        return converters;</b>
+<i>441</i>&nbsp;    }
+<i>442</i>&nbsp;    
+<i>443</i>&nbsp;    /**
+<i>444</i>&nbsp;     * Adds a converter to the set of converters. If a matching converter is
+<i>445</i>&nbsp;     * already in the set, the given converter replaces it. If the converter is
+<i>446</i>&nbsp;     * exactly the same as one already in the set, no changes are made.
+<i>447</i>&nbsp;     * &lt;p&gt;
+<i>448</i>&nbsp;     * The order in which converters are added is not relevent. The best
+<i>449</i>&nbsp;     * converter is selected by examining the object hierarchy.
+<i>450</i>&nbsp;     * 
+<i>451</i>&nbsp;     * @param converter  the converter to add, null ignored
+<i>452</i>&nbsp;     * @return replaced converter, or null
+<i>453</i>&nbsp;     */
+<i>454</i>&nbsp;    public PeriodConverter addPeriodConverter(PeriodConverter converter)
+<i>455</i>&nbsp;            throws SecurityException {
+<i>456</i>&nbsp;        
+<b class="fc"><i>457</i>&nbsp;        checkAlterPeriodConverters();</b>
+<b class="fc"><i>458</i>&nbsp;        if (converter == null) {</b>
+<b class="fc"><i>459</i>&nbsp;            return null;</b>
+<i>460</i>&nbsp;        }
+<b class="fc"><i>461</i>&nbsp;        PeriodConverter[] removed = new PeriodConverter[1];</b>
+<b class="fc"><i>462</i>&nbsp;        iPeriodConverters = iPeriodConverters.add(converter, removed);</b>
+<b class="fc"><i>463</i>&nbsp;        return removed[0];</b>
+<i>464</i>&nbsp;    }
+<i>465</i>&nbsp;    
+<i>466</i>&nbsp;    /**
+<i>467</i>&nbsp;     * Removes a converter from the set of converters. If the converter was
+<i>468</i>&nbsp;     * not in the set, no changes are made.
+<i>469</i>&nbsp;     * 
+<i>470</i>&nbsp;     * @param converter  the converter to remove, null ignored
+<i>471</i>&nbsp;     * @return replaced converter, or null
+<i>472</i>&nbsp;     */
+<i>473</i>&nbsp;    public PeriodConverter removePeriodConverter(PeriodConverter converter)
+<i>474</i>&nbsp;            throws SecurityException {
+<i>475</i>&nbsp;        
+<b class="fc"><i>476</i>&nbsp;        checkAlterPeriodConverters();</b>
+<b class="fc"><i>477</i>&nbsp;        if (converter == null) {</b>
+<b class="fc"><i>478</i>&nbsp;            return null;</b>
+<i>479</i>&nbsp;        }
+<b class="fc"><i>480</i>&nbsp;        PeriodConverter[] removed = new PeriodConverter[1];</b>
+<b class="fc"><i>481</i>&nbsp;        iPeriodConverters = iPeriodConverters.remove(converter, removed);</b>
+<b class="fc"><i>482</i>&nbsp;        return removed[0];</b>
+<i>483</i>&nbsp;    }
+<i>484</i>&nbsp;    
+<i>485</i>&nbsp;    /**
+<i>486</i>&nbsp;     * Checks whether the user has permission &#39;ConverterManager.alterPeriodConverters&#39;.
+<i>487</i>&nbsp;     * 
+<i>488</i>&nbsp;     * @throws SecurityException if the user does not have the permission
+<i>489</i>&nbsp;     */
+<i>490</i>&nbsp;    private void checkAlterPeriodConverters() throws SecurityException {
+<b class="fc"><i>491</i>&nbsp;        SecurityManager sm = System.getSecurityManager();</b>
+<b class="fc"><i>492</i>&nbsp;        if (sm != null) {</b>
+<b class="nc"><i>493</i>&nbsp;            sm.checkPermission(new JodaTimePermission(&quot;ConverterManager.alterPeriodConverters&quot;));</b>
+<i>494</i>&nbsp;        }
+<b class="fc"><i>495</i>&nbsp;    }</b>
+<i>496</i>&nbsp;
+<i>497</i>&nbsp;    //-----------------------------------------------------------------------
+<i>498</i>&nbsp;    /**
+<i>499</i>&nbsp;     * Gets the best converter for the object specified.
+<i>500</i>&nbsp;     * 
+<i>501</i>&nbsp;     * @param object  the object to convert
+<i>502</i>&nbsp;     * @return the converter to use
+<i>503</i>&nbsp;     * @throws IllegalArgumentException if no suitable converter
+<i>504</i>&nbsp;     * @throws IllegalStateException if multiple converters match the type
+<i>505</i>&nbsp;     * equally well
+<i>506</i>&nbsp;     */
+<i>507</i>&nbsp;    public IntervalConverter getIntervalConverter(Object object) {
+<b class="fc"><i>508</i>&nbsp;        IntervalConverter converter =</b>
+<b class="fc"><i>509</i>&nbsp;            (IntervalConverter)iIntervalConverters.select(object == null ? null : object.getClass());</b>
+<b class="fc"><i>510</i>&nbsp;        if (converter != null) {</b>
+<b class="fc"><i>511</i>&nbsp;            return converter;</b>
+<i>512</i>&nbsp;        }
+<b class="fc"><i>513</i>&nbsp;        throw new IllegalArgumentException(&quot;No interval converter found for type: &quot; +</b>
+<b class="fc"><i>514</i>&nbsp;            (object == null ? &quot;null&quot; : object.getClass().getName()));</b>
+<i>515</i>&nbsp;    }
+<i>516</i>&nbsp;    
+<i>517</i>&nbsp;    //-----------------------------------------------------------------------
+<i>518</i>&nbsp;    /**
+<i>519</i>&nbsp;     * Gets a copy of the list of converters.
+<i>520</i>&nbsp;     * 
+<i>521</i>&nbsp;     * @return the converters, a copy of the real data, never null
+<i>522</i>&nbsp;     */
+<i>523</i>&nbsp;    public IntervalConverter[] getIntervalConverters() {
+<b class="fc"><i>524</i>&nbsp;        ConverterSet set = iIntervalConverters;</b>
+<b class="fc"><i>525</i>&nbsp;        IntervalConverter[] converters = new IntervalConverter[set.size()];</b>
+<b class="fc"><i>526</i>&nbsp;        set.copyInto(converters);</b>
+<b class="fc"><i>527</i>&nbsp;        return converters;</b>
+<i>528</i>&nbsp;    }
+<i>529</i>&nbsp;    
+<i>530</i>&nbsp;    /**
+<i>531</i>&nbsp;     * Adds a converter to the set of converters. If a matching converter is
+<i>532</i>&nbsp;     * already in the set, the given converter replaces it. If the converter is
+<i>533</i>&nbsp;     * exactly the same as one already in the set, no changes are made.
+<i>534</i>&nbsp;     * &lt;p&gt;
+<i>535</i>&nbsp;     * The order in which converters are added is not relevent. The best
+<i>536</i>&nbsp;     * converter is selected by examining the object hierarchy.
+<i>537</i>&nbsp;     * 
+<i>538</i>&nbsp;     * @param converter  the converter to add, null ignored
+<i>539</i>&nbsp;     * @return replaced converter, or null
+<i>540</i>&nbsp;     */
+<i>541</i>&nbsp;    public IntervalConverter addIntervalConverter(IntervalConverter converter) 
+<i>542</i>&nbsp;            throws SecurityException {
+<i>543</i>&nbsp;        
+<b class="fc"><i>544</i>&nbsp;        checkAlterIntervalConverters();</b>
+<b class="fc"><i>545</i>&nbsp;        if (converter == null) {</b>
+<b class="fc"><i>546</i>&nbsp;            return null;</b>
+<i>547</i>&nbsp;        }
+<b class="fc"><i>548</i>&nbsp;        IntervalConverter[] removed = new IntervalConverter[1];</b>
+<b class="fc"><i>549</i>&nbsp;        iIntervalConverters = iIntervalConverters.add(converter, removed);</b>
+<b class="fc"><i>550</i>&nbsp;        return removed[0];</b>
+<i>551</i>&nbsp;    }
+<i>552</i>&nbsp;    
+<i>553</i>&nbsp;    /**
+<i>554</i>&nbsp;     * Removes a converter from the set of converters. If the converter was
+<i>555</i>&nbsp;     * not in the set, no changes are made.
+<i>556</i>&nbsp;     * 
+<i>557</i>&nbsp;     * @param converter  the converter to remove, null ignored
+<i>558</i>&nbsp;     * @return replaced converter, or null
+<i>559</i>&nbsp;     */
+<i>560</i>&nbsp;    public IntervalConverter removeIntervalConverter(IntervalConverter converter)
+<i>561</i>&nbsp;            throws SecurityException {
+<i>562</i>&nbsp;        
+<b class="fc"><i>563</i>&nbsp;        checkAlterIntervalConverters();</b>
+<b class="fc"><i>564</i>&nbsp;        if (converter == null) {</b>
+<b class="fc"><i>565</i>&nbsp;            return null;</b>
+<i>566</i>&nbsp;        }
+<b class="fc"><i>567</i>&nbsp;        IntervalConverter[] removed = new IntervalConverter[1];</b>
+<b class="fc"><i>568</i>&nbsp;        iIntervalConverters = iIntervalConverters.remove(converter, removed);</b>
+<b class="fc"><i>569</i>&nbsp;        return removed[0];</b>
+<i>570</i>&nbsp;    }
+<i>571</i>&nbsp;    
+<i>572</i>&nbsp;    /**
+<i>573</i>&nbsp;     * Checks whether the user has permission &#39;ConverterManager.alterIntervalConverters&#39;.
+<i>574</i>&nbsp;     * 
+<i>575</i>&nbsp;     * @throws SecurityException if the user does not have the permission
+<i>576</i>&nbsp;     */
+<i>577</i>&nbsp;    private void checkAlterIntervalConverters() throws SecurityException {
+<b class="fc"><i>578</i>&nbsp;        SecurityManager sm = System.getSecurityManager();</b>
+<b class="fc"><i>579</i>&nbsp;        if (sm != null) {</b>
+<b class="nc"><i>580</i>&nbsp;            sm.checkPermission(new JodaTimePermission(&quot;ConverterManager.alterIntervalConverters&quot;));</b>
+<i>581</i>&nbsp;        }
+<b class="fc"><i>582</i>&nbsp;    }</b>
+<i>583</i>&nbsp;
+<i>584</i>&nbsp;    //-----------------------------------------------------------------------
+<i>585</i>&nbsp;    /**
+<i>586</i>&nbsp;     * Gets a debug representation of the object.
+<i>587</i>&nbsp;     */
+<i>588</i>&nbsp;    public String toString() {
+<b class="fc"><i>589</i>&nbsp;        return &quot;ConverterManager[&quot; +</b>
+<b class="fc"><i>590</i>&nbsp;            iInstantConverters.size() + &quot; instant,&quot; +</b>
+<b class="fc"><i>591</i>&nbsp;            iPartialConverters.size() + &quot; partial,&quot; +</b>
+<b class="fc"><i>592</i>&nbsp;            iDurationConverters.size() + &quot; duration,&quot; +</b>
+<b class="fc"><i>593</i>&nbsp;            iPeriodConverters.size() + &quot; period,&quot; +</b>
+<b class="fc"><i>594</i>&nbsp;            iIntervalConverters.size() + &quot; interval]&quot;;</b>
+<i>595</i>&nbsp;    }
+<i>596</i>&nbsp;
+<i>597</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

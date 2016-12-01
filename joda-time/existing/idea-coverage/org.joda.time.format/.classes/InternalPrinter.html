@@ -1,0 +1,115 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: InternalPrinter</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time.format</a> ]
+</div>
+
+<h1>Coverage Summary for Class: InternalPrinter (org.joda.time.format)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+</tr>
+<tr>
+  <td class="name">InternalPrinter</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2014 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time.format;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;import java.io.IOException;
+<i>19</i>&nbsp;import java.util.Locale;
+<i>20</i>&nbsp;
+<i>21</i>&nbsp;import org.joda.time.Chronology;
+<i>22</i>&nbsp;import org.joda.time.DateTimeZone;
+<i>23</i>&nbsp;import org.joda.time.ReadablePartial;
+<i>24</i>&nbsp;
+<i>25</i>&nbsp;/**
+<i>26</i>&nbsp; * Internal interface for creating textual representations of datetimes.
+<i>27</i>&nbsp; * &lt;p&gt;
+<i>28</i>&nbsp; * This has been separated from {@link DateTimePrinter} to avoid code duplication.
+<i>29</i>&nbsp; *
+<i>30</i>&nbsp; * @author Stephen Colebourne
+<i>31</i>&nbsp; * @since 2.4
+<i>32</i>&nbsp; */
+<i>33</i>&nbsp;interface InternalPrinter {
+<i>34</i>&nbsp;
+<i>35</i>&nbsp;    /**
+<i>36</i>&nbsp;     * Returns the expected maximum number of characters produced.
+<i>37</i>&nbsp;     * The actual amount should rarely exceed this estimate.
+<i>38</i>&nbsp;     * 
+<i>39</i>&nbsp;     * @return the estimated length
+<i>40</i>&nbsp;     */
+<i>41</i>&nbsp;    int estimatePrintedLength();
+<i>42</i>&nbsp;
+<i>43</i>&nbsp;    //-----------------------------------------------------------------------
+<i>44</i>&nbsp;    /**
+<i>45</i>&nbsp;     * Prints an instant from milliseconds since 1970-01-01T00:00:00Z,
+<i>46</i>&nbsp;     * using the given Chronology.
+<i>47</i>&nbsp;     *
+<i>48</i>&nbsp;     * @param appendable  formatted instant is appended to, not null
+<i>49</i>&nbsp;     * @param instant  millis since 1970-01-01T00:00:00Z
+<i>50</i>&nbsp;     * @param chrono  the chronology to use, not null
+<i>51</i>&nbsp;     * @param displayOffset  if a time zone offset is printed, force it to use
+<i>52</i>&nbsp;     * this millisecond value
+<i>53</i>&nbsp;     * @param displayZone  the time zone to use, null means local time
+<i>54</i>&nbsp;     * @param locale  the locale to use, null means default locale
+<i>55</i>&nbsp;     */
+<i>56</i>&nbsp;    void printTo(Appendable appendable, long instant, Chronology chrono,
+<i>57</i>&nbsp;                 int displayOffset, DateTimeZone displayZone, Locale locale) throws IOException;
+<i>58</i>&nbsp;
+<i>59</i>&nbsp;    /**
+<i>60</i>&nbsp;     * Prints a ReadablePartial.
+<i>61</i>&nbsp;     *
+<i>62</i>&nbsp;     * @param appendable  formatted instant is appended to, not null
+<i>63</i>&nbsp;     * @param partial  partial to format, not null
+<i>64</i>&nbsp;     * @param locale  the locale to use, null means default locale
+<i>65</i>&nbsp;     */
+<i>66</i>&nbsp;    void printTo(Appendable appendable, ReadablePartial partial, Locale locale) throws IOException;
+<i>67</i>&nbsp;
+<i>68</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

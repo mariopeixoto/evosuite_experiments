@@ -1,0 +1,941 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: PeriodType</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time</a> ]
+</div>
+
+<h1>Coverage Summary for Class: PeriodType (org.joda.time)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">PeriodType</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (40/ 40)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (248/ 248)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2009 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;import java.io.Serializable;
+<i>19</i>&nbsp;import java.util.ArrayList;
+<i>20</i>&nbsp;import java.util.Arrays;
+<i>21</i>&nbsp;import java.util.HashMap;
+<i>22</i>&nbsp;import java.util.List;
+<i>23</i>&nbsp;import java.util.Map;
+<i>24</i>&nbsp;
+<i>25</i>&nbsp;import org.joda.time.field.FieldUtils;
+<i>26</i>&nbsp;
+<i>27</i>&nbsp;/**
+<i>28</i>&nbsp; * Controls a period implementation by specifying which duration fields are to be used.
+<i>29</i>&nbsp; * &lt;p&gt;
+<i>30</i>&nbsp; * The following implementations are provided:
+<i>31</i>&nbsp; * &lt;ul&gt;
+<i>32</i>&nbsp; * &lt;li&gt;Standard - years, months, weeks, days, hours, minutes, seconds, millis
+<i>33</i>&nbsp; * &lt;li&gt;YearMonthDayTime - years, months, days, hours, minutes, seconds, millis
+<i>34</i>&nbsp; * &lt;li&gt;YearMonthDay - years, months, days
+<i>35</i>&nbsp; * &lt;li&gt;YearWeekDayTime - years, weeks, days, hours, minutes, seconds, millis
+<i>36</i>&nbsp; * &lt;li&gt;YearWeekDay - years, weeks, days
+<i>37</i>&nbsp; * &lt;li&gt;YearDayTime - years, days, hours, minutes, seconds, millis
+<i>38</i>&nbsp; * &lt;li&gt;YearDay - years, days, hours
+<i>39</i>&nbsp; * &lt;li&gt;DayTime - days, hours, minutes, seconds, millis
+<i>40</i>&nbsp; * &lt;li&gt;Time - hours, minutes, seconds, millis
+<i>41</i>&nbsp; * &lt;li&gt;plus one for each single type
+<i>42</i>&nbsp; * &lt;/ul&gt;
+<i>43</i>&nbsp; *
+<i>44</i>&nbsp; * &lt;p&gt;
+<i>45</i>&nbsp; * PeriodType is thread-safe and immutable, and all subclasses must be as well.
+<i>46</i>&nbsp; *
+<i>47</i>&nbsp; * @author Brian S O&#39;Neill
+<i>48</i>&nbsp; * @author Stephen Colebourne
+<i>49</i>&nbsp; * @since 1.0
+<i>50</i>&nbsp; */
+<i>51</i>&nbsp;public class PeriodType implements Serializable {
+<i>52</i>&nbsp;    /** Serialization version */
+<i>53</i>&nbsp;    private static final long serialVersionUID = 2274324892792009998L;
+<i>54</i>&nbsp;
+<i>55</i>&nbsp;    /** Cache of all the known types. */
+<b class="fc"><i>56</i>&nbsp;    private static final Map&lt;PeriodType, Object&gt; cTypes = new HashMap&lt;PeriodType, Object&gt;(32);</b>
+<i>57</i>&nbsp;
+<b class="fc"><i>58</i>&nbsp;    static int YEAR_INDEX = 0;</b>
+<b class="fc"><i>59</i>&nbsp;    static int MONTH_INDEX = 1;</b>
+<b class="fc"><i>60</i>&nbsp;    static int WEEK_INDEX = 2;</b>
+<b class="fc"><i>61</i>&nbsp;    static int DAY_INDEX = 3;</b>
+<b class="fc"><i>62</i>&nbsp;    static int HOUR_INDEX = 4;</b>
+<b class="fc"><i>63</i>&nbsp;    static int MINUTE_INDEX = 5;</b>
+<b class="fc"><i>64</i>&nbsp;    static int SECOND_INDEX = 6;</b>
+<b class="fc"><i>65</i>&nbsp;    static int MILLI_INDEX = 7;</b>
+<i>66</i>&nbsp;    
+<i>67</i>&nbsp;    private static PeriodType cStandard;
+<i>68</i>&nbsp;    private static PeriodType cYMDTime;
+<i>69</i>&nbsp;    private static PeriodType cYMD;
+<i>70</i>&nbsp;    private static PeriodType cYWDTime;
+<i>71</i>&nbsp;    private static PeriodType cYWD;
+<i>72</i>&nbsp;    private static PeriodType cYDTime;
+<i>73</i>&nbsp;    private static PeriodType cYD;
+<i>74</i>&nbsp;    private static PeriodType cDTime;
+<i>75</i>&nbsp;    private static PeriodType cTime;
+<i>76</i>&nbsp;    
+<i>77</i>&nbsp;    private static PeriodType cYears;
+<i>78</i>&nbsp;    private static PeriodType cMonths;
+<i>79</i>&nbsp;    private static PeriodType cWeeks;
+<i>80</i>&nbsp;    private static PeriodType cDays;
+<i>81</i>&nbsp;    private static PeriodType cHours;
+<i>82</i>&nbsp;    private static PeriodType cMinutes;
+<i>83</i>&nbsp;    private static PeriodType cSeconds;
+<i>84</i>&nbsp;    private static PeriodType cMillis;
+<i>85</i>&nbsp;
+<i>86</i>&nbsp;    /**
+<i>87</i>&nbsp;     * Gets a type that defines all standard fields.
+<i>88</i>&nbsp;     * &lt;ul&gt;
+<i>89</i>&nbsp;     * &lt;li&gt;years
+<i>90</i>&nbsp;     * &lt;li&gt;months
+<i>91</i>&nbsp;     * &lt;li&gt;weeks
+<i>92</i>&nbsp;     * &lt;li&gt;days
+<i>93</i>&nbsp;     * &lt;li&gt;hours
+<i>94</i>&nbsp;     * &lt;li&gt;minutes
+<i>95</i>&nbsp;     * &lt;li&gt;seconds
+<i>96</i>&nbsp;     * &lt;li&gt;milliseconds
+<i>97</i>&nbsp;     * &lt;/ul&gt;
+<i>98</i>&nbsp;     *
+<i>99</i>&nbsp;     * @return the period type
+<i>100</i>&nbsp;     */
+<i>101</i>&nbsp;    public static PeriodType standard() {
+<b class="fc"><i>102</i>&nbsp;        PeriodType type = cStandard;</b>
+<b class="fc"><i>103</i>&nbsp;        if (type == null) {</b>
+<b class="fc"><i>104</i>&nbsp;            type = new PeriodType(</b>
+<i>105</i>&nbsp;                &quot;Standard&quot;,
+<i>106</i>&nbsp;                new DurationFieldType[] {
+<b class="fc"><i>107</i>&nbsp;                    DurationFieldType.years(), DurationFieldType.months(),</b>
+<b class="fc"><i>108</i>&nbsp;                    DurationFieldType.weeks(), DurationFieldType.days(),</b>
+<b class="fc"><i>109</i>&nbsp;                    DurationFieldType.hours(), DurationFieldType.minutes(),</b>
+<b class="fc"><i>110</i>&nbsp;                    DurationFieldType.seconds(), DurationFieldType.millis(),</b>
+<i>111</i>&nbsp;                },
+<i>112</i>&nbsp;                new int[] { 0, 1, 2, 3, 4, 5, 6, 7, }
+<i>113</i>&nbsp;            );
+<b class="fc"><i>114</i>&nbsp;            cStandard = type;</b>
+<i>115</i>&nbsp;        }
+<b class="fc"><i>116</i>&nbsp;        return type;</b>
+<i>117</i>&nbsp;    }
+<i>118</i>&nbsp;
+<i>119</i>&nbsp;    /**
+<i>120</i>&nbsp;     * Gets a type that defines all standard fields except weeks.
+<i>121</i>&nbsp;     * &lt;ul&gt;
+<i>122</i>&nbsp;     * &lt;li&gt;years
+<i>123</i>&nbsp;     * &lt;li&gt;months
+<i>124</i>&nbsp;     * &lt;li&gt;days
+<i>125</i>&nbsp;     * &lt;li&gt;hours
+<i>126</i>&nbsp;     * &lt;li&gt;minutes
+<i>127</i>&nbsp;     * &lt;li&gt;seconds
+<i>128</i>&nbsp;     * &lt;li&gt;milliseconds
+<i>129</i>&nbsp;     * &lt;/ul&gt;
+<i>130</i>&nbsp;     *
+<i>131</i>&nbsp;     * @return the period type
+<i>132</i>&nbsp;     */
+<i>133</i>&nbsp;    public static PeriodType yearMonthDayTime() {
+<b class="fc"><i>134</i>&nbsp;        PeriodType type = cYMDTime;</b>
+<b class="fc"><i>135</i>&nbsp;        if (type == null) {</b>
+<b class="fc"><i>136</i>&nbsp;            type = new PeriodType(</b>
+<i>137</i>&nbsp;                &quot;YearMonthDayTime&quot;,
+<i>138</i>&nbsp;                new DurationFieldType[] {
+<b class="fc"><i>139</i>&nbsp;                    DurationFieldType.years(), DurationFieldType.months(),</b>
+<b class="fc"><i>140</i>&nbsp;                    DurationFieldType.days(),</b>
+<b class="fc"><i>141</i>&nbsp;                    DurationFieldType.hours(), DurationFieldType.minutes(),</b>
+<b class="fc"><i>142</i>&nbsp;                    DurationFieldType.seconds(), DurationFieldType.millis(),</b>
+<i>143</i>&nbsp;                },
+<i>144</i>&nbsp;                new int[] { 0, 1, -1, 2, 3, 4, 5, 6, }
+<i>145</i>&nbsp;            );
+<b class="fc"><i>146</i>&nbsp;            cYMDTime = type;</b>
+<i>147</i>&nbsp;        }
+<b class="fc"><i>148</i>&nbsp;        return type;</b>
+<i>149</i>&nbsp;    }
+<i>150</i>&nbsp;
+<i>151</i>&nbsp;    /**
+<i>152</i>&nbsp;     * Gets a type that defines the year, month and day fields.
+<i>153</i>&nbsp;     * &lt;ul&gt;
+<i>154</i>&nbsp;     * &lt;li&gt;years
+<i>155</i>&nbsp;     * &lt;li&gt;months
+<i>156</i>&nbsp;     * &lt;li&gt;days
+<i>157</i>&nbsp;     * &lt;/ul&gt;
+<i>158</i>&nbsp;     *
+<i>159</i>&nbsp;     * @return the period type
+<i>160</i>&nbsp;     * @since 1.1
+<i>161</i>&nbsp;     */
+<i>162</i>&nbsp;    public static PeriodType yearMonthDay() {
+<b class="fc"><i>163</i>&nbsp;        PeriodType type = cYMD;</b>
+<b class="fc"><i>164</i>&nbsp;        if (type == null) {</b>
+<b class="fc"><i>165</i>&nbsp;            type = new PeriodType(</b>
+<i>166</i>&nbsp;                &quot;YearMonthDay&quot;,
+<i>167</i>&nbsp;                new DurationFieldType[] {
+<b class="fc"><i>168</i>&nbsp;                    DurationFieldType.years(), DurationFieldType.months(),</b>
+<b class="fc"><i>169</i>&nbsp;                    DurationFieldType.days(),</b>
+<i>170</i>&nbsp;                },
+<i>171</i>&nbsp;                new int[] { 0, 1, -1, 2, -1, -1, -1, -1, }
+<i>172</i>&nbsp;            );
+<b class="fc"><i>173</i>&nbsp;            cYMD = type;</b>
+<i>174</i>&nbsp;        }
+<b class="fc"><i>175</i>&nbsp;        return type;</b>
+<i>176</i>&nbsp;    }
+<i>177</i>&nbsp;
+<i>178</i>&nbsp;    /**
+<i>179</i>&nbsp;     * Gets a type that defines all standard fields except months.
+<i>180</i>&nbsp;     * &lt;ul&gt;
+<i>181</i>&nbsp;     * &lt;li&gt;years
+<i>182</i>&nbsp;     * &lt;li&gt;weeks
+<i>183</i>&nbsp;     * &lt;li&gt;days
+<i>184</i>&nbsp;     * &lt;li&gt;hours
+<i>185</i>&nbsp;     * &lt;li&gt;minutes
+<i>186</i>&nbsp;     * &lt;li&gt;seconds
+<i>187</i>&nbsp;     * &lt;li&gt;milliseconds
+<i>188</i>&nbsp;     * &lt;/ul&gt;
+<i>189</i>&nbsp;     *
+<i>190</i>&nbsp;     * @return the period type
+<i>191</i>&nbsp;     */
+<i>192</i>&nbsp;    public static PeriodType yearWeekDayTime() {
+<b class="fc"><i>193</i>&nbsp;        PeriodType type = cYWDTime;</b>
+<b class="fc"><i>194</i>&nbsp;        if (type == null) {</b>
+<b class="fc"><i>195</i>&nbsp;            type = new PeriodType(</b>
+<i>196</i>&nbsp;                &quot;YearWeekDayTime&quot;,
+<i>197</i>&nbsp;                new DurationFieldType[] {
+<b class="fc"><i>198</i>&nbsp;                    DurationFieldType.years(),</b>
+<b class="fc"><i>199</i>&nbsp;                    DurationFieldType.weeks(), DurationFieldType.days(),</b>
+<b class="fc"><i>200</i>&nbsp;                    DurationFieldType.hours(), DurationFieldType.minutes(),</b>
+<b class="fc"><i>201</i>&nbsp;                    DurationFieldType.seconds(), DurationFieldType.millis(),</b>
+<i>202</i>&nbsp;                },
+<i>203</i>&nbsp;                new int[] { 0, -1, 1, 2, 3, 4, 5, 6, }
+<i>204</i>&nbsp;            );
+<b class="fc"><i>205</i>&nbsp;            cYWDTime = type;</b>
+<i>206</i>&nbsp;        }
+<b class="fc"><i>207</i>&nbsp;        return type;</b>
+<i>208</i>&nbsp;    }
+<i>209</i>&nbsp;
+<i>210</i>&nbsp;    /**
+<i>211</i>&nbsp;     * Gets a type that defines year, week and day fields.
+<i>212</i>&nbsp;     * &lt;ul&gt;
+<i>213</i>&nbsp;     * &lt;li&gt;years
+<i>214</i>&nbsp;     * &lt;li&gt;weeks
+<i>215</i>&nbsp;     * &lt;li&gt;days
+<i>216</i>&nbsp;     * &lt;/ul&gt;
+<i>217</i>&nbsp;     *
+<i>218</i>&nbsp;     * @return the period type
+<i>219</i>&nbsp;     * @since 1.1
+<i>220</i>&nbsp;     */
+<i>221</i>&nbsp;    public static PeriodType yearWeekDay() {
+<b class="fc"><i>222</i>&nbsp;        PeriodType type = cYWD;</b>
+<b class="fc"><i>223</i>&nbsp;        if (type == null) {</b>
+<b class="fc"><i>224</i>&nbsp;            type = new PeriodType(</b>
+<i>225</i>&nbsp;                &quot;YearWeekDay&quot;,
+<i>226</i>&nbsp;                new DurationFieldType[] {
+<b class="fc"><i>227</i>&nbsp;                    DurationFieldType.years(),</b>
+<b class="fc"><i>228</i>&nbsp;                    DurationFieldType.weeks(), DurationFieldType.days(),</b>
+<i>229</i>&nbsp;                },
+<i>230</i>&nbsp;                new int[] { 0, -1, 1, 2, -1, -1, -1, -1, }
+<i>231</i>&nbsp;            );
+<b class="fc"><i>232</i>&nbsp;            cYWD = type;</b>
+<i>233</i>&nbsp;        }
+<b class="fc"><i>234</i>&nbsp;        return type;</b>
+<i>235</i>&nbsp;    }
+<i>236</i>&nbsp;
+<i>237</i>&nbsp;    /**
+<i>238</i>&nbsp;     * Gets a type that defines all standard fields except months and weeks.
+<i>239</i>&nbsp;     * &lt;ul&gt;
+<i>240</i>&nbsp;     * &lt;li&gt;years
+<i>241</i>&nbsp;     * &lt;li&gt;days
+<i>242</i>&nbsp;     * &lt;li&gt;hours
+<i>243</i>&nbsp;     * &lt;li&gt;minutes
+<i>244</i>&nbsp;     * &lt;li&gt;seconds
+<i>245</i>&nbsp;     * &lt;li&gt;milliseconds
+<i>246</i>&nbsp;     * &lt;/ul&gt;
+<i>247</i>&nbsp;     *
+<i>248</i>&nbsp;     * @return the period type
+<i>249</i>&nbsp;     */
+<i>250</i>&nbsp;    public static PeriodType yearDayTime() {
+<b class="fc"><i>251</i>&nbsp;        PeriodType type = cYDTime;</b>
+<b class="fc"><i>252</i>&nbsp;        if (type == null) {</b>
+<b class="fc"><i>253</i>&nbsp;            type = new PeriodType(</b>
+<i>254</i>&nbsp;                &quot;YearDayTime&quot;,
+<i>255</i>&nbsp;                new DurationFieldType[] {
+<b class="fc"><i>256</i>&nbsp;                    DurationFieldType.years(), DurationFieldType.days(),</b>
+<b class="fc"><i>257</i>&nbsp;                    DurationFieldType.hours(), DurationFieldType.minutes(),</b>
+<b class="fc"><i>258</i>&nbsp;                    DurationFieldType.seconds(), DurationFieldType.millis(),</b>
+<i>259</i>&nbsp;                },
+<i>260</i>&nbsp;                new int[] { 0, -1, -1, 1, 2, 3, 4, 5, }
+<i>261</i>&nbsp;            );
+<b class="fc"><i>262</i>&nbsp;            cYDTime = type;</b>
+<i>263</i>&nbsp;        }
+<b class="fc"><i>264</i>&nbsp;        return type;</b>
+<i>265</i>&nbsp;    }
+<i>266</i>&nbsp;
+<i>267</i>&nbsp;    /**
+<i>268</i>&nbsp;     * Gets a type that defines the year and day fields.
+<i>269</i>&nbsp;     * &lt;ul&gt;
+<i>270</i>&nbsp;     * &lt;li&gt;years
+<i>271</i>&nbsp;     * &lt;li&gt;days
+<i>272</i>&nbsp;     * &lt;/ul&gt;
+<i>273</i>&nbsp;     *
+<i>274</i>&nbsp;     * @return the period type
+<i>275</i>&nbsp;     * @since 1.1
+<i>276</i>&nbsp;     */
+<i>277</i>&nbsp;    public static PeriodType yearDay() {
+<b class="fc"><i>278</i>&nbsp;        PeriodType type = cYD;</b>
+<b class="fc"><i>279</i>&nbsp;        if (type == null) {</b>
+<b class="fc"><i>280</i>&nbsp;            type = new PeriodType(</b>
+<i>281</i>&nbsp;                &quot;YearDay&quot;,
+<i>282</i>&nbsp;                new DurationFieldType[] {
+<b class="fc"><i>283</i>&nbsp;                    DurationFieldType.years(), DurationFieldType.days(),</b>
+<i>284</i>&nbsp;                },
+<i>285</i>&nbsp;                new int[] { 0, -1, -1, 1, -1, -1, -1, -1, }
+<i>286</i>&nbsp;            );
+<b class="fc"><i>287</i>&nbsp;            cYD = type;</b>
+<i>288</i>&nbsp;        }
+<b class="fc"><i>289</i>&nbsp;        return type;</b>
+<i>290</i>&nbsp;    }
+<i>291</i>&nbsp;
+<i>292</i>&nbsp;    /**
+<i>293</i>&nbsp;     * Gets a type that defines all standard fields from days downwards.
+<i>294</i>&nbsp;     * &lt;ul&gt;
+<i>295</i>&nbsp;     * &lt;li&gt;days
+<i>296</i>&nbsp;     * &lt;li&gt;hours
+<i>297</i>&nbsp;     * &lt;li&gt;minutes
+<i>298</i>&nbsp;     * &lt;li&gt;seconds
+<i>299</i>&nbsp;     * &lt;li&gt;milliseconds
+<i>300</i>&nbsp;     * &lt;/ul&gt;
+<i>301</i>&nbsp;     *
+<i>302</i>&nbsp;     * @return the period type
+<i>303</i>&nbsp;     */
+<i>304</i>&nbsp;    public static PeriodType dayTime() {
+<b class="fc"><i>305</i>&nbsp;        PeriodType type = cDTime;</b>
+<b class="fc"><i>306</i>&nbsp;        if (type == null) {</b>
+<b class="fc"><i>307</i>&nbsp;            type = new PeriodType(</b>
+<i>308</i>&nbsp;                &quot;DayTime&quot;,
+<i>309</i>&nbsp;                new DurationFieldType[] {
+<b class="fc"><i>310</i>&nbsp;                    DurationFieldType.days(),</b>
+<b class="fc"><i>311</i>&nbsp;                    DurationFieldType.hours(), DurationFieldType.minutes(),</b>
+<b class="fc"><i>312</i>&nbsp;                    DurationFieldType.seconds(), DurationFieldType.millis(),</b>
+<i>313</i>&nbsp;                },
+<i>314</i>&nbsp;                new int[] { -1, -1, -1, 0, 1, 2, 3, 4, }
+<i>315</i>&nbsp;            );
+<b class="fc"><i>316</i>&nbsp;            cDTime = type;</b>
+<i>317</i>&nbsp;        }
+<b class="fc"><i>318</i>&nbsp;        return type;</b>
+<i>319</i>&nbsp;    }
+<i>320</i>&nbsp;
+<i>321</i>&nbsp;    /**
+<i>322</i>&nbsp;     * Gets a type that defines all standard time fields.
+<i>323</i>&nbsp;     * &lt;ul&gt;
+<i>324</i>&nbsp;     * &lt;li&gt;hours
+<i>325</i>&nbsp;     * &lt;li&gt;minutes
+<i>326</i>&nbsp;     * &lt;li&gt;seconds
+<i>327</i>&nbsp;     * &lt;li&gt;milliseconds
+<i>328</i>&nbsp;     * &lt;/ul&gt;
+<i>329</i>&nbsp;     *
+<i>330</i>&nbsp;     * @return the period type
+<i>331</i>&nbsp;     */
+<i>332</i>&nbsp;    public static PeriodType time() {
+<b class="fc"><i>333</i>&nbsp;        PeriodType type = cTime;</b>
+<b class="fc"><i>334</i>&nbsp;        if (type == null) {</b>
+<b class="fc"><i>335</i>&nbsp;            type = new PeriodType(</b>
+<i>336</i>&nbsp;                &quot;Time&quot;,
+<i>337</i>&nbsp;                new DurationFieldType[] {
+<b class="fc"><i>338</i>&nbsp;                    DurationFieldType.hours(), DurationFieldType.minutes(),</b>
+<b class="fc"><i>339</i>&nbsp;                    DurationFieldType.seconds(), DurationFieldType.millis(),</b>
+<i>340</i>&nbsp;                },
+<i>341</i>&nbsp;                new int[] { -1, -1, -1, -1, 0, 1, 2, 3, }
+<i>342</i>&nbsp;            );
+<b class="fc"><i>343</i>&nbsp;            cTime = type;</b>
+<i>344</i>&nbsp;        }
+<b class="fc"><i>345</i>&nbsp;        return type;</b>
+<i>346</i>&nbsp;    }
+<i>347</i>&nbsp;
+<i>348</i>&nbsp;    /**
+<i>349</i>&nbsp;     * Gets a type that defines just the years field.
+<i>350</i>&nbsp;     *
+<i>351</i>&nbsp;     * @return the period type
+<i>352</i>&nbsp;     */
+<i>353</i>&nbsp;    public static PeriodType years() {
+<b class="fc"><i>354</i>&nbsp;        PeriodType type = cYears;</b>
+<b class="fc"><i>355</i>&nbsp;        if (type == null) {</b>
+<b class="fc"><i>356</i>&nbsp;            type = new PeriodType(</b>
+<i>357</i>&nbsp;                &quot;Years&quot;,
+<b class="fc"><i>358</i>&nbsp;                new DurationFieldType[] { DurationFieldType.years() },</b>
+<i>359</i>&nbsp;                new int[] { 0, -1, -1, -1, -1, -1, -1, -1, }
+<i>360</i>&nbsp;            );
+<b class="fc"><i>361</i>&nbsp;            cYears = type;</b>
+<i>362</i>&nbsp;        }
+<b class="fc"><i>363</i>&nbsp;        return type;</b>
+<i>364</i>&nbsp;    }
+<i>365</i>&nbsp;
+<i>366</i>&nbsp;    /**
+<i>367</i>&nbsp;     * Gets a type that defines just the months field.
+<i>368</i>&nbsp;     *
+<i>369</i>&nbsp;     * @return the period type
+<i>370</i>&nbsp;     */
+<i>371</i>&nbsp;    public static PeriodType months() {
+<b class="fc"><i>372</i>&nbsp;        PeriodType type = cMonths;</b>
+<b class="fc"><i>373</i>&nbsp;        if (type == null) {</b>
+<b class="fc"><i>374</i>&nbsp;            type = new PeriodType(</b>
+<i>375</i>&nbsp;                &quot;Months&quot;,
+<b class="fc"><i>376</i>&nbsp;                new DurationFieldType[] { DurationFieldType.months() },</b>
+<i>377</i>&nbsp;                new int[] { -1, 0, -1, -1, -1, -1, -1, -1, }
+<i>378</i>&nbsp;            );
+<b class="fc"><i>379</i>&nbsp;            cMonths = type;</b>
+<i>380</i>&nbsp;        }
+<b class="fc"><i>381</i>&nbsp;        return type;</b>
+<i>382</i>&nbsp;    }
+<i>383</i>&nbsp;
+<i>384</i>&nbsp;    /**
+<i>385</i>&nbsp;     * Gets a type that defines just the weeks field.
+<i>386</i>&nbsp;     *
+<i>387</i>&nbsp;     * @return the period type
+<i>388</i>&nbsp;     */
+<i>389</i>&nbsp;    public static PeriodType weeks() {
+<b class="fc"><i>390</i>&nbsp;        PeriodType type = cWeeks;</b>
+<b class="fc"><i>391</i>&nbsp;        if (type == null) {</b>
+<b class="fc"><i>392</i>&nbsp;            type = new PeriodType(</b>
+<i>393</i>&nbsp;                &quot;Weeks&quot;,
+<b class="fc"><i>394</i>&nbsp;                new DurationFieldType[] { DurationFieldType.weeks() },</b>
+<i>395</i>&nbsp;                new int[] { -1, -1, 0, -1, -1, -1, -1, -1, }
+<i>396</i>&nbsp;            );
+<b class="fc"><i>397</i>&nbsp;            cWeeks = type;</b>
+<i>398</i>&nbsp;        }
+<b class="fc"><i>399</i>&nbsp;        return type;</b>
+<i>400</i>&nbsp;    }
+<i>401</i>&nbsp;
+<i>402</i>&nbsp;    /**
+<i>403</i>&nbsp;     * Gets a type that defines just the days field.
+<i>404</i>&nbsp;     *
+<i>405</i>&nbsp;     * @return the period type
+<i>406</i>&nbsp;     */
+<i>407</i>&nbsp;    public static PeriodType days() {
+<b class="fc"><i>408</i>&nbsp;        PeriodType type = cDays;</b>
+<b class="fc"><i>409</i>&nbsp;        if (type == null) {</b>
+<b class="fc"><i>410</i>&nbsp;            type = new PeriodType(</b>
+<i>411</i>&nbsp;                &quot;Days&quot;,
+<b class="fc"><i>412</i>&nbsp;                new DurationFieldType[] { DurationFieldType.days() },</b>
+<i>413</i>&nbsp;                new int[] { -1, -1, -1, 0, -1, -1, -1, -1, }
+<i>414</i>&nbsp;            );
+<b class="fc"><i>415</i>&nbsp;            cDays = type;</b>
+<i>416</i>&nbsp;        }
+<b class="fc"><i>417</i>&nbsp;        return type;</b>
+<i>418</i>&nbsp;    }
+<i>419</i>&nbsp;
+<i>420</i>&nbsp;    /**
+<i>421</i>&nbsp;     * Gets a type that defines just the hours field.
+<i>422</i>&nbsp;     *
+<i>423</i>&nbsp;     * @return the period type
+<i>424</i>&nbsp;     */
+<i>425</i>&nbsp;    public static PeriodType hours() {
+<b class="fc"><i>426</i>&nbsp;        PeriodType type = cHours;</b>
+<b class="fc"><i>427</i>&nbsp;        if (type == null) {</b>
+<b class="fc"><i>428</i>&nbsp;            type = new PeriodType(</b>
+<i>429</i>&nbsp;                &quot;Hours&quot;,
+<b class="fc"><i>430</i>&nbsp;                new DurationFieldType[] { DurationFieldType.hours() },</b>
+<i>431</i>&nbsp;                new int[] { -1, -1, -1, -1, 0, -1, -1, -1, }
+<i>432</i>&nbsp;            );
+<b class="fc"><i>433</i>&nbsp;            cHours = type;</b>
+<i>434</i>&nbsp;        }
+<b class="fc"><i>435</i>&nbsp;        return type;</b>
+<i>436</i>&nbsp;    }
+<i>437</i>&nbsp;
+<i>438</i>&nbsp;    /**
+<i>439</i>&nbsp;     * Gets a type that defines just the minutes field.
+<i>440</i>&nbsp;     *
+<i>441</i>&nbsp;     * @return the period type
+<i>442</i>&nbsp;     */
+<i>443</i>&nbsp;    public static PeriodType minutes() {
+<b class="fc"><i>444</i>&nbsp;        PeriodType type = cMinutes;</b>
+<b class="fc"><i>445</i>&nbsp;        if (type == null) {</b>
+<b class="fc"><i>446</i>&nbsp;            type = new PeriodType(</b>
+<i>447</i>&nbsp;                &quot;Minutes&quot;,
+<b class="fc"><i>448</i>&nbsp;                new DurationFieldType[] { DurationFieldType.minutes() },</b>
+<i>449</i>&nbsp;                new int[] { -1, -1, -1, -1, -1, 0, -1, -1, }
+<i>450</i>&nbsp;            );
+<b class="fc"><i>451</i>&nbsp;            cMinutes = type;</b>
+<i>452</i>&nbsp;        }
+<b class="fc"><i>453</i>&nbsp;        return type;</b>
+<i>454</i>&nbsp;    }
+<i>455</i>&nbsp;
+<i>456</i>&nbsp;    /**
+<i>457</i>&nbsp;     * Gets a type that defines just the seconds field.
+<i>458</i>&nbsp;     *
+<i>459</i>&nbsp;     * @return the period type
+<i>460</i>&nbsp;     */
+<i>461</i>&nbsp;    public static PeriodType seconds() {
+<b class="fc"><i>462</i>&nbsp;        PeriodType type = cSeconds;</b>
+<b class="fc"><i>463</i>&nbsp;        if (type == null) {</b>
+<b class="fc"><i>464</i>&nbsp;            type = new PeriodType(</b>
+<i>465</i>&nbsp;                &quot;Seconds&quot;,
+<b class="fc"><i>466</i>&nbsp;                new DurationFieldType[] { DurationFieldType.seconds() },</b>
+<i>467</i>&nbsp;                new int[] { -1, -1, -1, -1, -1, -1, 0, -1, }
+<i>468</i>&nbsp;            );
+<b class="fc"><i>469</i>&nbsp;            cSeconds = type;</b>
+<i>470</i>&nbsp;        }
+<b class="fc"><i>471</i>&nbsp;        return type;</b>
+<i>472</i>&nbsp;    }
+<i>473</i>&nbsp;
+<i>474</i>&nbsp;    /**
+<i>475</i>&nbsp;     * Gets a type that defines just the millis field.
+<i>476</i>&nbsp;     *
+<i>477</i>&nbsp;     * @return the period type
+<i>478</i>&nbsp;     */
+<i>479</i>&nbsp;    public static PeriodType millis() {
+<b class="fc"><i>480</i>&nbsp;        PeriodType type = cMillis;</b>
+<b class="fc"><i>481</i>&nbsp;        if (type == null) {</b>
+<b class="fc"><i>482</i>&nbsp;            type = new PeriodType(</b>
+<i>483</i>&nbsp;                &quot;Millis&quot;,
+<b class="fc"><i>484</i>&nbsp;                new DurationFieldType[] { DurationFieldType.millis() },</b>
+<i>485</i>&nbsp;                new int[] { -1, -1, -1, -1, -1, -1, -1, 0, }
+<i>486</i>&nbsp;            );
+<b class="fc"><i>487</i>&nbsp;            cMillis = type;</b>
+<i>488</i>&nbsp;        }
+<b class="fc"><i>489</i>&nbsp;        return type;</b>
+<i>490</i>&nbsp;    }
+<i>491</i>&nbsp;
+<i>492</i>&nbsp;    /**
+<i>493</i>&nbsp;     * Gets a period type that contains the duration types of the array.
+<i>494</i>&nbsp;     * &lt;p&gt;
+<i>495</i>&nbsp;     * Only the 8 standard duration field types are supported.
+<i>496</i>&nbsp;     *
+<i>497</i>&nbsp;     * @param types  the types to include in the array.
+<i>498</i>&nbsp;     * @return the period type
+<i>499</i>&nbsp;     * @since 1.1
+<i>500</i>&nbsp;     */
+<i>501</i>&nbsp;    public static synchronized PeriodType forFields(DurationFieldType[] types) {
+<b class="fc"><i>502</i>&nbsp;        if (types == null || types.length == 0) {</b>
+<b class="fc"><i>503</i>&nbsp;            throw new IllegalArgumentException(&quot;Types array must not be null or empty&quot;);</b>
+<i>504</i>&nbsp;        }
+<b class="fc"><i>505</i>&nbsp;        for (int i = 0; i &lt; types.length; i++) {</b>
+<b class="fc"><i>506</i>&nbsp;            if (types[i] == null) {</b>
+<b class="fc"><i>507</i>&nbsp;                throw new IllegalArgumentException(&quot;Types array must not contain null&quot;);</b>
+<i>508</i>&nbsp;            }
+<i>509</i>&nbsp;        }
+<b class="fc"><i>510</i>&nbsp;        Map&lt;PeriodType, Object&gt; cache = cTypes;</b>
+<b class="fc"><i>511</i>&nbsp;        if (cache.isEmpty()) {</b>
+<b class="fc"><i>512</i>&nbsp;            cache.put(standard(), standard());</b>
+<b class="fc"><i>513</i>&nbsp;            cache.put(yearMonthDayTime(), yearMonthDayTime());</b>
+<b class="fc"><i>514</i>&nbsp;            cache.put(yearMonthDay(), yearMonthDay());</b>
+<b class="fc"><i>515</i>&nbsp;            cache.put(yearWeekDayTime(), yearWeekDayTime());</b>
+<b class="fc"><i>516</i>&nbsp;            cache.put(yearWeekDay(), yearWeekDay());</b>
+<b class="fc"><i>517</i>&nbsp;            cache.put(yearDayTime(), yearDayTime());</b>
+<b class="fc"><i>518</i>&nbsp;            cache.put(yearDay(), yearDay());</b>
+<b class="fc"><i>519</i>&nbsp;            cache.put(dayTime(), dayTime());</b>
+<b class="fc"><i>520</i>&nbsp;            cache.put(time(), time());</b>
+<b class="fc"><i>521</i>&nbsp;            cache.put(years(), years());</b>
+<b class="fc"><i>522</i>&nbsp;            cache.put(months(), months());</b>
+<b class="fc"><i>523</i>&nbsp;            cache.put(weeks(), weeks());</b>
+<b class="fc"><i>524</i>&nbsp;            cache.put(days(), days());</b>
+<b class="fc"><i>525</i>&nbsp;            cache.put(hours(), hours());</b>
+<b class="fc"><i>526</i>&nbsp;            cache.put(minutes(), minutes());</b>
+<b class="fc"><i>527</i>&nbsp;            cache.put(seconds(), seconds());</b>
+<b class="fc"><i>528</i>&nbsp;            cache.put(millis(), millis());</b>
+<i>529</i>&nbsp;        }
+<b class="fc"><i>530</i>&nbsp;        PeriodType inPartType = new PeriodType(null, types, null);</b>
+<b class="fc"><i>531</i>&nbsp;        Object cached = cache.get(inPartType);</b>
+<b class="fc"><i>532</i>&nbsp;        if (cached instanceof PeriodType) {</b>
+<b class="fc"><i>533</i>&nbsp;            return (PeriodType) cached;</b>
+<i>534</i>&nbsp;        }
+<b class="fc"><i>535</i>&nbsp;        if (cached != null) {</b>
+<b class="fc"><i>536</i>&nbsp;            throw new IllegalArgumentException(&quot;PeriodType does not support fields: &quot; + cached);</b>
+<i>537</i>&nbsp;        }
+<b class="fc"><i>538</i>&nbsp;        PeriodType type = standard();</b>
+<b class="fc"><i>539</i>&nbsp;        List&lt;DurationFieldType&gt; list = new ArrayList&lt;DurationFieldType&gt;(Arrays.asList(types));</b>
+<b class="fc"><i>540</i>&nbsp;        if (list.remove(DurationFieldType.years()) == false) {</b>
+<b class="fc"><i>541</i>&nbsp;            type = type.withYearsRemoved();</b>
+<i>542</i>&nbsp;        }
+<b class="fc"><i>543</i>&nbsp;        if (list.remove(DurationFieldType.months()) == false) {</b>
+<b class="fc"><i>544</i>&nbsp;            type = type.withMonthsRemoved();</b>
+<i>545</i>&nbsp;        }
+<b class="fc"><i>546</i>&nbsp;        if (list.remove(DurationFieldType.weeks()) == false) {</b>
+<b class="fc"><i>547</i>&nbsp;            type = type.withWeeksRemoved();</b>
+<i>548</i>&nbsp;        }
+<b class="fc"><i>549</i>&nbsp;        if (list.remove(DurationFieldType.days()) == false) {</b>
+<b class="fc"><i>550</i>&nbsp;            type = type.withDaysRemoved();</b>
+<i>551</i>&nbsp;        }
+<b class="fc"><i>552</i>&nbsp;        if (list.remove(DurationFieldType.hours()) == false) {</b>
+<b class="fc"><i>553</i>&nbsp;            type = type.withHoursRemoved();</b>
+<i>554</i>&nbsp;        }
+<b class="fc"><i>555</i>&nbsp;        if (list.remove(DurationFieldType.minutes()) == false) {</b>
+<b class="fc"><i>556</i>&nbsp;            type = type.withMinutesRemoved();</b>
+<i>557</i>&nbsp;        }
+<b class="fc"><i>558</i>&nbsp;        if (list.remove(DurationFieldType.seconds()) == false) {</b>
+<b class="fc"><i>559</i>&nbsp;            type = type.withSecondsRemoved();</b>
+<i>560</i>&nbsp;        }
+<b class="fc"><i>561</i>&nbsp;        if (list.remove(DurationFieldType.millis()) == false) {</b>
+<b class="fc"><i>562</i>&nbsp;            type = type.withMillisRemoved();</b>
+<i>563</i>&nbsp;        }
+<b class="fc"><i>564</i>&nbsp;        if (list.size() &gt; 0) {</b>
+<b class="fc"><i>565</i>&nbsp;            cache.put(inPartType, list);</b>
+<b class="fc"><i>566</i>&nbsp;            throw new IllegalArgumentException(&quot;PeriodType does not support fields: &quot; + list);</b>
+<i>567</i>&nbsp;        }
+<i>568</i>&nbsp;        // recheck cache in case initial array order was wrong
+<b class="fc"><i>569</i>&nbsp;        PeriodType checkPartType = new PeriodType(null, type.iTypes, null);</b>
+<b class="fc"><i>570</i>&nbsp;        PeriodType checkedType = (PeriodType) cache.get(checkPartType);</b>
+<b class="fc"><i>571</i>&nbsp;        if (checkedType != null) {</b>
+<b class="fc"><i>572</i>&nbsp;            cache.put(checkPartType, checkedType);</b>
+<b class="fc"><i>573</i>&nbsp;            return checkedType;</b>
+<i>574</i>&nbsp;        }
+<b class="fc"><i>575</i>&nbsp;        cache.put(checkPartType, type);</b>
+<b class="fc"><i>576</i>&nbsp;        return type;</b>
+<i>577</i>&nbsp;    }
+<i>578</i>&nbsp;
+<i>579</i>&nbsp;    //-----------------------------------------------------------------------    
+<i>580</i>&nbsp;    /** The name of the type */
+<i>581</i>&nbsp;    private final String iName;
+<i>582</i>&nbsp;    /** The array of types */
+<i>583</i>&nbsp;    private final DurationFieldType[] iTypes;
+<i>584</i>&nbsp;    /** The array of indices */
+<i>585</i>&nbsp;    private final int[] iIndices;
+<i>586</i>&nbsp;
+<i>587</i>&nbsp;    /**
+<i>588</i>&nbsp;     * Constructor.
+<i>589</i>&nbsp;     *
+<i>590</i>&nbsp;     * @param name  the name
+<i>591</i>&nbsp;     * @param types  the types
+<i>592</i>&nbsp;     * @param indices  the indices
+<i>593</i>&nbsp;     */
+<i>594</i>&nbsp;    protected PeriodType(String name, DurationFieldType[] types, int[] indices) {
+<b class="fc"><i>595</i>&nbsp;        super();</b>
+<b class="fc"><i>596</i>&nbsp;        iName = name;</b>
+<b class="fc"><i>597</i>&nbsp;        iTypes = types;</b>
+<b class="fc"><i>598</i>&nbsp;        iIndices = indices;</b>
+<b class="fc"><i>599</i>&nbsp;    }</b>
+<i>600</i>&nbsp;
+<i>601</i>&nbsp;    //-----------------------------------------------------------------------
+<i>602</i>&nbsp;    /**
+<i>603</i>&nbsp;     * Gets the name of the period type.
+<i>604</i>&nbsp;     * 
+<i>605</i>&nbsp;     * @return the name
+<i>606</i>&nbsp;     */
+<i>607</i>&nbsp;    public String getName() {
+<b class="fc"><i>608</i>&nbsp;        return iName;</b>
+<i>609</i>&nbsp;    }
+<i>610</i>&nbsp;
+<i>611</i>&nbsp;    /**
+<i>612</i>&nbsp;     * Gets the number of fields in the period type.
+<i>613</i>&nbsp;     * 
+<i>614</i>&nbsp;     * @return the number of fields
+<i>615</i>&nbsp;     */
+<i>616</i>&nbsp;    public int size() {
+<b class="fc"><i>617</i>&nbsp;        return iTypes.length;</b>
+<i>618</i>&nbsp;    }
+<i>619</i>&nbsp;
+<i>620</i>&nbsp;    /**
+<i>621</i>&nbsp;     * Gets the field type by index.
+<i>622</i>&nbsp;     * 
+<i>623</i>&nbsp;     * @param index  the index to retrieve
+<i>624</i>&nbsp;     * @return the field type
+<i>625</i>&nbsp;     * @throws IndexOutOfBoundsException if the index is invalid
+<i>626</i>&nbsp;     */
+<i>627</i>&nbsp;    public DurationFieldType getFieldType(int index) {
+<b class="fc"><i>628</i>&nbsp;        return iTypes[index];</b>
+<i>629</i>&nbsp;    }
+<i>630</i>&nbsp;
+<i>631</i>&nbsp;    /**
+<i>632</i>&nbsp;     * Checks whether the field specified is supported by this period.
+<i>633</i>&nbsp;     *
+<i>634</i>&nbsp;     * @param type  the type to check, may be null which returns false
+<i>635</i>&nbsp;     * @return true if the field is supported
+<i>636</i>&nbsp;     */
+<i>637</i>&nbsp;    public boolean isSupported(DurationFieldType type) {
+<b class="fc"><i>638</i>&nbsp;        return (indexOf(type) &gt;= 0);</b>
+<i>639</i>&nbsp;    }
+<i>640</i>&nbsp;
+<i>641</i>&nbsp;    /**
+<i>642</i>&nbsp;     * Gets the index of the field in this period.
+<i>643</i>&nbsp;     *
+<i>644</i>&nbsp;     * @param type  the type to check, may be null which returns -1
+<i>645</i>&nbsp;     * @return the index of -1 if not supported
+<i>646</i>&nbsp;     */
+<i>647</i>&nbsp;    public int indexOf(DurationFieldType type) {
+<b class="fc"><i>648</i>&nbsp;        for (int i = 0, isize = size(); i &lt; isize; i++) {</b>
+<b class="fc"><i>649</i>&nbsp;            if (iTypes[i] == type) {</b>
+<b class="fc"><i>650</i>&nbsp;                return i;</b>
+<i>651</i>&nbsp;            }
+<i>652</i>&nbsp;        }
+<b class="fc"><i>653</i>&nbsp;        return -1;</b>
+<i>654</i>&nbsp;    }
+<i>655</i>&nbsp;
+<i>656</i>&nbsp;    /**
+<i>657</i>&nbsp;     * Gets a debugging to string.
+<i>658</i>&nbsp;     * 
+<i>659</i>&nbsp;     * @return a string
+<i>660</i>&nbsp;     */
+<i>661</i>&nbsp;    public String toString() {
+<b class="fc"><i>662</i>&nbsp;        return &quot;PeriodType[&quot; + getName() + &quot;]&quot;;</b>
+<i>663</i>&nbsp;    }
+<i>664</i>&nbsp;
+<i>665</i>&nbsp;    //-----------------------------------------------------------------------
+<i>666</i>&nbsp;    /**
+<i>667</i>&nbsp;     * Gets the indexed field part of the period.
+<i>668</i>&nbsp;     * 
+<i>669</i>&nbsp;     * @param period  the period to query
+<i>670</i>&nbsp;     * @param index  the index to use
+<i>671</i>&nbsp;     * @return the value of the field, zero if unsupported
+<i>672</i>&nbsp;     */
+<i>673</i>&nbsp;    int getIndexedField(ReadablePeriod period, int index) {
+<b class="fc"><i>674</i>&nbsp;        int realIndex = iIndices[index];</b>
+<b class="fc"><i>675</i>&nbsp;        return (realIndex == -1 ? 0 : period.getValue(realIndex));</b>
+<i>676</i>&nbsp;    }
+<i>677</i>&nbsp;
+<i>678</i>&nbsp;    /**
+<i>679</i>&nbsp;     * Sets the indexed field part of the period.
+<i>680</i>&nbsp;     * 
+<i>681</i>&nbsp;     * @param period  the period to query
+<i>682</i>&nbsp;     * @param index  the index to use
+<i>683</i>&nbsp;     * @param values  the array to populate
+<i>684</i>&nbsp;     * @param newValue  the value to set
+<i>685</i>&nbsp;     * @throws UnsupportedOperationException if not supported
+<i>686</i>&nbsp;     */
+<i>687</i>&nbsp;    boolean setIndexedField(ReadablePeriod period, int index, int[] values, int newValue) {
+<b class="fc"><i>688</i>&nbsp;        int realIndex = iIndices[index];</b>
+<b class="fc"><i>689</i>&nbsp;        if (realIndex == -1) {</b>
+<b class="fc"><i>690</i>&nbsp;            throw new UnsupportedOperationException(&quot;Field is not supported&quot;);</b>
+<i>691</i>&nbsp;        }
+<b class="fc"><i>692</i>&nbsp;        values[realIndex] = newValue;</b>
+<b class="fc"><i>693</i>&nbsp;        return true;</b>
+<i>694</i>&nbsp;    }
+<i>695</i>&nbsp;
+<i>696</i>&nbsp;    /**
+<i>697</i>&nbsp;     * Adds to the indexed field part of the period.
+<i>698</i>&nbsp;     * 
+<i>699</i>&nbsp;     * @param period  the period to query
+<i>700</i>&nbsp;     * @param index  the index to use
+<i>701</i>&nbsp;     * @param values  the array to populate
+<i>702</i>&nbsp;     * @param valueToAdd  the value to add
+<i>703</i>&nbsp;     * @return true if the array is updated
+<i>704</i>&nbsp;     * @throws UnsupportedOperationException if not supported
+<i>705</i>&nbsp;     */
+<i>706</i>&nbsp;    boolean addIndexedField(ReadablePeriod period, int index, int[] values, int valueToAdd) {
+<b class="fc"><i>707</i>&nbsp;        if (valueToAdd == 0) {</b>
+<b class="fc"><i>708</i>&nbsp;            return false;</b>
+<i>709</i>&nbsp;        }
+<b class="fc"><i>710</i>&nbsp;        int realIndex = iIndices[index];</b>
+<b class="fc"><i>711</i>&nbsp;        if (realIndex == -1) {</b>
+<b class="fc"><i>712</i>&nbsp;            throw new UnsupportedOperationException(&quot;Field is not supported&quot;);</b>
+<i>713</i>&nbsp;        }
+<b class="fc"><i>714</i>&nbsp;        values[realIndex] = FieldUtils.safeAdd(values[realIndex], valueToAdd);</b>
+<b class="fc"><i>715</i>&nbsp;        return true;</b>
+<i>716</i>&nbsp;    }
+<i>717</i>&nbsp;
+<i>718</i>&nbsp;    //-----------------------------------------------------------------------
+<i>719</i>&nbsp;    /**
+<i>720</i>&nbsp;     * Returns a version of this PeriodType instance that does not support years.
+<i>721</i>&nbsp;     * 
+<i>722</i>&nbsp;     * @return a new period type that supports the original set of fields except years
+<i>723</i>&nbsp;     */
+<i>724</i>&nbsp;    public PeriodType withYearsRemoved() {
+<b class="fc"><i>725</i>&nbsp;        return withFieldRemoved(0, &quot;NoYears&quot;);</b>
+<i>726</i>&nbsp;    }
+<i>727</i>&nbsp;
+<i>728</i>&nbsp;    /**
+<i>729</i>&nbsp;     * Returns a version of this PeriodType instance that does not support months.
+<i>730</i>&nbsp;     * 
+<i>731</i>&nbsp;     * @return a new period type that supports the original set of fields except months
+<i>732</i>&nbsp;     */
+<i>733</i>&nbsp;    public PeriodType withMonthsRemoved() {
+<b class="fc"><i>734</i>&nbsp;        return withFieldRemoved(1, &quot;NoMonths&quot;);</b>
+<i>735</i>&nbsp;    }
+<i>736</i>&nbsp;
+<i>737</i>&nbsp;    /**
+<i>738</i>&nbsp;     * Returns a version of this PeriodType instance that does not support weeks.
+<i>739</i>&nbsp;     * 
+<i>740</i>&nbsp;     * @return a new period type that supports the original set of fields except weeks
+<i>741</i>&nbsp;     */
+<i>742</i>&nbsp;    public PeriodType withWeeksRemoved() {
+<b class="fc"><i>743</i>&nbsp;        return withFieldRemoved(2, &quot;NoWeeks&quot;);</b>
+<i>744</i>&nbsp;    }
+<i>745</i>&nbsp;
+<i>746</i>&nbsp;    /**
+<i>747</i>&nbsp;     * Returns a version of this PeriodType instance that does not support days.
+<i>748</i>&nbsp;     * 
+<i>749</i>&nbsp;     * @return a new period type that supports the original set of fields except days
+<i>750</i>&nbsp;     */
+<i>751</i>&nbsp;    public PeriodType withDaysRemoved() {
+<b class="fc"><i>752</i>&nbsp;        return withFieldRemoved(3, &quot;NoDays&quot;);</b>
+<i>753</i>&nbsp;    }
+<i>754</i>&nbsp;
+<i>755</i>&nbsp;    /**
+<i>756</i>&nbsp;     * Returns a version of this PeriodType instance that does not support hours.
+<i>757</i>&nbsp;     * 
+<i>758</i>&nbsp;     * @return a new period type that supports the original set of fields except hours
+<i>759</i>&nbsp;     */
+<i>760</i>&nbsp;    public PeriodType withHoursRemoved() {
+<b class="fc"><i>761</i>&nbsp;        return withFieldRemoved(4, &quot;NoHours&quot;);</b>
+<i>762</i>&nbsp;    }
+<i>763</i>&nbsp;
+<i>764</i>&nbsp;    /**
+<i>765</i>&nbsp;     * Returns a version of this PeriodType instance that does not support minutes.
+<i>766</i>&nbsp;     * 
+<i>767</i>&nbsp;     * @return a new period type that supports the original set of fields except minutes
+<i>768</i>&nbsp;     */
+<i>769</i>&nbsp;    public PeriodType withMinutesRemoved() {
+<b class="fc"><i>770</i>&nbsp;        return withFieldRemoved(5, &quot;NoMinutes&quot;);</b>
+<i>771</i>&nbsp;    }
+<i>772</i>&nbsp;
+<i>773</i>&nbsp;    /**
+<i>774</i>&nbsp;     * Returns a version of this PeriodType instance that does not support seconds.
+<i>775</i>&nbsp;     * 
+<i>776</i>&nbsp;     * @return a new period type that supports the original set of fields except seconds
+<i>777</i>&nbsp;     */
+<i>778</i>&nbsp;    public PeriodType withSecondsRemoved() {
+<b class="fc"><i>779</i>&nbsp;        return withFieldRemoved(6, &quot;NoSeconds&quot;);</b>
+<i>780</i>&nbsp;    }
+<i>781</i>&nbsp;
+<i>782</i>&nbsp;    /**
+<i>783</i>&nbsp;     * Returns a version of this PeriodType instance that does not support milliseconds.
+<i>784</i>&nbsp;     * 
+<i>785</i>&nbsp;     * @return a new period type that supports the original set of fields except milliseconds
+<i>786</i>&nbsp;     */
+<i>787</i>&nbsp;    public PeriodType withMillisRemoved() {
+<b class="fc"><i>788</i>&nbsp;        return withFieldRemoved(7, &quot;NoMillis&quot;);</b>
+<i>789</i>&nbsp;    }
+<i>790</i>&nbsp;
+<i>791</i>&nbsp;    /**
+<i>792</i>&nbsp;     * Removes the field specified by indices index.
+<i>793</i>&nbsp;     * 
+<i>794</i>&nbsp;     * @param indicesIndex  the index to remove
+<i>795</i>&nbsp;     * @param name  the name addition
+<i>796</i>&nbsp;     * @return the new type
+<i>797</i>&nbsp;     */
+<i>798</i>&nbsp;    private PeriodType withFieldRemoved(int indicesIndex, String name) {
+<b class="fc"><i>799</i>&nbsp;        int fieldIndex = iIndices[indicesIndex];</b>
+<b class="fc"><i>800</i>&nbsp;        if (fieldIndex == -1) {</b>
+<b class="fc"><i>801</i>&nbsp;            return this;</b>
+<i>802</i>&nbsp;        }
+<i>803</i>&nbsp;        
+<b class="fc"><i>804</i>&nbsp;        DurationFieldType[] types = new DurationFieldType[size() - 1];</b>
+<b class="fc"><i>805</i>&nbsp;        for (int i = 0; i &lt; iTypes.length; i++) {</b>
+<b class="fc"><i>806</i>&nbsp;            if (i &lt; fieldIndex) {</b>
+<b class="fc"><i>807</i>&nbsp;                types[i] = iTypes[i];</b>
+<b class="fc"><i>808</i>&nbsp;            } else if (i &gt; fieldIndex) {</b>
+<b class="fc"><i>809</i>&nbsp;                types[i - 1] = iTypes[i];</b>
+<i>810</i>&nbsp;            }
+<i>811</i>&nbsp;        }
+<i>812</i>&nbsp;        
+<b class="fc"><i>813</i>&nbsp;        int[] indices = new int[8];</b>
+<b class="fc"><i>814</i>&nbsp;        for (int i = 0; i &lt; indices.length; i++) {</b>
+<b class="fc"><i>815</i>&nbsp;            if (i &lt; indicesIndex) {</b>
+<b class="fc"><i>816</i>&nbsp;                indices[i] = iIndices[i];</b>
+<b class="fc"><i>817</i>&nbsp;            } else if (i &gt; indicesIndex) {</b>
+<b class="fc"><i>818</i>&nbsp;                indices[i] = (iIndices[i] == -1 ? -1 : iIndices[i] - 1);</b>
+<i>819</i>&nbsp;            } else {
+<b class="fc"><i>820</i>&nbsp;                indices[i] = -1;</b>
+<i>821</i>&nbsp;            }
+<i>822</i>&nbsp;        }
+<b class="fc"><i>823</i>&nbsp;        return new PeriodType(getName() + name, types, indices);</b>
+<i>824</i>&nbsp;    }
+<i>825</i>&nbsp;
+<i>826</i>&nbsp;    //-----------------------------------------------------------------------
+<i>827</i>&nbsp;    /**
+<i>828</i>&nbsp;     * Compares this type to another object.
+<i>829</i>&nbsp;     * To be equal, the object must be a PeriodType with the same set of fields.
+<i>830</i>&nbsp;     * 
+<i>831</i>&nbsp;     * @param obj  the object to compare to
+<i>832</i>&nbsp;     * @return true if equal
+<i>833</i>&nbsp;     */
+<i>834</i>&nbsp;    public boolean equals(Object obj) {
+<b class="fc"><i>835</i>&nbsp;        if (this == obj) {</b>
+<b class="fc"><i>836</i>&nbsp;            return true;</b>
+<i>837</i>&nbsp;        }
+<b class="fc"><i>838</i>&nbsp;        if (obj instanceof PeriodType == false) {</b>
+<b class="fc"><i>839</i>&nbsp;            return false;</b>
+<i>840</i>&nbsp;        }
+<b class="fc"><i>841</i>&nbsp;        PeriodType other = (PeriodType) obj;</b>
+<b class="fc"><i>842</i>&nbsp;        return (Arrays.equals(iTypes, other.iTypes));</b>
+<i>843</i>&nbsp;    }
+<i>844</i>&nbsp;
+<i>845</i>&nbsp;    /**
+<i>846</i>&nbsp;     * Returns a hashcode based on the field types.
+<i>847</i>&nbsp;     * 
+<i>848</i>&nbsp;     * @return a suitable hashcode
+<i>849</i>&nbsp;     */
+<i>850</i>&nbsp;    public int hashCode() {
+<b class="fc"><i>851</i>&nbsp;        int hash = 0;</b>
+<b class="fc"><i>852</i>&nbsp;        for (int i = 0; i &lt; iTypes.length; i++) {</b>
+<b class="fc"><i>853</i>&nbsp;            hash += iTypes[i].hashCode();</b>
+<i>854</i>&nbsp;        }
+<b class="fc"><i>855</i>&nbsp;        return hash;</b>
+<i>856</i>&nbsp;    }
+<i>857</i>&nbsp;
+<i>858</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

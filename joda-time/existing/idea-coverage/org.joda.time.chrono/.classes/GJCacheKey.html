@@ -1,0 +1,160 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: GJCacheKey</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time.chrono</a> ]
+</div>
+
+<h1>Coverage Summary for Class: GJCacheKey (org.joda.time.chrono)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">GJCacheKey</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/ 3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    67.7%
+  </span>
+  <span class="absValue">
+    (21/ 31)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2014 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time.chrono;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;import org.joda.time.DateTimeZone;
+<i>19</i>&nbsp;import org.joda.time.Instant;
+<i>20</i>&nbsp;
+<i>21</i>&nbsp;/**
+<i>22</i>&nbsp; * For internal usage in GJChronology only. 
+<i>23</i>&nbsp; */
+<i>24</i>&nbsp;class GJCacheKey {
+<i>25</i>&nbsp;    private final DateTimeZone zone;
+<i>26</i>&nbsp;    private final Instant cutoverInstant;
+<i>27</i>&nbsp;    private final int minDaysInFirstWeek;
+<i>28</i>&nbsp;
+<b class="fc"><i>29</i>&nbsp;    GJCacheKey(DateTimeZone zone, Instant cutoverInstant, int minDaysInFirstWeek) {</b>
+<b class="fc"><i>30</i>&nbsp;        this.zone = zone;</b>
+<b class="fc"><i>31</i>&nbsp;        this.cutoverInstant = cutoverInstant;</b>
+<b class="fc"><i>32</i>&nbsp;        this.minDaysInFirstWeek = minDaysInFirstWeek;</b>
+<b class="fc"><i>33</i>&nbsp;    }</b>
+<i>34</i>&nbsp;
+<i>35</i>&nbsp;    @Override
+<i>36</i>&nbsp;    public int hashCode() {
+<b class="fc"><i>37</i>&nbsp;        final int prime = 31;</b>
+<b class="fc"><i>38</i>&nbsp;        int result = 1;</b>
+<b class="fc"><i>39</i>&nbsp;        result = prime * result + ((cutoverInstant == null) ? 0 : cutoverInstant.hashCode());</b>
+<b class="fc"><i>40</i>&nbsp;        result = prime * result + minDaysInFirstWeek;</b>
+<b class="fc"><i>41</i>&nbsp;        result = prime * result + ((zone == null) ? 0 : zone.hashCode());</b>
+<b class="fc"><i>42</i>&nbsp;        return result;</b>
+<i>43</i>&nbsp;    }
+<i>44</i>&nbsp;
+<i>45</i>&nbsp;    @Override
+<i>46</i>&nbsp;    public boolean equals(Object obj) {
+<b class="fc"><i>47</i>&nbsp;        if (this == obj) {</b>
+<b class="nc"><i>48</i>&nbsp;            return true;</b>
+<i>49</i>&nbsp;        }
+<b class="fc"><i>50</i>&nbsp;        if (obj == null) {</b>
+<b class="nc"><i>51</i>&nbsp;            return false;</b>
+<i>52</i>&nbsp;        }
+<b class="fc"><i>53</i>&nbsp;        if (!(obj instanceof GJCacheKey)) {</b>
+<b class="nc"><i>54</i>&nbsp;            return false;</b>
+<i>55</i>&nbsp;        }
+<b class="fc"><i>56</i>&nbsp;        GJCacheKey other = (GJCacheKey) obj;</b>
+<b class="fc"><i>57</i>&nbsp;        if (cutoverInstant == null) {</b>
+<b class="nc"><i>58</i>&nbsp;            if (other.cutoverInstant != null) {</b>
+<b class="nc"><i>59</i>&nbsp;                return false;</b>
+<i>60</i>&nbsp;            }
+<b class="fc"><i>61</i>&nbsp;        } else if (!cutoverInstant.equals(other.cutoverInstant)) {</b>
+<b class="nc"><i>62</i>&nbsp;            return false;</b>
+<i>63</i>&nbsp;        }
+<b class="fc"><i>64</i>&nbsp;        if (minDaysInFirstWeek != other.minDaysInFirstWeek) {</b>
+<b class="nc"><i>65</i>&nbsp;            return false;</b>
+<i>66</i>&nbsp;        }
+<b class="fc"><i>67</i>&nbsp;        if (zone == null) {</b>
+<b class="nc"><i>68</i>&nbsp;            if (other.zone != null) {</b>
+<b class="nc"><i>69</i>&nbsp;                return false;</b>
+<i>70</i>&nbsp;            }
+<b class="fc"><i>71</i>&nbsp;        } else if (!zone.equals(other.zone)) {</b>
+<b class="nc"><i>72</i>&nbsp;            return false;</b>
+<i>73</i>&nbsp;        }
+<b class="fc"><i>74</i>&nbsp;        return true;</b>
+<i>75</i>&nbsp;    }
+<i>76</i>&nbsp;
+<i>77</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

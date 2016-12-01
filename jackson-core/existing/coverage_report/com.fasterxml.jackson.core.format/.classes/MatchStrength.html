@@ -1,0 +1,145 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: MatchStrength</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.fasterxml.jackson.core.format</a> ]
+</div>
+
+<h1>Coverage Summary for Class: MatchStrength (com.fasterxml.jackson.core.format)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">MatchStrength</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (2/ 2)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (6/ 6)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package com.fasterxml.jackson.core.format;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;/**
+<i>4</i>&nbsp; * Enumeration used to indicate strength of match between data format
+<i>5</i>&nbsp; * and piece of data (typically beginning of a data file).
+<i>6</i>&nbsp; * Values are in increasing match strength; and detectors should return
+<i>7</i>&nbsp; * &quot;strongest&quot; value: that is, it should start with strongest match
+<i>8</i>&nbsp; * criteria, and downgrading if criteria is not fulfilled.
+<i>9</i>&nbsp; */
+<b class="fc"><i>10</i>&nbsp;public enum MatchStrength</b>
+<i>11</i>&nbsp;{
+<i>12</i>&nbsp;    /**
+<i>13</i>&nbsp;     * Value that indicates that given data can not be in given format.
+<i>14</i>&nbsp;     */
+<b class="fc"><i>15</i>&nbsp;    NO_MATCH,</b>
+<i>16</i>&nbsp;    
+<i>17</i>&nbsp;    /**
+<i>18</i>&nbsp;     * Value that indicates that detector can not find out whether could
+<i>19</i>&nbsp;     * be a match or not.
+<i>20</i>&nbsp;     * This can occur for example for textual data formats t
+<i>21</i>&nbsp;     * when there are so many leading spaces that detector can not
+<i>22</i>&nbsp;     * find the first data byte (because detectors typically limit lookahead
+<i>23</i>&nbsp;     * to some smallish value).
+<i>24</i>&nbsp;     */
+<b class="fc"><i>25</i>&nbsp;    INCONCLUSIVE,</b>
+<i>26</i>&nbsp;
+<i>27</i>&nbsp;    /**
+<i>28</i>&nbsp;     * Value that indicates that given data could be of specified format (i.e.
+<i>29</i>&nbsp;     * it can not be ruled out). This can occur for example when seen data
+<i>30</i>&nbsp;     * is both not in canonical formats (for example: JSON data should be a JSON Array or Object
+<i>31</i>&nbsp;     * not a scalar value, as per JSON specification) and there are known use case
+<i>32</i>&nbsp;     * where a format detected is actually used (plain JSON Strings are actually used, even
+<i>33</i>&nbsp;     * though specification does not indicate that as valid usage: as such, seeing a leading
+<i>34</i>&nbsp;     * double-quote could indicate a JSON String, which plausibly &lt;b&gt;could&lt;/b&gt; indicate
+<i>35</i>&nbsp;     * non-standard JSON usage).
+<i>36</i>&nbsp;     */
+<b class="fc"><i>37</i>&nbsp;    WEAK_MATCH,</b>
+<i>38</i>&nbsp;    
+<i>39</i>&nbsp;    /**
+<i>40</i>&nbsp;     * Value that indicates that given data conforms to (one of) canonical form(s) of
+<i>41</i>&nbsp;     * the data format.
+<i>42</i>&nbsp;     *&lt;p&gt;
+<i>43</i>&nbsp;     * For example, when testing for XML data format,
+<i>44</i>&nbsp;     * seeing a less-than character (&quot;&amp;lt;&quot;) alone (with possible leading spaces)
+<i>45</i>&nbsp;     * would be a strong indication that data could
+<i>46</i>&nbsp;     * be in xml format (but see below for {@link #FULL_MATCH} description for more)
+<i>47</i>&nbsp;     */
+<b class="fc"><i>48</i>&nbsp;    SOLID_MATCH,</b>
+<i>49</i>&nbsp;
+<i>50</i>&nbsp;    /**
+<i>51</i>&nbsp;     * Value that indicates that given data contains a signature that is deemed
+<i>52</i>&nbsp;     * specific enough to uniquely indicate data format used.
+<i>53</i>&nbsp;     *&lt;p&gt;
+<i>54</i>&nbsp;     * For example, when testing for XML data format,
+<i>55</i>&nbsp;     * seing &quot;&amp;lt;xml&quot; as the first data bytes (&quot;XML declaration&quot;, as per XML specification)
+<i>56</i>&nbsp;     * could give full confidence that data is indeed in XML format.
+<i>57</i>&nbsp;     * Not all data formats have unique leading identifiers to allow full matches; for example,
+<i>58</i>&nbsp;     * JSON only has heuristic matches and can have at most {@link #SOLID_MATCH}) match.
+<i>59</i>&nbsp;     */
+<b class="fc"><i>60</i>&nbsp;    FULL_MATCH</b>
+<i>61</i>&nbsp;    ;
+<i>62</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 04:22</div>
+</div>
+</body>
+</html>

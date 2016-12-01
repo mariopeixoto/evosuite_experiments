@@ -1,0 +1,228 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: ReadableInstant</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time</a> ]
+</div>
+
+<h1>Coverage Summary for Class: ReadableInstant (org.joda.time)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+</tr>
+<tr>
+  <td class="name">ReadableInstant</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2009 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;/**
+<i>19</i>&nbsp; * Defines an instant in the datetime continuum.
+<i>20</i>&nbsp; * This interface expresses the datetime as milliseconds from 1970-01-01T00:00:00Z.
+<i>21</i>&nbsp; * &lt;p&gt;
+<i>22</i>&nbsp; * The implementation of this interface may be mutable or immutable.
+<i>23</i>&nbsp; * This interface only gives access to retrieve data, never to change it.
+<i>24</i>&nbsp; * &lt;p&gt;
+<i>25</i>&nbsp; * Methods in your application should be defined using &lt;code&gt;ReadableInstant&lt;/code&gt;
+<i>26</i>&nbsp; * as a parameter if the method only wants to read the instant without needing to know
+<i>27</i>&nbsp; * the specific datetime fields.
+<i>28</i>&nbsp; * &lt;p&gt;
+<i>29</i>&nbsp; * The {@code compareTo} method is no longer defined in this class in version 2.0.
+<i>30</i>&nbsp; * Instead, the definition is simply inherited from the {@code Comparable} interface.
+<i>31</i>&nbsp; * This approach is necessary to preserve binary compatibility.
+<i>32</i>&nbsp; * The definition of the comparison is ascending order by millisecond instant.
+<i>33</i>&nbsp; * Implementors are recommended to extend {@code AbstractInstant} instead of this interface.
+<i>34</i>&nbsp; *
+<i>35</i>&nbsp; * @author Stephen Colebourne
+<i>36</i>&nbsp; * @since 1.0
+<i>37</i>&nbsp; */
+<i>38</i>&nbsp;public interface ReadableInstant extends Comparable&lt;ReadableInstant&gt; {
+<i>39</i>&nbsp;
+<i>40</i>&nbsp;    /**
+<i>41</i>&nbsp;     * Get the value as the number of milliseconds since
+<i>42</i>&nbsp;     * the epoch, 1970-01-01T00:00:00Z.
+<i>43</i>&nbsp;     *
+<i>44</i>&nbsp;     * @return the value as milliseconds
+<i>45</i>&nbsp;     */
+<i>46</i>&nbsp;    long getMillis();
+<i>47</i>&nbsp;
+<i>48</i>&nbsp;    /**
+<i>49</i>&nbsp;     * Gets the chronology of the instant.
+<i>50</i>&nbsp;     * &lt;p&gt;
+<i>51</i>&nbsp;     * The {@link Chronology} provides conversion from the millisecond
+<i>52</i>&nbsp;     * value to meaningful fields in a particular calendar system.
+<i>53</i>&nbsp;     * 
+<i>54</i>&nbsp;     * @return the Chronology, never null
+<i>55</i>&nbsp;     */
+<i>56</i>&nbsp;    Chronology getChronology();
+<i>57</i>&nbsp;
+<i>58</i>&nbsp;    /**
+<i>59</i>&nbsp;     * Gets the time zone of the instant from the chronology.
+<i>60</i>&nbsp;     * 
+<i>61</i>&nbsp;     * @return the DateTimeZone that the instant is using, never null
+<i>62</i>&nbsp;     */
+<i>63</i>&nbsp;    DateTimeZone getZone();
+<i>64</i>&nbsp;
+<i>65</i>&nbsp;    /**
+<i>66</i>&nbsp;     * Get the value of one of the fields of a datetime.
+<i>67</i>&nbsp;     * &lt;p&gt;
+<i>68</i>&nbsp;     * This method uses the chronology of the instant to obtain the value.
+<i>69</i>&nbsp;     *
+<i>70</i>&nbsp;     * @param type  a field type, usually obtained from DateTimeFieldType, not null
+<i>71</i>&nbsp;     * @return the value of that field
+<i>72</i>&nbsp;     * @throws IllegalArgumentException if the field type is null
+<i>73</i>&nbsp;     */
+<i>74</i>&nbsp;    int get(DateTimeFieldType type);
+<i>75</i>&nbsp;
+<i>76</i>&nbsp;    /**
+<i>77</i>&nbsp;     * Checks whether the field type specified is supported by this implementation.
+<i>78</i>&nbsp;     *
+<i>79</i>&nbsp;     * @param field  the field type to check, may be null which returns false
+<i>80</i>&nbsp;     * @return true if the field is supported
+<i>81</i>&nbsp;     */
+<i>82</i>&nbsp;    boolean isSupported(DateTimeFieldType field);
+<i>83</i>&nbsp;
+<i>84</i>&nbsp;    //-----------------------------------------------------------------------
+<i>85</i>&nbsp;    /**
+<i>86</i>&nbsp;     * Get the value as a simple immutable &lt;code&gt;Instant&lt;/code&gt; object.
+<i>87</i>&nbsp;     * &lt;p&gt;
+<i>88</i>&nbsp;     * This can be useful if you don&#39;t trust the implementation
+<i>89</i>&nbsp;     * of the interface to be well-behaved, or to get a guaranteed
+<i>90</i>&nbsp;     * immutable object.
+<i>91</i>&nbsp;     *
+<i>92</i>&nbsp;     * @return the value as an &lt;code&gt;Instant&lt;/code&gt; object
+<i>93</i>&nbsp;     */
+<i>94</i>&nbsp;    Instant toInstant();
+<i>95</i>&nbsp;
+<i>96</i>&nbsp;    //-----------------------------------------------------------------------
+<i>97</i>&nbsp;    // Method is no longer defined here as that would break generic backwards compatibility
+<i>98</i>&nbsp;//    /**
+<i>99</i>&nbsp;//     * Compares this object with the specified object for ascending
+<i>100</i>&nbsp;//     * millisecond instant order. This ordering is inconsistent with
+<i>101</i>&nbsp;//     * equals, as it ignores the Chronology.
+<i>102</i>&nbsp;//     * &lt;p&gt;
+<i>103</i>&nbsp;//     * All ReadableInstant instances are accepted.
+<i>104</i>&nbsp;//     *
+<i>105</i>&nbsp;//     * @param readableInstant  a readable instant to check against
+<i>106</i>&nbsp;//     * @return negative value if this is less, 0 if equal, or positive value if greater
+<i>107</i>&nbsp;//     * @throws NullPointerException if the object is null
+<i>108</i>&nbsp;//     * @throws ClassCastException if the object type is not supported
+<i>109</i>&nbsp;//     */
+<i>110</i>&nbsp;//    int compareTo(ReadableInstant readableInstant);
+<i>111</i>&nbsp;
+<i>112</i>&nbsp;    //-----------------------------------------------------------------------
+<i>113</i>&nbsp;    /**
+<i>114</i>&nbsp;     * Is this instant equal to the instant passed in
+<i>115</i>&nbsp;     * comparing solely by millisecond.
+<i>116</i>&nbsp;     *
+<i>117</i>&nbsp;     * @param instant  an instant to check against, null means now
+<i>118</i>&nbsp;     * @return true if the instant is equal to the instant passed in
+<i>119</i>&nbsp;     */
+<i>120</i>&nbsp;    boolean isEqual(ReadableInstant instant);
+<i>121</i>&nbsp;
+<i>122</i>&nbsp;    /**
+<i>123</i>&nbsp;     * Is this instant after the instant passed in
+<i>124</i>&nbsp;     * comparing solely by millisecond.
+<i>125</i>&nbsp;     *
+<i>126</i>&nbsp;     * @param instant  an instant to check against, null means now
+<i>127</i>&nbsp;     * @return true if the instant is after the instant passed in
+<i>128</i>&nbsp;     */
+<i>129</i>&nbsp;    boolean isAfter(ReadableInstant instant);
+<i>130</i>&nbsp;
+<i>131</i>&nbsp;    /**
+<i>132</i>&nbsp;     * Is this instant before the instant passed in
+<i>133</i>&nbsp;     * comparing solely by millisecond.
+<i>134</i>&nbsp;     *
+<i>135</i>&nbsp;     * @param instant  an instant to check against, null means now
+<i>136</i>&nbsp;     * @return true if the instant is before the instant passed in
+<i>137</i>&nbsp;     */
+<i>138</i>&nbsp;    boolean isBefore(ReadableInstant instant);
+<i>139</i>&nbsp;
+<i>140</i>&nbsp;    //-----------------------------------------------------------------------
+<i>141</i>&nbsp;    /**
+<i>142</i>&nbsp;     * Compares this object with the specified object for equality based
+<i>143</i>&nbsp;     * on the millisecond instant and the Chronology. All ReadableInstant
+<i>144</i>&nbsp;     * instances are accepted.
+<i>145</i>&nbsp;     * &lt;p&gt;
+<i>146</i>&nbsp;     * To compare two instants for absolute time (ie. UTC milliseconds 
+<i>147</i>&nbsp;     * ignoring the chronology), use {@link #isEqual(ReadableInstant)} or
+<i>148</i>&nbsp;     * {@link #compareTo(Object)}.
+<i>149</i>&nbsp;     *
+<i>150</i>&nbsp;     * @param readableInstant  a readable instant to check against
+<i>151</i>&nbsp;     * @return true if millisecond and chronology are equal, false if
+<i>152</i>&nbsp;     *  not or the instant is null or of an incorrect type
+<i>153</i>&nbsp;     */
+<i>154</i>&nbsp;    boolean equals(Object readableInstant);
+<i>155</i>&nbsp;
+<i>156</i>&nbsp;    /**
+<i>157</i>&nbsp;     * Gets a hash code for the instant that is compatible with the 
+<i>158</i>&nbsp;     * equals method.
+<i>159</i>&nbsp;     * &lt;p&gt;
+<i>160</i>&nbsp;     * The formula used must be as follows:
+<i>161</i>&nbsp;     * &lt;pre&gt;
+<i>162</i>&nbsp;     * ((int) (getMillis() ^ (getMillis() &gt;&gt;&gt; 32))) +
+<i>163</i>&nbsp;     * (getChronology().hashCode())
+<i>164</i>&nbsp;     * &lt;/pre&gt;
+<i>165</i>&nbsp;     *
+<i>166</i>&nbsp;     * @return a hash code as defined above
+<i>167</i>&nbsp;     */
+<i>168</i>&nbsp;    int hashCode();
+<i>169</i>&nbsp;
+<i>170</i>&nbsp;    //-----------------------------------------------------------------------
+<i>171</i>&nbsp;    /**
+<i>172</i>&nbsp;     * Get the value as a String in a recognisable ISO8601 format.
+<i>173</i>&nbsp;     * &lt;p&gt;
+<i>174</i>&nbsp;     * The string output is in ISO8601 format to enable the String
+<i>175</i>&nbsp;     * constructor to correctly parse it.
+<i>176</i>&nbsp;     *
+<i>177</i>&nbsp;     * @return the value as an ISO8601 string
+<i>178</i>&nbsp;     */
+<i>179</i>&nbsp;    String toString();
+<i>180</i>&nbsp;
+<i>181</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>

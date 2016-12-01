@@ -1,0 +1,1378 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: ByteQuadsCanonicalizer</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.fasterxml.jackson.core.sym</a> ]
+</div>
+
+<h1>Coverage Summary for Class: ByteQuadsCanonicalizer (com.fasterxml.jackson.core.sym)</h1>
+
+<table class="coverageStats">
+
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">ByteQuadsCanonicalizer</td>
+<td class="coverageStat">
+  <span class="percent">
+    89.1%
+  </span>
+  <span class="absValue">
+    (41/ 46)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    87.7%
+  </span>
+  <span class="absValue">
+    (392/ 447)
+  </span>
+</td>
+</tr>
+  <tr>
+    <td class="name">ByteQuadsCanonicalizer$TableInfo</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (3/ 3)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (21/ 21)
+  </span>
+</td>
+  </tr>
+<tr>
+  <td class="name"><strong>total</strong></td>
+<td class="coverageStat">
+  <span class="percent">
+    89.8%
+  </span>
+  <span class="absValue">
+    (44/ 49)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    88.2%
+  </span>
+  <span class="absValue">
+    (413/ 468)
+  </span>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package com.fasterxml.jackson.core.sym;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import java.util.Arrays;
+<i>4</i>&nbsp;import java.util.concurrent.atomic.AtomicReference;
+<i>5</i>&nbsp;
+<i>6</i>&nbsp;import com.fasterxml.jackson.core.JsonFactory;
+<i>7</i>&nbsp;import com.fasterxml.jackson.core.util.InternCache;
+<i>8</i>&nbsp;
+<i>9</i>&nbsp;/**
+<i>10</i>&nbsp; * Replacement for &lt;code&gt;BytesToNameCanonicalizer&lt;/code&gt; which aims at more localized
+<i>11</i>&nbsp; * memory access due to flattening of name quad data.
+<i>12</i>&nbsp; * Performance improvement modest for simple JSON document data binding (maybe 3%),
+<i>13</i>&nbsp; * but should help more for larger symbol tables, or for binary formats like Smile.
+<i>14</i>&nbsp; *
+<i>15</i>&nbsp; * @since 2.6
+<i>16</i>&nbsp; */
+<b class="fc"><i>17</i>&nbsp;public final class ByteQuadsCanonicalizer</b>
+<i>18</i>&nbsp;{
+<i>19</i>&nbsp;    /**
+<i>20</i>&nbsp;     * Initial size of the primary hash area. Each entry consumes 4 ints (16 bytes),
+<i>21</i>&nbsp;     * and secondary area is same as primary; so default size will use 2kB of memory_tertiaryStart
+<i>22</i>&nbsp;     * (plus 64x4 or 64x8 (256/512 bytes) for references to Strings, and Strings
+<i>23</i>&nbsp;     * themselves).
+<i>24</i>&nbsp;     */
+<i>25</i>&nbsp;    private static final int DEFAULT_T_SIZE = 64;
+<i>26</i>&nbsp;//    private static final int DEFAULT_T_SIZE = 256;
+<i>27</i>&nbsp;
+<i>28</i>&nbsp;    /**
+<i>29</i>&nbsp;     * Let&#39;s not expand symbol tables past some maximum size;
+<i>30</i>&nbsp;     * this should protected against OOMEs caused by large documents
+<i>31</i>&nbsp;     * with unique (~= random) names.
+<i>32</i>&nbsp;     * Size is in 
+<i>33</i>&nbsp;     */
+<i>34</i>&nbsp;    private static final int MAX_T_SIZE = 0x10000; // 64k entries == 2M mem hash area
+<i>35</i>&nbsp;
+<i>36</i>&nbsp;    /**
+<i>37</i>&nbsp;     * No point in trying to construct tiny tables, just need to resize soon.
+<i>38</i>&nbsp;     */
+<i>39</i>&nbsp;    private final static int MIN_HASH_SIZE = 16;
+<i>40</i>&nbsp;    
+<i>41</i>&nbsp;    /**
+<i>42</i>&nbsp;     * Let&#39;s only share reasonably sized symbol tables. Max size set to 3/4 of 8k;
+<i>43</i>&nbsp;     * this corresponds to 256k main hash index. This should allow for enough distinct
+<i>44</i>&nbsp;     * names for almost any case, while preventing ballooning for cases where names
+<i>45</i>&nbsp;     * are unique (or close thereof).
+<i>46</i>&nbsp;     */
+<i>47</i>&nbsp;    final static int MAX_ENTRIES_FOR_REUSE = 6000;
+<i>48</i>&nbsp;
+<i>49</i>&nbsp;    /*
+<i>50</i>&nbsp;    /**********************************************************
+<i>51</i>&nbsp;    /* Linkage, needed for merging symbol tables
+<i>52</i>&nbsp;    /**********************************************************
+<i>53</i>&nbsp;     */
+<i>54</i>&nbsp;
+<i>55</i>&nbsp;    /**
+<i>56</i>&nbsp;     * Reference to the root symbol table, for child tables, so
+<i>57</i>&nbsp;     * that they can merge table information back as necessary.
+<i>58</i>&nbsp;     */
+<i>59</i>&nbsp;    final private ByteQuadsCanonicalizer _parent;
+<i>60</i>&nbsp;
+<i>61</i>&nbsp;    /**
+<i>62</i>&nbsp;     * Member that is only used by the root table instance: root
+<i>63</i>&nbsp;     * passes immutable state into child instances, and children
+<i>64</i>&nbsp;     * may return new state if they add entries to the table.
+<i>65</i>&nbsp;     * Child tables do NOT use the reference.
+<i>66</i>&nbsp;     */
+<i>67</i>&nbsp;    final private AtomicReference&lt;TableInfo&gt; _tableInfo;
+<i>68</i>&nbsp;    
+<i>69</i>&nbsp;    /**
+<i>70</i>&nbsp;     * Seed value we use as the base to make hash codes non-static between
+<i>71</i>&nbsp;     * different runs, but still stable for lifetime of a single symbol table
+<i>72</i>&nbsp;     * instance.
+<i>73</i>&nbsp;     * This is done for security reasons, to avoid potential DoS attack via
+<i>74</i>&nbsp;     * hash collisions.
+<i>75</i>&nbsp;     */
+<i>76</i>&nbsp;    final private int _seed;
+<i>77</i>&nbsp;    
+<i>78</i>&nbsp;    /*
+<i>79</i>&nbsp;    /**********************************************************
+<i>80</i>&nbsp;    /* Configuration
+<i>81</i>&nbsp;    /**********************************************************
+<i>82</i>&nbsp;     */
+<i>83</i>&nbsp;
+<i>84</i>&nbsp;    /**
+<i>85</i>&nbsp;     * Whether canonical symbol Strings are to be intern()ed before added
+<i>86</i>&nbsp;     * to the table or not.
+<i>87</i>&nbsp;     *&lt;p&gt;
+<i>88</i>&nbsp;     * NOTE: non-final to allow disabling intern()ing in case of excessive
+<i>89</i>&nbsp;     * collisions.
+<i>90</i>&nbsp;     */
+<i>91</i>&nbsp;    private boolean _intern;
+<i>92</i>&nbsp;
+<i>93</i>&nbsp;    /**
+<i>94</i>&nbsp;     * Flag that indicates whether we should throw an exception if enough 
+<i>95</i>&nbsp;     * hash collisions are detected (true); or just worked around (false).
+<i>96</i>&nbsp;     * 
+<i>97</i>&nbsp;     * @since 2.4
+<i>98</i>&nbsp;     */
+<i>99</i>&nbsp;    private final boolean _failOnDoS;
+<i>100</i>&nbsp;    
+<i>101</i>&nbsp;    /*
+<i>102</i>&nbsp;    /**********************************************************
+<i>103</i>&nbsp;    /* First, main hash area info
+<i>104</i>&nbsp;    /**********************************************************
+<i>105</i>&nbsp;     */
+<i>106</i>&nbsp;
+<i>107</i>&nbsp;    /**
+<i>108</i>&nbsp;     * Primary hash information area: consists of &lt;code&gt;2 * _hashSize&lt;/code&gt;
+<i>109</i>&nbsp;     * entries of 16 bytes (4 ints), arranged in a cascading lookup
+<i>110</i>&nbsp;     * structure (details of which may be tweaked depending on expected rates
+<i>111</i>&nbsp;     * of collisions).
+<i>112</i>&nbsp;     */
+<i>113</i>&nbsp;    private int[] _hashArea;
+<i>114</i>&nbsp;
+<i>115</i>&nbsp;    /**
+<i>116</i>&nbsp;     * Number of slots for primary entries within {@link #_hashArea}; which is
+<i>117</i>&nbsp;     * at most &lt;code&gt;1/8&lt;/code&gt; of actual size of the underlying array (4-int slots,
+<i>118</i>&nbsp;     * primary covers only half of the area; plus, additional area for longer
+<i>119</i>&nbsp;     * symbols after hash area).
+<i>120</i>&nbsp;     */
+<i>121</i>&nbsp;    private int _hashSize;
+<i>122</i>&nbsp;
+<i>123</i>&nbsp;    /**
+<i>124</i>&nbsp;     * Offset within {@link #_hashArea} where secondary entries start
+<i>125</i>&nbsp;     */
+<i>126</i>&nbsp;    private int _secondaryStart;
+<i>127</i>&nbsp;
+<i>128</i>&nbsp;    /**
+<i>129</i>&nbsp;     * Offset within {@link #_hashArea} where tertiary entries start
+<i>130</i>&nbsp;     */
+<i>131</i>&nbsp;    private int _tertiaryStart;
+<i>132</i>&nbsp;    
+<i>133</i>&nbsp;    /**
+<i>134</i>&nbsp;     * Constant that determines size of buckets for tertiary entries:
+<i>135</i>&nbsp;     * &lt;code&gt;1 &amp;lt;&amp;lt; _tertiaryShift&lt;/code&gt; is the size, and shift value
+<i>136</i>&nbsp;     * is also used for translating from primary offset into
+<i>137</i>&nbsp;     * tertiary bucket (shift right by &lt;code&gt;4 + _tertiaryShift&lt;/code&gt;).
+<i>138</i>&nbsp;     *&lt;p&gt;
+<i>139</i>&nbsp;     * Default value is 2, for buckets of 4 slots; grows bigger with
+<i>140</i>&nbsp;     * bigger table sizes.
+<i>141</i>&nbsp;     */
+<i>142</i>&nbsp;    private int _tertiaryShift;
+<i>143</i>&nbsp;
+<i>144</i>&nbsp;    /**
+<i>145</i>&nbsp;     * Total number of Strings in the symbol table; only used for child tables.
+<i>146</i>&nbsp;     */
+<i>147</i>&nbsp;    private int _count;
+<i>148</i>&nbsp;
+<i>149</i>&nbsp;    /**
+<i>150</i>&nbsp;     * Array that contains &lt;code&gt;String&lt;/code&gt; instances matching
+<i>151</i>&nbsp;     * entries in {@link #_hashArea}.
+<i>152</i>&nbsp;     * Contains nulls for unused entries. Note that this size is twice
+<i>153</i>&nbsp;     * that of {@link #_hashArea}
+<i>154</i>&nbsp;     */
+<i>155</i>&nbsp;    private String[] _names;
+<i>156</i>&nbsp;
+<i>157</i>&nbsp;    /*
+<i>158</i>&nbsp;    /**********************************************************
+<i>159</i>&nbsp;    /* Then information on collisions etc
+<i>160</i>&nbsp;    /**********************************************************
+<i>161</i>&nbsp;     */
+<i>162</i>&nbsp;
+<i>163</i>&nbsp;    /**
+<i>164</i>&nbsp;     * Pointer to the offset within spill-over area where there is room
+<i>165</i>&nbsp;     * for more spilled over entries (if any).
+<i>166</i>&nbsp;     * Spill over area is within fixed-size portion of {@link #_hashArea}.
+<i>167</i>&nbsp;     */
+<i>168</i>&nbsp;    private int _spilloverEnd;
+<i>169</i>&nbsp;
+<i>170</i>&nbsp;    /**
+<i>171</i>&nbsp;     * Offset within {@link #_hashArea} that follows main slots and contains
+<i>172</i>&nbsp;     * quads for longer names (13 bytes or longers), and points to the
+<i>173</i>&nbsp;     * first available int that may be used for appending quads of the next
+<i>174</i>&nbsp;     * long name.
+<i>175</i>&nbsp;     * Note that long name area follows immediately after the fixed-size
+<i>176</i>&nbsp;     * main hash area ({@link #_hashArea}).
+<i>177</i>&nbsp;     */
+<i>178</i>&nbsp;    private int _longNameOffset;
+<i>179</i>&nbsp;
+<i>180</i>&nbsp;    /**
+<i>181</i>&nbsp;     * This flag is set if, after adding a new entry, it is deemed
+<i>182</i>&nbsp;     * that a rehash is warranted if any more entries are to be added.
+<i>183</i>&nbsp;     */
+<i>184</i>&nbsp;    private transient boolean _needRehash;
+<i>185</i>&nbsp;
+<i>186</i>&nbsp;    /*
+<i>187</i>&nbsp;    /**********************************************************
+<i>188</i>&nbsp;    /* Sharing, versioning
+<i>189</i>&nbsp;    /**********************************************************
+<i>190</i>&nbsp;     */
+<i>191</i>&nbsp;
+<i>192</i>&nbsp;    // // // Which of the buffers may be shared (and are copy-on-write)?
+<i>193</i>&nbsp;
+<i>194</i>&nbsp;    /**
+<i>195</i>&nbsp;     * Flag that indicates whether underlying data structures for
+<i>196</i>&nbsp;     * the main hash area are shared or not. If they are, then they
+<i>197</i>&nbsp;     * need to be handled in copy-on-write way, i.e. if they need
+<i>198</i>&nbsp;     * to be modified, a copy needs to be made first; at this point
+<i>199</i>&nbsp;     * it will not be shared any more, and can be modified.
+<i>200</i>&nbsp;     *&lt;p&gt;
+<i>201</i>&nbsp;     * This flag needs to be checked both when adding new main entries,
+<i>202</i>&nbsp;     * and when adding new collision list queues (i.e. creating a new
+<i>203</i>&nbsp;     * collision list head entry)
+<i>204</i>&nbsp;     */
+<i>205</i>&nbsp;    private boolean _hashShared;
+<i>206</i>&nbsp;
+<i>207</i>&nbsp;    /*
+<i>208</i>&nbsp;    /**********************************************************
+<i>209</i>&nbsp;    /* Life-cycle: constructors
+<i>210</i>&nbsp;    /**********************************************************
+<i>211</i>&nbsp;     */
+<i>212</i>&nbsp;
+<i>213</i>&nbsp;    /**
+<i>214</i>&nbsp;     * Constructor used for creating per-&lt;code&gt;JsonFactory&lt;/code&gt; &quot;root&quot;
+<i>215</i>&nbsp;     * symbol tables: ones used for merging and sharing common symbols
+<i>216</i>&nbsp;     * 
+<i>217</i>&nbsp;     * @param sz Initial primary hash area size
+<i>218</i>&nbsp;     * @param intern Whether Strings contained should be {@link String#intern}ed
+<i>219</i>&nbsp;     * @param seed Random seed valued used to make it more difficult to cause
+<i>220</i>&nbsp;     *   collisions (used for collision-based DoS attacks).
+<i>221</i>&nbsp;     */
+<b class="fc"><i>222</i>&nbsp;    private ByteQuadsCanonicalizer(int sz, boolean intern, int seed, boolean failOnDoS) {</b>
+<b class="fc"><i>223</i>&nbsp;        _parent = null;</b>
+<b class="fc"><i>224</i>&nbsp;        _seed = seed;</b>
+<b class="fc"><i>225</i>&nbsp;        _intern = intern;</b>
+<b class="fc"><i>226</i>&nbsp;        _failOnDoS = failOnDoS;</b>
+<i>227</i>&nbsp;        // Sanity check: let&#39;s now allow hash sizes below certain minimum value
+<b class="fc"><i>228</i>&nbsp;        if (sz &lt; MIN_HASH_SIZE) {</b>
+<b class="nc"><i>229</i>&nbsp;            sz = MIN_HASH_SIZE;</b>
+<i>230</i>&nbsp;        } else {
+<i>231</i>&nbsp;            // Also; size must be 2^N; otherwise hash algorithm won&#39;t
+<i>232</i>&nbsp;            // work... so let&#39;s just pad it up, if so
+<b class="fc"><i>233</i>&nbsp;            if ((sz &amp; (sz - 1)) != 0) { // only true if it&#39;s 2^N</b>
+<b class="nc"><i>234</i>&nbsp;                int curr = MIN_HASH_SIZE;</b>
+<b class="nc"><i>235</i>&nbsp;                while (curr &lt; sz) {</b>
+<b class="nc"><i>236</i>&nbsp;                    curr += curr;</b>
+<i>237</i>&nbsp;                }
+<b class="nc"><i>238</i>&nbsp;                sz = curr;</b>
+<i>239</i>&nbsp;            }
+<i>240</i>&nbsp;        }
+<b class="fc"><i>241</i>&nbsp;        _tableInfo = new AtomicReference&lt;TableInfo&gt;(TableInfo.createInitial(sz));</b>
+<b class="fc"><i>242</i>&nbsp;    }</b>
+<i>243</i>&nbsp;
+<i>244</i>&nbsp;    /**
+<i>245</i>&nbsp;     * Constructor used when creating a child instance
+<i>246</i>&nbsp;     */
+<i>247</i>&nbsp;    private ByteQuadsCanonicalizer(ByteQuadsCanonicalizer parent, boolean intern,
+<i>248</i>&nbsp;            int seed, boolean failOnDoS, TableInfo state)
+<b class="fc"><i>249</i>&nbsp;    {</b>
+<b class="fc"><i>250</i>&nbsp;        _parent = parent;</b>
+<b class="fc"><i>251</i>&nbsp;        _seed = seed;</b>
+<b class="fc"><i>252</i>&nbsp;        _intern = intern;</b>
+<b class="fc"><i>253</i>&nbsp;        _failOnDoS = failOnDoS;</b>
+<b class="fc"><i>254</i>&nbsp;        _tableInfo = null; // not used by child tables</b>
+<i>255</i>&nbsp;
+<i>256</i>&nbsp;        // Then copy shared state
+<b class="fc"><i>257</i>&nbsp;        _count = state.count;</b>
+<b class="fc"><i>258</i>&nbsp;        _hashSize = state.size;</b>
+<b class="fc"><i>259</i>&nbsp;        _secondaryStart = _hashSize &lt;&lt; 2; // right after primary area</b>
+<b class="fc"><i>260</i>&nbsp;        _tertiaryStart = _secondaryStart + (_secondaryStart &gt;&gt; 1); // right after secondary</b>
+<b class="fc"><i>261</i>&nbsp;        _tertiaryShift = state.tertiaryShift;</b>
+<i>262</i>&nbsp;        
+<b class="fc"><i>263</i>&nbsp;        _hashArea = state.mainHash;</b>
+<b class="fc"><i>264</i>&nbsp;        _names = state.names;</b>
+<i>265</i>&nbsp;
+<b class="fc"><i>266</i>&nbsp;        _spilloverEnd = state.spilloverEnd;</b>
+<b class="fc"><i>267</i>&nbsp;        _longNameOffset = state.longNameOffset;</b>
+<i>268</i>&nbsp;
+<i>269</i>&nbsp;        // and then set other state to reflect sharing status
+<b class="fc"><i>270</i>&nbsp;        _needRehash = false;</b>
+<b class="fc"><i>271</i>&nbsp;        _hashShared = true;</b>
+<b class="fc"><i>272</i>&nbsp;    }</b>
+<i>273</i>&nbsp;
+<i>274</i>&nbsp;    /*
+<i>275</i>&nbsp;    /**********************************************************
+<i>276</i>&nbsp;    /* Life-cycle: factory methods, merging
+<i>277</i>&nbsp;    /**********************************************************
+<i>278</i>&nbsp;     */
+<i>279</i>&nbsp;    
+<i>280</i>&nbsp;    /**
+<i>281</i>&nbsp;     * Factory method to call to create a symbol table instance with a
+<i>282</i>&nbsp;     * randomized seed value.
+<i>283</i>&nbsp;     */
+<i>284</i>&nbsp;    public static ByteQuadsCanonicalizer createRoot() {
+<i>285</i>&nbsp;        /* [Issue-21]: Need to use a variable seed, to thwart hash-collision
+<i>286</i>&nbsp;         * based attacks.
+<i>287</i>&nbsp;         */
+<b class="fc"><i>288</i>&nbsp;        long now = System.currentTimeMillis();</b>
+<i>289</i>&nbsp;        // ensure it&#39;s not 0; and might as well require to be odd so:
+<b class="fc"><i>290</i>&nbsp;        int seed = (((int) now) + ((int) (now &gt;&gt;&gt; 32))) | 1;</b>
+<b class="fc"><i>291</i>&nbsp;        return createRoot(seed);</b>
+<i>292</i>&nbsp;    }
+<i>293</i>&nbsp;
+<i>294</i>&nbsp;    /**
+<i>295</i>&nbsp;     * Factory method that should only be called from unit tests, where seed
+<i>296</i>&nbsp;     * value should remain the same.
+<i>297</i>&nbsp;     */
+<i>298</i>&nbsp;    protected static ByteQuadsCanonicalizer createRoot(int seed) {
+<b class="fc"><i>299</i>&nbsp;        return new ByteQuadsCanonicalizer(DEFAULT_T_SIZE, true, seed, true);</b>
+<i>300</i>&nbsp;    }
+<i>301</i>&nbsp;    
+<i>302</i>&nbsp;    /**
+<i>303</i>&nbsp;     * Factory method used to create actual symbol table instance to
+<i>304</i>&nbsp;     * use for parsing.
+<i>305</i>&nbsp;     */
+<i>306</i>&nbsp;    public ByteQuadsCanonicalizer makeChild(int flags) {
+<b class="fc"><i>307</i>&nbsp;        return new ByteQuadsCanonicalizer(this,</b>
+<b class="fc"><i>308</i>&nbsp;                JsonFactory.Feature.INTERN_FIELD_NAMES.enabledIn(flags),</b>
+<i>309</i>&nbsp;                _seed,
+<b class="fc"><i>310</i>&nbsp;                JsonFactory.Feature.FAIL_ON_SYMBOL_HASH_OVERFLOW.enabledIn(flags),</b>
+<b class="fc"><i>311</i>&nbsp;                _tableInfo.get());</b>
+<i>312</i>&nbsp;    }
+<i>313</i>&nbsp;
+<i>314</i>&nbsp;    /**
+<i>315</i>&nbsp;     * Method called by the using code to indicate it is done
+<i>316</i>&nbsp;     * with this instance. This lets instance merge accumulated
+<i>317</i>&nbsp;     * changes into parent (if need be), safely and efficiently,
+<i>318</i>&nbsp;     * and without calling code having to know about parent
+<i>319</i>&nbsp;     * information
+<i>320</i>&nbsp;     */
+<i>321</i>&nbsp;    public void release()
+<i>322</i>&nbsp;    {
+<i>323</i>&nbsp;        // we will try to merge if child table has new entries
+<b class="fc"><i>324</i>&nbsp;        if (_parent != null &amp;&amp; maybeDirty()) {</b>
+<b class="fc"><i>325</i>&nbsp;            _parent.mergeChild(new TableInfo(this));</b>
+<i>326</i>&nbsp;            /* Let&#39;s also mark this instance as dirty, so that just in
+<i>327</i>&nbsp;             * case release was too early, there&#39;s no corruption of possibly shared data.
+<i>328</i>&nbsp;             */
+<b class="fc"><i>329</i>&nbsp;            _hashShared = true;</b>
+<i>330</i>&nbsp;        }
+<b class="fc"><i>331</i>&nbsp;    }</b>
+<i>332</i>&nbsp;
+<i>333</i>&nbsp;    private void mergeChild(TableInfo childState)
+<i>334</i>&nbsp;    {
+<b class="fc"><i>335</i>&nbsp;        final int childCount = childState.count;</b>
+<b class="fc"><i>336</i>&nbsp;        TableInfo currState = _tableInfo.get();</b>
+<i>337</i>&nbsp;
+<i>338</i>&nbsp;        // Should usually grow; but occasionally could also shrink if (but only if)
+<i>339</i>&nbsp;        // collision list overflow ends up clearing some collision lists.
+<b class="fc"><i>340</i>&nbsp;        if (childCount == currState.count) {</b>
+<b class="fc"><i>341</i>&nbsp;            return;</b>
+<i>342</i>&nbsp;        }
+<i>343</i>&nbsp;
+<i>344</i>&nbsp;        // One caveat: let&#39;s try to avoid problems with degenerate cases of documents with
+<i>345</i>&nbsp;        // generated &quot;random&quot; names: for these, symbol tables would bloat indefinitely.
+<i>346</i>&nbsp;        // One way to do this is to just purge tables if they grow
+<i>347</i>&nbsp;        // too large, and that&#39;s what we&#39;ll do here.
+<b class="fc"><i>348</i>&nbsp;        if (childCount &gt; MAX_ENTRIES_FOR_REUSE) {</b>
+<i>349</i>&nbsp;            // At any rate, need to clean up the tables
+<b class="fc"><i>350</i>&nbsp;            childState = TableInfo.createInitial(DEFAULT_T_SIZE);</b>
+<i>351</i>&nbsp;        }
+<b class="fc"><i>352</i>&nbsp;        _tableInfo.compareAndSet(currState, childState);</b>
+<b class="fc"><i>353</i>&nbsp;    }</b>
+<i>354</i>&nbsp;
+<i>355</i>&nbsp;    /*
+<i>356</i>&nbsp;    /**********************************************************
+<i>357</i>&nbsp;    /* API, accessors
+<i>358</i>&nbsp;    /**********************************************************
+<i>359</i>&nbsp;     */
+<i>360</i>&nbsp;
+<i>361</i>&nbsp;    public int size()
+<i>362</i>&nbsp;    {
+<b class="fc"><i>363</i>&nbsp;        if (_tableInfo != null) { // root table</b>
+<b class="fc"><i>364</i>&nbsp;            return _tableInfo.get().count;</b>
+<i>365</i>&nbsp;        }
+<i>366</i>&nbsp;        // nope, child table
+<b class="fc"><i>367</i>&nbsp;        return _count;</b>
+<i>368</i>&nbsp;    }
+<i>369</i>&nbsp;
+<i>370</i>&nbsp;    /**
+<i>371</i>&nbsp;     * Returns number of primary slots table has currently
+<i>372</i>&nbsp;     */
+<b class="fc"><i>373</i>&nbsp;    public int bucketCount() { return _hashSize; }</b>
+<i>374</i>&nbsp;
+<i>375</i>&nbsp;    /**
+<i>376</i>&nbsp;     * Method called to check to quickly see if a child symbol table
+<i>377</i>&nbsp;     * may have gotten additional entries. Used for checking to see
+<i>378</i>&nbsp;     * if a child table should be merged into shared table.
+<i>379</i>&nbsp;     */
+<b class="fc"><i>380</i>&nbsp;    public boolean maybeDirty() { return !_hashShared; }</b>
+<i>381</i>&nbsp;
+<b class="nc"><i>382</i>&nbsp;    public int hashSeed() { return _seed; }</b>
+<i>383</i>&nbsp;    
+<i>384</i>&nbsp;    /**
+<i>385</i>&nbsp;     * Method mostly needed by unit tests; calculates number of
+<i>386</i>&nbsp;     * entries that are in the primary slot set. These are
+<i>387</i>&nbsp;     * &quot;perfect&quot; entries, accessible with a single lookup
+<i>388</i>&nbsp;     */
+<i>389</i>&nbsp;    public int primaryCount()
+<i>390</i>&nbsp;    {
+<b class="fc"><i>391</i>&nbsp;        int count = 0;</b>
+<b class="fc"><i>392</i>&nbsp;        for (int offset = 3, end = _secondaryStart; offset &lt; end; offset += 4) {</b>
+<b class="fc"><i>393</i>&nbsp;            if (_hashArea[offset] != 0) {</b>
+<b class="fc"><i>394</i>&nbsp;                ++count;</b>
+<i>395</i>&nbsp;            }
+<i>396</i>&nbsp;        }
+<b class="fc"><i>397</i>&nbsp;        return count;</b>
+<i>398</i>&nbsp;    }
+<i>399</i>&nbsp;
+<i>400</i>&nbsp;    /**
+<i>401</i>&nbsp;     * Method mostly needed by unit tests; calculates number of entries
+<i>402</i>&nbsp;     * in secondary buckets
+<i>403</i>&nbsp;     */
+<i>404</i>&nbsp;    public int secondaryCount() {
+<b class="fc"><i>405</i>&nbsp;        int count = 0;</b>
+<b class="fc"><i>406</i>&nbsp;        int offset = _secondaryStart + 3;</b>
+<b class="fc"><i>407</i>&nbsp;        for (int end = _tertiaryStart; offset &lt; end; offset += 4) {</b>
+<b class="fc"><i>408</i>&nbsp;            if (_hashArea[offset] != 0) {</b>
+<b class="fc"><i>409</i>&nbsp;                ++count;</b>
+<i>410</i>&nbsp;            }
+<i>411</i>&nbsp;        }
+<b class="fc"><i>412</i>&nbsp;        return count;</b>
+<i>413</i>&nbsp;    }
+<i>414</i>&nbsp;
+<i>415</i>&nbsp;    /**
+<i>416</i>&nbsp;     * Method mostly needed by unit tests; calculates number of entries
+<i>417</i>&nbsp;     * in tertiary buckets
+<i>418</i>&nbsp;     */
+<i>419</i>&nbsp;    public int tertiaryCount() {
+<b class="fc"><i>420</i>&nbsp;        int count = 0;</b>
+<b class="fc"><i>421</i>&nbsp;        int offset = _tertiaryStart + 3; // to 1.5x, starting point of tertiary</b>
+<b class="fc"><i>422</i>&nbsp;        for (int end = offset + _hashSize; offset &lt; end; offset += 4) {</b>
+<b class="fc"><i>423</i>&nbsp;            if (_hashArea[offset] != 0) {</b>
+<b class="fc"><i>424</i>&nbsp;                ++count;</b>
+<i>425</i>&nbsp;            }
+<i>426</i>&nbsp;        }
+<b class="fc"><i>427</i>&nbsp;        return count;</b>
+<i>428</i>&nbsp;    }
+<i>429</i>&nbsp;
+<i>430</i>&nbsp;    /**
+<i>431</i>&nbsp;     * Method mostly needed by unit tests; calculates number of entries
+<i>432</i>&nbsp;     * in shared spillover area
+<i>433</i>&nbsp;     */
+<i>434</i>&nbsp;    public int spilloverCount() {
+<i>435</i>&nbsp;        // difference between spillover end, start, divided by 4 (four ints per slot)
+<b class="fc"><i>436</i>&nbsp;        return (_spilloverEnd - _spilloverStart()) &gt;&gt; 2;</b>
+<i>437</i>&nbsp;    }
+<i>438</i>&nbsp;
+<i>439</i>&nbsp;    public int totalCount()
+<i>440</i>&nbsp;    {
+<b class="fc"><i>441</i>&nbsp;        int count = 0;</b>
+<b class="fc"><i>442</i>&nbsp;        for (int offset = 3, end = (_hashSize &lt;&lt; 3); offset &lt; end; offset += 4) {</b>
+<b class="fc"><i>443</i>&nbsp;            if (_hashArea[offset] != 0) {</b>
+<b class="fc"><i>444</i>&nbsp;                ++count;</b>
+<i>445</i>&nbsp;            }
+<i>446</i>&nbsp;        }
+<b class="fc"><i>447</i>&nbsp;        return count;</b>
+<i>448</i>&nbsp;    }
+<i>449</i>&nbsp;
+<i>450</i>&nbsp;    @Override
+<i>451</i>&nbsp;    public String toString() {
+<b class="fc"><i>452</i>&nbsp;        int pri = primaryCount();</b>
+<b class="fc"><i>453</i>&nbsp;        int sec = secondaryCount();</b>
+<b class="fc"><i>454</i>&nbsp;        int tert = tertiaryCount();</b>
+<b class="fc"><i>455</i>&nbsp;        int spill = spilloverCount();</b>
+<b class="fc"><i>456</i>&nbsp;        int total = totalCount();</b>
+<b class="fc"><i>457</i>&nbsp;        return String.format(&quot;[%s: size=%d, hashSize=%d, %d/%d/%d/%d pri/sec/ter/spill (=%s), total:%d]&quot;,</b>
+<b class="fc"><i>458</i>&nbsp;                getClass().getName(), _count, _hashSize,</b>
+<b class="fc"><i>459</i>&nbsp;                pri, sec, tert, spill, (pri+sec+tert+spill), total);</b>
+<i>460</i>&nbsp;    }
+<i>461</i>&nbsp;
+<i>462</i>&nbsp;    /*
+<i>463</i>&nbsp;    /**********************************************************
+<i>464</i>&nbsp;    /* Public API, accessing symbols
+<i>465</i>&nbsp;    /**********************************************************
+<i>466</i>&nbsp;     */
+<i>467</i>&nbsp;
+<i>468</i>&nbsp;    public String findName(int q1)
+<i>469</i>&nbsp;    {
+<b class="fc"><i>470</i>&nbsp;        int offset = _calcOffset(calcHash(q1));</b>
+<i>471</i>&nbsp;        // first: primary match?
+<b class="fc"><i>472</i>&nbsp;        final int[] hashArea = _hashArea;</b>
+<i>473</i>&nbsp;
+<b class="fc"><i>474</i>&nbsp;        int len = hashArea[offset+3];</b>
+<i>475</i>&nbsp;
+<b class="fc"><i>476</i>&nbsp;        if (len == 1) {</b>
+<b class="fc"><i>477</i>&nbsp;            if (hashArea[offset] == q1) {</b>
+<b class="fc"><i>478</i>&nbsp;                return _names[offset &gt;&gt; 2];</b>
+<i>479</i>&nbsp;            }
+<b class="fc"><i>480</i>&nbsp;        } else if (len == 0) { // empty slot; unlikely but avoid further lookups if so</b>
+<b class="fc"><i>481</i>&nbsp;            return null;</b>
+<i>482</i>&nbsp;        }
+<i>483</i>&nbsp;        // secondary? single slot shared by N/2 primaries
+<b class="fc"><i>484</i>&nbsp;        int offset2 = _secondaryStart + ((offset &gt;&gt; 3) &lt;&lt; 2);</b>
+<i>485</i>&nbsp;
+<b class="fc"><i>486</i>&nbsp;        len = hashArea[offset2+3];</b>
+<i>487</i>&nbsp;
+<b class="fc"><i>488</i>&nbsp;        if (len == 1) {</b>
+<b class="fc"><i>489</i>&nbsp;            if (hashArea[offset2] == q1) {</b>
+<b class="fc"><i>490</i>&nbsp;                return _names[offset2 &gt;&gt; 2];</b>
+<i>491</i>&nbsp;            }
+<b class="fc"><i>492</i>&nbsp;        } else if (len == 0) { // empty slot; unlikely but avoid further lookups if so</b>
+<b class="fc"><i>493</i>&nbsp;            return null;</b>
+<i>494</i>&nbsp;        }
+<i>495</i>&nbsp;
+<i>496</i>&nbsp;        // tertiary lookup &amp; spillovers best to offline
+<b class="fc"><i>497</i>&nbsp;        return _findSecondary(offset, q1);</b>
+<i>498</i>&nbsp;    }
+<i>499</i>&nbsp;
+<i>500</i>&nbsp;    public String findName(int q1, int q2)
+<i>501</i>&nbsp;    {
+<b class="fc"><i>502</i>&nbsp;        int offset = _calcOffset(calcHash(q1, q2));</b>
+<i>503</i>&nbsp;
+<b class="fc"><i>504</i>&nbsp;        final int[] hashArea = _hashArea;</b>
+<i>505</i>&nbsp;
+<b class="fc"><i>506</i>&nbsp;        int len = hashArea[offset+3];</b>
+<i>507</i>&nbsp;
+<b class="fc"><i>508</i>&nbsp;        if (len == 2) {</b>
+<b class="fc"><i>509</i>&nbsp;            if ((q1 == hashArea[offset]) &amp;&amp; (q2 == hashArea[offset+1])) {</b>
+<b class="fc"><i>510</i>&nbsp;                return _names[offset &gt;&gt; 2];</b>
+<i>511</i>&nbsp;            }
+<b class="fc"><i>512</i>&nbsp;        } else if (len == 0) { // empty slot; unlikely but avoid further lookups if so</b>
+<b class="fc"><i>513</i>&nbsp;            return null;</b>
+<i>514</i>&nbsp;        }
+<i>515</i>&nbsp;        // secondary?
+<b class="fc"><i>516</i>&nbsp;        int offset2 = _secondaryStart + ((offset &gt;&gt; 3) &lt;&lt; 2);</b>
+<i>517</i>&nbsp;
+<b class="fc"><i>518</i>&nbsp;        len = hashArea[offset2+3];</b>
+<i>519</i>&nbsp;
+<b class="fc"><i>520</i>&nbsp;        if (len == 2) {</b>
+<b class="fc"><i>521</i>&nbsp;            if ((q1 == hashArea[offset2]) &amp;&amp; (q2 == hashArea[offset2+1])) {</b>
+<b class="fc"><i>522</i>&nbsp;                return _names[offset2 &gt;&gt; 2];</b>
+<i>523</i>&nbsp;            }
+<b class="fc"><i>524</i>&nbsp;        } else if (len == 0) { // empty slot? Short-circuit if no more spillovers</b>
+<b class="fc"><i>525</i>&nbsp;            return null;</b>
+<i>526</i>&nbsp;        }
+<b class="fc"><i>527</i>&nbsp;        return _findSecondary(offset, q1, q2);</b>
+<i>528</i>&nbsp;    }
+<i>529</i>&nbsp;
+<i>530</i>&nbsp;    public String findName(int q1, int q2, int q3)
+<i>531</i>&nbsp;    {
+<b class="fc"><i>532</i>&nbsp;        int offset = _calcOffset(calcHash(q1, q2, q3));</b>
+<b class="fc"><i>533</i>&nbsp;        final int[] hashArea = _hashArea;</b>
+<b class="fc"><i>534</i>&nbsp;        int len = hashArea[offset+3];</b>
+<i>535</i>&nbsp;
+<b class="fc"><i>536</i>&nbsp;        if (len == 3) {</b>
+<b class="fc"><i>537</i>&nbsp;            if ((q1 == hashArea[offset]) &amp;&amp; (hashArea[offset+1] == q2) &amp;&amp; (hashArea[offset+2] == q3)) {</b>
+<b class="fc"><i>538</i>&nbsp;                return _names[offset &gt;&gt; 2];</b>
+<i>539</i>&nbsp;            }
+<b class="fc"><i>540</i>&nbsp;        } else if (len == 0) { // empty slot; unlikely but avoid further lookups if so</b>
+<b class="fc"><i>541</i>&nbsp;            return null;</b>
+<i>542</i>&nbsp;        }
+<i>543</i>&nbsp;        // secondary?
+<b class="fc"><i>544</i>&nbsp;        int offset2 = _secondaryStart + ((offset &gt;&gt; 3) &lt;&lt; 2);</b>
+<i>545</i>&nbsp;
+<b class="fc"><i>546</i>&nbsp;        len = hashArea[offset2+3];</b>
+<i>547</i>&nbsp;
+<b class="fc"><i>548</i>&nbsp;        if (len == 3) {</b>
+<b class="fc"><i>549</i>&nbsp;            if ((q1 == hashArea[offset2]) &amp;&amp; (hashArea[offset2+1] == q2) &amp;&amp; (hashArea[offset2+2] == q3)) {</b>
+<b class="fc"><i>550</i>&nbsp;                return _names[offset2 &gt;&gt; 2];</b>
+<i>551</i>&nbsp;            }
+<b class="fc"><i>552</i>&nbsp;        } else if (len == 0) { // empty slot? Short-circuit if no more spillovers</b>
+<b class="fc"><i>553</i>&nbsp;            return null;</b>
+<i>554</i>&nbsp;        }
+<b class="fc"><i>555</i>&nbsp;        return _findSecondary(offset, q1, q2, q3);</b>
+<i>556</i>&nbsp;    }
+<i>557</i>&nbsp;
+<i>558</i>&nbsp;    public String findName(int[] q, int qlen)
+<i>559</i>&nbsp;    {
+<i>560</i>&nbsp;        /* This version differs significantly, because longer names do not fit within cell.
+<i>561</i>&nbsp;         * Rather, they contain hash in main slot, and offset+length to extension area
+<i>562</i>&nbsp;         * that contains actual quads.
+<i>563</i>&nbsp;         */
+<b class="fc"><i>564</i>&nbsp;        if (qlen &lt; 4) { // another sanity check</b>
+<b class="fc"><i>565</i>&nbsp;            if (qlen == 3) {</b>
+<b class="fc"><i>566</i>&nbsp;                return findName(q[0], q[1], q[2]);</b>
+<i>567</i>&nbsp;            }
+<b class="fc"><i>568</i>&nbsp;            if (qlen == 2) {</b>
+<b class="fc"><i>569</i>&nbsp;                return findName(q[0], q[1]);</b>
+<i>570</i>&nbsp;            }
+<b class="fc"><i>571</i>&nbsp;            return findName(q[0]);</b>
+<i>572</i>&nbsp;        }
+<b class="fc"><i>573</i>&nbsp;        final int hash = calcHash(q, qlen);</b>
+<b class="fc"><i>574</i>&nbsp;        int offset = _calcOffset(hash);</b>
+<i>575</i>&nbsp;
+<b class="fc"><i>576</i>&nbsp;        final int[] hashArea = _hashArea;</b>
+<i>577</i>&nbsp;
+<b class="fc"><i>578</i>&nbsp;        final int len = hashArea[offset+3];</b>
+<i>579</i>&nbsp;        
+<b class="fc"><i>580</i>&nbsp;        if ((hash == hashArea[offset]) &amp;&amp; (len == qlen)) {</b>
+<i>581</i>&nbsp;            // probable but not guaranteed: verify
+<b class="fc"><i>582</i>&nbsp;            if (_verifyLongName(q, qlen, hashArea[offset+1])) {</b>
+<b class="fc"><i>583</i>&nbsp;                return _names[offset &gt;&gt; 2];</b>
+<i>584</i>&nbsp;            }
+<i>585</i>&nbsp;        }
+<b class="fc"><i>586</i>&nbsp;        if (len == 0) { // empty slot; unlikely but avoid further lookups if so</b>
+<b class="fc"><i>587</i>&nbsp;            return null;</b>
+<i>588</i>&nbsp;        }
+<i>589</i>&nbsp;        // secondary?
+<b class="fc"><i>590</i>&nbsp;        int offset2 = _secondaryStart + ((offset &gt;&gt; 3) &lt;&lt; 2);</b>
+<i>591</i>&nbsp;
+<b class="fc"><i>592</i>&nbsp;        final int len2 = hashArea[offset2+3];</b>
+<b class="fc"><i>593</i>&nbsp;        if ((hash == hashArea[offset2]) &amp;&amp; (len2 == qlen)) {</b>
+<b class="fc"><i>594</i>&nbsp;            if (_verifyLongName(q, qlen, hashArea[offset2+1])) {</b>
+<b class="fc"><i>595</i>&nbsp;                return _names[offset2 &gt;&gt; 2];</b>
+<i>596</i>&nbsp;            }
+<i>597</i>&nbsp;        }
+<b class="fc"><i>598</i>&nbsp;        return _findSecondary(offset, hash, q, qlen);</b>
+<i>599</i>&nbsp;    }
+<i>600</i>&nbsp;    
+<i>601</i>&nbsp;    private final int _calcOffset(int hash)
+<i>602</i>&nbsp;    {
+<i>603</i>&nbsp;        // NOTE: simple for initial impl, but we may want to interleave it a bit
+<i>604</i>&nbsp;        // in near future
+<i>605</i>&nbsp;        // So: first, hash into primary hash index
+<b class="fc"><i>606</i>&nbsp;        int ix = hash &amp; (_hashSize-1);</b>
+<i>607</i>&nbsp;        // keeping in mind we have 4 ints per entry
+<b class="fc"><i>608</i>&nbsp;        return (ix &lt;&lt; 2);</b>
+<i>609</i>&nbsp;    }
+<i>610</i>&nbsp;
+<i>611</i>&nbsp;    /*
+<i>612</i>&nbsp;    /**********************************************************
+<i>613</i>&nbsp;    /* Access from spill-over areas
+<i>614</i>&nbsp;    /**********************************************************
+<i>615</i>&nbsp;     */
+<i>616</i>&nbsp;
+<i>617</i>&nbsp;    private String _findSecondary(int origOffset, int q1)
+<i>618</i>&nbsp;    {
+<i>619</i>&nbsp;        // tertiary area division is dynamic. First; its size is N/4 compared to
+<i>620</i>&nbsp;        // primary hash size; and offsets are for 4 int slots. So to get to logical
+<i>621</i>&nbsp;        // index would shift by 4. But! Tertiary area is further split into buckets,
+<i>622</i>&nbsp;        // determined by shift value. And finally, from bucket back into physical offsets
+<b class="fc"><i>623</i>&nbsp;        int offset = _tertiaryStart + ((origOffset &gt;&gt; (_tertiaryShift + 2)) &lt;&lt; _tertiaryShift);</b>
+<b class="fc"><i>624</i>&nbsp;        final int[] hashArea = _hashArea;</b>
+<b class="fc"><i>625</i>&nbsp;        final int bucketSize = (1 &lt;&lt; _tertiaryShift);</b>
+<b class="fc"><i>626</i>&nbsp;        for (int end = offset + bucketSize; offset &lt; end; offset += 4) {</b>
+<b class="fc"><i>627</i>&nbsp;            int len = hashArea[offset+3];</b>
+<b class="fc"><i>628</i>&nbsp;            if ((q1 == hashArea[offset]) &amp;&amp; (1 == len)) {</b>
+<b class="fc"><i>629</i>&nbsp;                return _names[offset &gt;&gt; 2];</b>
+<i>630</i>&nbsp;            }
+<b class="fc"><i>631</i>&nbsp;            if (len == 0) {</b>
+<b class="fc"><i>632</i>&nbsp;                return null;</b>
+<i>633</i>&nbsp;            }
+<i>634</i>&nbsp;        }
+<i>635</i>&nbsp;        // but if tertiary full, check out spill-over area as last resort
+<i>636</i>&nbsp;        // shared spillover starts at 7/8 of the main hash area
+<i>637</i>&nbsp;        // (which is sized at 2 * _hashSize), so:
+<b class="fc"><i>638</i>&nbsp;        for (offset = _spilloverStart(); offset &lt; _spilloverEnd; offset += 4) {</b>
+<b class="fc"><i>639</i>&nbsp;            if ((q1 == hashArea[offset]) &amp;&amp; (1 == hashArea[offset+3])) {</b>
+<b class="nc"><i>640</i>&nbsp;                return _names[offset &gt;&gt; 2];</b>
+<i>641</i>&nbsp;            }
+<i>642</i>&nbsp;        }
+<b class="fc"><i>643</i>&nbsp;        return null;</b>
+<i>644</i>&nbsp;    }
+<i>645</i>&nbsp;
+<i>646</i>&nbsp;    private String _findSecondary(int origOffset, int q1, int q2)
+<i>647</i>&nbsp;    {
+<b class="fc"><i>648</i>&nbsp;        int offset = _tertiaryStart + ((origOffset &gt;&gt; (_tertiaryShift + 2)) &lt;&lt; _tertiaryShift);</b>
+<b class="fc"><i>649</i>&nbsp;        final int[] hashArea = _hashArea;</b>
+<i>650</i>&nbsp;
+<b class="fc"><i>651</i>&nbsp;        final int bucketSize = (1 &lt;&lt; _tertiaryShift);</b>
+<b class="fc"><i>652</i>&nbsp;        for (int end = offset + bucketSize; offset &lt; end; offset += 4) {</b>
+<b class="fc"><i>653</i>&nbsp;            int len = hashArea[offset+3];</b>
+<b class="fc"><i>654</i>&nbsp;            if ((q1 == hashArea[offset]) &amp;&amp; (q2 == hashArea[offset+1]) &amp;&amp; (2 == len)) {</b>
+<b class="fc"><i>655</i>&nbsp;                return _names[offset &gt;&gt; 2];</b>
+<i>656</i>&nbsp;            }
+<b class="fc"><i>657</i>&nbsp;            if (len == 0) {</b>
+<b class="fc"><i>658</i>&nbsp;                return null;</b>
+<i>659</i>&nbsp;            }
+<i>660</i>&nbsp;        }
+<b class="fc"><i>661</i>&nbsp;        for (offset = _spilloverStart(); offset &lt; _spilloverEnd; offset += 4) {</b>
+<b class="fc"><i>662</i>&nbsp;            if ((q1 == hashArea[offset]) &amp;&amp; (q2 == hashArea[offset+1]) &amp;&amp; (2 == hashArea[offset+3])) {</b>
+<b class="fc"><i>663</i>&nbsp;                return _names[offset &gt;&gt; 2];</b>
+<i>664</i>&nbsp;            }
+<i>665</i>&nbsp;        }
+<b class="fc"><i>666</i>&nbsp;        return null;</b>
+<i>667</i>&nbsp;    }
+<i>668</i>&nbsp;
+<i>669</i>&nbsp;    private String _findSecondary(int origOffset, int q1, int q2, int q3)
+<i>670</i>&nbsp;    {
+<b class="fc"><i>671</i>&nbsp;        int offset = _tertiaryStart + ((origOffset &gt;&gt; (_tertiaryShift + 2)) &lt;&lt; _tertiaryShift);</b>
+<b class="fc"><i>672</i>&nbsp;        final int[] hashArea = _hashArea;</b>
+<i>673</i>&nbsp;
+<b class="fc"><i>674</i>&nbsp;        final int bucketSize = (1 &lt;&lt; _tertiaryShift);</b>
+<b class="fc"><i>675</i>&nbsp;        for (int end = offset + bucketSize; offset &lt; end; offset += 4) {</b>
+<b class="fc"><i>676</i>&nbsp;            int len = hashArea[offset+3];</b>
+<b class="fc"><i>677</i>&nbsp;            if ((q1 == hashArea[offset]) &amp;&amp; (q2 == hashArea[offset+1]) &amp;&amp; (q3 == hashArea[offset+2]) &amp;&amp; (3 == len)) {</b>
+<b class="fc"><i>678</i>&nbsp;                return _names[offset &gt;&gt; 2];</b>
+<i>679</i>&nbsp;            }
+<b class="fc"><i>680</i>&nbsp;            if (len == 0) {</b>
+<b class="fc"><i>681</i>&nbsp;                return null;</b>
+<i>682</i>&nbsp;            }
+<i>683</i>&nbsp;        }
+<b class="fc"><i>684</i>&nbsp;        for (offset = _spilloverStart(); offset &lt; _spilloverEnd; offset += 4) {</b>
+<b class="fc"><i>685</i>&nbsp;            if ((q1 == hashArea[offset]) &amp;&amp; (q2 == hashArea[offset+1]) &amp;&amp; (q3 == hashArea[offset+2])</b>
+<i>686</i>&nbsp;                    &amp;&amp; (3 == hashArea[offset+3])) {
+<b class="nc"><i>687</i>&nbsp;                return _names[offset &gt;&gt; 2];</b>
+<i>688</i>&nbsp;            }
+<i>689</i>&nbsp;        }
+<b class="fc"><i>690</i>&nbsp;        return null;</b>
+<i>691</i>&nbsp;    }
+<i>692</i>&nbsp;
+<i>693</i>&nbsp;    private String _findSecondary(int origOffset, int hash, int[] q, int qlen)
+<i>694</i>&nbsp;    {
+<b class="fc"><i>695</i>&nbsp;        int offset = _tertiaryStart + ((origOffset &gt;&gt; (_tertiaryShift + 2)) &lt;&lt; _tertiaryShift);</b>
+<b class="fc"><i>696</i>&nbsp;        final int[] hashArea = _hashArea;</b>
+<i>697</i>&nbsp;
+<b class="fc"><i>698</i>&nbsp;        final int bucketSize = (1 &lt;&lt; _tertiaryShift);</b>
+<b class="fc"><i>699</i>&nbsp;        for (int end = offset + bucketSize; offset &lt; end; offset += 4) {</b>
+<b class="fc"><i>700</i>&nbsp;            int len = hashArea[offset+3];</b>
+<b class="fc"><i>701</i>&nbsp;            if ((hash == hashArea[offset]) &amp;&amp; (qlen == len)) {</b>
+<b class="fc"><i>702</i>&nbsp;                if (_verifyLongName(q, qlen, hashArea[offset+1])) {</b>
+<b class="fc"><i>703</i>&nbsp;                    return _names[offset &gt;&gt; 2];</b>
+<i>704</i>&nbsp;                }
+<i>705</i>&nbsp;            }
+<b class="fc"><i>706</i>&nbsp;            if (len == 0) {</b>
+<b class="fc"><i>707</i>&nbsp;                return null;</b>
+<i>708</i>&nbsp;            }
+<i>709</i>&nbsp;        }
+<b class="fc"><i>710</i>&nbsp;        for (offset = _spilloverStart(); offset &lt; _spilloverEnd; offset += 4) {</b>
+<b class="fc"><i>711</i>&nbsp;            if ((hash == hashArea[offset]) &amp;&amp; (qlen == hashArea[offset+3])) {</b>
+<b class="nc"><i>712</i>&nbsp;                if (_verifyLongName(q, qlen, hashArea[offset+1])) {</b>
+<b class="nc"><i>713</i>&nbsp;                    return _names[offset &gt;&gt; 2];</b>
+<i>714</i>&nbsp;                }
+<i>715</i>&nbsp;            }
+<i>716</i>&nbsp;        }
+<b class="fc"><i>717</i>&nbsp;        return null;</b>
+<i>718</i>&nbsp;    }
+<i>719</i>&nbsp;    
+<i>720</i>&nbsp;    private boolean _verifyLongName(int[] q, int qlen, int spillOffset)
+<i>721</i>&nbsp;    {
+<b class="fc"><i>722</i>&nbsp;        final int[] hashArea = _hashArea;</b>
+<i>723</i>&nbsp;        // spillOffset assumed to be physical index right into quad string
+<b class="fc"><i>724</i>&nbsp;        int ix = 0;</b>
+<i>725</i>&nbsp;
+<b class="fc"><i>726</i>&nbsp;        switch (qlen) {</b>
+<i>727</i>&nbsp;        default:
+<b class="fc"><i>728</i>&nbsp;            return _verifyLongName2(q, qlen, spillOffset);</b>
+<i>729</i>&nbsp;        case 8:
+<b class="nc"><i>730</i>&nbsp;            if (q[ix++] != hashArea[spillOffset++]) return false;</b>
+<i>731</i>&nbsp;        case 7:
+<b class="fc"><i>732</i>&nbsp;            if (q[ix++] != hashArea[spillOffset++]) return false;</b>
+<i>733</i>&nbsp;        case 6:
+<b class="fc"><i>734</i>&nbsp;            if (q[ix++] != hashArea[spillOffset++]) return false;</b>
+<i>735</i>&nbsp;        case 5:
+<b class="fc"><i>736</i>&nbsp;            if (q[ix++] != hashArea[spillOffset++]) return false;</b>
+<i>737</i>&nbsp;        case 4: // always at least 4
+<b class="fc"><i>738</i>&nbsp;            if (q[ix++] != hashArea[spillOffset++]) return false;</b>
+<b class="fc"><i>739</i>&nbsp;            if (q[ix++] != hashArea[spillOffset++]) return false;</b>
+<b class="fc"><i>740</i>&nbsp;            if (q[ix++] != hashArea[spillOffset++]) return false;</b>
+<b class="fc"><i>741</i>&nbsp;            if (q[ix++] != hashArea[spillOffset++]) return false;</b>
+<i>742</i>&nbsp;        }
+<b class="fc"><i>743</i>&nbsp;        return true;</b>
+<i>744</i>&nbsp;    }
+<i>745</i>&nbsp;
+<i>746</i>&nbsp;    private boolean _verifyLongName2(int[] q, int qlen, int spillOffset)
+<i>747</i>&nbsp;    {
+<b class="fc"><i>748</i>&nbsp;        int ix = 0;</b>
+<i>749</i>&nbsp;        do {
+<b class="fc"><i>750</i>&nbsp;            if (q[ix++] != _hashArea[spillOffset++]) {</b>
+<b class="nc"><i>751</i>&nbsp;                return false;</b>
+<i>752</i>&nbsp;            }
+<b class="fc"><i>753</i>&nbsp;        } while (ix &lt; qlen);</b>
+<b class="fc"><i>754</i>&nbsp;        return true;</b>
+<i>755</i>&nbsp;    }
+<i>756</i>&nbsp;
+<i>757</i>&nbsp;    /*
+<i>758</i>&nbsp;    /**********************************************************
+<i>759</i>&nbsp;    /* API, mutators
+<i>760</i>&nbsp;    /**********************************************************
+<i>761</i>&nbsp;     */
+<i>762</i>&nbsp;
+<i>763</i>&nbsp;    public String addName(String name, int q1) {
+<b class="nc"><i>764</i>&nbsp;        _verifySharing();</b>
+<b class="nc"><i>765</i>&nbsp;        if (_intern) {</b>
+<b class="nc"><i>766</i>&nbsp;            name = InternCache.instance.intern(name);</b>
+<i>767</i>&nbsp;        }
+<b class="nc"><i>768</i>&nbsp;        int offset = _findOffsetForAdd(calcHash(q1));</b>
+<b class="nc"><i>769</i>&nbsp;        _hashArea[offset] = q1;</b>
+<b class="nc"><i>770</i>&nbsp;        _hashArea[offset+3] = 1;</b>
+<b class="nc"><i>771</i>&nbsp;        _names[offset &gt;&gt; 2] = name;</b>
+<b class="nc"><i>772</i>&nbsp;        ++_count;</b>
+<b class="nc"><i>773</i>&nbsp;        _verifyNeedForRehash();</b>
+<b class="nc"><i>774</i>&nbsp;        return name;</b>
+<i>775</i>&nbsp;    }
+<i>776</i>&nbsp;
+<i>777</i>&nbsp;    public String addName(String name, int q1, int q2) {
+<b class="nc"><i>778</i>&nbsp;        _verifySharing();</b>
+<b class="nc"><i>779</i>&nbsp;        if (_intern) {</b>
+<b class="nc"><i>780</i>&nbsp;            name = InternCache.instance.intern(name);</b>
+<i>781</i>&nbsp;        }
+<b class="nc"><i>782</i>&nbsp;        int hash = (q2 == 0) ? calcHash(q1) : calcHash(q1, q2);</b>
+<b class="nc"><i>783</i>&nbsp;        int offset = _findOffsetForAdd(hash);</b>
+<b class="nc"><i>784</i>&nbsp;        _hashArea[offset] = q1;</b>
+<b class="nc"><i>785</i>&nbsp;        _hashArea[offset+1] = q2;</b>
+<b class="nc"><i>786</i>&nbsp;        _hashArea[offset+3] = 2;</b>
+<b class="nc"><i>787</i>&nbsp;        _names[offset &gt;&gt; 2] = name;</b>
+<b class="nc"><i>788</i>&nbsp;        ++_count;</b>
+<b class="nc"><i>789</i>&nbsp;        _verifyNeedForRehash();</b>
+<b class="nc"><i>790</i>&nbsp;        return name;</b>
+<i>791</i>&nbsp;    }
+<i>792</i>&nbsp;
+<i>793</i>&nbsp;    public String addName(String name, int q1, int q2, int q3) {
+<b class="nc"><i>794</i>&nbsp;        _verifySharing();</b>
+<b class="nc"><i>795</i>&nbsp;        if (_intern) {</b>
+<b class="nc"><i>796</i>&nbsp;            name = InternCache.instance.intern(name);</b>
+<i>797</i>&nbsp;        }
+<b class="nc"><i>798</i>&nbsp;        int offset = _findOffsetForAdd(calcHash(q1, q2, q3));</b>
+<b class="nc"><i>799</i>&nbsp;        _hashArea[offset] = q1;</b>
+<b class="nc"><i>800</i>&nbsp;        _hashArea[offset+1] = q2;</b>
+<b class="nc"><i>801</i>&nbsp;        _hashArea[offset+2] = q3;</b>
+<b class="nc"><i>802</i>&nbsp;        _hashArea[offset+3] = 3;</b>
+<b class="nc"><i>803</i>&nbsp;        _names[offset &gt;&gt; 2] = name;</b>
+<b class="nc"><i>804</i>&nbsp;        ++_count;</b>
+<b class="nc"><i>805</i>&nbsp;        _verifyNeedForRehash();</b>
+<b class="nc"><i>806</i>&nbsp;        return name;</b>
+<i>807</i>&nbsp;    }
+<i>808</i>&nbsp;
+<i>809</i>&nbsp;    public String addName(String name, int[] q, int qlen)
+<i>810</i>&nbsp;    {
+<b class="fc"><i>811</i>&nbsp;        _verifySharing();</b>
+<b class="fc"><i>812</i>&nbsp;        if (_intern) {</b>
+<b class="fc"><i>813</i>&nbsp;            name = InternCache.instance.intern(name);</b>
+<i>814</i>&nbsp;        }
+<i>815</i>&nbsp;        int offset;
+<i>816</i>&nbsp;        
+<b class="fc"><i>817</i>&nbsp;        switch (qlen) {</b>
+<i>818</i>&nbsp;        case 1:
+<i>819</i>&nbsp;        {
+<b class="fc"><i>820</i>&nbsp;                offset = _findOffsetForAdd(calcHash(q[0]));</b>
+<b class="fc"><i>821</i>&nbsp;                _hashArea[offset] = q[0];</b>
+<b class="fc"><i>822</i>&nbsp;                _hashArea[offset+3] = 1;</b>
+<i>823</i>&nbsp;            }
+<b class="fc"><i>824</i>&nbsp;            break;</b>
+<i>825</i>&nbsp;        case 2:
+<i>826</i>&nbsp;            {
+<b class="fc"><i>827</i>&nbsp;                offset = _findOffsetForAdd(calcHash(q[0], q[1]));</b>
+<b class="fc"><i>828</i>&nbsp;                _hashArea[offset] = q[0];</b>
+<b class="fc"><i>829</i>&nbsp;                _hashArea[offset+1] = q[1];</b>
+<b class="fc"><i>830</i>&nbsp;                _hashArea[offset+3] = 2;</b>
+<i>831</i>&nbsp;            }
+<b class="fc"><i>832</i>&nbsp;            break;</b>
+<i>833</i>&nbsp;        case 3:
+<i>834</i>&nbsp;            {
+<b class="fc"><i>835</i>&nbsp;                offset = _findOffsetForAdd(calcHash(q[0], q[1], q[2]));</b>
+<b class="fc"><i>836</i>&nbsp;                _hashArea[offset] = q[0];</b>
+<b class="fc"><i>837</i>&nbsp;                _hashArea[offset+1] = q[1];</b>
+<b class="fc"><i>838</i>&nbsp;                _hashArea[offset+2] = q[2];</b>
+<b class="fc"><i>839</i>&nbsp;                _hashArea[offset+3] = 3;</b>
+<i>840</i>&nbsp;            }
+<b class="fc"><i>841</i>&nbsp;            break;</b>
+<i>842</i>&nbsp;        default:
+<b class="fc"><i>843</i>&nbsp;            final int hash = calcHash(q, qlen);</b>
+<b class="fc"><i>844</i>&nbsp;            offset = _findOffsetForAdd(hash);</b>
+<i>845</i>&nbsp;
+<b class="fc"><i>846</i>&nbsp;            _hashArea[offset] = hash;</b>
+<b class="fc"><i>847</i>&nbsp;            int longStart = _appendLongName(q, qlen);</b>
+<b class="fc"><i>848</i>&nbsp;            _hashArea[offset+1] = longStart;</b>
+<b class="fc"><i>849</i>&nbsp;            _hashArea[offset+3] = qlen;</b>
+<i>850</i>&nbsp;        }
+<i>851</i>&nbsp;        // plus add the actual String
+<b class="fc"><i>852</i>&nbsp;        _names[offset &gt;&gt; 2] = name;</b>
+<i>853</i>&nbsp;
+<i>854</i>&nbsp;        // and finally; see if we really should rehash.
+<b class="fc"><i>855</i>&nbsp;        ++_count;</b>
+<b class="fc"><i>856</i>&nbsp;        _verifyNeedForRehash();</b>
+<b class="fc"><i>857</i>&nbsp;        return name;</b>
+<i>858</i>&nbsp;    }
+<i>859</i>&nbsp;
+<i>860</i>&nbsp;    private void _verifyNeedForRehash() {
+<i>861</i>&nbsp;        // Yes if above 80%, or above 50% AND have ~1% spill-overs
+<b class="fc"><i>862</i>&nbsp;        if (_count &gt; (_hashSize &gt;&gt; 1)) { // over 50%</b>
+<b class="fc"><i>863</i>&nbsp;            int spillCount = (_spilloverEnd - _spilloverStart()) &gt;&gt; 2;</b>
+<b class="fc"><i>864</i>&nbsp;            if ((spillCount &gt; (1 + _count &gt;&gt; 7))</b>
+<i>865</i>&nbsp;                    || (_count &gt; (_hashSize * 0.80))) {
+<b class="fc"><i>866</i>&nbsp;                _needRehash = true;</b>
+<i>867</i>&nbsp;            }
+<i>868</i>&nbsp;        }
+<b class="fc"><i>869</i>&nbsp;    }</b>
+<i>870</i>&nbsp;
+<i>871</i>&nbsp;    private void _verifySharing()
+<i>872</i>&nbsp;    {
+<b class="fc"><i>873</i>&nbsp;        if (_hashShared) {</b>
+<b class="fc"><i>874</i>&nbsp;            _hashArea = Arrays.copyOf(_hashArea, _hashArea.length);</b>
+<b class="fc"><i>875</i>&nbsp;            _names = Arrays.copyOf(_names, _names.length);</b>
+<b class="fc"><i>876</i>&nbsp;            _hashShared = false;</b>
+<i>877</i>&nbsp;            // 09-Sep-2015, tatu: As per [jackson-core#216], also need to ensure
+<i>878</i>&nbsp;            //    we rehash as needed, as need-rehash flag is not copied from parent
+<b class="fc"><i>879</i>&nbsp;            _verifyNeedForRehash();</b>
+<i>880</i>&nbsp;        }
+<b class="fc"><i>881</i>&nbsp;        if (_needRehash) {</b>
+<b class="fc"><i>882</i>&nbsp;            rehash();</b>
+<i>883</i>&nbsp;        }
+<b class="fc"><i>884</i>&nbsp;    }</b>
+<i>885</i>&nbsp;
+<i>886</i>&nbsp;    /**
+<i>887</i>&nbsp;     * Method called to find the location within hash table to add a new symbol in.
+<i>888</i>&nbsp;     */
+<i>889</i>&nbsp;    private int _findOffsetForAdd(int hash)
+<i>890</i>&nbsp;    {
+<i>891</i>&nbsp;        // first, check the primary:
+<b class="fc"><i>892</i>&nbsp;        int offset = _calcOffset(hash);</b>
+<b class="fc"><i>893</i>&nbsp;        final int[] hashArea = _hashArea;</b>
+<b class="fc"><i>894</i>&nbsp;        if (hashArea[offset+3] == 0) {</b>
+<i>895</i>&nbsp;//System.err.printf(&quot; PRImary slot #%d, hash %X\n&quot;, (offset&gt;&gt;2), hash &amp; 0x7F);
+<b class="fc"><i>896</i>&nbsp;            return offset;</b>
+<i>897</i>&nbsp;        }
+<i>898</i>&nbsp;        // then secondary
+<b class="fc"><i>899</i>&nbsp;        int offset2 = _secondaryStart + ((offset &gt;&gt; 3) &lt;&lt; 2);</b>
+<b class="fc"><i>900</i>&nbsp;        if (hashArea[offset2+3] == 0) {</b>
+<i>901</i>&nbsp;//System.err.printf(&quot; SECondary slot #%d (start x%X), hash %X\n&quot;,(offset &gt;&gt; 3), _secondaryStart, (hash &amp; 0x7F));
+<b class="fc"><i>902</i>&nbsp;            return offset2;</b>
+<i>903</i>&nbsp;        }
+<i>904</i>&nbsp;        // if not, tertiary?
+<i>905</i>&nbsp;
+<b class="fc"><i>906</i>&nbsp;        offset2 = _tertiaryStart + ((offset &gt;&gt; (_tertiaryShift + 2)) &lt;&lt; _tertiaryShift);</b>
+<b class="fc"><i>907</i>&nbsp;        final int bucketSize = (1 &lt;&lt; _tertiaryShift);</b>
+<b class="fc"><i>908</i>&nbsp;        for (int end = offset2 + bucketSize; offset2 &lt; end; offset2 += 4) {</b>
+<b class="fc"><i>909</i>&nbsp;            if (hashArea[offset2+3] == 0) {</b>
+<i>910</i>&nbsp;//System.err.printf(&quot; TERtiary slot x%X (from x%X, start x%X), hash %X.\n&quot;, offset2, ((offset &gt;&gt; (_tertiaryShift + 2)) &lt;&lt; _tertiaryShift), _tertiaryStart, (hash &amp; 0x7F));
+<b class="fc"><i>911</i>&nbsp;                return offset2;</b>
+<i>912</i>&nbsp;            }
+<i>913</i>&nbsp;        }
+<i>914</i>&nbsp;
+<i>915</i>&nbsp;        // and if even tertiary full, append at the end of spill area
+<b class="fc"><i>916</i>&nbsp;        offset = _spilloverEnd;</b>
+<b class="fc"><i>917</i>&nbsp;        _spilloverEnd += 4;</b>
+<i>918</i>&nbsp;
+<i>919</i>&nbsp;//System.err.printf(&quot; SPIll-over at x%X; start x%X; end x%X, hash %X\n&quot;, offset, _spilloverStart(), _hashArea.length, (hash &amp; 0x7F));
+<i>920</i>&nbsp;        
+<i>921</i>&nbsp;        // one caveat: in the unlikely event if spill-over filling up,
+<i>922</i>&nbsp;        // check if that could be considered a DoS attack; handle appropriately
+<i>923</i>&nbsp;        // (NOTE: approximate for now; we could verify details if that becomes necessary)
+<i>924</i>&nbsp;        /* 31-Jul-2015, tatu: Note that spillover area does NOT end at end of array,
+<i>925</i>&nbsp;         *   since &quot;long names&quot; area follows. Instead, need to calculate from hash size.
+<i>926</i>&nbsp;         */
+<b class="fc"><i>927</i>&nbsp;        final int end = (_hashSize &lt;&lt; 3);</b>
+<b class="fc"><i>928</i>&nbsp;        if (_spilloverEnd &gt;= end) {</b>
+<b class="nc"><i>929</i>&nbsp;            if (_failOnDoS) {</b>
+<b class="nc"><i>930</i>&nbsp;                _reportTooManyCollisions();</b>
+<i>931</i>&nbsp;            }
+<i>932</i>&nbsp;            // and if we didn&#39;t fail, we&#39;ll simply force rehash for next add
+<i>933</i>&nbsp;            // (which, in turn, may double up or nuke contents, depending on size etc)
+<b class="nc"><i>934</i>&nbsp;            _needRehash = true;</b>
+<i>935</i>&nbsp;        }
+<b class="fc"><i>936</i>&nbsp;        return offset;</b>
+<i>937</i>&nbsp;    }
+<i>938</i>&nbsp;
+<i>939</i>&nbsp;    private int _appendLongName(int[] quads, int qlen)
+<i>940</i>&nbsp;    {
+<b class="fc"><i>941</i>&nbsp;        int start = _longNameOffset;</b>
+<i>942</i>&nbsp;        
+<i>943</i>&nbsp;        // note: at this point we must already be shared. But may not have enough space
+<b class="fc"><i>944</i>&nbsp;        if ((start + qlen) &gt; _hashArea.length) {</b>
+<i>945</i>&nbsp;            // try to increment in reasonable chunks; at least space that we need
+<b class="fc"><i>946</i>&nbsp;            int toAdd = (start + qlen) - _hashArea.length;</b>
+<i>947</i>&nbsp;            // but at least 1/8 of regular hash area size or 16kB (whichever smaller)
+<b class="fc"><i>948</i>&nbsp;            int minAdd = Math.min(4096, _hashSize);</b>
+<i>949</i>&nbsp;
+<b class="fc"><i>950</i>&nbsp;            int newSize = _hashArea.length + Math.max(toAdd, minAdd);</b>
+<b class="fc"><i>951</i>&nbsp;            _hashArea = Arrays.copyOf(_hashArea, newSize);</b>
+<i>952</i>&nbsp;        }
+<b class="fc"><i>953</i>&nbsp;        System.arraycopy(quads, 0, _hashArea, start, qlen);</b>
+<b class="fc"><i>954</i>&nbsp;        _longNameOffset += qlen;</b>
+<b class="fc"><i>955</i>&nbsp;        return start;</b>
+<i>956</i>&nbsp;    }
+<i>957</i>&nbsp;
+<i>958</i>&nbsp;    /*
+<i>959</i>&nbsp;    /**********************************************************
+<i>960</i>&nbsp;    /* Hash calculation
+<i>961</i>&nbsp;    /**********************************************************
+<i>962</i>&nbsp;     */
+<i>963</i>&nbsp;
+<i>964</i>&nbsp;    /* Note on hash calculation: we try to make it more difficult to
+<i>965</i>&nbsp;     * generate collisions automatically; part of this is to avoid
+<i>966</i>&nbsp;     * simple &quot;multiply-add&quot; algorithm (like JDK String.hashCode()),
+<i>967</i>&nbsp;     * and add bit of shifting. And other part is to make this
+<i>968</i>&nbsp;     * non-linear, at least for shorter symbols.
+<i>969</i>&nbsp;     */
+<i>970</i>&nbsp;    
+<i>971</i>&nbsp;    // JDK uses 31; other fine choices are 33 and 65599, let&#39;s use 33
+<i>972</i>&nbsp;    // as it seems to give fewest collisions for us
+<i>973</i>&nbsp;    // (see [http://www.cse.yorku.ca/~oz/hash.html] for details)
+<i>974</i>&nbsp;    private final static int MULT = 33;
+<i>975</i>&nbsp;    private final static int MULT2 = 65599;
+<i>976</i>&nbsp;    private final static int MULT3 = 31;
+<i>977</i>&nbsp;    
+<i>978</i>&nbsp;    public int calcHash(int q1)
+<i>979</i>&nbsp;    {
+<b class="fc"><i>980</i>&nbsp;        int hash = q1 ^ _seed;</b>
+<i>981</i>&nbsp;        /* 29-Mar-2015, tatu: Earlier used 15 + 9 right shifts, which worked ok
+<i>982</i>&nbsp;         *    except for one specific problem case: numbers. So needed to make sure
+<i>983</i>&nbsp;         *    that all 4 least-significant bits participate in hash. Couple of ways
+<i>984</i>&nbsp;         *    to work it out, but this is the simplest, fast and seems to do ok.
+<i>985</i>&nbsp;         */
+<b class="fc"><i>986</i>&nbsp;        hash += (hash &gt;&gt;&gt; 16); // to xor hi- and low- 16-bits</b>
+<b class="fc"><i>987</i>&nbsp;        hash ^= (hash &lt;&lt; 3); // shuffle back a bit</b>
+<b class="fc"><i>988</i>&nbsp;        hash += (hash &gt;&gt;&gt; 12); // and bit more</b>
+<b class="fc"><i>989</i>&nbsp;        return hash;</b>
+<i>990</i>&nbsp;    }
+<i>991</i>&nbsp;
+<i>992</i>&nbsp;    public int calcHash(int q1, int q2)
+<i>993</i>&nbsp;    {
+<i>994</i>&nbsp;        // For two quads, let&#39;s change algorithm a bit, to spice
+<i>995</i>&nbsp;        // things up (can do bit more processing anyway)
+<b class="fc"><i>996</i>&nbsp;        int hash = q1;</b>
+<i>997</i>&nbsp;
+<b class="fc"><i>998</i>&nbsp;        hash += (hash &gt;&gt;&gt; 15); // try mixing first and second byte pairs first</b>
+<b class="fc"><i>999</i>&nbsp;        hash ^= (hash &gt;&gt;&gt; 9); // as well as lowest 2 bytes</b>
+<b class="fc"><i>1000</i>&nbsp;        hash += (q2 * MULT); // then add second quad</b>
+<b class="fc"><i>1001</i>&nbsp;        hash ^= _seed;</b>
+<b class="fc"><i>1002</i>&nbsp;        hash += (hash &gt;&gt;&gt; 16); // and shuffle some more</b>
+<b class="fc"><i>1003</i>&nbsp;        hash ^= (hash &gt;&gt;&gt; 4);</b>
+<b class="fc"><i>1004</i>&nbsp;        hash += (hash &lt;&lt; 3);</b>
+<i>1005</i>&nbsp;        
+<b class="fc"><i>1006</i>&nbsp;        return hash;</b>
+<i>1007</i>&nbsp;    }
+<i>1008</i>&nbsp;
+<i>1009</i>&nbsp;    public int calcHash(int q1, int q2, int q3)
+<i>1010</i>&nbsp;    { // use same algorithm as multi-byte, tested to work well
+<b class="fc"><i>1011</i>&nbsp;        int hash = q1 ^ _seed;</b>
+<b class="fc"><i>1012</i>&nbsp;        hash += (hash &gt;&gt;&gt; 9);</b>
+<b class="fc"><i>1013</i>&nbsp;        hash *= MULT3;</b>
+<b class="fc"><i>1014</i>&nbsp;        hash += q2;</b>
+<b class="fc"><i>1015</i>&nbsp;        hash *= MULT;</b>
+<b class="fc"><i>1016</i>&nbsp;        hash += (hash &gt;&gt;&gt; 15);</b>
+<b class="fc"><i>1017</i>&nbsp;        hash ^= q3;</b>
+<i>1018</i>&nbsp;        // 26-Mar-2015, tatu: As per two-quad case, a short shift seems to help more here
+<b class="fc"><i>1019</i>&nbsp;        hash += (hash &gt;&gt;&gt; 4);</b>
+<i>1020</i>&nbsp;
+<b class="fc"><i>1021</i>&nbsp;        hash += (hash &gt;&gt;&gt; 15);</b>
+<b class="fc"><i>1022</i>&nbsp;        hash ^= (hash &lt;&lt; 9);</b>
+<i>1023</i>&nbsp;
+<b class="fc"><i>1024</i>&nbsp;        return hash;</b>
+<i>1025</i>&nbsp;    }
+<i>1026</i>&nbsp;
+<i>1027</i>&nbsp;    public int calcHash(int[] q, int qlen)
+<i>1028</i>&nbsp;    {
+<b class="fc"><i>1029</i>&nbsp;        if (qlen &lt; 4) {</b>
+<b class="nc"><i>1030</i>&nbsp;            throw new IllegalArgumentException();</b>
+<i>1031</i>&nbsp;        }
+<i>1032</i>&nbsp;        /* And then change handling again for &quot;multi-quad&quot; case; mostly
+<i>1033</i>&nbsp;         * to make calculation of collisions less fun. For example,
+<i>1034</i>&nbsp;         * add seed bit later in the game, and switch plus/xor around,
+<i>1035</i>&nbsp;         * use different shift lengths.
+<i>1036</i>&nbsp;         */
+<b class="fc"><i>1037</i>&nbsp;        int hash = q[0] ^ _seed;</b>
+<b class="fc"><i>1038</i>&nbsp;        hash += (hash &gt;&gt;&gt; 9);</b>
+<b class="fc"><i>1039</i>&nbsp;        hash += q[1];</b>
+<b class="fc"><i>1040</i>&nbsp;        hash += (hash &gt;&gt;&gt; 15);</b>
+<b class="fc"><i>1041</i>&nbsp;        hash *= MULT;</b>
+<b class="fc"><i>1042</i>&nbsp;        hash ^= q[2];</b>
+<b class="fc"><i>1043</i>&nbsp;        hash += (hash &gt;&gt;&gt; 4);</b>
+<i>1044</i>&nbsp;
+<b class="fc"><i>1045</i>&nbsp;        for (int i = 3; i &lt; qlen; ++i) {</b>
+<b class="fc"><i>1046</i>&nbsp;            int next = q[i];</b>
+<b class="fc"><i>1047</i>&nbsp;            next = next ^ (next &gt;&gt; 21);</b>
+<b class="fc"><i>1048</i>&nbsp;            hash += next;</b>
+<i>1049</i>&nbsp;        }
+<b class="fc"><i>1050</i>&nbsp;        hash *= MULT2;</b>
+<i>1051</i>&nbsp;        
+<i>1052</i>&nbsp;        // and finally shuffle some more once done
+<b class="fc"><i>1053</i>&nbsp;        hash += (hash &gt;&gt;&gt; 19);</b>
+<b class="fc"><i>1054</i>&nbsp;        hash ^= (hash &lt;&lt; 5);</b>
+<b class="fc"><i>1055</i>&nbsp;        return hash;</b>
+<i>1056</i>&nbsp;    }
+<i>1057</i>&nbsp;
+<i>1058</i>&nbsp;    /*
+<i>1059</i>&nbsp;    /**********************************************************
+<i>1060</i>&nbsp;    /* Rehashing
+<i>1061</i>&nbsp;    /**********************************************************
+<i>1062</i>&nbsp;     */
+<i>1063</i>&nbsp;
+<i>1064</i>&nbsp;    private void rehash()
+<i>1065</i>&nbsp;    {
+<b class="fc"><i>1066</i>&nbsp;        _needRehash = false;</b>
+<i>1067</i>&nbsp;        // Note: since we&#39;ll make copies, no need to unshare, can just mark as such:
+<b class="fc"><i>1068</i>&nbsp;        _hashShared = false;</b>
+<i>1069</i>&nbsp;
+<i>1070</i>&nbsp;        // And then we can first deal with the main hash area. Since we are expanding
+<i>1071</i>&nbsp;        // linearly (double up), we know there&#39;ll be no collisions during this phase.
+<b class="fc"><i>1072</i>&nbsp;        final int[] oldHashArea = _hashArea;</b>
+<b class="fc"><i>1073</i>&nbsp;        final String[] oldNames = _names;</b>
+<b class="fc"><i>1074</i>&nbsp;        final int oldSize = _hashSize;</b>
+<b class="fc"><i>1075</i>&nbsp;        final int oldCount = _count;</b>
+<b class="fc"><i>1076</i>&nbsp;        final int newSize = oldSize + oldSize;</b>
+<b class="fc"><i>1077</i>&nbsp;        final int oldEnd = _spilloverEnd;</b>
+<i>1078</i>&nbsp;
+<i>1079</i>&nbsp;        /* 13-Mar-2010, tatu: Let&#39;s guard against OOME that could be caused by
+<i>1080</i>&nbsp;         *    large documents with unique (or mostly so) names
+<i>1081</i>&nbsp;         */
+<b class="fc"><i>1082</i>&nbsp;        if (newSize &gt; MAX_T_SIZE) {</b>
+<b class="fc"><i>1083</i>&nbsp;            nukeSymbols(true);</b>
+<b class="fc"><i>1084</i>&nbsp;            return;</b>
+<i>1085</i>&nbsp;        }
+<i>1086</i>&nbsp;        // double up main hash area, but do not expand long-name area:
+<b class="fc"><i>1087</i>&nbsp;        _hashArea = new int[oldHashArea.length + (oldSize&lt;&lt;3)];</b>
+<b class="fc"><i>1088</i>&nbsp;        _hashSize = newSize;</b>
+<b class="fc"><i>1089</i>&nbsp;        _secondaryStart = (newSize &lt;&lt; 2); // 4 ints per entry</b>
+<b class="fc"><i>1090</i>&nbsp;        _tertiaryStart = _secondaryStart + (_secondaryStart &gt;&gt; 1); // right after secondary</b>
+<b class="fc"><i>1091</i>&nbsp;        _tertiaryShift = _calcTertiaryShift(newSize);</b>
+<i>1092</i>&nbsp;        
+<i>1093</i>&nbsp;        // and simply double up name array
+<b class="fc"><i>1094</i>&nbsp;        _names = new String[oldNames.length &lt;&lt; 1];</b>
+<b class="fc"><i>1095</i>&nbsp;        nukeSymbols(false);</b>
+<i>1096</i>&nbsp;
+<i>1097</i>&nbsp;        // Plus we can scan only through the primary hash area, looking for non-empty
+<i>1098</i>&nbsp;        // slots, without worrying about ordering. This should never reduce priority
+<i>1099</i>&nbsp;        // of existing entries: primaries remain primaries; however, due to increased
+<i>1100</i>&nbsp;        // space, secondaries may become primaries etc
+<i>1101</i>&nbsp;
+<b class="fc"><i>1102</i>&nbsp;        int copyCount = 0;</b>
+<b class="fc"><i>1103</i>&nbsp;        int[] q = new int[16];</b>
+<b class="fc"><i>1104</i>&nbsp;        for (int offset = 0, end = oldEnd; offset &lt; end; offset += 4) {</b>
+<b class="fc"><i>1105</i>&nbsp;            int len = oldHashArea[offset+3];</b>
+<b class="fc"><i>1106</i>&nbsp;            if (len == 0) { // empty slot, skip</b>
+<b class="fc"><i>1107</i>&nbsp;                continue;</b>
+<i>1108</i>&nbsp;            }
+<b class="fc"><i>1109</i>&nbsp;            ++copyCount;</b>
+<b class="fc"><i>1110</i>&nbsp;            String name = oldNames[offset&gt;&gt;2];</b>
+<b class="fc"><i>1111</i>&nbsp;            switch (len) {</b>
+<i>1112</i>&nbsp;            case 1:
+<b class="fc"><i>1113</i>&nbsp;                q[0] = oldHashArea[offset];</b>
+<b class="fc"><i>1114</i>&nbsp;                addName(name, q, 1);</b>
+<b class="fc"><i>1115</i>&nbsp;                break;</b>
+<i>1116</i>&nbsp;            case 2:
+<b class="fc"><i>1117</i>&nbsp;                q[0] = oldHashArea[offset];</b>
+<b class="fc"><i>1118</i>&nbsp;                q[1] = oldHashArea[offset+1];</b>
+<b class="fc"><i>1119</i>&nbsp;                addName(name, q, 2);</b>
+<b class="fc"><i>1120</i>&nbsp;                break;</b>
+<i>1121</i>&nbsp;            case 3:
+<b class="fc"><i>1122</i>&nbsp;                q[0] = oldHashArea[offset];</b>
+<b class="fc"><i>1123</i>&nbsp;                q[1] = oldHashArea[offset+1];</b>
+<b class="fc"><i>1124</i>&nbsp;                q[2] = oldHashArea[offset+2];</b>
+<b class="fc"><i>1125</i>&nbsp;                addName(name, q, 3);</b>
+<b class="fc"><i>1126</i>&nbsp;                break;</b>
+<i>1127</i>&nbsp;            default:
+<b class="fc"><i>1128</i>&nbsp;                if (len &gt; q.length) {</b>
+<b class="nc"><i>1129</i>&nbsp;                    q = new int[len];</b>
+<i>1130</i>&nbsp;                }
+<i>1131</i>&nbsp;                // #0 is hash, #1 offset
+<b class="fc"><i>1132</i>&nbsp;                int qoff = oldHashArea[offset+1];</b>
+<b class="fc"><i>1133</i>&nbsp;                System.arraycopy(oldHashArea, qoff, q, 0, len);</b>
+<b class="fc"><i>1134</i>&nbsp;                addName(name, q, len);</b>
+<i>1135</i>&nbsp;                break;
+<i>1136</i>&nbsp;            }
+<i>1137</i>&nbsp;        }
+<i>1138</i>&nbsp;
+<i>1139</i>&nbsp;        // Sanity checks: since corruption difficult to detect, assert explicitly
+<i>1140</i>&nbsp;        // with production code
+<b class="fc"><i>1141</i>&nbsp;        if (copyCount != oldCount) {</b>
+<b class="nc"><i>1142</i>&nbsp;            throw new IllegalStateException(&quot;Failed rehash(): old count=&quot;+oldCount+&quot;, copyCount=&quot;+copyCount);</b>
+<i>1143</i>&nbsp;        }
+<b class="fc"><i>1144</i>&nbsp;    }</b>
+<i>1145</i>&nbsp;
+<i>1146</i>&nbsp;    /**
+<i>1147</i>&nbsp;     * Helper method called to empty all shared symbols, but to leave
+<i>1148</i>&nbsp;     * arrays allocated
+<i>1149</i>&nbsp;     */
+<i>1150</i>&nbsp;    private void nukeSymbols(boolean fill) {
+<b class="fc"><i>1151</i>&nbsp;        _count = 0;</b>
+<i>1152</i>&nbsp;        // reset spill-over to empty (starting at 7/8 of hash area)
+<b class="fc"><i>1153</i>&nbsp;        _spilloverEnd = _spilloverStart();</b>
+<i>1154</i>&nbsp;        // and long name area to empty, starting immediately after hash area
+<b class="fc"><i>1155</i>&nbsp;        _longNameOffset = _hashSize &lt;&lt; 3;</b>
+<b class="fc"><i>1156</i>&nbsp;        if (fill) {</b>
+<b class="fc"><i>1157</i>&nbsp;            Arrays.fill(_hashArea, 0);</b>
+<b class="fc"><i>1158</i>&nbsp;            Arrays.fill(_names, null);</b>
+<i>1159</i>&nbsp;        }
+<b class="fc"><i>1160</i>&nbsp;    }</b>
+<i>1161</i>&nbsp;
+<i>1162</i>&nbsp;    /*
+<i>1163</i>&nbsp;    /**********************************************************
+<i>1164</i>&nbsp;    /* Helper methods
+<i>1165</i>&nbsp;    /**********************************************************
+<i>1166</i>&nbsp;     */
+<i>1167</i>&nbsp;
+<i>1168</i>&nbsp;    /**
+<i>1169</i>&nbsp;     * Helper method that calculates start of the spillover area
+<i>1170</i>&nbsp;     */
+<i>1171</i>&nbsp;    private final int _spilloverStart() {
+<i>1172</i>&nbsp;        // we&#39;ll need slot at 1.75x of hashSize, but with 4-ints per slot.
+<i>1173</i>&nbsp;        // So basically multiply by 7
+<b class="fc"><i>1174</i>&nbsp;        int offset = _hashSize;</b>
+<b class="fc"><i>1175</i>&nbsp;        return (offset &lt;&lt; 3) - offset;</b>
+<i>1176</i>&nbsp;    }
+<i>1177</i>&nbsp;
+<i>1178</i>&nbsp;    protected void _reportTooManyCollisions()
+<i>1179</i>&nbsp;    {
+<i>1180</i>&nbsp;        // First: do not fuzz about small symbol tables; may get balanced by doubling up
+<b class="nc"><i>1181</i>&nbsp;        if (_hashSize &lt;= 1024) { // would have spill-over area of 128 entries</b>
+<b class="nc"><i>1182</i>&nbsp;            return;</b>
+<i>1183</i>&nbsp;        }
+<b class="nc"><i>1184</i>&nbsp;        throw new IllegalStateException(&quot;Spill-over slots in symbol table with &quot;+_count</b>
+<i>1185</i>&nbsp;                +&quot; entries, hash area of &quot;+_hashSize+&quot; slots is now full (all &quot;
+<i>1186</i>&nbsp;                +(_hashSize &gt;&gt; 3)+&quot; slots -- suspect a DoS attack based on hash collisions.&quot;
+<i>1187</i>&nbsp;                +&quot; You can disable the check via `JsonFactory.Feature.FAIL_ON_SYMBOL_HASH_OVERFLOW`&quot;);
+<i>1188</i>&nbsp;    }
+<i>1189</i>&nbsp;
+<i>1190</i>&nbsp;    static int _calcTertiaryShift(int primarySlots)
+<i>1191</i>&nbsp;    {
+<i>1192</i>&nbsp;        // first: we only get 1/4 of slots of primary, to divide
+<b class="fc"><i>1193</i>&nbsp;        int tertSlots = (primarySlots) &gt;&gt; 2;</b>
+<i>1194</i>&nbsp;        
+<i>1195</i>&nbsp;        // default is for buckets of 4 slots (each 4 ints, i.e. 1 &lt;&lt; 4)
+<b class="fc"><i>1196</i>&nbsp;        if (tertSlots &lt; 64) {</b>
+<b class="fc"><i>1197</i>&nbsp;            return 4;</b>
+<i>1198</i>&nbsp;        }
+<b class="fc"><i>1199</i>&nbsp;        if (tertSlots &lt;= 256) { // buckets of 8 slots (up to 256 == 32 x 8)</b>
+<b class="fc"><i>1200</i>&nbsp;            return 5;</b>
+<i>1201</i>&nbsp;        }
+<b class="fc"><i>1202</i>&nbsp;        if (tertSlots &lt;= 1024) { // buckets of 16 slots (up to 1024 == 64 x 16)</b>
+<b class="fc"><i>1203</i>&nbsp;            return 6;</b>
+<i>1204</i>&nbsp;        }
+<i>1205</i>&nbsp;        // and biggest buckets have 32 slots
+<b class="fc"><i>1206</i>&nbsp;        return 7;</b>
+<i>1207</i>&nbsp;    }
+<i>1208</i>&nbsp;
+<i>1209</i>&nbsp;    /*
+<i>1210</i>&nbsp;    /**********************************************************
+<i>1211</i>&nbsp;    /* Helper classes
+<i>1212</i>&nbsp;    /**********************************************************
+<i>1213</i>&nbsp;     */
+<i>1214</i>&nbsp;
+<i>1215</i>&nbsp;    /**
+<i>1216</i>&nbsp;     * Immutable value class used for sharing information as efficiently
+<i>1217</i>&nbsp;     * as possible, by only require synchronization of reference manipulation
+<i>1218</i>&nbsp;     * but not access to contents.
+<i>1219</i>&nbsp;     * 
+<i>1220</i>&nbsp;     * @since 2.1
+<i>1221</i>&nbsp;     */
+<i>1222</i>&nbsp;    private final static class TableInfo
+<i>1223</i>&nbsp;    {
+<i>1224</i>&nbsp;        public final int size;
+<i>1225</i>&nbsp;        public final int count;
+<i>1226</i>&nbsp;        public final int tertiaryShift;
+<i>1227</i>&nbsp;        public final int[] mainHash;
+<i>1228</i>&nbsp;        public final String[] names;
+<i>1229</i>&nbsp;        public final int spilloverEnd;
+<i>1230</i>&nbsp;        public final int longNameOffset;
+<i>1231</i>&nbsp;
+<i>1232</i>&nbsp;        public TableInfo(int size, int count, int tertiaryShift, 
+<i>1233</i>&nbsp;                int[] mainHash, String[] names, int spilloverEnd, int longNameOffset)
+<b class="fc"><i>1234</i>&nbsp;        {</b>
+<b class="fc"><i>1235</i>&nbsp;            this.size = size;</b>
+<b class="fc"><i>1236</i>&nbsp;            this.count = count;</b>
+<b class="fc"><i>1237</i>&nbsp;            this.tertiaryShift = tertiaryShift;</b>
+<b class="fc"><i>1238</i>&nbsp;            this.mainHash = mainHash;</b>
+<b class="fc"><i>1239</i>&nbsp;            this.names = names;</b>
+<b class="fc"><i>1240</i>&nbsp;            this.spilloverEnd = spilloverEnd;</b>
+<b class="fc"><i>1241</i>&nbsp;            this.longNameOffset = longNameOffset;</b>
+<b class="fc"><i>1242</i>&nbsp;        }</b>
+<i>1243</i>&nbsp;
+<i>1244</i>&nbsp;        public TableInfo(ByteQuadsCanonicalizer src)
+<b class="fc"><i>1245</i>&nbsp;        {</b>
+<b class="fc"><i>1246</i>&nbsp;            size = src._hashSize;</b>
+<b class="fc"><i>1247</i>&nbsp;            count = src._count;</b>
+<b class="fc"><i>1248</i>&nbsp;            tertiaryShift = src._tertiaryShift;</b>
+<b class="fc"><i>1249</i>&nbsp;            mainHash = src._hashArea;</b>
+<b class="fc"><i>1250</i>&nbsp;            names = src._names;</b>
+<b class="fc"><i>1251</i>&nbsp;            spilloverEnd = src._spilloverEnd;</b>
+<b class="fc"><i>1252</i>&nbsp;            longNameOffset = src._longNameOffset;</b>
+<b class="fc"><i>1253</i>&nbsp;        }</b>
+<i>1254</i>&nbsp;
+<i>1255</i>&nbsp;        public static TableInfo createInitial(int sz) {
+<b class="fc"><i>1256</i>&nbsp;            int hashAreaSize = sz &lt;&lt; 3;</b>
+<b class="fc"><i>1257</i>&nbsp;            int tertShift = _calcTertiaryShift(sz);</b>
+<i>1258</i>&nbsp;
+<b class="fc"><i>1259</i>&nbsp;            return new TableInfo(sz, // hashSize</b>
+<i>1260</i>&nbsp;                    0, // count
+<i>1261</i>&nbsp;                    tertShift,
+<i>1262</i>&nbsp;                    new int[hashAreaSize], // mainHash, 2x slots, 4 ints per slot
+<i>1263</i>&nbsp;                    new String[sz &lt;&lt; 1], // names == 2x slots
+<i>1264</i>&nbsp;                    hashAreaSize - sz, // at 7/8 of the total area
+<i>1265</i>&nbsp;                    hashAreaSize // longNameOffset, immediately after main hashes
+<i>1266</i>&nbsp;            );
+<i>1267</i>&nbsp;        }
+<i>1268</i>&nbsp;    }
+<i>1269</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 04:22</div>
+</div>
+</body>
+</html>

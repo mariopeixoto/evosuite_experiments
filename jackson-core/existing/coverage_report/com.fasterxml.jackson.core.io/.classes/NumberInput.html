@@ -1,0 +1,390 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: NumberInput</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.fasterxml.jackson.core.io</a> ]
+</div>
+
+<h1>Coverage Summary for Class: NumberInput (com.fasterxml.jackson.core.io)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">NumberInput</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    81.2%
+  </span>
+  <span class="absValue">
+    (13/ 16)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    72.5%
+  </span>
+  <span class="absValue">
+    (103/ 142)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;package com.fasterxml.jackson.core.io;
+<i>2</i>&nbsp;
+<i>3</i>&nbsp;import java.math.BigDecimal;
+<i>4</i>&nbsp;
+<b class="nc"><i>5</i>&nbsp;public final class NumberInput</b>
+<i>6</i>&nbsp;{
+<i>7</i>&nbsp;    /**
+<i>8</i>&nbsp;     * Textual representation of a double constant that can cause nasty problems
+<i>9</i>&nbsp;     * with JDK (see http://www.exploringbinary.com/java-hangs-when-converting-2-2250738585072012e-308).
+<i>10</i>&nbsp;     */
+<i>11</i>&nbsp;    public final static String NASTY_SMALL_DOUBLE = &quot;2.2250738585072012e-308&quot;;
+<i>12</i>&nbsp;
+<i>13</i>&nbsp;    /**
+<i>14</i>&nbsp;     * Constants needed for parsing longs from basic int parsing methods
+<i>15</i>&nbsp;     */
+<i>16</i>&nbsp;    final static long L_BILLION = 1000000000;
+<i>17</i>&nbsp;
+<b class="fc"><i>18</i>&nbsp;    final static String MIN_LONG_STR_NO_SIGN = String.valueOf(Long.MIN_VALUE).substring(1);</b>
+<b class="fc"><i>19</i>&nbsp;    final static String MAX_LONG_STR = String.valueOf(Long.MAX_VALUE);</b>
+<i>20</i>&nbsp;
+<i>21</i>&nbsp;    /**
+<i>22</i>&nbsp;     * Fast method for parsing integers that are known to fit into
+<i>23</i>&nbsp;     * regular 32-bit signed int type. This means that length is
+<i>24</i>&nbsp;     * between 1 and 9 digits (inclusive)
+<i>25</i>&nbsp;     *&lt;p&gt;
+<i>26</i>&nbsp;     * Note: public to let unit tests call it
+<i>27</i>&nbsp;     */
+<i>28</i>&nbsp;    public static int parseInt(char[] ch, int off, int len)
+<i>29</i>&nbsp;    {
+<b class="fc"><i>30</i>&nbsp;        int num = ch[off] - &#39;0&#39;;</b>
+<i>31</i>&nbsp;
+<b class="fc"><i>32</i>&nbsp;        if (len &gt; 4) {</b>
+<b class="fc"><i>33</i>&nbsp;            num = (num * 10) + (ch[++off] - &#39;0&#39;);</b>
+<b class="fc"><i>34</i>&nbsp;            num = (num * 10) + (ch[++off] - &#39;0&#39;);</b>
+<b class="fc"><i>35</i>&nbsp;            num = (num * 10) + (ch[++off] - &#39;0&#39;);</b>
+<b class="fc"><i>36</i>&nbsp;            num = (num * 10) + (ch[++off] - &#39;0&#39;);</b>
+<b class="fc"><i>37</i>&nbsp;            len -= 4;</b>
+<b class="fc"><i>38</i>&nbsp;            if (len &gt; 4) {</b>
+<b class="fc"><i>39</i>&nbsp;                num = (num * 10) + (ch[++off] - &#39;0&#39;);</b>
+<b class="fc"><i>40</i>&nbsp;                num = (num * 10) + (ch[++off] - &#39;0&#39;);</b>
+<b class="fc"><i>41</i>&nbsp;                num = (num * 10) + (ch[++off] - &#39;0&#39;);</b>
+<b class="fc"><i>42</i>&nbsp;                num = (num * 10) + (ch[++off] - &#39;0&#39;);</b>
+<b class="fc"><i>43</i>&nbsp;                return num;</b>
+<i>44</i>&nbsp;            }
+<i>45</i>&nbsp;        }
+<b class="fc"><i>46</i>&nbsp;        if (len &gt; 1) {</b>
+<b class="fc"><i>47</i>&nbsp;            num = (num * 10) + (ch[++off] - &#39;0&#39;);</b>
+<b class="fc"><i>48</i>&nbsp;            if (len &gt; 2) {</b>
+<b class="fc"><i>49</i>&nbsp;                num = (num * 10) + (ch[++off] - &#39;0&#39;);</b>
+<b class="fc"><i>50</i>&nbsp;                if (len &gt; 3) {</b>
+<b class="fc"><i>51</i>&nbsp;                    num = (num * 10) + (ch[++off] - &#39;0&#39;);</b>
+<i>52</i>&nbsp;                }
+<i>53</i>&nbsp;            }
+<i>54</i>&nbsp;        }
+<b class="fc"><i>55</i>&nbsp;        return num;</b>
+<i>56</i>&nbsp;    }
+<i>57</i>&nbsp;
+<i>58</i>&nbsp;    /**
+<i>59</i>&nbsp;     * Helper method to (more) efficiently parse integer numbers from
+<i>60</i>&nbsp;     * String values.
+<i>61</i>&nbsp;     */
+<i>62</i>&nbsp;    public static int parseInt(String s)
+<i>63</i>&nbsp;    {
+<i>64</i>&nbsp;        /* Ok: let&#39;s keep strategy simple: ignoring optional minus sign,
+<i>65</i>&nbsp;         * we&#39;ll accept 1 - 9 digits and parse things efficiently;
+<i>66</i>&nbsp;         * otherwise just defer to JDK parse functionality.
+<i>67</i>&nbsp;         */
+<b class="fc"><i>68</i>&nbsp;        char c = s.charAt(0);</b>
+<b class="fc"><i>69</i>&nbsp;        int len = s.length();</b>
+<b class="fc"><i>70</i>&nbsp;        boolean neg = (c == &#39;-&#39;);</b>
+<b class="fc"><i>71</i>&nbsp;        int offset = 1;</b>
+<i>72</i>&nbsp;        // must have 1 - 9 digits after optional sign:
+<i>73</i>&nbsp;        // negative?
+<b class="fc"><i>74</i>&nbsp;        if (neg) {</b>
+<b class="fc"><i>75</i>&nbsp;            if (len == 1 || len &gt; 10) {</b>
+<b class="fc"><i>76</i>&nbsp;                return Integer.parseInt(s);</b>
+<i>77</i>&nbsp;            }
+<b class="fc"><i>78</i>&nbsp;            c = s.charAt(offset++);</b>
+<i>79</i>&nbsp;        } else {
+<b class="fc"><i>80</i>&nbsp;            if (len &gt; 9) {</b>
+<b class="fc"><i>81</i>&nbsp;                return Integer.parseInt(s);</b>
+<i>82</i>&nbsp;            }
+<i>83</i>&nbsp;        }
+<b class="fc"><i>84</i>&nbsp;        if (c &gt; &#39;9&#39; || c &lt; &#39;0&#39;) {</b>
+<b class="nc"><i>85</i>&nbsp;            return Integer.parseInt(s);</b>
+<i>86</i>&nbsp;        }
+<b class="fc"><i>87</i>&nbsp;        int num = c - &#39;0&#39;;</b>
+<b class="fc"><i>88</i>&nbsp;        if (offset &lt; len) {</b>
+<b class="fc"><i>89</i>&nbsp;            c = s.charAt(offset++);</b>
+<b class="fc"><i>90</i>&nbsp;            if (c &gt; &#39;9&#39; || c &lt; &#39;0&#39;) {</b>
+<b class="nc"><i>91</i>&nbsp;                return Integer.parseInt(s);</b>
+<i>92</i>&nbsp;            }
+<b class="fc"><i>93</i>&nbsp;            num = (num * 10) + (c - &#39;0&#39;);</b>
+<b class="fc"><i>94</i>&nbsp;            if (offset &lt; len) {</b>
+<b class="fc"><i>95</i>&nbsp;                c = s.charAt(offset++);</b>
+<b class="fc"><i>96</i>&nbsp;                if (c &gt; &#39;9&#39; || c &lt; &#39;0&#39;) {</b>
+<b class="nc"><i>97</i>&nbsp;                    return Integer.parseInt(s);</b>
+<i>98</i>&nbsp;                }
+<b class="fc"><i>99</i>&nbsp;                num = (num * 10) + (c - &#39;0&#39;);</b>
+<i>100</i>&nbsp;                // Let&#39;s just loop if we have more than 3 digits:
+<b class="fc"><i>101</i>&nbsp;                if (offset &lt; len) {</b>
+<i>102</i>&nbsp;                    do {
+<b class="fc"><i>103</i>&nbsp;                        c = s.charAt(offset++);</b>
+<b class="fc"><i>104</i>&nbsp;                        if (c &gt; &#39;9&#39; || c &lt; &#39;0&#39;) {</b>
+<b class="nc"><i>105</i>&nbsp;                            return Integer.parseInt(s);</b>
+<i>106</i>&nbsp;                        }
+<b class="fc"><i>107</i>&nbsp;                        num = (num * 10) + (c - &#39;0&#39;);</b>
+<b class="fc"><i>108</i>&nbsp;                    } while (offset &lt; len);</b>
+<i>109</i>&nbsp;                }
+<i>110</i>&nbsp;            }
+<i>111</i>&nbsp;        }
+<b class="fc"><i>112</i>&nbsp;        return neg ? -num : num;</b>
+<i>113</i>&nbsp;    }
+<i>114</i>&nbsp;    
+<i>115</i>&nbsp;    public static long parseLong(char[] ch, int off, int len)
+<i>116</i>&nbsp;    {
+<i>117</i>&nbsp;        // Note: caller must ensure length is [10, 18]
+<b class="fc"><i>118</i>&nbsp;        int len1 = len-9;</b>
+<b class="fc"><i>119</i>&nbsp;        long val = parseInt(ch, off, len1) * L_BILLION;</b>
+<b class="fc"><i>120</i>&nbsp;        return val + (long) parseInt(ch, off+len1, 9);</b>
+<i>121</i>&nbsp;    }
+<i>122</i>&nbsp;
+<i>123</i>&nbsp;    public static long parseLong(String s)
+<i>124</i>&nbsp;    {
+<i>125</i>&nbsp;        /* Ok, now; as the very first thing, let&#39;s just optimize case of &quot;fake longs&quot;;
+<i>126</i>&nbsp;         * that is, if we know they must be ints, call int parsing
+<i>127</i>&nbsp;         */
+<b class="fc"><i>128</i>&nbsp;        int length = s.length();</b>
+<b class="fc"><i>129</i>&nbsp;        if (length &lt;= 9) {</b>
+<b class="nc"><i>130</i>&nbsp;            return (long) parseInt(s);</b>
+<i>131</i>&nbsp;        }
+<i>132</i>&nbsp;        // !!! TODO: implement efficient 2-int parsing...
+<b class="fc"><i>133</i>&nbsp;        return Long.parseLong(s);</b>
+<i>134</i>&nbsp;    }
+<i>135</i>&nbsp;    
+<i>136</i>&nbsp;    /**
+<i>137</i>&nbsp;     * Helper method for determining if given String representation of
+<i>138</i>&nbsp;     * an integral number would fit in 64-bit Java long or not.
+<i>139</i>&nbsp;     * Note that input String must NOT contain leading minus sign (even
+<i>140</i>&nbsp;     * if &#39;negative&#39; is set to true).
+<i>141</i>&nbsp;     *
+<i>142</i>&nbsp;     * @param negative Whether original number had a minus sign (which is
+<i>143</i>&nbsp;     *    NOT passed to this method) or not
+<i>144</i>&nbsp;     */
+<i>145</i>&nbsp;    public static boolean inLongRange(char[] ch, int off, int len,
+<i>146</i>&nbsp;            boolean negative)
+<i>147</i>&nbsp;    {
+<b class="fc"><i>148</i>&nbsp;        String cmpStr = negative ? MIN_LONG_STR_NO_SIGN : MAX_LONG_STR;</b>
+<b class="fc"><i>149</i>&nbsp;        int cmpLen = cmpStr.length();</b>
+<b class="fc"><i>150</i>&nbsp;        if (len &lt; cmpLen) return true;</b>
+<b class="fc"><i>151</i>&nbsp;        if (len &gt; cmpLen) return false;</b>
+<i>152</i>&nbsp;
+<b class="fc"><i>153</i>&nbsp;        for (int i = 0; i &lt; cmpLen; ++i) {</b>
+<b class="fc"><i>154</i>&nbsp;            int diff = ch[off+i] - cmpStr.charAt(i);</b>
+<b class="fc"><i>155</i>&nbsp;            if (diff != 0) {</b>
+<b class="fc"><i>156</i>&nbsp;                return (diff &lt; 0);</b>
+<i>157</i>&nbsp;            }
+<i>158</i>&nbsp;        }
+<b class="fc"><i>159</i>&nbsp;        return true;</b>
+<i>160</i>&nbsp;    }
+<i>161</i>&nbsp;
+<i>162</i>&nbsp;    /**
+<i>163</i>&nbsp;     * Similar to {@link #inLongRange(char[],int,int,boolean)}, but
+<i>164</i>&nbsp;     * with String argument
+<i>165</i>&nbsp;     *
+<i>166</i>&nbsp;     * @param negative Whether original number had a minus sign (which is
+<i>167</i>&nbsp;     *    NOT passed to this method) or not
+<i>168</i>&nbsp;     */
+<i>169</i>&nbsp;    public static boolean inLongRange(String s, boolean negative)
+<i>170</i>&nbsp;    {
+<b class="fc"><i>171</i>&nbsp;        String cmp = negative ? MIN_LONG_STR_NO_SIGN : MAX_LONG_STR;</b>
+<b class="fc"><i>172</i>&nbsp;        int cmpLen = cmp.length();</b>
+<b class="fc"><i>173</i>&nbsp;        int alen = s.length();</b>
+<b class="fc"><i>174</i>&nbsp;        if (alen &lt; cmpLen) return true;</b>
+<b class="fc"><i>175</i>&nbsp;        if (alen &gt; cmpLen) return false;</b>
+<i>176</i>&nbsp;
+<i>177</i>&nbsp;        // could perhaps just use String.compareTo()?
+<b class="fc"><i>178</i>&nbsp;        for (int i = 0; i &lt; cmpLen; ++i) {</b>
+<b class="fc"><i>179</i>&nbsp;            int diff = s.charAt(i) - cmp.charAt(i);</b>
+<b class="fc"><i>180</i>&nbsp;            if (diff != 0) {</b>
+<b class="fc"><i>181</i>&nbsp;                return (diff &lt; 0);</b>
+<i>182</i>&nbsp;            }
+<i>183</i>&nbsp;        }
+<b class="fc"><i>184</i>&nbsp;        return true;</b>
+<i>185</i>&nbsp;    }
+<i>186</i>&nbsp;
+<i>187</i>&nbsp;    public static int parseAsInt(String s, int def)
+<i>188</i>&nbsp;    {
+<b class="nc"><i>189</i>&nbsp;        if (s == null) {</b>
+<b class="nc"><i>190</i>&nbsp;            return def;</b>
+<i>191</i>&nbsp;        }
+<b class="nc"><i>192</i>&nbsp;        s = s.trim();</b>
+<b class="nc"><i>193</i>&nbsp;        int len = s.length();</b>
+<b class="nc"><i>194</i>&nbsp;        if (len == 0) {</b>
+<b class="nc"><i>195</i>&nbsp;            return def;</b>
+<i>196</i>&nbsp;        }
+<i>197</i>&nbsp;        // One more thing: use integer parsing for &#39;simple&#39;
+<b class="nc"><i>198</i>&nbsp;        int i = 0;</b>
+<b class="nc"><i>199</i>&nbsp;        if (i &lt; len) { // skip leading sign:</b>
+<b class="nc"><i>200</i>&nbsp;            char c = s.charAt(0);</b>
+<b class="nc"><i>201</i>&nbsp;            if (c == &#39;+&#39;) { // for plus, actually physically remove</b>
+<b class="nc"><i>202</i>&nbsp;                s = s.substring(1);</b>
+<b class="nc"><i>203</i>&nbsp;                len = s.length();</b>
+<b class="nc"><i>204</i>&nbsp;            } else if (c == &#39;-&#39;) { // minus, just skip for checks, must retain</b>
+<b class="nc"><i>205</i>&nbsp;                ++i;</b>
+<i>206</i>&nbsp;            }
+<i>207</i>&nbsp;        }
+<b class="nc"><i>208</i>&nbsp;        for (; i &lt; len; ++i) {</b>
+<b class="nc"><i>209</i>&nbsp;            char c = s.charAt(i);</b>
+<i>210</i>&nbsp;            // if other symbols, parse as Double, coerce
+<b class="nc"><i>211</i>&nbsp;            if (c &gt; &#39;9&#39; || c &lt; &#39;0&#39;) {</b>
+<i>212</i>&nbsp;                try {
+<b class="nc"><i>213</i>&nbsp;                    return (int) parseDouble(s);</b>
+<b class="nc"><i>214</i>&nbsp;                } catch (NumberFormatException e) {</b>
+<b class="nc"><i>215</i>&nbsp;                    return def;</b>
+<i>216</i>&nbsp;                }
+<i>217</i>&nbsp;            }
+<i>218</i>&nbsp;        }
+<i>219</i>&nbsp;        try {
+<b class="nc"><i>220</i>&nbsp;            return Integer.parseInt(s);</b>
+<b class="nc"><i>221</i>&nbsp;        } catch (NumberFormatException e) { }</b>
+<b class="nc"><i>222</i>&nbsp;        return def;</b>
+<i>223</i>&nbsp;    }
+<i>224</i>&nbsp;
+<i>225</i>&nbsp;    public static long parseAsLong(String s, long def)
+<i>226</i>&nbsp;    {
+<b class="fc"><i>227</i>&nbsp;        if (s == null) {</b>
+<b class="nc"><i>228</i>&nbsp;            return def;</b>
+<i>229</i>&nbsp;        }
+<b class="fc"><i>230</i>&nbsp;        s = s.trim();</b>
+<b class="fc"><i>231</i>&nbsp;        int len = s.length();</b>
+<b class="fc"><i>232</i>&nbsp;        if (len == 0) {</b>
+<b class="nc"><i>233</i>&nbsp;            return def;</b>
+<i>234</i>&nbsp;        }
+<i>235</i>&nbsp;        // One more thing: use long parsing for &#39;simple&#39;
+<b class="fc"><i>236</i>&nbsp;        int i = 0;</b>
+<b class="fc"><i>237</i>&nbsp;        if (i &lt; len) { // skip leading sign:</b>
+<b class="fc"><i>238</i>&nbsp;            char c = s.charAt(0);</b>
+<b class="fc"><i>239</i>&nbsp;            if (c == &#39;+&#39;) { // for plus, actually physically remove</b>
+<b class="nc"><i>240</i>&nbsp;                s = s.substring(1);</b>
+<b class="nc"><i>241</i>&nbsp;                len = s.length();</b>
+<b class="fc"><i>242</i>&nbsp;            } else if (c == &#39;-&#39;) { // minus, just skip for checks, must retain</b>
+<b class="fc"><i>243</i>&nbsp;                ++i;</b>
+<i>244</i>&nbsp;            }
+<i>245</i>&nbsp;        }
+<b class="fc"><i>246</i>&nbsp;        for (; i &lt; len; ++i) {</b>
+<b class="fc"><i>247</i>&nbsp;            char c = s.charAt(i);</b>
+<i>248</i>&nbsp;            // if other symbols, parse as Double, coerce
+<b class="fc"><i>249</i>&nbsp;            if (c &gt; &#39;9&#39; || c &lt; &#39;0&#39;) {</b>
+<i>250</i>&nbsp;                try {
+<b class="fc"><i>251</i>&nbsp;                    return (long) parseDouble(s);</b>
+<b class="fc"><i>252</i>&nbsp;                } catch (NumberFormatException e) {</b>
+<b class="fc"><i>253</i>&nbsp;                    return def;</b>
+<i>254</i>&nbsp;                }
+<i>255</i>&nbsp;            }
+<i>256</i>&nbsp;        }
+<i>257</i>&nbsp;        try {
+<b class="fc"><i>258</i>&nbsp;            return Long.parseLong(s);</b>
+<b class="nc"><i>259</i>&nbsp;        } catch (NumberFormatException e) { }</b>
+<b class="nc"><i>260</i>&nbsp;        return def;</b>
+<i>261</i>&nbsp;    }
+<i>262</i>&nbsp;    
+<i>263</i>&nbsp;    public static double parseAsDouble(String s, double def)
+<i>264</i>&nbsp;    {
+<b class="fc"><i>265</i>&nbsp;        if (s == null) { return def; }</b>
+<b class="fc"><i>266</i>&nbsp;        s = s.trim();</b>
+<b class="fc"><i>267</i>&nbsp;        int len = s.length();</b>
+<b class="fc"><i>268</i>&nbsp;        if (len == 0) {</b>
+<b class="nc"><i>269</i>&nbsp;            return def;</b>
+<i>270</i>&nbsp;        }
+<i>271</i>&nbsp;        try {
+<b class="fc"><i>272</i>&nbsp;            return parseDouble(s);</b>
+<b class="fc"><i>273</i>&nbsp;        } catch (NumberFormatException e) { }</b>
+<b class="fc"><i>274</i>&nbsp;        return def;</b>
+<i>275</i>&nbsp;    }
+<i>276</i>&nbsp;
+<i>277</i>&nbsp;    public static double parseDouble(String s) throws NumberFormatException {
+<i>278</i>&nbsp;        // [JACKSON-486]: avoid some nasty float representations... but should it be MIN_NORMAL or MIN_VALUE?
+<i>279</i>&nbsp;        /* as per [JACKSON-827], let&#39;s use MIN_VALUE as it is available on all JDKs; normalized
+<i>280</i>&nbsp;         * only in JDK 1.6. In practice, should not really matter.
+<i>281</i>&nbsp;         */
+<b class="fc"><i>282</i>&nbsp;        if (NASTY_SMALL_DOUBLE.equals(s)) {</b>
+<b class="nc"><i>283</i>&nbsp;            return Double.MIN_VALUE;</b>
+<i>284</i>&nbsp;        }
+<b class="fc"><i>285</i>&nbsp;        return Double.parseDouble(s);</b>
+<i>286</i>&nbsp;    }
+<i>287</i>&nbsp;
+<i>288</i>&nbsp;    public static BigDecimal parseBigDecimal(String s) throws NumberFormatException {
+<b class="fc"><i>289</i>&nbsp;        try { return new BigDecimal(s); } catch (NumberFormatException e) {</b>
+<b class="fc"><i>290</i>&nbsp;            throw _badBD(s);</b>
+<i>291</i>&nbsp;        }
+<i>292</i>&nbsp;    }
+<i>293</i>&nbsp;
+<i>294</i>&nbsp;    public static BigDecimal parseBigDecimal(char[] b) throws NumberFormatException {
+<b class="nc"><i>295</i>&nbsp;        return parseBigDecimal(b, 0, b.length);</b>
+<i>296</i>&nbsp;    }
+<i>297</i>&nbsp;    
+<i>298</i>&nbsp;    public static BigDecimal parseBigDecimal(char[] b, int off, int len) throws NumberFormatException {
+<b class="fc"><i>299</i>&nbsp;        try { return new BigDecimal(b, off, len); } catch (NumberFormatException e) {</b>
+<b class="nc"><i>300</i>&nbsp;            throw _badBD(new String(b, off, len));</b>
+<i>301</i>&nbsp;        }
+<i>302</i>&nbsp;    }
+<i>303</i>&nbsp;
+<i>304</i>&nbsp;    private static NumberFormatException _badBD(String s) {
+<b class="fc"><i>305</i>&nbsp;        return new NumberFormatException(&quot;Value \&quot;&quot;+s+&quot;\&quot; can not be represented as BigDecimal&quot;);</b>
+<i>306</i>&nbsp;    }
+<i>307</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 04:22</div>
+</div>
+</body>
+</html>

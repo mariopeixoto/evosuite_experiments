@@ -1,0 +1,335 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: TreeNode</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.fasterxml.jackson.core</a> ]
+</div>
+
+<h1>Coverage Summary for Class: TreeNode (com.fasterxml.jackson.core)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+</tr>
+<tr>
+  <td class="name">TreeNode</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/* Jackson JSON-processor.
+<i>2</i>&nbsp; *
+<i>3</i>&nbsp; * Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
+<i>4</i>&nbsp; */
+<i>5</i>&nbsp;
+<i>6</i>&nbsp;package com.fasterxml.jackson.core;
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;import java.util.Iterator;
+<i>9</i>&nbsp;
+<i>10</i>&nbsp;/**
+<i>11</i>&nbsp; * Marker interface used to denote JSON Tree nodes, as far as
+<i>12</i>&nbsp; * the core package knows them (which is very little): mostly
+<i>13</i>&nbsp; * needed to allow {@link ObjectCodec} to have some level
+<i>14</i>&nbsp; * of interoperability.
+<i>15</i>&nbsp; * Most functionality is within &lt;code&gt;JsonNode&lt;/code&gt;
+<i>16</i>&nbsp; * base class in &lt;code&gt;mapper&lt;/code&gt; package.
+<i>17</i>&nbsp; *&lt;p&gt;
+<i>18</i>&nbsp; * Note that in Jackson 1.x &lt;code&gt;JsonNode&lt;/code&gt; itself
+<i>19</i>&nbsp; * was part of core package: Jackson 2.x refactored this
+<i>20</i>&nbsp; * since conceptually Tree Model is part of mapper package,
+<i>21</i>&nbsp; * and so part visible to &lt;code&gt;core&lt;/code&gt; package should
+<i>22</i>&nbsp; * be minimized.
+<i>23</i>&nbsp; *&lt;p&gt;
+<i>24</i>&nbsp; * NOTE: starting with Jackson 2.2, there is more functionality
+<i>25</i>&nbsp; * available via this class, and the intent is that this should
+<i>26</i>&nbsp; * form actual base for multiple alternative tree representations;
+<i>27</i>&nbsp; * for example, immutable trees could use different implementation
+<i>28</i>&nbsp; * than mutable trees. It should also be possible to move actual
+<i>29</i>&nbsp; * Tree Model implementation out of databind package eventually
+<i>30</i>&nbsp; * (Jackson 3?).
+<i>31</i>&nbsp; * 
+<i>32</i>&nbsp; * @since 2.2
+<i>33</i>&nbsp; */
+<i>34</i>&nbsp;public interface TreeNode
+<i>35</i>&nbsp;{
+<i>36</i>&nbsp;    /*
+<i>37</i>&nbsp;    /**********************************************************
+<i>38</i>&nbsp;    /* Minimal introspection methods
+<i>39</i>&nbsp;    /**********************************************************
+<i>40</i>&nbsp;     */
+<i>41</i>&nbsp;    
+<i>42</i>&nbsp;    /**
+<i>43</i>&nbsp;     * Method that can be used for efficient type detection
+<i>44</i>&nbsp;     * when using stream abstraction for traversing nodes.
+<i>45</i>&nbsp;     * Will return the first {@link JsonToken} that equivalent
+<i>46</i>&nbsp;     * stream event would produce (for most nodes there is just
+<i>47</i>&nbsp;     * one token but for structured/container types multiple)
+<i>48</i>&nbsp;     */
+<i>49</i>&nbsp;    JsonToken asToken();
+<i>50</i>&nbsp;
+<i>51</i>&nbsp;    /**
+<i>52</i>&nbsp;     * If this node is a numeric type (as per {@link JsonToken#isNumeric}),
+<i>53</i>&nbsp;     * returns native type that node uses to store the numeric value;
+<i>54</i>&nbsp;     * otherwise returns null.
+<i>55</i>&nbsp;     * 
+<i>56</i>&nbsp;     * @return Type of number contained, if any; or null if node does not
+<i>57</i>&nbsp;     *  contain numeric value.
+<i>58</i>&nbsp;     */
+<i>59</i>&nbsp;    JsonParser.NumberType numberType();
+<i>60</i>&nbsp;
+<i>61</i>&nbsp;    /**
+<i>62</i>&nbsp;     * Method that returns number of child nodes this node contains:
+<i>63</i>&nbsp;     * for Array nodes, number of child elements, for Object nodes,
+<i>64</i>&nbsp;     * number of fields, and for all other nodes 0.
+<i>65</i>&nbsp;     *
+<i>66</i>&nbsp;     * @return For non-container nodes returns 0; for arrays number of
+<i>67</i>&nbsp;     *   contained elements, and for objects number of fields.
+<i>68</i>&nbsp;     * 
+<i>69</i>&nbsp;     * @since 2.2
+<i>70</i>&nbsp;     */
+<i>71</i>&nbsp;    int size();
+<i>72</i>&nbsp;
+<i>73</i>&nbsp;    /**
+<i>74</i>&nbsp;     * Method that returns true for all value nodes: ones that 
+<i>75</i>&nbsp;     * are not containers, and that do not represent &quot;missing&quot; nodes
+<i>76</i>&nbsp;     * in the path. Such value nodes represent String, Number, Boolean
+<i>77</i>&nbsp;     * and null values from JSON.
+<i>78</i>&nbsp;     *&lt;p&gt;
+<i>79</i>&nbsp;     * Note: one and only one of methods {@link #isValueNode},
+<i>80</i>&nbsp;     * {@link #isContainerNode} and {@link #isMissingNode} ever
+<i>81</i>&nbsp;     * returns true for any given node.
+<i>82</i>&nbsp;     * 
+<i>83</i>&nbsp;     * @since 2.2
+<i>84</i>&nbsp;     */
+<i>85</i>&nbsp;    boolean isValueNode();
+<i>86</i>&nbsp;
+<i>87</i>&nbsp;    /**
+<i>88</i>&nbsp;     * Method that returns true for container nodes: Arrays and Objects.
+<i>89</i>&nbsp;     *&lt;p&gt;
+<i>90</i>&nbsp;     * Note: one and only one of methods {@link #isValueNode},
+<i>91</i>&nbsp;     * {@link #isContainerNode} and {@link #isMissingNode} ever
+<i>92</i>&nbsp;     * returns true for any given node.
+<i>93</i>&nbsp;     * 
+<i>94</i>&nbsp;     * @since 2.2
+<i>95</i>&nbsp;     */
+<i>96</i>&nbsp;    boolean isContainerNode();
+<i>97</i>&nbsp;    
+<i>98</i>&nbsp;    /**
+<i>99</i>&nbsp;     * Method that returns true for &quot;virtual&quot; nodes which represent
+<i>100</i>&nbsp;     * missing entries constructed by path accessor methods when
+<i>101</i>&nbsp;     * there is no actual node matching given criteria.
+<i>102</i>&nbsp;     *&lt;p&gt;
+<i>103</i>&nbsp;     * Note: one and only one of methods {@link #isValueNode},
+<i>104</i>&nbsp;     * {@link #isContainerNode} and {@link #isMissingNode} ever
+<i>105</i>&nbsp;     * returns true for any given node.
+<i>106</i>&nbsp;     * 
+<i>107</i>&nbsp;     * @since 2.2
+<i>108</i>&nbsp;     */
+<i>109</i>&nbsp;    boolean isMissingNode();
+<i>110</i>&nbsp;    
+<i>111</i>&nbsp;    /**
+<i>112</i>&nbsp;     * Method that returns true if this node is an Array node, false
+<i>113</i>&nbsp;     * otherwise.
+<i>114</i>&nbsp;     * Note that if true is returned, {@link #isContainerNode}
+<i>115</i>&nbsp;     * must also return true.
+<i>116</i>&nbsp;     * 
+<i>117</i>&nbsp;     * @since 2.2
+<i>118</i>&nbsp;     */
+<i>119</i>&nbsp;    boolean isArray();
+<i>120</i>&nbsp;
+<i>121</i>&nbsp;    /**
+<i>122</i>&nbsp;     * Method that returns true if this node is an Object node, false
+<i>123</i>&nbsp;     * otherwise.
+<i>124</i>&nbsp;     * Note that if true is returned, {@link #isContainerNode}
+<i>125</i>&nbsp;     * must also return true.
+<i>126</i>&nbsp;     * 
+<i>127</i>&nbsp;     * @since 2.2
+<i>128</i>&nbsp;     */
+<i>129</i>&nbsp;    boolean isObject();
+<i>130</i>&nbsp;
+<i>131</i>&nbsp;    /*
+<i>132</i>&nbsp;    /**********************************************************
+<i>133</i>&nbsp;    /* Basic traversal through structured entries (Arrays, Objects)
+<i>134</i>&nbsp;    /**********************************************************
+<i>135</i>&nbsp;     */
+<i>136</i>&nbsp;
+<i>137</i>&nbsp;    /**
+<i>138</i>&nbsp;     * Method for accessing value of the specified field of
+<i>139</i>&nbsp;     * an object node. If this node is not an object (or it
+<i>140</i>&nbsp;     * does not have a value for specified field name), or
+<i>141</i>&nbsp;     * if there is no field with such name, null is returned.
+<i>142</i>&nbsp;     *&lt;p&gt;
+<i>143</i>&nbsp;     * NOTE: handling of explicit null values may vary between
+<i>144</i>&nbsp;     * implementations; some trees may retain explicit nulls, others
+<i>145</i>&nbsp;     * not.
+<i>146</i>&nbsp;     * 
+<i>147</i>&nbsp;     * @return Node that represent value of the specified field,
+<i>148</i>&nbsp;     *   if this node is an object and has value for the specified
+<i>149</i>&nbsp;     *   field. Null otherwise.
+<i>150</i>&nbsp;     * 
+<i>151</i>&nbsp;     * @since 2.2
+<i>152</i>&nbsp;     */
+<i>153</i>&nbsp;    TreeNode get(String fieldName);
+<i>154</i>&nbsp;
+<i>155</i>&nbsp;    /**
+<i>156</i>&nbsp;     * Method for accessing value of the specified element of
+<i>157</i>&nbsp;     * an array node. For other nodes, null is returned.
+<i>158</i>&nbsp;     *&lt;p&gt;
+<i>159</i>&nbsp;     * For array nodes, index specifies
+<i>160</i>&nbsp;     * exact location within array and allows for efficient iteration
+<i>161</i>&nbsp;     * over child elements (underlying storage is guaranteed to
+<i>162</i>&nbsp;     * be efficiently indexable, i.e. has random-access to elements).
+<i>163</i>&nbsp;     * If index is less than 0, or equal-or-greater than
+<i>164</i>&nbsp;     * &lt;code&gt;node.size()&lt;/code&gt;, null is returned; no exception is
+<i>165</i>&nbsp;     * thrown for any index.
+<i>166</i>&nbsp;     *
+<i>167</i>&nbsp;     * @return Node that represent value of the specified element,
+<i>168</i>&nbsp;     *   if this node is an array and has specified element.
+<i>169</i>&nbsp;     *   Null otherwise.
+<i>170</i>&nbsp;     * 
+<i>171</i>&nbsp;     * @since 2.2
+<i>172</i>&nbsp;     */
+<i>173</i>&nbsp;    TreeNode get(int index);
+<i>174</i>&nbsp;
+<i>175</i>&nbsp;    /**
+<i>176</i>&nbsp;     * Method for accessing value of the specified field of
+<i>177</i>&nbsp;     * an object node.
+<i>178</i>&nbsp;     * For other nodes, a &quot;missing node&quot; (virtual node
+<i>179</i>&nbsp;     * for which {@link #isMissingNode} returns true) is returned.
+<i>180</i>&nbsp;     * 
+<i>181</i>&nbsp;     * @return Node that represent value of the specified field,
+<i>182</i>&nbsp;     *   if this node is an object and has value for the specified field;
+<i>183</i>&nbsp;     *   otherwise &quot;missing node&quot; is returned.
+<i>184</i>&nbsp;     * 
+<i>185</i>&nbsp;     * @since 2.2
+<i>186</i>&nbsp;     */
+<i>187</i>&nbsp;    TreeNode path(String fieldName);
+<i>188</i>&nbsp;
+<i>189</i>&nbsp;    /**
+<i>190</i>&nbsp;     * Method for accessing value of the specified element of
+<i>191</i>&nbsp;     * an array node.
+<i>192</i>&nbsp;     * For other nodes, a &quot;missing node&quot; (virtual node
+<i>193</i>&nbsp;     * for which {@link #isMissingNode} returns true) is returned.
+<i>194</i>&nbsp;     *&lt;p&gt;
+<i>195</i>&nbsp;     * For array nodes, index specifies
+<i>196</i>&nbsp;     * exact location within array and allows for efficient iteration
+<i>197</i>&nbsp;     * over child elements (underlying storage is guaranteed to
+<i>198</i>&nbsp;     * be efficiently indexable, i.e. has random-access to elements).
+<i>199</i>&nbsp;     * If index is less than 0, or equal-or-greater than
+<i>200</i>&nbsp;     * &lt;code&gt;node.size()&lt;/code&gt;, &quot;missing node&quot; is returned; no exception is
+<i>201</i>&nbsp;     * thrown for any index.
+<i>202</i>&nbsp;     *
+<i>203</i>&nbsp;     * @return Node that represent value of the specified element,
+<i>204</i>&nbsp;     *   if this node is an array and has specified element;
+<i>205</i>&nbsp;     *   otherwise &quot;missing node&quot; is returned.
+<i>206</i>&nbsp;     * 
+<i>207</i>&nbsp;     * @since 2.2
+<i>208</i>&nbsp;     */
+<i>209</i>&nbsp;    TreeNode path(int index);
+<i>210</i>&nbsp;    
+<i>211</i>&nbsp;    /**
+<i>212</i>&nbsp;     * Method for accessing names of all fields for this node, iff
+<i>213</i>&nbsp;     * this node is an Object node. Number of field names accessible
+<i>214</i>&nbsp;     * will be {@link #size}.
+<i>215</i>&nbsp;     * 
+<i>216</i>&nbsp;     * @since 2.2
+<i>217</i>&nbsp;     */
+<i>218</i>&nbsp;    Iterator&lt;String&gt; fieldNames();
+<i>219</i>&nbsp;
+<i>220</i>&nbsp;    /**
+<i>221</i>&nbsp;     * Method for locating node specified by given JSON pointer instances.
+<i>222</i>&nbsp;     * Method will never return null; if no matching node exists, 
+<i>223</i>&nbsp;     *   will return a node for which {@link TreeNode#isMissingNode()} returns true.
+<i>224</i>&nbsp;     * 
+<i>225</i>&nbsp;     * @return Node that matches given JSON Pointer: if no match exists,
+<i>226</i>&nbsp;     *   will return a node for which {@link TreeNode#isMissingNode()} returns true.
+<i>227</i>&nbsp;     * 
+<i>228</i>&nbsp;     * @since 2.3
+<i>229</i>&nbsp;     */
+<i>230</i>&nbsp;    TreeNode at(JsonPointer ptr);
+<i>231</i>&nbsp;
+<i>232</i>&nbsp;    /**
+<i>233</i>&nbsp;     * Convenience method that is functionally equivalent to:
+<i>234</i>&nbsp;     *&lt;pre&gt;
+<i>235</i>&nbsp;     *   return at(JsonPointer.valueOf(jsonPointerExpression));
+<i>236</i>&nbsp;     *&lt;/pre&gt;
+<i>237</i>&nbsp;     *&lt;p&gt;
+<i>238</i>&nbsp;     * Note that if the same expression is used often, it is preferable to construct
+<i>239</i>&nbsp;     * {@link JsonPointer} instance once and reuse it: this method will not perform
+<i>240</i>&nbsp;     * any caching of compiled expressions.
+<i>241</i>&nbsp;     * 
+<i>242</i>&nbsp;     * @param jsonPointerExpression Expression to compile as a {@link JsonPointer}
+<i>243</i>&nbsp;     *   instance
+<i>244</i>&nbsp;     * 
+<i>245</i>&nbsp;     * @return Node that matches given JSON Pointer: if no match exists,
+<i>246</i>&nbsp;     *   will return a node for which {@link TreeNode#isMissingNode()} returns true.
+<i>247</i>&nbsp;     * 
+<i>248</i>&nbsp;     * @since 2.3
+<i>249</i>&nbsp;     */
+<i>250</i>&nbsp;    TreeNode at(String jsonPointerExpression) throws IllegalArgumentException;
+<i>251</i>&nbsp;    
+<i>252</i>&nbsp;    /*
+<i>253</i>&nbsp;    /**********************************************************
+<i>254</i>&nbsp;    /* Converting to/from Streaming API
+<i>255</i>&nbsp;    /**********************************************************
+<i>256</i>&nbsp;     */
+<i>257</i>&nbsp;
+<i>258</i>&nbsp;    /**
+<i>259</i>&nbsp;     * Method for constructing a {@link JsonParser} instance for
+<i>260</i>&nbsp;     * iterating over contents of the tree that this node is root of.
+<i>261</i>&nbsp;     * Functionally equivalent to first serializing tree using
+<i>262</i>&nbsp;     * {@link ObjectCodec} and then re-parsing but
+<i>263</i>&nbsp;     * more efficient.
+<i>264</i>&nbsp;     *&lt;p&gt;
+<i>265</i>&nbsp;     * NOTE: constructed parser instance will NOT initially point to a token,
+<i>266</i>&nbsp;     * so before passing it to deserializers, it is typically necessary to
+<i>267</i>&nbsp;     * advance it to the first available token by calling {@link JsonParser#nextToken()}.
+<i>268</i>&nbsp;     *&lt;p&gt;
+<i>269</i>&nbsp;     * Also note that calling this method will &lt;b&gt;NOT&lt;/b&gt; pass {@link ObjectCodec}
+<i>270</i>&nbsp;     * reference, so data-binding callback methods like {@link JsonParser#readValueAs(Class)}
+<i>271</i>&nbsp;     * will not work with calling {@link JsonParser#setCodec}).
+<i>272</i>&nbsp;     * It is often better to call {@link #traverse(ObjectCodec)} to pass the codec explicitly.
+<i>273</i>&nbsp;     */
+<i>274</i>&nbsp;    JsonParser traverse();
+<i>275</i>&nbsp;
+<i>276</i>&nbsp;    /**
+<i>277</i>&nbsp;     * Same as {@link #traverse()}, but additionally passes {@link com.fasterxml.jackson.core.ObjectCodec}
+<i>278</i>&nbsp;     * to use if {@link JsonParser#readValueAs(Class)} is used (otherwise caller must call
+<i>279</i>&nbsp;     * {@link JsonParser#setCodec} on response explicitly).
+<i>280</i>&nbsp;     *&lt;p&gt;
+<i>281</i>&nbsp;     * NOTE: constructed parser instance will NOT initially point to a token,
+<i>282</i>&nbsp;     * so before passing it to deserializers, it is typically necessary to
+<i>283</i>&nbsp;     * advance it to the first available token by calling {@link JsonParser#nextToken()}.
+<i>284</i>&nbsp;     * 
+<i>285</i>&nbsp;     * @since 2.1
+<i>286</i>&nbsp;     */
+<i>287</i>&nbsp;    JsonParser traverse(ObjectCodec codec);
+<i>288</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 04:22</div>
+</div>
+</body>
+</html>

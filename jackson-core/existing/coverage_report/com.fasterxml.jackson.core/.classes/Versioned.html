@@ -1,0 +1,70 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: Versioned</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">com.fasterxml.jackson.core</a> ]
+</div>
+
+<h1>Coverage Summary for Class: Versioned (com.fasterxml.jackson.core)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+</tr>
+<tr>
+  <td class="name">Versioned</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/* Jackson JSON-processor.
+<i>2</i>&nbsp; *
+<i>3</i>&nbsp; * Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
+<i>4</i>&nbsp; */
+<i>5</i>&nbsp;
+<i>6</i>&nbsp;package com.fasterxml.jackson.core;
+<i>7</i>&nbsp;
+<i>8</i>&nbsp;/**
+<i>9</i>&nbsp; * Interface that those Jackson components that are explicitly versioned will implement.
+<i>10</i>&nbsp; * Intention is to allow both plug-in components (custom extensions) and applications and
+<i>11</i>&nbsp; * frameworks that use Jackson to detect exact version of Jackson in use.
+<i>12</i>&nbsp; * This may be useful for example for ensuring that proper Jackson version is deployed
+<i>13</i>&nbsp; * (beyond mechanisms that deployment system may have), as well as for possible
+<i>14</i>&nbsp; * workarounds.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;public interface Versioned {
+<i>17</i>&nbsp;    /**
+<i>18</i>&nbsp;     * Method called to detect version of the component that implements this interface;
+<i>19</i>&nbsp;     * returned version should never be null, but may return specific &quot;not available&quot;
+<i>20</i>&nbsp;     * instance (see {@link Version} for details).
+<i>21</i>&nbsp;     */
+<i>22</i>&nbsp;    Version version();
+<i>23</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 04:22</div>
+</div>
+</body>
+</html>

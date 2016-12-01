@@ -1,0 +1,172 @@
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html id="htmlId">
+<head>
+  <title>Coverage Report :: IllegalInstantException</title>
+  <style type="text/css">
+    @import "../../.css/coverage.css";
+  </style>
+</head>
+
+<body>
+<div class="header"></div>
+
+<div class="content">
+<div class="breadCrumbs">
+    [ <a href="../../index.html">all classes</a> ]
+    [ <a href="../index.html">org.joda.time</a> ]
+</div>
+
+<h1>Coverage Summary for Class: IllegalInstantException (org.joda.time)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">IllegalInstantException</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/ 1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (4/ 4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    91.7%
+  </span>
+  <span class="absValue">
+    (11/ 12)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<div class="sourceCode"><i>1</i>&nbsp;/*
+<i>2</i>&nbsp; *  Copyright 2001-2013 Stephen Colebourne
+<i>3</i>&nbsp; *
+<i>4</i>&nbsp; *  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<i>5</i>&nbsp; *  you may not use this file except in compliance with the License.
+<i>6</i>&nbsp; *  You may obtain a copy of the License at
+<i>7</i>&nbsp; *
+<i>8</i>&nbsp; *      http://www.apache.org/licenses/LICENSE-2.0
+<i>9</i>&nbsp; *
+<i>10</i>&nbsp; *  Unless required by applicable law or agreed to in writing, software
+<i>11</i>&nbsp; *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<i>12</i>&nbsp; *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<i>13</i>&nbsp; *  See the License for the specific language governing permissions and
+<i>14</i>&nbsp; *  limitations under the License.
+<i>15</i>&nbsp; */
+<i>16</i>&nbsp;package org.joda.time;
+<i>17</i>&nbsp;
+<i>18</i>&nbsp;import org.joda.time.format.DateTimeFormat;
+<i>19</i>&nbsp;
+<i>20</i>&nbsp;/**
+<i>21</i>&nbsp; * Exception thrown when attempting to create an instant or date-time that cannot exist.
+<i>22</i>&nbsp; * &lt;p&gt;
+<i>23</i>&nbsp; * Classes like {@code DateTime} only store valid date-times.
+<i>24</i>&nbsp; * One of the cases where validity is important is handling daylight savings time (DST).
+<i>25</i>&nbsp; * In many places DST is used, where the local clock moves forward by an hour in spring and back by an hour in autumn/fall.
+<i>26</i>&nbsp; * This means that in spring, there is a &quot;gap&quot; where a local time does not exist.
+<i>27</i>&nbsp; * &lt;p&gt;
+<i>28</i>&nbsp; * This exception refers to this gap, and it means that your application tried to create
+<i>29</i>&nbsp; * a date-time inside the gap - a time that did not exist.
+<i>30</i>&nbsp; * Since Joda-Time objects must be valid, this is not allowed.
+<i>31</i>&nbsp; * &lt;p&gt;
+<i>32</i>&nbsp; * Possible solutions may be as follows:&lt;br /&gt;
+<i>33</i>&nbsp; * Use &lt;code&gt;LocalDateTime&lt;/code&gt;, as all local date-times are valid.&lt;br /&gt;
+<i>34</i>&nbsp; * When converting a &lt;code&gt;LocalDate&lt;/code&gt; to a &lt;code&gt;DateTime&lt;/code&gt;, then use &lt;code&gt;toDateTimeAsStartOfDay()&lt;/code&gt;
+<i>35</i>&nbsp; * as this handles and manages any gaps.&lt;br /&gt;
+<i>36</i>&nbsp; * When parsing, use &lt;code&gt;parseLocalDateTime()&lt;/code&gt; if the string being parsed has no time-zone.
+<i>37</i>&nbsp; *
+<i>38</i>&nbsp; * @author Stephen Colebourne
+<i>39</i>&nbsp; * @since 2.2
+<i>40</i>&nbsp; */
+<i>41</i>&nbsp;public class IllegalInstantException extends IllegalArgumentException {
+<i>42</i>&nbsp;    
+<i>43</i>&nbsp;    /** Serialization lock. */
+<i>44</i>&nbsp;    private static final long serialVersionUID = 2858712538216L;
+<i>45</i>&nbsp;
+<i>46</i>&nbsp;
+<i>47</i>&nbsp;    /**
+<i>48</i>&nbsp;     * Constructor.
+<i>49</i>&nbsp;     * 
+<i>50</i>&nbsp;     * @param message  the message
+<i>51</i>&nbsp;     */
+<i>52</i>&nbsp;    public IllegalInstantException(String message) {
+<b class="fc"><i>53</i>&nbsp;        super(message);</b>
+<b class="fc"><i>54</i>&nbsp;    }</b>
+<i>55</i>&nbsp;
+<i>56</i>&nbsp;    /**
+<i>57</i>&nbsp;     * Constructor.
+<i>58</i>&nbsp;     * 
+<i>59</i>&nbsp;     * @param instantLocal  the local instant
+<i>60</i>&nbsp;     * @param zoneId  the time-zone ID, may be null
+<i>61</i>&nbsp;     */
+<i>62</i>&nbsp;    public IllegalInstantException(long instantLocal, String zoneId) {
+<b class="fc"><i>63</i>&nbsp;        super(createMessage(instantLocal, zoneId));</b>
+<b class="fc"><i>64</i>&nbsp;    }</b>
+<i>65</i>&nbsp;
+<i>66</i>&nbsp;    private static String createMessage(long instantLocal, String zoneId) {
+<b class="fc"><i>67</i>&nbsp;        String localDateTime = DateTimeFormat.forPattern(&quot;yyyy-MM-dd&#39;T&#39;HH:mm:ss.SSS&quot;).print(new Instant(instantLocal));</b>
+<b class="fc"><i>68</i>&nbsp;        String zone = (zoneId != null ? &quot; (&quot; + zoneId + &quot;)&quot; : &quot;&quot;);</b>
+<b class="fc"><i>69</i>&nbsp;        return &quot;Illegal instant due to time zone offset transition (daylight savings time &#39;gap&#39;): &quot; + localDateTime + zone;</b>
+<i>70</i>&nbsp;    }
+<i>71</i>&nbsp;
+<i>72</i>&nbsp;    //-----------------------------------------------------------------------
+<i>73</i>&nbsp;    /**
+<i>74</i>&nbsp;     * Checks if the exception is, or has a cause, of {@code IllegalInstantException}.
+<i>75</i>&nbsp;     * 
+<i>76</i>&nbsp;     * @param ex  the exception to check
+<i>77</i>&nbsp;     * @return true if an {@code IllegalInstantException}
+<i>78</i>&nbsp;     */
+<i>79</i>&nbsp;    public static boolean isIllegalInstant(Throwable ex) {
+<b class="fc"><i>80</i>&nbsp;        if (ex instanceof IllegalInstantException) {</b>
+<b class="fc"><i>81</i>&nbsp;            return true;</b>
+<i>82</i>&nbsp;        }
+<b class="fc"><i>83</i>&nbsp;        while (ex.getCause() != null &amp;&amp; ex.getCause() != ex) {</b>
+<b class="fc"><i>84</i>&nbsp;            return isIllegalInstant(ex.getCause());</b>
+<i>85</i>&nbsp;        }
+<b class="nc"><i>86</i>&nbsp;        return false;</b>
+<i>87</i>&nbsp;    }
+<i>88</i>&nbsp;
+<i>89</i>&nbsp;}
+</div>
+</div>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2016-11-30 03:04</div>
+</div>
+</body>
+</html>
